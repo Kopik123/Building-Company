@@ -992,6 +992,25 @@ a {
   color: rgba(148, 163, 184, 0.9);
 }
 
+.form-status {
+  margin: 0.8rem 0 0 0;
+  min-height: 1.2rem;
+  font-size: 0.85rem;
+  color: rgba(203, 213, 225, 0.95);
+}
+
+.form-status.is-loading {
+  color: rgba(229, 231, 235, 0.95);
+}
+
+.form-status.is-success {
+  color: #86efac;
+}
+
+.form-status.is-error {
+  color: #fca5a5;
+}
+
 /* Footer */
 
 .site-footer {
