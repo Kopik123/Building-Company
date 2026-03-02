@@ -254,52 +254,14 @@
             &#10094;
           </button>
           <div class="gallery-viewport">
-            <div class="gallery-track">
-              <div class="gallery-item is-center" data-index="0">
-                <img src="gallery/photo-1.jpg" alt="High-end bathroom tiling and walk-in shower" />
-              </div>
-              <div class="gallery-item is-side" data-index="1">
-                <img src="gallery/photo-2.jpg" alt="Modern kitchen with handleless cabinets and island" />
-              </div>
-              <div class="gallery-item is-side" data-index="2">
-                <img src="gallery/photo-3.jpg" alt="Bespoke joinery and media wall" />
-              </div>
-              <div class="gallery-item" data-index="3">
-                <img src="gallery/photo-4.jpg" alt="Staircase and flooring detail" />
-              </div>
-              <div class="gallery-item" data-index="4">
-                <img src="gallery/photo-5.jpg" alt="Exterior rendering and facade" />
-              </div>
-              <div class="gallery-item" data-index="5">
-                <img src="gallery/photo-6.jpg" alt="Decorating and finishing details" />
-              </div>
-            </div>
+            <div class="gallery-track"></div>
           </div>
           <button class="gallery-arrow gallery-arrow-next" type="button" aria-label="Next image">
             &#10095;
           </button>
         </div>
 
-        <div class="gallery-thumbs">
-          <button class="gallery-thumb is-active" type="button" data-index="0">
-            <img src="gallery/photo-1.jpg" alt="Thumbnail: bathroom tiling" />
-          </button>
-          <button class="gallery-thumb" type="button" data-index="1">
-            <img src="gallery/photo-2.jpg" alt="Thumbnail: modern kitchen" />
-          </button>
-          <button class="gallery-thumb" type="button" data-index="2">
-            <img src="gallery/photo-3.jpg" alt="Thumbnail: media wall" />
-          </button>
-          <button class="gallery-thumb" type="button" data-index="3">
-            <img src="gallery/photo-4.jpg" alt="Thumbnail: staircase and flooring" />
-          </button>
-          <button class="gallery-thumb" type="button" data-index="4">
-            <img src="gallery/photo-5.jpg" alt="Thumbnail: exterior rendering" />
-          </button>
-          <button class="gallery-thumb" type="button" data-index="5">
-            <img src="gallery/photo-6.jpg" alt="Thumbnail: decorating details" />
-          </button>
-        </div>
+        <div class="gallery-thumbs"></div>
       </div>
     </section>
 
@@ -510,15 +472,15 @@
             We handle a limited number of projects at a time to maintain quality. All enquiries are treated confidentially.
           </p>
         </div>
-        <form class="contact-form">
+        <form class="contact-form" id="contact-form">
           <div class="form-row">
             <div class="form-field">
               <label for="name">Name</label>
-              <input type="text" id="name" name="name" placeholder="Your full name" />
+              <input type="text" id="name" name="name" placeholder="Your full name" required />
             </div>
             <div class="form-field">
               <label for="email">Email</label>
-              <input type="email" id="email" name="email" placeholder="you@example.com" />
+              <input type="email" id="email" name="email" placeholder="you@example.com" required />
             </div>
           </div>
           <div class="form-row">
@@ -563,9 +525,10 @@
           </div>
           <div class="form-field">
             <label for="message">Project details</label>
-            <textarea id="message" name="message" rows="5" placeholder="Tell us about your bathroom, kitchen or interior project, timings and any ideas you already have."></textarea>
+            <textarea id="message" name="message" rows="5" placeholder="Tell us about your bathroom, kitchen or interior project, timings and any ideas you already have." required></textarea>
           </div>
           <button type="submit" class="btn btn-primary btn-block">Send enquiry</button>
+          <p class="form-status" id="form-status" aria-live="polite"></p>
           <p class="form-footnote">
             By submitting this form you agree for us to contact you regarding your enquiry. We do not share your details with third parties.
           </p>
@@ -615,63 +578,152 @@
 
     // Gallery carousel logic
     (function () {
-      const items = Array.from(document.querySelectorAll('.gallery-item'));
-      const thumbs = Array.from(document.querySelectorAll('.gallery-thumb'));
+      const track = document.querySelector('.gallery-track');
+      const thumbsContainer = document.querySelector('.gallery-thumbs');
       const prevBtn = document.querySelector('.gallery-arrow-prev');
       const nextBtn = document.querySelector('.gallery-arrow-next');
 
-      if (!items.length || !thumbs.length || !prevBtn || !nextBtn) return;
+      if (!track || !thumbsContainer || !prevBtn || !nextBtn) return;
 
-      let currentIndex = 0;
+      // Fetch gallery images from API
+      fetch('/api/gallery')
+        .then(response => response.json())
+        .then(data => {
+          const galleryImages = data.images || [];
 
-      function updateGallery(index) {
-        const last = items.length - 1;
-        const leftIndex = index === 0 ? last : index - 1;
-        const rightIndex = index === last ? 0 : index + 1;
+          if (!galleryImages.length) return;
 
-        items.forEach((item, i) => {
-          item.classList.remove('is-center', 'is-side', 'is-hidden');
-          if (i === index) {
-            item.classList.add('is-center');
-          } else if (i === leftIndex || i === rightIndex) {
-            item.classList.add('is-side');
-          } else {
-            item.classList.add('is-hidden');
+          track.innerHTML = galleryImages
+            .map((imageName, index) => (
+              `<div class="gallery-item" data-index="${index}">` +
+                `<img src="Gallery/${imageName}" alt="Project photo ${index + 1}" />` +
+              `</div>`
+            ))
+            .join('');
+
+          thumbsContainer.innerHTML = galleryImages
+            .map((imageName, index) => (
+              `<button class="gallery-thumb" type="button" data-index="${index}">` +
+                `<img src="Gallery/${imageName}" alt="Thumbnail ${index + 1}" />` +
+              `</button>`
+            ))
+            .join('');
+
+          const items = Array.from(track.querySelectorAll('.gallery-item'));
+          const thumbs = Array.from(thumbsContainer.querySelectorAll('.gallery-thumb'));
+
+          if (!items.length || !thumbs.length) return;
+
+          let currentIndex = 0;
+
+          function updateGallery(index) {
+            const last = items.length - 1;
+            const leftIndex = index === 0 ? last : index - 1;
+            const rightIndex = index === last ? 0 : index + 1;
+
+            items.forEach((item, i) => {
+              item.classList.remove('is-center', 'is-side', 'is-hidden');
+              if (i === index) {
+                item.classList.add('is-center');
+              } else if (i === leftIndex || i === rightIndex) {
+                item.classList.add('is-side');
+              } else {
+                item.classList.add('is-hidden');
+              }
+            });
+
+            thumbs.forEach((thumb, i) => {
+              if (i === index) {
+                thumb.classList.add('is-active');
+              } else {
+                thumb.classList.remove('is-active');
+              }
+            });
+
+            currentIndex = index;
           }
-        });
 
-        thumbs.forEach((thumb, i) => {
-          if (i === index) {
-            thumb.classList.add('is-active');
-          } else {
-            thumb.classList.remove('is-active');
-          }
-        });
+          prevBtn.addEventListener('click', () => {
+            const nextIndex = (currentIndex - 1 + items.length) % items.length;
+            updateGallery(nextIndex);
+          });
 
-        currentIndex = index;
+          nextBtn.addEventListener('click', () => {
+            const nextIndex = (currentIndex + 1) % items.length;
+            updateGallery(nextIndex);
+          });
+
+          thumbs.forEach((thumb) => {
+            thumb.addEventListener('click', () => {
+              const idx = Number(thumb.getAttribute('data-index'));
+              if (!Number.isNaN(idx)) {
+                updateGallery(idx);
+              }
+            });
+          });
+
+          // Ensure initial state is consistent
+          updateGallery(0);
+        })
+        .catch(error => console.error('Failed to load gallery:', error));
+    })();
+
+    // Contact form submit logic
+    (function () {
+      const form = document.getElementById('contact-form');
+      const status = document.getElementById('form-status');
+      const submitButton = form ? form.querySelector('button[type="submit"]') : null;
+
+      if (!form || !status || !submitButton) return;
+
+      function setStatus(message, type) {
+        status.textContent = message;
+        status.classList.remove('is-success', 'is-error', 'is-loading');
+        if (type) {
+          status.classList.add(type);
+        }
       }
 
-      prevBtn.addEventListener('click', () => {
-        const nextIndex = (currentIndex - 1 + items.length) % items.length;
-        updateGallery(nextIndex);
-      });
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
 
-      nextBtn.addEventListener('click', () => {
-        const nextIndex = (currentIndex + 1) % items.length;
-        updateGallery(nextIndex);
-      });
+        const formData = new FormData(form);
+        const payload = {
+          name: String(formData.get('name') || '').trim(),
+          email: String(formData.get('email') || '').trim(),
+          phone: String(formData.get('phone') || '').trim(),
+          location: String(formData.get('location') || '').trim(),
+          projectType: String(formData.get('project-type') || '').trim(),
+          budget: String(formData.get('budget') || '').trim(),
+          message: String(formData.get('message') || '').trim()
+        };
 
-      thumbs.forEach((thumb) => {
-        thumb.addEventListener('click', () => {
-          const idx = Number(thumb.getAttribute('data-index'));
-          if (!Number.isNaN(idx)) {
-            updateGallery(idx);
+        submitButton.disabled = true;
+        setStatus('Sending enquiry...', 'is-loading');
+
+        try {
+          const response = await fetch('/api/contact', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+          });
+
+          const result = await response.json().catch(() => ({}));
+
+          if (!response.ok) {
+            throw new Error(result.error || 'Failed to send enquiry.');
           }
-        });
-      });
 
-      // Ensure initial state is consistent
-      updateGallery(0);
+          form.reset();
+          setStatus('Thank you. Your enquiry has been sent.', 'is-success');
+        } catch (error) {
+          setStatus(error.message || 'Failed to send enquiry. Please try again later.', 'is-error');
+        } finally {
+          submitButton.disabled = false;
+        }
+      });
     })();
   </script>
 </body>
