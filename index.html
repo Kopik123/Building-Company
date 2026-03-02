@@ -27,6 +27,7 @@
         <ul class="nav-list">
           <li><a href="#services">Services</a></li>
           <li><a href="#projects">Projects</a></li>
+          <li><a href="#gallery">Gallery</a></li>
           <li><a href="#process">Process</a></li>
           <li><a href="#about">About</a></li>
           <li><a href="#testimonials">Testimonials</a></li>
@@ -234,6 +235,71 @@
         <p class="projects-note">
           More case studies will be added as we complete new projects.
         </p>
+      </div>
+    </section>
+
+    <!-- Gallery -->
+    <section id="gallery" class="section section-light">
+      <div class="container">
+        <header class="section-header">
+          <h2>Project gallery</h2>
+          <p>
+            A rotating selection of bathrooms, kitchens, joinery and exterior work. Scroll through the main carousel
+            or pick any image from the tiled gallery below.
+          </p>
+        </header>
+
+        <div class="gallery-main">
+          <button class="gallery-arrow gallery-arrow-prev" type="button" aria-label="Previous image">
+            &#10094;
+          </button>
+          <div class="gallery-viewport">
+            <div class="gallery-track">
+              <div class="gallery-item is-center" data-index="0">
+                <img src="gallery/photo-1.jpg" alt="High-end bathroom tiling and walk-in shower" />
+              </div>
+              <div class="gallery-item is-side" data-index="1">
+                <img src="gallery/photo-2.jpg" alt="Modern kitchen with handleless cabinets and island" />
+              </div>
+              <div class="gallery-item is-side" data-index="2">
+                <img src="gallery/photo-3.jpg" alt="Bespoke joinery and media wall" />
+              </div>
+              <div class="gallery-item" data-index="3">
+                <img src="gallery/photo-4.jpg" alt="Staircase and flooring detail" />
+              </div>
+              <div class="gallery-item" data-index="4">
+                <img src="gallery/photo-5.jpg" alt="Exterior rendering and facade" />
+              </div>
+              <div class="gallery-item" data-index="5">
+                <img src="gallery/photo-6.jpg" alt="Decorating and finishing details" />
+              </div>
+            </div>
+          </div>
+          <button class="gallery-arrow gallery-arrow-next" type="button" aria-label="Next image">
+            &#10095;
+          </button>
+        </div>
+
+        <div class="gallery-thumbs">
+          <button class="gallery-thumb is-active" type="button" data-index="0">
+            <img src="gallery/photo-1.jpg" alt="Thumbnail: bathroom tiling" />
+          </button>
+          <button class="gallery-thumb" type="button" data-index="1">
+            <img src="gallery/photo-2.jpg" alt="Thumbnail: modern kitchen" />
+          </button>
+          <button class="gallery-thumb" type="button" data-index="2">
+            <img src="gallery/photo-3.jpg" alt="Thumbnail: media wall" />
+          </button>
+          <button class="gallery-thumb" type="button" data-index="3">
+            <img src="gallery/photo-4.jpg" alt="Thumbnail: staircase and flooring" />
+          </button>
+          <button class="gallery-thumb" type="button" data-index="4">
+            <img src="gallery/photo-5.jpg" alt="Thumbnail: exterior rendering" />
+          </button>
+          <button class="gallery-thumb" type="button" data-index="5">
+            <img src="gallery/photo-6.jpg" alt="Thumbnail: decorating details" />
+          </button>
+        </div>
       </div>
     </section>
 
@@ -546,6 +612,67 @@
     });
 
     document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Gallery carousel logic
+    (function () {
+      const items = Array.from(document.querySelectorAll('.gallery-item'));
+      const thumbs = Array.from(document.querySelectorAll('.gallery-thumb'));
+      const prevBtn = document.querySelector('.gallery-arrow-prev');
+      const nextBtn = document.querySelector('.gallery-arrow-next');
+
+      if (!items.length || !thumbs.length || !prevBtn || !nextBtn) return;
+
+      let currentIndex = 0;
+
+      function updateGallery(index) {
+        const last = items.length - 1;
+        const leftIndex = index === 0 ? last : index - 1;
+        const rightIndex = index === last ? 0 : index + 1;
+
+        items.forEach((item, i) => {
+          item.classList.remove('is-center', 'is-side', 'is-hidden');
+          if (i === index) {
+            item.classList.add('is-center');
+          } else if (i === leftIndex || i === rightIndex) {
+            item.classList.add('is-side');
+          } else {
+            item.classList.add('is-hidden');
+          }
+        });
+
+        thumbs.forEach((thumb, i) => {
+          if (i === index) {
+            thumb.classList.add('is-active');
+          } else {
+            thumb.classList.remove('is-active');
+          }
+        });
+
+        currentIndex = index;
+      }
+
+      prevBtn.addEventListener('click', () => {
+        const nextIndex = (currentIndex - 1 + items.length) % items.length;
+        updateGallery(nextIndex);
+      });
+
+      nextBtn.addEventListener('click', () => {
+        const nextIndex = (currentIndex + 1) % items.length;
+        updateGallery(nextIndex);
+      });
+
+      thumbs.forEach((thumb) => {
+        thumb.addEventListener('click', () => {
+          const idx = Number(thumb.getAttribute('data-index'));
+          if (!Number.isNaN(idx)) {
+            updateGallery(idx);
+          }
+        });
+      });
+
+      // Ensure initial state is consistent
+      updateGallery(0);
+    })();
   </script>
 </body>
 </html>
