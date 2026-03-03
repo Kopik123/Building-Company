@@ -14,9 +14,27 @@ const createClaimToken = () => crypto.randomBytes(24).toString('hex');
 const createClaimCode = () => String(Math.floor(100000 + Math.random() * 900000));
 const createClaimCodeHash = (value) => crypto.createHash('sha256').update(value).digest('hex');
 const CLAIM_MAX_ATTEMPTS = 5;
+let cachedClaimEmailTransporter;
 
 const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
 const normalizePhone = (value) => String(value || '').trim();
+
+const getClaimEmailTransporter = () => {
+  if (!cachedClaimEmailTransporter) {
+    cachedClaimEmailTransporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT) || 587,
+      secure: process.env.SMTP_SECURE === 'true',
+      pool: true,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
+      }
+    });
+  }
+
+  return cachedClaimEmailTransporter;
+};
 
 const sendClaimCodeByEmail = async (email, code) => {
   if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS || !process.env.CONTACT_FROM) {
@@ -25,15 +43,7 @@ const sendClaimCodeByEmail = async (email, code) => {
     throw err;
   }
 
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT) || 587,
-    secure: process.env.SMTP_SECURE === 'true',
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS
-    }
-  });
+  const transporter = getClaimEmailTransporter();
 
   await transporter.sendMail({
     from: `Building Company <${process.env.CONTACT_FROM}>`,

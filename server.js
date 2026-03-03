@@ -26,6 +26,7 @@ const groupRoutes = require('./routes/group');
 
 const app = express();
 app.set('trust proxy', 1);
+let cachedContactTransporter;
 
 const PORT = Number(process.env.PORT) || 3000;
 const allowedOrigins = String(process.env.CORS_ORIGINS || '')
@@ -52,6 +53,23 @@ const contactLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 10
 });
+
+const getContactTransporter = () => {
+  if (!cachedContactTransporter) {
+    cachedContactTransporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT) || 587,
+      secure: process.env.SMTP_SECURE === 'true',
+      pool: true,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
+      }
+    });
+  }
+
+  return cachedContactTransporter;
+};
 
 app.use(helmet());
 app.use(cors({
@@ -127,15 +145,7 @@ app.post('/api/contact', async (req, res, next) => {
       return res.status(503).json({ error: 'Email service is not configured yet.' });
     }
 
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT) || 587,
-      secure: process.env.SMTP_SECURE === 'true',
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-      }
-    });
+    const transporter = getContactTransporter();
 
     await transporter.sendMail({
       from: `Building Company <${process.env.CONTACT_FROM || process.env.SMTP_USER}>`,
