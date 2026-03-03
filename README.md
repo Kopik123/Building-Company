@@ -82,7 +82,7 @@ curl -sS -X POST http://localhost:3000/api/quotes/guest/<QUOTE_ID>/claim/confirm
 	-d '{"claimToken":"<CLAIM_TOKEN>","claimCode":"123456"}'
 ```
 
-Uwaga: `claim/request` nie zwraca `claimCode`. Kod jest dostarczany kanałem `email` albo `phone`.
+Uwaga: endpoint `claim/request` nie zwraca `claimCode`. Kod jest dostarczany kanałem `email` albo `phone`.
 
 ### 5) Local inbox (zalogowani użytkownicy)
 
@@ -122,7 +122,14 @@ curl -sS -X POST http://localhost:3000/api/auth/bootstrap/staff \
 	-d '{"email":"admin@example.com","password":"secret1234","name":"Admin User","role":"admin"}'
 ```
 
-Uwaga: tworzenie `admin` jest jednorazowe (`409` przy kolejnej próbie). Endpoint bootstrap jest wygaszany po pierwszym udanym utworzeniu konta staff (`.bootstrap.lock`).
+Uwaga: tworzenie `admin` jest jednorazowe (`409` przy kolejnej próbie).
+Endpoint bootstrap jest automatycznie wygaszany po pierwszym udanym utworzeniu konta staff (`manager` lub `admin`).
+Po wygaszeniu kolejne wywołania zwracają `403`.
+
+Aby włączyć bootstrap ponownie lokalnie:
+
+- ustaw `BOOTSTRAP_ENABLED=true`
+- usuń plik `.bootstrap.lock` z katalogu projektu
 
 ### 8) Rotacja `BOOTSTRAP_ADMIN_KEY` bez restartu (tylko admin)
 
@@ -132,6 +139,18 @@ curl -sS -X POST http://localhost:3000/api/auth/bootstrap/rotate-key \
 	-H 'Content-Type: application/json' \
 	-d '{"currentBootstrapKey":"<OLD_BOOTSTRAP_ADMIN_KEY>","newBootstrapKey":"<NEW_BOOTSTRAP_ADMIN_KEY>"}'
 ```
+
+## Wymagane zmienne środowiskowe
+
+Serwer nie uruchomi się bez:
+
+- `DATABASE_URL`
+- `JWT_SECRET`
+- `BOOTSTRAP_ADMIN_KEY`
+
+Opcjonalne:
+
+- `BOOTSTRAP_ENABLED` (domyślnie aktywny, zablokowany gdy `false`)
 
 ## Wdrożenie na DigitalOcean Droplet (PM2 + Nginx + SSL)
 
