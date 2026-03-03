@@ -674,27 +674,43 @@
 
       // Fetch gallery images from API
       fetch('/api/gallery')
-        .then(response => response.json())
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Failed to fetch gallery');
+          }
+          return response.json();
+        })
         .then(data => {
           const galleryImages = data.images || [];
 
-          if (!galleryImages.length) return;
+          if (!galleryImages.length) {
+            return;
+          }
 
-          track.innerHTML = galleryImages
-            .map((imageName, index) => (
-              `<div class="gallery-item" data-index="${index}">` +
-                `<img src="Gallery/${imageName}" alt="Project photo ${index + 1}" />` +
-              `</div>`
-            ))
-            .join('');
+          track.replaceChildren(...galleryImages.map((imageName, index) => {
+            const item = document.createElement('div');
+            item.className = 'gallery-item';
+            item.setAttribute('data-index', String(index));
 
-          thumbsContainer.innerHTML = galleryImages
-            .map((imageName, index) => (
-              `<button class="gallery-thumb" type="button" data-index="${index}">` +
-                `<img src="Gallery/${imageName}" alt="Thumbnail ${index + 1}" />` +
-              `</button>`
-            ))
-            .join('');
+            const image = document.createElement('img');
+            image.src = `Gallery/${encodeURIComponent(imageName)}`;
+            image.alt = `Project photo ${index + 1}`;
+            item.appendChild(image);
+            return item;
+          }));
+
+          thumbsContainer.replaceChildren(...galleryImages.map((imageName, index) => {
+            const thumb = document.createElement('button');
+            thumb.className = 'gallery-thumb';
+            thumb.type = 'button';
+            thumb.setAttribute('data-index', String(index));
+
+            const image = document.createElement('img');
+            image.src = `Gallery/${encodeURIComponent(imageName)}`;
+            image.alt = `Thumbnail ${index + 1}`;
+            thumb.appendChild(image);
+            return thumb;
+          }));
 
           const items = Array.from(track.querySelectorAll('.gallery-item'));
           const thumbs = Array.from(thumbsContainer.querySelectorAll('.gallery-thumb'));
@@ -758,4 +774,3 @@
   </script>
 </body>
 </html>
-

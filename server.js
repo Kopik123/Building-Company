@@ -26,12 +26,14 @@ const groupRoutes = require('./routes/group');
 
 const app = express();
 app.set('trust proxy', 1);
+app.disable('x-powered-by');
 const escapeHtml = (value = '') => String(value)
   .replace(/&/g, '&amp;')
   .replace(/</g, '&lt;')
   .replace(/>/g, '&gt;')
   .replace(/"/g, '&quot;')
   .replace(/'/g, '&#39;');
+const sanitizeHeaderValue = (value = '') => String(value).replace(/[\r\n]+/g, ' ').trim();
 
 const PORT = Number(process.env.PORT) || 3000;
 const allowedOrigins = String(process.env.CORS_ORIGINS || '')
@@ -120,13 +122,25 @@ app.post('/api/contact', async (req, res, next) => {
       message = ''
     } = req.body || {};
 
-    if (!name.trim() || !email.trim() || !message.trim()) {
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim();
+    const trimmedPhone = phone.trim();
+    const trimmedLocation = location.trim();
+    const trimmedProjectType = projectType.trim();
+    const trimmedBudget = budget.trim();
+    const trimmedMessage = message.trim();
+
+    if (!trimmedName || !trimmedEmail || !trimmedMessage) {
       return res.status(400).json({ error: 'Name, email and message are required.' });
     }
 
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailPattern.test(email.trim())) {
+    if (!emailPattern.test(trimmedEmail)) {
       return res.status(400).json({ error: 'Please provide a valid email address.' });
+    }
+
+    if (trimmedName.length > 120 || trimmedLocation.length > 120 || trimmedProjectType.length > 120 || trimmedBudget.length > 120 || trimmedPhone.length > 40 || trimmedMessage.length > 5000) {
+      return res.status(400).json({ error: 'One or more fields exceed the allowed length.' });
     }
 
     if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS || !process.env.CONTACT_TO) {
@@ -146,10 +160,10 @@ app.post('/api/contact', async (req, res, next) => {
     await transporter.sendMail({
       from: `Building Company <${process.env.CONTACT_FROM || process.env.SMTP_USER}>`,
       to: process.env.CONTACT_TO,
-      replyTo: email.trim(),
-      subject: `New website enquiry from ${name.trim()}`,
-      text: `New contact form enquiry\n\nName: ${name.trim()}\nEmail: ${email.trim()}\nPhone: ${phone.trim() || '-'}\nLocation: ${location.trim() || '-'}\nProject type: ${projectType.trim() || '-'}\nBudget: ${budget.trim() || '-'}\n\nMessage:\n${message.trim()}`,
-      html: `<h2>New contact form enquiry</h2>\n<p><strong>Name:</strong> ${escapeHtml(name.trim())}</p>\n<p><strong>Email:</strong> ${escapeHtml(email.trim())}</p>\n<p><strong>Phone:</strong> ${escapeHtml(phone.trim() || '-')}</p>\n<p><strong>Location:</strong> ${escapeHtml(location.trim() || '-')}</p>\n<p><strong>Project type:</strong> ${escapeHtml(projectType.trim() || '-')}</p>\n<p><strong>Budget:</strong> ${escapeHtml(budget.trim() || '-')}</p>\n<p><strong>Message:</strong></p>\n<p>${escapeHtml(message.trim()).replace(/\n/g, '<br />')}</p>`
+      replyTo: sanitizeHeaderValue(trimmedEmail),
+      subject: `New website enquiry from ${sanitizeHeaderValue(trimmedName)}`,
+      text: `New contact form enquiry\n\nName: ${trimmedName}\nEmail: ${trimmedEmail}\nPhone: ${trimmedPhone || '-'}\nLocation: ${trimmedLocation || '-'}\nProject type: ${trimmedProjectType || '-'}\nBudget: ${trimmedBudget || '-'}\n\nMessage:\n${trimmedMessage}`,
+      html: `<h2>New contact form enquiry</h2>\n<p><strong>Name:</strong> ${escapeHtml(trimmedName)}</p>\n<p><strong>Email:</strong> ${escapeHtml(trimmedEmail)}</p>\n<p><strong>Phone:</strong> ${escapeHtml(trimmedPhone || '-')}</p>\n<p><strong>Location:</strong> ${escapeHtml(trimmedLocation || '-')}</p>\n<p><strong>Project type:</strong> ${escapeHtml(trimmedProjectType || '-')}</p>\n<p><strong>Budget:</strong> ${escapeHtml(trimmedBudget || '-')}</p>\n<p><strong>Message:</strong></p>\n<p>${escapeHtml(trimmedMessage).replace(/\n/g, '<br />')}</p>`
     });
 
     return res.json({ ok: true });
