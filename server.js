@@ -26,6 +26,12 @@ const groupRoutes = require('./routes/group');
 
 const app = express();
 app.set('trust proxy', 1);
+const escapeHtml = (value = '') => String(value)
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#39;');
 
 const PORT = Number(process.env.PORT) || 3000;
 const allowedOrigins = String(process.env.CORS_ORIGINS || '')
@@ -89,7 +95,7 @@ app.get('/api/gallery', (req, res) => {
   try {
     const files = fs.readdirSync(galleryPath);
     const imageFiles = files
-      .filter((file) => /\.(jpg|jpeg|png|gif|webp|JPG|JPEG|PNG|GIF|WEBP)$/.test(file))
+      .filter((file) => /^[a-zA-Z0-9._-]+\.(jpg|jpeg|png|gif|webp)$/i.test(file))
       .sort((a, b) => {
         const dateA = a.match(/\d{8}/)?.[0] || '00000000';
         const dateB = b.match(/\d{8}/)?.[0] || '00000000';
@@ -143,7 +149,7 @@ app.post('/api/contact', async (req, res, next) => {
       replyTo: email.trim(),
       subject: `New website enquiry from ${name.trim()}`,
       text: `New contact form enquiry\n\nName: ${name.trim()}\nEmail: ${email.trim()}\nPhone: ${phone.trim() || '-'}\nLocation: ${location.trim() || '-'}\nProject type: ${projectType.trim() || '-'}\nBudget: ${budget.trim() || '-'}\n\nMessage:\n${message.trim()}`,
-      html: `<h2>New contact form enquiry</h2>\n<p><strong>Name:</strong> ${name.trim()}</p>\n<p><strong>Email:</strong> ${email.trim()}</p>\n<p><strong>Phone:</strong> ${phone.trim() || '-'}</p>\n<p><strong>Location:</strong> ${location.trim() || '-'}</p>\n<p><strong>Project type:</strong> ${projectType.trim() || '-'}</p>\n<p><strong>Budget:</strong> ${budget.trim() || '-'}</p>\n<p><strong>Message:</strong></p>\n<p>${message.trim().replace(/\n/g, '<br />')}</p>`
+      html: `<h2>New contact form enquiry</h2>\n<p><strong>Name:</strong> ${escapeHtml(name.trim())}</p>\n<p><strong>Email:</strong> ${escapeHtml(email.trim())}</p>\n<p><strong>Phone:</strong> ${escapeHtml(phone.trim() || '-')}</p>\n<p><strong>Location:</strong> ${escapeHtml(location.trim() || '-')}</p>\n<p><strong>Project type:</strong> ${escapeHtml(projectType.trim() || '-')}</p>\n<p><strong>Budget:</strong> ${escapeHtml(budget.trim() || '-')}</p>\n<p><strong>Message:</strong></p>\n<p>${escapeHtml(message.trim()).replace(/\n/g, '<br />')}</p>`
     });
 
     return res.json({ ok: true });
