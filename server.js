@@ -95,7 +95,7 @@ app.get('/api/gallery', (req, res) => {
   try {
     const files = fs.readdirSync(galleryPath);
     const imageFiles = files
-      .filter((file) => /^[a-zA-Z0-9._-]+\.(jpg|jpeg|png|gif|webp)$/i.test(file))
+      .filter((file) => /^[a-zA-Z0-9_-]+\.(jpg|jpeg|png|gif|webp)$/i.test(file))
       .sort((a, b) => {
         const dateA = a.match(/\d{8}/)?.[0] || '00000000';
         const dateB = b.match(/\d{8}/)?.[0] || '00000000';
