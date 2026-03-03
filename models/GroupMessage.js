@@ -1,13 +1,13 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
-const InboxMessage = sequelize.define('InboxMessage', {
+const GroupMessage = sequelize.define('GroupMessage', {
   id: {
     type: DataTypes.UUID,
     defaultValue: DataTypes.UUIDV4,
     primaryKey: true
   },
-  threadId: {
+  groupThreadId: {
     type: DataTypes.UUID,
     allowNull: false
   },
@@ -15,18 +15,9 @@ const InboxMessage = sequelize.define('InboxMessage', {
     type: DataTypes.UUID,
     allowNull: false
   },
-  recipientId: {
-    type: DataTypes.UUID,
-    allowNull: false
-  },
   body: {
     type: DataTypes.TEXT,
     allowNull: false
-  },
-  isRead: {
-    type: DataTypes.BOOLEAN,
-    allowNull: false,
-    defaultValue: false
   },
   attachments: {
     type: DataTypes.JSON,
@@ -35,4 +26,4 @@ const InboxMessage = sequelize.define('InboxMessage', {
   }
 });
 
-module.exports = InboxMessage;
+module.exports = GroupMessage;

@@ -3,7 +3,7 @@ const express = require('express');
 const nodemailer = require('nodemailer');
 const { Op } = require('sequelize');
 const { body, validationResult, param } = require('express-validator');
-const { Quote, QuoteClaimToken } = require('../models');
+const { Quote, QuoteClaimToken, User, Notification } = require('../models');
 const { auth } = require('../middleware/auth');
 const asyncHandler = require('../utils/asyncHandler');
 
@@ -74,6 +74,7 @@ router.post(
   [
     body('projectType').isIn(['bathroom', 'kitchen', 'tiling', 'extension', 'joinery', 'rendering', 'decorating', 'other']),
     body('location').trim().notEmpty(),
+    body('postcode').trim().notEmpty(),
     body('description').trim().notEmpty(),
     body('guestName').trim().notEmpty(),
     body('guestEmail').optional().isEmail(),
@@ -86,7 +87,7 @@ router.post(
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { projectType, location, description, guestName, guestEmail, guestPhone, budgetRange } = req.body;
+    const { projectType, location, postcode, description, guestName, guestEmail, guestPhone, budgetRange } = req.body;
 
     if (!guestEmail && !guestPhone) {
       return res.status(400).json({ error: 'Provide guestEmail or guestPhone' });
@@ -103,11 +104,48 @@ router.post(
       publicToken: createPublicToken(),
       projectType,
       location,
+      postcode,
       description,
       budgetRange: budgetRange || null,
       contactEmail: guestEmail || null,
       contactPhone: guestPhone || null
     });
+
+    // Notify all managers via internal notification
+    const managers = await User.findAll({ where: { role: ['manager', 'admin'], isActive: true } });
+
+    const notificationTitle = `New quote request from ${guestName}`;
+    const notificationBody = [
+      `Name: ${guestName}`,
+      `Postcode: ${postcode}`,
+      `Location: ${location}`,
+      `Project type: ${projectType}`,
+      guestEmail ? `Email: ${guestEmail}` : null,
+      guestPhone ? `Phone: ${guestPhone}` : null,
+      budgetRange ? `Budget: ${budgetRange}` : null,
+      `Description: ${description}`
+    ].filter(Boolean).join('\n');
+
+    await Promise.all(
+      managers.map((manager) =>
+        Notification.create({
+          userId: manager.id,
+          type: 'new_quote',
+          title: notificationTitle,
+          body: notificationBody,
+          quoteId: quote.id,
+          data: {
+            quoteId: quote.id,
+            guestName,
+            guestEmail: guestEmail || null,
+            guestPhone: guestPhone || null,
+            postcode,
+            location,
+            projectType
+          }
+        })
+      )
+    );
 
     return res.status(201).json({
       quoteId: quote.id,
