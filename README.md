@@ -197,6 +197,23 @@ Skrypt wykona automatycznie:
 
 ### Lokalna baza danych PostgreSQL na DigitalOcean (na tym samym Droplet)
 
+Szybki start (kopiuj-wklej):
+
+```bash
+sudo apt-get update && sudo apt-get install -y postgresql postgresql-contrib
+sudo systemctl enable --now postgresql
+sudo -u postgres psql -c "CREATE USER buildingco WITH PASSWORD '<REPLACE_WITH_YOUR_SECURE_PASSWORD>';"
+sudo -u postgres psql -c "CREATE DATABASE building_company OWNER buildingco;"
+```
+
+Następnie wpisz ręcznie do `.env`:
+
+```env
+DATABASE_URL=postgresql://buildingco:<REPLACE_WITH_YOUR_SECURE_PASSWORD>@localhost:5432/building_company
+```
+
+`<REPLACE_WITH_YOUR_SECURE_PASSWORD>` musi być tym samym hasłem, którego użyłeś w komendzie `CREATE USER`.
+
 Jeśli nie używasz `deploy/setup-droplet.sh`, możesz uruchomić bazę ręcznie:
 
 ```bash
