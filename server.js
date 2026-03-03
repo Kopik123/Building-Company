@@ -26,7 +26,7 @@ const groupRoutes = require('./routes/group');
 
 const app = express();
 app.set('trust proxy', 1);
-let contactTransporter;
+let cachedContactTransporter;
 
 const PORT = Number(process.env.PORT) || 3000;
 const allowedOrigins = String(process.env.CORS_ORIGINS || '')
@@ -55,8 +55,8 @@ const contactLimiter = rateLimit({
 });
 
 const getContactTransporter = () => {
-  if (!contactTransporter) {
-    contactTransporter = nodemailer.createTransport({
+  if (!cachedContactTransporter) {
+    cachedContactTransporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: Number(process.env.SMTP_PORT) || 587,
       secure: process.env.SMTP_SECURE === 'true',
@@ -68,7 +68,7 @@ const getContactTransporter = () => {
     });
   }
 
-  return contactTransporter;
+  return cachedContactTransporter;
 };
 
 app.use(helmet());
