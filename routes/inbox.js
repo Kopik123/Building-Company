@@ -3,10 +3,11 @@ const { Op } = require('sequelize');
 const { body, validationResult, param } = require('express-validator');
 const { InboxThread, InboxMessage, User } = require('../models');
 const { auth } = require('../middleware/auth');
+const asyncHandler = require('../utils/asyncHandler');
 
 const router = express.Router();
 
-router.get('/threads', auth, async (req, res) => {
+router.get('/threads', auth, asyncHandler(async (req, res) => {
   const threads = await InboxThread.findAll({
     where: {
       [Op.or]: [{ participantAId: req.user.id }, { participantBId: req.user.id }]
@@ -19,12 +20,12 @@ router.get('/threads', auth, async (req, res) => {
   });
 
   return res.json({ threads });
-});
+}));
 
 router.post(
   '/threads',
   [auth, body('recipientUserId').isUUID(), body('subject').trim().notEmpty(), body('body').trim().notEmpty()],
-  async (req, res) => {
+  asyncHandler(async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
@@ -65,10 +66,10 @@ router.post(
     });
 
     return res.status(201).json({ thread, message });
-  }
+  })
 );
 
-router.get('/threads/:id/messages', [auth, param('id').isUUID()], async (req, res) => {
+router.get('/threads/:id/messages', [auth, param('id').isUUID()], asyncHandler(async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
@@ -90,9 +91,9 @@ router.get('/threads/:id/messages', [auth, param('id').isUUID()], async (req, re
   });
 
   return res.json({ thread, messages });
-});
+}));
 
-router.post('/threads/:id/messages', [auth, param('id').isUUID(), body('body').trim().notEmpty()], async (req, res) => {
+router.post('/threads/:id/messages', [auth, param('id').isUUID(), body('body').trim().notEmpty()], asyncHandler(async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
@@ -117,9 +118,14 @@ router.post('/threads/:id/messages', [auth, param('id').isUUID(), body('body').t
   });
 
   return res.status(201).json({ message });
-});
+}));
 
-router.patch('/messages/:id/read', [auth, param('id').isUUID()], async (req, res) => {
+router.patch('/messages/:id/read', [auth, param('id').isUUID()], asyncHandler(async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
   const message = await InboxMessage.findByPk(req.params.id);
   if (!message) {
     return res.status(404).json({ error: 'Message not found' });
@@ -131,6 +137,6 @@ router.patch('/messages/:id/read', [auth, param('id').isUUID()], async (req, res
 
   await message.update({ isRead: true });
   return res.json({ message: 'Message marked as read' });
-});
+}));
 
 module.exports = router;

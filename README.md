@@ -1,126 +1,34 @@
 # Building Company
 strona firmy budowlanej
 
-<<<<<<< HEAD
 ## Uruchomienie lokalnie
 
 1. Zainstaluj zależności:
+
 	npm install
+
 2. Skopiuj konfigurację:
+
 	cp .env.example .env
-3. Uzupełnij dane SMTP w `.env`.
+
+3. Uzupełnij `.env` (minimum):
+
+	- `DATABASE_URL`
+	- `JWT_SECRET`
+	- `BOOTSTRAP_ADMIN_KEY`
+
 4. Uruchom serwer:
+
 	npm start
 
 Serwis będzie dostępny pod `http://localhost:3000`.
 
-## Formularz e-mail
+## Formularz e-mail i galeria
 
-- Frontend wysyła formularz do `POST /api/contact`.
-- Backend wysyła wiadomość przez SMTP (konfiguracja w `.env`).
-- Wymagane zmienne: `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `CONTACT_TO`.
+- Frontend wysyła formularz kontaktowy do `POST /api/contact`.
+- Backend wysyła wiadomość przez SMTP (`SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `CONTACT_TO`).
+- `GET /api/gallery` zwraca listę zdjęć z folderu `Gallery` (sortowanie po dacie z nazwy pliku).
 
-## Galeria
-
-- `GET /api/gallery` zwraca listę zdjęć z folderu `Gallery`.
-- Zdjęcia są sortowane od najnowszych do najstarszych po dacie w nazwie pliku (`IMG_YYYYMMDD_...`).
-
-## Wdrożenie na DigitalOcean Droplet (PM2 + Nginx + SSL)
-
-### 1) Przygotuj serwer
-
-1. Zaloguj się na Droplet przez SSH.
-2. Zainstaluj wymagane pakiety:
-
-	apt update
-	apt install -y nodejs npm nginx certbot python3-certbot-nginx
-	npm install -g pm2
-
-3. (Opcjonalnie) uruchom helper z repo:
-
-	bash deploy/setup-droplet.sh /var/www/building-company
-
-### 2) Wgraj aplikację
-
-1. Sklonuj repo do katalogu aplikacji, np. `/var/www/building-company`.
-2. Przejdź do katalogu i zainstaluj zależności:
-
-	cd /var/www/building-company
-	npm ci
-
-### 3) Ustaw konfigurację `.env`
-
-1. Utwórz plik:
-
-	cp .env.example .env
-
-2. Uzupełnij minimum:
-
-	- `NODE_ENV=production`
-	- `PORT=3000`
-	- `APP_URL=https://twoja-domena.pl`
-	- `DATABASE_URL=...`
-	- `JWT_SECRET=...` (długi, losowy sekret)
-	- `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`
-	- `CONTACT_TO`, opcjonalnie `CONTACT_FROM`
-
-### 4) Uruchom aplikację przez PM2
-
-1. Start:
-
-	pm2 start ecosystem.config.js --env production
-
-2. Zapis autostartu po restarcie serwera:
-
-	pm2 save
-	pm2 startup systemd -u $USER --hp $HOME
-
-3. Podgląd logów:
-
-	pm2 logs building-company
-
-### 5) Skonfiguruj Nginx reverse proxy
-
-1. Skopiuj gotowy plik:
-
-	sudo cp deploy/nginx/building-company.conf /etc/nginx/sites-available/building-company
-
-2. Edytuj `server_name` w pliku na swoją domenę.
-3. Włącz konfigurację:
-
-	sudo ln -s /etc/nginx/sites-available/building-company /etc/nginx/sites-enabled/building-company
-	sudo nginx -t
-	sudo systemctl reload nginx
-
-### 6) Dodaj HTTPS (Let's Encrypt)
-
-	sudo certbot --nginx -d twoja-domena.pl -d www.twoja-domena.pl
-
-Po tej komendzie Nginx zostanie automatycznie zaktualizowany o certyfikat SSL.
-
-### 7) Firewall
-
-	sudo ufw allow OpenSSH
-	sudo ufw allow 'Nginx Full'
-	sudo ufw enable
-
-### 8) Test końcowy
-
-1. Sprawdź aplikację:
-
-	curl -I https://twoja-domena.pl
-	curl https://twoja-domena.pl/api/gallery
-
-2. Jeśli endpointy działają i strona się otwiera, wdrożenie jest gotowe.
-
-### Aktualizacja aplikacji po zmianach
-
-	cd /var/www/building-company
-	git pull
-	npm ci
-	pm2 restart building-company
-
-=======
 ## API testy (curl)
 
 ### 1) Guest quote bez logowania
@@ -162,13 +70,19 @@ curl -sS -X POST http://localhost:3000/api/auth/login \
 ```bash
 curl -sS -X POST http://localhost:3000/api/quotes/guest/<QUOTE_ID>/claim/request \
 	-H 'Content-Type: application/json' \
-	-d '{"guestEmail":"jan@example.com"}'
+	-d '{"channel":"email","guestEmail":"jan@example.com"}'
+
+curl -sS -X POST http://localhost:3000/api/quotes/guest/<QUOTE_ID>/claim/request \
+	-H 'Content-Type: application/json' \
+	-d '{"channel":"phone","guestPhone":"+447700900000"}'
 
 curl -sS -X POST http://localhost:3000/api/quotes/guest/<QUOTE_ID>/claim/confirm \
 	-H 'Authorization: Bearer <JWT_TOKEN>' \
 	-H 'Content-Type: application/json' \
 	-d '{"claimToken":"<CLAIM_TOKEN>","claimCode":"123456"}'
 ```
+
+Uwaga: `claim/request` nie zwraca `claimCode`. Kod jest dostarczany kanałem `email` albo `phone`.
 
 ### 5) Local inbox (zalogowani użytkownicy)
 
@@ -181,4 +95,49 @@ curl -sS -X POST http://localhost:3000/api/inbox/threads \
 curl -sS http://localhost:3000/api/inbox/threads \
 	-H 'Authorization: Bearer <JWT_TOKEN>'
 ```
->>>>>>> d02f614 (email)
+
+### 6) Manager API (manager/admin)
+
+```bash
+curl -sS "http://localhost:3000/api/manager/quotes?status=pending" \
+	-H 'Authorization: Bearer <MANAGER_JWT_TOKEN>'
+
+curl -sS -X PATCH http://localhost:3000/api/manager/quotes/<QUOTE_ID> \
+	-H 'Authorization: Bearer <MANAGER_JWT_TOKEN>' \
+	-H 'Content-Type: application/json' \
+	-d '{"status":"in_progress","priority":"high"}'
+```
+
+### 7) Bootstrap konta manager/admin
+
+```bash
+curl -sS -X POST http://localhost:3000/api/auth/bootstrap/staff \
+	-H 'Content-Type: application/json' \
+	-H 'x-bootstrap-key: <BOOTSTRAP_ADMIN_KEY>' \
+	-d '{"email":"manager@example.com","password":"secret1234","name":"Manager User","role":"manager"}'
+
+curl -sS -X POST http://localhost:3000/api/auth/bootstrap/staff \
+	-H 'Content-Type: application/json' \
+	-H 'x-bootstrap-key: <BOOTSTRAP_ADMIN_KEY>' \
+	-d '{"email":"admin@example.com","password":"secret1234","name":"Admin User","role":"admin"}'
+```
+
+Uwaga: tworzenie `admin` jest jednorazowe (`409` przy kolejnej próbie). Endpoint bootstrap jest wygaszany po pierwszym udanym utworzeniu konta staff (`.bootstrap.lock`).
+
+### 8) Rotacja `BOOTSTRAP_ADMIN_KEY` bez restartu (tylko admin)
+
+```bash
+curl -sS -X POST http://localhost:3000/api/auth/bootstrap/rotate-key \
+	-H 'Authorization: Bearer <ADMIN_JWT_TOKEN>' \
+	-H 'Content-Type: application/json' \
+	-d '{"currentBootstrapKey":"<OLD_BOOTSTRAP_ADMIN_KEY>","newBootstrapKey":"<NEW_BOOTSTRAP_ADMIN_KEY>"}'
+```
+
+## Wdrożenie na DigitalOcean Droplet (PM2 + Nginx + SSL)
+
+1. Przygotuj serwer (`apt`, `nginx`, `certbot`, `pm2`).
+2. Wgraj aplikację i wykonaj `npm ci`.
+3. Skonfiguruj `.env` dla produkcji (`NODE_ENV=production`, `APP_URL`, SMTP itd.).
+4. Uruchom przez PM2: `pm2 start ecosystem.config.js --env production`.
+5. Skonfiguruj reverse proxy Nginx i SSL przez certbot.
+6. Po zmianach: `git pull && npm ci && pm2 restart building-company`.

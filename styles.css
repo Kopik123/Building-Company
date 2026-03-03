@@ -993,7 +993,6 @@ a {
 }
 
 .form-status {
-<<<<<<< HEAD
   margin: 0.8rem 0 0 0;
   min-height: 1.2rem;
   font-size: 0.85rem;
@@ -1002,16 +1001,6 @@ a {
 
 .form-status.is-loading {
   color: rgba(229, 231, 235, 0.95);
-=======
-  min-height: 1.2rem;
-  margin: 0.5rem 0 0.3rem;
-  font-size: 0.86rem;
-  color: rgba(148, 163, 184, 0.95);
-}
-
-.form-status.is-loading {
-  color: #cbd5e1;
->>>>>>> d02f614 (email)
 }
 
 .form-status.is-success {
@@ -1019,11 +1008,7 @@ a {
 }
 
 .form-status.is-error {
-<<<<<<< HEAD
   color: #fca5a5;
-=======
-  color: #fda4af;
->>>>>>> d02f614 (email)
 }
 
 /* Footer */

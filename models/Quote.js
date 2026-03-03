@@ -9,13 +9,6 @@ const Quote = sequelize.define('Quote', {
   },
   clientId: {
     type: DataTypes.UUID,
-<<<<<<< HEAD
-    allowNull: false,
-    references: {
-      model: 'Users',
-      key: 'id'
-    }
-=======
     allowNull: true
   },
   isGuest: {
@@ -43,7 +36,6 @@ const Quote = sequelize.define('Quote', {
     type: DataTypes.STRING,
     allowNull: true,
     unique: true
->>>>>>> d02f614 (email)
   },
   projectType: {
     type: DataTypes.ENUM('bathroom', 'kitchen', 'tiling', 'extension', 'joinery', 'rendering', 'decorating', 'other'),
@@ -63,11 +55,7 @@ const Quote = sequelize.define('Quote', {
   },
   contactEmail: {
     type: DataTypes.STRING,
-<<<<<<< HEAD
-    allowNull: false
-=======
     allowNull: true
->>>>>>> d02f614 (email)
   },
   contactPhone: {
     type: DataTypes.STRING,
@@ -75,18 +63,6 @@ const Quote = sequelize.define('Quote', {
   },
   status: {
     type: DataTypes.ENUM('pending', 'in_progress', 'responded', 'closed'),
-<<<<<<< HEAD
-    defaultValue: 'pending',
-    allowNull: false
-  },
-  priority: {
-    type: DataTypes.ENUM('low', 'medium', 'high'),
-    defaultValue: 'medium',
-    allowNull: false
-  }
-}, {
-  timestamps: true
-=======
     allowNull: false,
     defaultValue: 'pending'
   },
@@ -95,7 +71,6 @@ const Quote = sequelize.define('Quote', {
     allowNull: false,
     defaultValue: 'medium'
   }
->>>>>>> d02f614 (email)
 });
 
 module.exports = Quote;

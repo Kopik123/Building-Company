@@ -472,11 +472,7 @@
             We handle a limited number of projects at a time to maintain quality. All enquiries are treated confidentially.
           </p>
         </div>
-<<<<<<< HEAD
-        <form class="contact-form" id="contact-form">
-=======
         <form class="contact-form" id="guest-quote-form">
->>>>>>> d02f614 (email)
           <div class="form-row">
             <div class="form-field">
               <label for="name">Name</label>
@@ -531,13 +527,8 @@
             <label for="message">Project details</label>
             <textarea id="message" name="message" rows="5" placeholder="Tell us about your bathroom, kitchen or interior project, timings and any ideas you already have." required></textarea>
           </div>
-<<<<<<< HEAD
-          <button type="submit" class="btn btn-primary btn-block">Send enquiry</button>
-          <p class="form-status" id="form-status" aria-live="polite"></p>
-=======
           <button type="submit" class="btn btn-primary btn-block" id="guest-quote-submit">Send quote request</button>
           <p class="form-status" id="guest-quote-status" aria-live="polite"></p>
->>>>>>> d02f614 (email)
           <p class="form-footnote">
             By submitting this form you agree for us to contact you regarding your enquiry. We do not share your details with third parties.
           </p>
@@ -652,7 +643,7 @@
           }
 
           status.className = 'form-status is-success';
-          status.textContent = `Quote submitted. ID: ${payload.quoteId}. Keep your token: ${payload.publicToken}`;
+          status.textContent = `Quote submitted successfully. Your quote ID: ${payload.quoteId}.`;
           form.reset();
         } catch (error) {
           status.className = 'form-status is-error';
@@ -755,63 +746,6 @@
         .catch(error => console.error('Failed to load gallery:', error));
     })();
 
-    // Contact form submit logic
-    (function () {
-      const form = document.getElementById('contact-form');
-      const status = document.getElementById('form-status');
-      const submitButton = form ? form.querySelector('button[type="submit"]') : null;
-
-      if (!form || !status || !submitButton) return;
-
-      function setStatus(message, type) {
-        status.textContent = message;
-        status.classList.remove('is-success', 'is-error', 'is-loading');
-        if (type) {
-          status.classList.add(type);
-        }
-      }
-
-      form.addEventListener('submit', async (event) => {
-        event.preventDefault();
-
-        const formData = new FormData(form);
-        const payload = {
-          name: String(formData.get('name') || '').trim(),
-          email: String(formData.get('email') || '').trim(),
-          phone: String(formData.get('phone') || '').trim(),
-          location: String(formData.get('location') || '').trim(),
-          projectType: String(formData.get('project-type') || '').trim(),
-          budget: String(formData.get('budget') || '').trim(),
-          message: String(formData.get('message') || '').trim()
-        };
-
-        submitButton.disabled = true;
-        setStatus('Sending enquiry...', 'is-loading');
-
-        try {
-          const response = await fetch('/api/contact', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(payload)
-          });
-
-          const result = await response.json().catch(() => ({}));
-
-          if (!response.ok) {
-            throw new Error(result.error || 'Failed to send enquiry.');
-          }
-
-          form.reset();
-          setStatus('Thank you. Your enquiry has been sent.', 'is-success');
-        } catch (error) {
-          setStatus(error.message || 'Failed to send enquiry. Please try again later.', 'is-error');
-        } finally {
-          submitButton.disabled = false;
-        }
-      });
-    })();
   </script>
 </body>
 </html>

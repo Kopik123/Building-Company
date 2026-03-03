@@ -1,12 +1,18 @@
 require('dotenv').config();
-<<<<<<< HEAD
-=======
+
+const requiredEnvVars = ['DATABASE_URL', 'JWT_SECRET', 'BOOTSTRAP_ADMIN_KEY'];
+const missingEnvVars = requiredEnvVars.filter((name) => !process.env[name]);
+
+if (missingEnvVars.length) {
+  console.error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
+  process.exit(1);
+}
+
 const fs = require('fs');
 const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
 const nodemailer = require('nodemailer');
 const { syncDatabase } = require('./models');
@@ -14,27 +20,61 @@ const { syncDatabase } = require('./models');
 const authRoutes = require('./routes/auth');
 const quotesRoutes = require('./routes/quotes');
 const inboxRoutes = require('./routes/inbox');
+const managerRoutes = require('./routes/manager');
 
 const app = express();
 app.set('trust proxy', 1);
 
 const PORT = Number(process.env.PORT) || 3000;
+const allowedOrigins = String(process.env.CORS_ORIGINS || '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
-const limiter = rateLimit({
+const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100
+  max: 150
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20
+});
+
+const claimLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10
+});
+
+const contactLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 10
 });
 
 app.use(helmet());
-app.use(cors());
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || !allowedOrigins.length || allowedOrigins.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+
+    const err = new Error('Origin not allowed by CORS policy');
+    err.statusCode = 403;
+    callback(err);
+  }
+}));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
-app.use('/api/', limiter);
+app.use('/api/', globalLimiter);
+app.use('/api/auth', authLimiter);
+app.use('/api/quotes/guest/:id/claim', claimLimiter);
+app.use('/api/contact', contactLimiter);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/quotes', quotesRoutes);
 app.use('/api/inbox', inboxRoutes);
+app.use('/api/manager', managerRoutes);
 
 app.use(express.static(path.join(__dirname)));
 
@@ -57,130 +97,31 @@ app.get('/api/gallery', (req, res) => {
   }
 });
 
-app.post('/api/contact', async (req, res) => {
-  const { name = '', email = '', message = '' } = req.body || {};
-
-  if (!name.trim() || !email.trim() || !message.trim()) {
-    return res.status(400).json({ error: 'Name, email and message are required.' });
-  }
-
-  if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS || !process.env.CONTACT_TO) {
-    return res.status(503).json({ error: 'Email service is not configured yet.' });
-  }
-
+app.post('/api/contact', async (req, res, next) => {
   try {
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT) || 587,
-      secure: process.env.SMTP_SECURE === 'true',
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-      }
-    });
+    const {
+      name = '',
+      email = '',
+      phone = '',
+      location = '',
+      projectType = '',
+      budget = '',
+      message = ''
+    } = req.body || {};
 
-    await transporter.sendMail({
-      from: `Building Company <${process.env.CONTACT_FROM || process.env.SMTP_USER}>`,
-      to: process.env.CONTACT_TO,
-      replyTo: email.trim(),
-      subject: `New website enquiry from ${name.trim()}`,
-      text: message.trim()
-    });
+    if (!name.trim() || !email.trim() || !message.trim()) {
+      return res.status(400).json({ error: 'Name, email and message are required.' });
+    }
 
-    return res.json({ ok: true });
-  } catch (error) {
-    return res.status(500).json({ error: 'Failed to send email. Please try again later.' });
-  }
-});
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(email.trim())) {
+      return res.status(400).json({ error: 'Please provide a valid email address.' });
+    }
 
-const startServer = async () => {
-  try {
-    await syncDatabase();
+    if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS || !process.env.CONTACT_TO) {
+      return res.status(503).json({ error: 'Email service is not configured yet.' });
+    }
 
-    app.listen(PORT, () => {
-      console.log(`Server running at http://localhost:${PORT}`);
-    });
-  } catch (error) {
-    console.error('Failed to start server:', error);
-    process.exit(1);
-  }
-};
-
-startServer();
-require('dotenv').config();
->>>>>>> d02f614 (email)
-const express = require('express');
-const fs = require('fs');
-const path = require('path');
-const cors = require('cors');
-const helmet = require('helmet');
-const cookieParser = require('cookie-parser');
-const rateLimit = require('express-rate-limit');
-const nodemailer = require('nodemailer');
-const { syncDatabase } = require('./models');
-
-const app = express();
-const PORT = Number(process.env.PORT) || 3000;
-
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
-});
-
-// Middleware
-app.use(helmet());
-app.use(cors());
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
-app.use('/api/', limiter);
-
-// Import routes
-const authRoutes = require('./routes/auth');
-const quotesRoutes = require('./routes/quotes');
-const managerRoutes = require('./routes/manager');
-
-// API routes
-app.use('/api/auth', authRoutes);
-app.use('/api/quotes', quotesRoutes);
-app.use('/api/manager', managerRoutes);
-
-// Static files - keep existing gallery and contact functionality
-app.use(express.static('.'));
-
-// Original contact endpoint (for non-authenticated users)
-app.post('/api/contact', async (req, res) => {
-  const {
-    name = '',
-    email = '',
-    phone = '',
-    location = '',
-    projectType = '',
-    budget = '',
-    message = ''
-  } = req.body || {};
-
-  if (!name.trim() || !email.trim() || !message.trim()) {
-    return res.status(400).json({
-      error: 'Name, email and message are required.'
-    });
-  }
-
-  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailPattern.test(email.trim())) {
-    return res.status(400).json({
-      error: 'Please provide a valid email address.'
-    });
-  }
-
-  if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS || !process.env.CONTACT_TO) {
-    return res.status(503).json({
-      error: 'Email service is not configured yet. Please set SMTP env variables.'
-    });
-  }
-
-  try {
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: Number(process.env.SMTP_PORT) || 587,
@@ -197,60 +138,39 @@ app.post('/api/contact', async (req, res) => {
       replyTo: email.trim(),
       subject: `New website enquiry from ${name.trim()}`,
       text: `New contact form enquiry\n\nName: ${name.trim()}\nEmail: ${email.trim()}\nPhone: ${phone.trim() || '-'}\nLocation: ${location.trim() || '-'}\nProject type: ${projectType.trim() || '-'}\nBudget: ${budget.trim() || '-'}\n\nMessage:\n${message.trim()}`,
-      html: `<h2>New contact form enquiry</h2>
-<p><strong>Name:</strong> ${name.trim()}</p>
-<p><strong>Email:</strong> ${email.trim()}</p>
-<p><strong>Phone:</strong> ${phone.trim() || '-'}</p>
-<p><strong>Location:</strong> ${location.trim() || '-'}</p>
-<p><strong>Project type:</strong> ${projectType.trim() || '-'}</p>
-<p><strong>Budget:</strong> ${budget.trim() || '-'}</p>
-<p><strong>Message:</strong></p>
-<p>${message.trim().replace(/\n/g, '<br />')}</p>`
+      html: `<h2>New contact form enquiry</h2>\n<p><strong>Name:</strong> ${name.trim()}</p>\n<p><strong>Email:</strong> ${email.trim()}</p>\n<p><strong>Phone:</strong> ${phone.trim() || '-'}</p>\n<p><strong>Location:</strong> ${location.trim() || '-'}</p>\n<p><strong>Project type:</strong> ${projectType.trim() || '-'}</p>\n<p><strong>Budget:</strong> ${budget.trim() || '-'}</p>\n<p><strong>Message:</strong></p>\n<p>${message.trim().replace(/\n/g, '<br />')}</p>`
     });
 
     return res.json({ ok: true });
   } catch (error) {
-    console.error('Error sending contact email:', error);
-    return res.status(500).json({
-      error: 'Failed to send email. Please try again later.'
-    });
+    return next(error);
   }
 });
 
-// Gallery API
-app.get('/api/gallery', (req, res) => {
-  const galleryPath = path.join(__dirname, 'Gallery');
-  
-  try {
-    const files = fs.readdirSync(galleryPath);
-    
-    const imageFiles = files
-      .filter(file => /\.(jpg|jpeg|png|gif|webp|JPG|JPEG|PNG|GIF|WEBP)$/.test(file))
-      .sort((a, b) => {
-        const dateA = a.match(/\d{8}/)?.[0] || '00000000';
-        const dateB = b.match(/\d{8}/)?.[0] || '00000000';
-        return dateB.localeCompare(dateA);
-      });
-    
-    res.json({ images: imageFiles });
-  } catch (error) {
-    console.error('Error reading gallery folder:', error);
-    res.status(500).json({ error: 'Failed to read gallery folder' });
-  }
+app.use('/api/*', (req, res) => {
+  return res.status(404).json({ error: 'API route not found' });
 });
 
-// Initialize database and start server
+app.use((error, req, res, next) => {
+  if (res.headersSent) {
+    return next(error);
+  }
+
+  const statusCode = Number(error.statusCode) || 500;
+  if (statusCode >= 500) {
+    console.error('Unhandled error:', error);
+  }
+
+  return res.status(statusCode).json({
+    error: statusCode >= 500 ? 'Internal server error' : error.message || 'Request failed'
+  });
+});
+
 const startServer = async () => {
   try {
     await syncDatabase();
-    
     app.listen(PORT, () => {
       console.log(`Server running at http://localhost:${PORT}`);
-      console.log(`Gallery API available at http://localhost:${PORT}/api/gallery`);
-      console.log(`Contact API available at http://localhost:${PORT}/api/contact`);
-      console.log(`Auth API available at http://localhost:${PORT}/api/auth`);
-      console.log(`Quotes API available at http://localhost:${PORT}/api/quotes`);
-      console.log(`Manager API available at http://localhost:${PORT}/api/manager`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);
