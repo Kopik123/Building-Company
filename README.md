@@ -155,6 +155,22 @@ Opcjonalne:
 
 ## Wdrożenie na DigitalOcean Droplet (PM2 + Nginx + SSL)
 
+### Jak dodać repo do DigitalOcean
+
+1. W panelu DigitalOcean utwórz Droplet (Ubuntu 22.04/24.04).
+2. Zaloguj się przez SSH na serwer.
+3. Sklonuj repo do katalogu aplikacji:
+
+```bash
+git clone https://github.com/Kopik123/Building-Company.git /var/www/building-company
+```
+
+4. Uruchom konfigurację z tego repo:
+
+```bash
+bash /var/www/building-company/deploy/setup-droplet.sh /var/www/building-company example.com
+```
+
 ### Wymagania
 
 - Ubuntu 22.04 lub 24.04 Droplet (min. 1 GB RAM)
@@ -224,4 +240,3 @@ pm2 logs building-company        # live tail
 pm2 monit                         # dashboard CPU/RAM
 tail -f logs/pm2-error.log        # error log
 ```
-
