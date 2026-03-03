@@ -201,12 +201,18 @@ Po wykonaniu skryptu uzupełnij plik `.env`:
 nano /var/www/building-company/.env
 ```
 
-Minimalne wartości do uzupełnienia:
+Skrypt automatycznie generuje i wstrzykuje:
+
+| Zmienna | Jak generowana |
+|---|---|
+| `DATABASE_URL` | Automatycznie – losowe hasło DB podczas setup |
+| `JWT_SECRET` | Automatycznie – `openssl rand -hex 32` |
+| `BOOTSTRAP_ADMIN_KEY` | Automatycznie – `openssl rand -hex 24` |
+
+Należy uzupełnić ręcznie (formularz kontaktowy):
 
 | Zmienna | Opis |
 |---|---|
-| `JWT_SECRET` | Losowy klucz – `openssl rand -hex 32` |
-| `BOOTSTRAP_ADMIN_KEY` | Klucz do pierwszego konta – `openssl rand -hex 24` |
 | `SMTP_HOST` / `SMTP_USER` / `SMTP_PASS` | Dane SMTP (np. Mailgun, Brevo) |
 | `CONTACT_TO` | Adres e-mail do odbierania formularzy |
 
