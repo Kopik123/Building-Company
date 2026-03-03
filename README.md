@@ -155,35 +155,22 @@ Opcjonalne:
 
 ## Wdrożenie na DigitalOcean Droplet (PM2 + Nginx + SSL)
 
-### Jak dodać repo do DigitalOcean
+### Krok po kroku (od zera)
 
-1. W panelu DigitalOcean utwórz Droplet (Ubuntu 22.04/24.04).
-2. Zaloguj się przez SSH na serwer.
-3. Sklonuj repo do katalogu aplikacji:
+1. W panelu DigitalOcean utwórz Droplet (Ubuntu 22.04/24.04, min. 1 GB RAM).
+2. Skieruj domenę na IP Dropletu (rekord DNS A).
+3. Zaloguj się przez SSH na serwer.
+4. Sklonuj repozytorium do katalogu aplikacji:
 
-```bash
-git clone https://github.com/Kopik123/Building-Company.git /var/www/building-company
-```
+   ```bash
+   git clone https://github.com/Kopik123/Building-Company.git /var/www/building-company
+   ```
 
-4. Uruchom konfigurację z tego repo:
+5. Uruchom skrypt konfiguracji:
 
-```bash
-bash /var/www/building-company/deploy/setup-droplet.sh /var/www/building-company example.com
-```
-
-### Wymagania
-
-- Ubuntu 22.04 lub 24.04 Droplet (min. 1 GB RAM)
-- Domena DNS wskazująca na IP Dropletu
-
-### Automatyczna instalacja
-
-Sklonuj repozytorium na Droplet, a następnie uruchom skrypt konfiguracyjny:
-
-```bash
-git clone https://github.com/Kopik123/Building-Company.git /var/www/building-company
-bash /var/www/building-company/deploy/setup-droplet.sh /var/www/building-company example.com
-```
+   ```bash
+   bash /var/www/building-company/deploy/setup-droplet.sh /var/www/building-company example.com
+   ```
 
 Skrypt wykona automatycznie:
 - instalację Node.js LTS (v22 przez NodeSource),
@@ -193,9 +180,7 @@ Skrypt wykona automatycznie:
 - instalację zależności npm (`npm ci --omit=dev`),
 - skopiowanie `.env.example` → `.env` z wstępnie wygenerowanym hasłem do bazy.
 
-### Konfiguracja środowiska
-
-Po wykonaniu skryptu uzupełnij plik `.env`:
+6. Po wykonaniu skryptu uzupełnij plik `.env`:
 
 ```bash
 nano /var/www/building-company/.env
@@ -216,13 +201,13 @@ Należy uzupełnić ręcznie (formularz kontaktowy):
 | `SMTP_HOST` / `SMTP_USER` / `SMTP_PASS` | Dane SMTP (np. Mailgun, Brevo) |
 | `CONTACT_TO` | Adres e-mail do odbierania formularzy |
 
-Następnie zrestartuj aplikację:
+7. Zrestartuj aplikację:
 
 ```bash
 pm2 restart building-company
 ```
 
-### SSL (Let's Encrypt)
+8. Włącz SSL (Let's Encrypt):
 
 ```bash
 sudo certbot --nginx -d example.com -d www.example.com
