@@ -8,8 +8,10 @@ APP_DIR="${1:-/var/www/building-company}"
 DOMAIN="${2:-}"
 DB_NAME="building_company"
 DB_USER="buildingco"
-# Generate a random DB password
+# Generate random secrets
 DB_PASS="$(openssl rand -hex 16)"
+JWT_SECRET_GENERATED="$(openssl rand -hex 32)"
+BOOTSTRAP_KEY_GENERATED="$(openssl rand -hex 24)"
 
 echo "================================================"
 echo " Building Company – Droplet Setup"
@@ -79,8 +81,14 @@ if [[ ! -f "${APP_DIR}/.env" && -f "${APP_DIR}/.env.example" ]]; then
   # Inject the generated database credentials
   sed -i "s|postgresql://buildingco:CHANGE_ME@localhost:5432/building_company|postgresql://${DB_USER}:${DB_PASS}@localhost:5432/${DB_NAME}|g" \
     "${APP_DIR}/.env"
-  echo "    ⚠  .env created from .env.example"
-  echo "    ⚠  Edit ${APP_DIR}/.env and set JWT_SECRET, BOOTSTRAP_ADMIN_KEY, SMTP_* before starting."
+  # Inject the generated JWT secret
+  sed -i "s|CHANGE_ME_use_openssl_rand_hex_32|${JWT_SECRET_GENERATED}|g" \
+    "${APP_DIR}/.env"
+  # Inject the generated bootstrap admin key
+  sed -i "s|CHANGE_ME_use_openssl_rand_hex_24|${BOOTSTRAP_KEY_GENERATED}|g" \
+    "${APP_DIR}/.env"
+  echo "    ✔  .env created with auto-generated DATABASE_URL, JWT_SECRET and BOOTSTRAP_ADMIN_KEY"
+  echo "    ⚠  Edit ${APP_DIR}/.env and set SMTP_* and CONTACT_TO before using the contact form."
 fi
 
 # ── 6. Node dependencies ──────────────────────────────────────────────────────
@@ -123,8 +131,11 @@ echo "════════════════════════�
 echo " Setup complete!"
 echo ""
 echo " Next steps:"
-echo "  1. Edit ${APP_DIR}/.env – set JWT_SECRET, BOOTSTRAP_ADMIN_KEY, SMTP_*"
-echo "  2. Restart app after editing .env:"
+echo "  1. Note your BOOTSTRAP_ADMIN_KEY (used to create the first admin account):"
+echo "       $(grep '^BOOTSTRAP_ADMIN_KEY=' "${APP_DIR}/.env" | cut -d= -f2-)"
+echo "  2. Edit ${APP_DIR}/.env to configure SMTP (contact form e-mail):"
+echo "       nano ${APP_DIR}/.env"
+echo "  3. Restart app after editing .env:"
 echo "       pm2 restart building-company"
 if [[ -n "${DOMAIN}" ]]; then
   echo "  3. Obtain SSL certificate:"
