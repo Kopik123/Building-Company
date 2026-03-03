@@ -186,11 +186,13 @@ sudo apt-get update
 sudo apt-get install -y postgresql postgresql-contrib
 sudo systemctl enable --now postgresql
 
-sudo -u postgres psql -c "CREATE USER buildingco WITH PASSWORD '<YOUR_STRONG_PASSWORD_HERE>';"
+sudo -u postgres psql -c "CREATE USER buildingco;"
 sudo -u postgres psql -c "CREATE DATABASE building_company OWNER buildingco;"
+sudo -u postgres psql
+# w konsoli psql:
+# \password buildingco
+# \q
 ```
-
-Uwaga: komenda z hasłem może trafić do historii shella — użyj tymczasowego użytkownika/hosta administracyjnego albo wyczyść historię po konfiguracji.
 
 Następnie ustaw połączenie aplikacji do tej lokalnej bazy w `.env`:
 
@@ -198,10 +200,12 @@ Następnie ustaw połączenie aplikacji do tej lokalnej bazy w `.env`:
 DATABASE_URL=postgresql://buildingco:<YOUR_STRONG_PASSWORD_HERE>@localhost:5432/building_company
 ```
 
+`<YOUR_STRONG_PASSWORD_HERE>` zastąp hasłem ustawionym wcześniej w kroku `\password buildingco`.
+
 Sprawdzenie połączenia:
 
 ```bash
-sudo -u postgres psql -d building_company -c '\dt'
+PGPASSWORD='<YOUR_STRONG_PASSWORD_HERE>' psql -h localhost -U buildingco -d building_company -c '\dt'
 ```
 
 Po zmianie `.env` zrestartuj aplikację:
