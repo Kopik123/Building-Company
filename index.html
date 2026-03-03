@@ -472,7 +472,11 @@
             We handle a limited number of projects at a time to maintain quality. All enquiries are treated confidentially.
           </p>
         </div>
+<<<<<<< HEAD
         <form class="contact-form" id="contact-form">
+=======
+        <form class="contact-form" id="guest-quote-form">
+>>>>>>> d02f614 (email)
           <div class="form-row">
             <div class="form-field">
               <label for="name">Name</label>
@@ -527,8 +531,13 @@
             <label for="message">Project details</label>
             <textarea id="message" name="message" rows="5" placeholder="Tell us about your bathroom, kitchen or interior project, timings and any ideas you already have." required></textarea>
           </div>
+<<<<<<< HEAD
           <button type="submit" class="btn btn-primary btn-block">Send enquiry</button>
           <p class="form-status" id="form-status" aria-live="polite"></p>
+=======
+          <button type="submit" class="btn btn-primary btn-block" id="guest-quote-submit">Send quote request</button>
+          <p class="form-status" id="guest-quote-status" aria-live="polite"></p>
+>>>>>>> d02f614 (email)
           <p class="form-footnote">
             By submitting this form you agree for us to contact you regarding your enquiry. We do not share your details with third parties.
           </p>
@@ -575,6 +584,84 @@
     });
 
     document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Guest quote submission (no login required)
+    (function () {
+      const form = document.getElementById('guest-quote-form');
+      const status = document.getElementById('guest-quote-status');
+      const submitButton = document.getElementById('guest-quote-submit');
+
+      if (!form || !status || !submitButton) return;
+
+      const mapProjectType = (value) => {
+        const raw = String(value || '').toLowerCase();
+        if (raw.includes('bathroom')) return 'bathroom';
+        if (raw.includes('kitchen')) return 'kitchen';
+        if (raw.includes('tiling')) return 'tiling';
+        if (raw.includes('joinery')) return 'joinery';
+        if (raw.includes('extension')) return 'extension';
+        return 'other';
+      };
+
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const formData = new FormData(form);
+        const guestName = String(formData.get('name') || '').trim();
+        const guestEmail = String(formData.get('email') || '').trim();
+        const guestPhone = String(formData.get('phone') || '').trim();
+        const location = String(formData.get('location') || '').trim();
+        const description = String(formData.get('message') || '').trim();
+        const projectType = mapProjectType(formData.get('project-type'));
+        const budgetRange = String(formData.get('budget') || '').trim();
+
+        status.textContent = '';
+        status.className = 'form-status';
+
+        if (!guestName || !description || (!guestEmail && !guestPhone)) {
+          status.textContent = 'Please provide name, project details and at least email or phone.';
+          status.classList.add('is-error');
+          return;
+        }
+
+        submitButton.disabled = true;
+        status.textContent = 'Sending your quote request...';
+        status.classList.add('is-loading');
+
+        try {
+          const response = await fetch('/api/quotes/guest', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              guestName,
+              guestEmail: guestEmail || undefined,
+              guestPhone: guestPhone || undefined,
+              location: location || 'Manchester',
+              projectType,
+              budgetRange: budgetRange || undefined,
+              description
+            })
+          });
+
+          const payload = await response.json().catch(() => ({}));
+
+          if (!response.ok) {
+            throw new Error(payload.error || 'Failed to submit quote request');
+          }
+
+          status.className = 'form-status is-success';
+          status.textContent = `Quote submitted. ID: ${payload.quoteId}. Keep your token: ${payload.publicToken}`;
+          form.reset();
+        } catch (error) {
+          status.className = 'form-status is-error';
+          status.textContent = error.message || 'Failed to submit quote request. Please try again.';
+        } finally {
+          submitButton.disabled = false;
+        }
+      });
+    })();
 
     // Gallery carousel logic
     (function () {

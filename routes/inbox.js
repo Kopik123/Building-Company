@@ -1,0 +1,136 @@
+const express = require('express');
+const { Op } = require('sequelize');
+const { body, validationResult, param } = require('express-validator');
+const { InboxThread, InboxMessage, User } = require('../models');
+const { auth } = require('../middleware/auth');
+
+const router = express.Router();
+
+router.get('/threads', auth, async (req, res) => {
+  const threads = await InboxThread.findAll({
+    where: {
+      [Op.or]: [{ participantAId: req.user.id }, { participantBId: req.user.id }]
+    },
+    include: [
+      { model: User, as: 'participantA', attributes: ['id', 'name', 'email'] },
+      { model: User, as: 'participantB', attributes: ['id', 'name', 'email'] }
+    ],
+    order: [['updatedAt', 'DESC']]
+  });
+
+  return res.json({ threads });
+});
+
+router.post(
+  '/threads',
+  [auth, body('recipientUserId').isUUID(), body('subject').trim().notEmpty(), body('body').trim().notEmpty()],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { recipientUserId, subject, body: messageBody, quoteId } = req.body;
+
+    if (recipientUserId === req.user.id) {
+      return res.status(400).json({ error: 'Cannot message yourself' });
+    }
+
+    const recipient = await User.findByPk(recipientUserId);
+    if (!recipient) {
+      return res.status(404).json({ error: 'Recipient not found' });
+    }
+
+    const [participantAId, participantBId] = [req.user.id, recipientUserId].sort();
+
+    const [thread] = await InboxThread.findOrCreate({
+      where: {
+        participantAId,
+        participantBId,
+        ...(quoteId ? { quoteId } : {})
+      },
+      defaults: {
+        participantAId,
+        participantBId,
+        subject,
+        quoteId: quoteId || null
+      }
+    });
+
+    const message = await InboxMessage.create({
+      threadId: thread.id,
+      senderId: req.user.id,
+      recipientId: recipientUserId,
+      body: messageBody
+    });
+
+    return res.status(201).json({ thread, message });
+  }
+);
+
+router.get('/threads/:id/messages', [auth, param('id').isUUID()], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  const thread = await InboxThread.findByPk(req.params.id);
+  if (!thread) {
+    return res.status(404).json({ error: 'Thread not found' });
+  }
+
+  if (thread.participantAId !== req.user.id && thread.participantBId !== req.user.id) {
+    return res.status(403).json({ error: 'Access denied' });
+  }
+
+  const messages = await InboxMessage.findAll({
+    where: { threadId: thread.id },
+    include: [{ model: User, as: 'sender', attributes: ['id', 'name', 'email'] }],
+    order: [['createdAt', 'ASC']]
+  });
+
+  return res.json({ thread, messages });
+});
+
+router.post('/threads/:id/messages', [auth, param('id').isUUID(), body('body').trim().notEmpty()], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  const thread = await InboxThread.findByPk(req.params.id);
+  if (!thread) {
+    return res.status(404).json({ error: 'Thread not found' });
+  }
+
+  if (thread.participantAId !== req.user.id && thread.participantBId !== req.user.id) {
+    return res.status(403).json({ error: 'Access denied' });
+  }
+
+  const recipientId = thread.participantAId === req.user.id ? thread.participantBId : thread.participantAId;
+
+  const message = await InboxMessage.create({
+    threadId: thread.id,
+    senderId: req.user.id,
+    recipientId,
+    body: req.body.body
+  });
+
+  return res.status(201).json({ message });
+});
+
+router.patch('/messages/:id/read', [auth, param('id').isUUID()], async (req, res) => {
+  const message = await InboxMessage.findByPk(req.params.id);
+  if (!message) {
+    return res.status(404).json({ error: 'Message not found' });
+  }
+
+  if (message.recipientId !== req.user.id) {
+    return res.status(403).json({ error: 'Access denied' });
+  }
+
+  await message.update({ isRead: true });
+  return res.json({ message: 'Message marked as read' });
+});
+
+module.exports = router;

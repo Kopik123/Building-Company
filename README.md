@@ -1,6 +1,7 @@
 # Building Company
 strona firmy budowlanej
 
+<<<<<<< HEAD
 ## Uruchomienie lokalnie
 
 1. Zainstaluj zależności:
@@ -119,3 +120,65 @@ Po tej komendzie Nginx zostanie automatycznie zaktualizowany o certyfikat SSL.
 	npm ci
 	pm2 restart building-company
 
+=======
+## API testy (curl)
+
+### 1) Guest quote bez logowania
+
+```bash
+curl -sS -X POST http://localhost:3000/api/quotes/guest \
+	-H 'Content-Type: application/json' \
+	-d '{
+		"guestName":"Jan Test",
+		"guestEmail":"jan@example.com",
+		"guestPhone":"+447700900000",
+		"projectType":"bathroom",
+		"location":"Manchester",
+		"budgetRange":"£10,000–£25,000",
+		"description":"Guest quote test"
+	}'
+```
+
+### 2) Podgląd statusu guest quote (po tokenie)
+
+```bash
+curl -sS http://localhost:3000/api/quotes/guest/<PUBLIC_TOKEN>
+```
+
+### 3) Rejestracja i login (token JWT)
+
+```bash
+curl -sS -X POST http://localhost:3000/api/auth/register \
+	-H 'Content-Type: application/json' \
+	-d '{"email":"client@example.com","password":"secret123","name":"Client User"}'
+
+curl -sS -X POST http://localhost:3000/api/auth/login \
+	-H 'Content-Type: application/json' \
+	-d '{"email":"client@example.com","password":"secret123"}'
+```
+
+### 4) Claim request + confirm guest quote
+
+```bash
+curl -sS -X POST http://localhost:3000/api/quotes/guest/<QUOTE_ID>/claim/request \
+	-H 'Content-Type: application/json' \
+	-d '{"guestEmail":"jan@example.com"}'
+
+curl -sS -X POST http://localhost:3000/api/quotes/guest/<QUOTE_ID>/claim/confirm \
+	-H 'Authorization: Bearer <JWT_TOKEN>' \
+	-H 'Content-Type: application/json' \
+	-d '{"claimToken":"<CLAIM_TOKEN>","claimCode":"123456"}'
+```
+
+### 5) Local inbox (zalogowani użytkownicy)
+
+```bash
+curl -sS -X POST http://localhost:3000/api/inbox/threads \
+	-H 'Authorization: Bearer <JWT_TOKEN>' \
+	-H 'Content-Type: application/json' \
+	-d '{"recipientUserId":"<USER_ID>","subject":"Nowy temat","body":"Pierwsza wiadomość"}'
+
+curl -sS http://localhost:3000/api/inbox/threads \
+	-H 'Authorization: Bearer <JWT_TOKEN>'
+```
+>>>>>>> d02f614 (email)

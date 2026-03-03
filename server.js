@@ -1,4 +1,114 @@
 require('dotenv').config();
+<<<<<<< HEAD
+=======
+const fs = require('fs');
+const path = require('path');
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const cookieParser = require('cookie-parser');
+const rateLimit = require('express-rate-limit');
+const nodemailer = require('nodemailer');
+const { syncDatabase } = require('./models');
+
+const authRoutes = require('./routes/auth');
+const quotesRoutes = require('./routes/quotes');
+const inboxRoutes = require('./routes/inbox');
+
+const app = express();
+app.set('trust proxy', 1);
+
+const PORT = Number(process.env.PORT) || 3000;
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100
+});
+
+app.use(helmet());
+app.use(cors());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+app.use('/api/', limiter);
+
+app.use('/api/auth', authRoutes);
+app.use('/api/quotes', quotesRoutes);
+app.use('/api/inbox', inboxRoutes);
+
+app.use(express.static(path.join(__dirname)));
+
+app.get('/api/gallery', (req, res) => {
+  const galleryPath = path.join(__dirname, 'Gallery');
+
+  try {
+    const files = fs.readdirSync(galleryPath);
+    const imageFiles = files
+      .filter((file) => /\.(jpg|jpeg|png|gif|webp|JPG|JPEG|PNG|GIF|WEBP)$/.test(file))
+      .sort((a, b) => {
+        const dateA = a.match(/\d{8}/)?.[0] || '00000000';
+        const dateB = b.match(/\d{8}/)?.[0] || '00000000';
+        return dateB.localeCompare(dateA);
+      });
+
+    return res.json({ images: imageFiles });
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to read gallery folder' });
+  }
+});
+
+app.post('/api/contact', async (req, res) => {
+  const { name = '', email = '', message = '' } = req.body || {};
+
+  if (!name.trim() || !email.trim() || !message.trim()) {
+    return res.status(400).json({ error: 'Name, email and message are required.' });
+  }
+
+  if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS || !process.env.CONTACT_TO) {
+    return res.status(503).json({ error: 'Email service is not configured yet.' });
+  }
+
+  try {
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT) || 587,
+      secure: process.env.SMTP_SECURE === 'true',
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
+      }
+    });
+
+    await transporter.sendMail({
+      from: `Building Company <${process.env.CONTACT_FROM || process.env.SMTP_USER}>`,
+      to: process.env.CONTACT_TO,
+      replyTo: email.trim(),
+      subject: `New website enquiry from ${name.trim()}`,
+      text: message.trim()
+    });
+
+    return res.json({ ok: true });
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to send email. Please try again later.' });
+  }
+});
+
+const startServer = async () => {
+  try {
+    await syncDatabase();
+
+    app.listen(PORT, () => {
+      console.log(`Server running at http://localhost:${PORT}`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+};
+
+startServer();
+require('dotenv').config();
+>>>>>>> d02f614 (email)
 const express = require('express');
 const fs = require('fs');
 const path = require('path');

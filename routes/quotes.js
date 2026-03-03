@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 const express = require('express');
 const router = express.Router();
 const { body, validationResult } = require('express-validator');
@@ -75,11 +76,39 @@ router.post('/', [
   body('budgetRange').optional().trim()
 ], async (req, res) => {
   try {
+=======
+const crypto = require('crypto');
+const express = require('express');
+const { Op } = require('sequelize');
+const { body, validationResult, param } = require('express-validator');
+const { Quote, QuoteClaimToken } = require('../models');
+const { auth } = require('../middleware/auth');
+
+const router = express.Router();
+
+const createPublicToken = () => crypto.randomBytes(16).toString('hex');
+const createClaimToken = () => crypto.randomBytes(24).toString('hex');
+const createClaimCode = () => String(Math.floor(100000 + Math.random() * 900000));
+
+router.post(
+  '/guest',
+  [
+    body('projectType').isIn(['bathroom', 'kitchen', 'tiling', 'extension', 'joinery', 'rendering', 'decorating', 'other']),
+    body('location').trim().notEmpty(),
+    body('description').trim().notEmpty(),
+    body('guestName').trim().notEmpty(),
+    body('guestEmail').optional().isEmail(),
+    body('guestPhone').optional().trim().isLength({ min: 5 }),
+    body('budgetRange').optional().trim()
+  ],
+  async (req, res) => {
+>>>>>>> d02f614 (email)
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
 
+<<<<<<< HEAD
     const { projectType, location, description, contactEmail, contactPhone, budgetRange } = req.body;
 
     const quote = await Quote.create({
@@ -197,6 +226,136 @@ router.post('/:id/messages', [
     console.error('Error sending message:', error);
     res.status(500).json({ error: 'Failed to send message' });
   }
+=======
+    const { projectType, location, description, guestName, guestEmail, guestPhone, budgetRange } = req.body;
+
+    if (!guestEmail && !guestPhone) {
+      return res.status(400).json({ error: 'Provide guestEmail or guestPhone' });
+    }
+
+    const contactMethod = guestEmail && guestPhone ? 'both' : guestEmail ? 'email' : 'phone';
+
+    const quote = await Quote.create({
+      isGuest: true,
+      guestName,
+      guestEmail: guestEmail || null,
+      guestPhone: guestPhone || null,
+      contactMethod,
+      publicToken: createPublicToken(),
+      projectType,
+      location,
+      description,
+      budgetRange: budgetRange || null,
+      contactEmail: guestEmail || null,
+      contactPhone: guestPhone || null
+    });
+
+    return res.status(201).json({
+      quoteId: quote.id,
+      publicToken: quote.publicToken,
+      status: quote.status
+    });
+  }
+);
+
+router.get('/guest/:publicToken', [param('publicToken').isLength({ min: 16 })], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  const quote = await Quote.findOne({
+    where: {
+      publicToken: req.params.publicToken,
+      isGuest: true
+    },
+    attributes: ['id', 'projectType', 'location', 'status', 'priority', 'createdAt', 'updatedAt']
+  });
+
+  if (!quote) {
+    return res.status(404).json({ error: 'Quote not found' });
+  }
+
+  return res.json({ quote });
+});
+
+router.post('/guest/:id/claim/request', [param('id').isUUID()], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  const { guestEmail, guestPhone } = req.body;
+  const quote = await Quote.findOne({
+    where: {
+      id: req.params.id,
+      isGuest: true,
+      [Op.or]: [
+        guestEmail ? { guestEmail } : null,
+        guestPhone ? { guestPhone } : null
+      ].filter(Boolean)
+    }
+  });
+
+  if (!quote) {
+    return res.status(404).json({ error: 'Guest quote not found' });
+  }
+
+  const token = createClaimToken();
+  const code = createClaimCode();
+  const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+  await QuoteClaimToken.create({
+    quoteId: quote.id,
+    token,
+    code,
+    expiresAt
+  });
+
+  return res.json({
+    message: 'Claim code generated',
+    claimToken: token,
+    claimCode: code,
+    expiresAt
+  });
+});
+
+router.post('/guest/:id/claim/confirm', [auth, param('id').isUUID(), body('claimToken').notEmpty(), body('claimCode').isLength({ min: 6, max: 6 })], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  const quote = await Quote.findOne({ where: { id: req.params.id, isGuest: true } });
+  if (!quote) {
+    return res.status(404).json({ error: 'Guest quote not found' });
+  }
+
+  const claim = await QuoteClaimToken.findOne({
+    where: {
+      quoteId: quote.id,
+      token: req.body.claimToken,
+      code: req.body.claimCode,
+      usedAt: null,
+      expiresAt: {
+        [Op.gt]: new Date()
+      }
+    }
+  });
+
+  if (!claim) {
+    return res.status(400).json({ error: 'Invalid or expired claim code' });
+  }
+
+  await claim.update({ usedAt: new Date() });
+  await quote.update({
+    isGuest: false,
+    clientId: req.user.id,
+    publicToken: null
+  });
+
+  return res.json({ message: 'Quote claimed successfully', quoteId: quote.id, clientId: req.user.id });
+>>>>>>> d02f614 (email)
 });
 
 module.exports = router;
