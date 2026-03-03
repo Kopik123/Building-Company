@@ -153,82 +153,126 @@ Opcjonalne:
 
 - `BOOTSTRAP_ENABLED` (domyślnie aktywny, zablokowany gdy `false`)
 
-## Wdrożenie na DigitalOcean Droplet (PM2 + Nginx + SSL)
+## Wdrożenie na DigitalOcean (PM2 + Nginx + SSL)
 
-### Jak dodać repo do DigitalOcean
+### Wymagania wstępne
 
-1. W panelu DigitalOcean utwórz Droplet (Ubuntu 22.04/24.04).
-2. Zaloguj się przez SSH na serwer.
-3. Sklonuj repo do katalogu aplikacji:
+- Droplet Ubuntu 22.04 lub 24.04 (min. 1 GB RAM)
+- Domena z rekordem DNS **A** wskazującym na IP Dropletu
+- Dostęp SSH do Dropletu (klucz lub hasło root)
+
+---
+
+### Krok 1 – Utwórz Droplet
+
+1. Zaloguj się do [cloud.digitalocean.com](https://cloud.digitalocean.com).
+2. Kliknij **Create → Droplets**.
+3. Wybierz obraz: **Ubuntu 22.04 LTS** lub **24.04 LTS**.
+4. Wybierz plan (min. **1 GB RAM / 1 vCPU**).
+5. Dodaj klucz SSH (zalecane) lub ustaw hasło root.
+6. Kliknij **Create Droplet** i poczekaj na uruchomienie.
+
+---
+
+### Krok 2 – Zaloguj się przez SSH
+
+```bash
+ssh root@<IP_DROPLETU>
+```
+
+> Zastąp `<IP_DROPLETU>` adresem IP widocznym w panelu DigitalOcean.
+
+---
+
+### Krok 3 – Sklonuj repozytorium
 
 ```bash
 git clone https://github.com/Kopik123/Building-Company.git /var/www/building-company
 ```
 
-4. Uruchom konfigurację z tego repo:
+---
+
+### Krok 4 – Uruchom skrypt konfiguracyjny
 
 ```bash
-bash /var/www/building-company/deploy/setup-droplet.sh /var/www/building-company example.com
+bash /var/www/building-company/deploy/setup-droplet.sh /var/www/building-company twoja-domena.pl
 ```
 
-### Wymagania
-
-- Ubuntu 22.04 lub 24.04 Droplet (min. 1 GB RAM)
-- Domena DNS wskazująca na IP Dropletu
-
-### Automatyczna instalacja
-
-Sklonuj repozytorium na Droplet, a następnie uruchom skrypt konfiguracyjny:
-
-```bash
-git clone https://github.com/Kopik123/Building-Company.git /var/www/building-company
-bash /var/www/building-company/deploy/setup-droplet.sh /var/www/building-company example.com
-```
+> Zastąp `twoja-domena.pl` swoją domeną.
 
 Skrypt wykona automatycznie:
-- instalację Node.js LTS (v22 przez NodeSource),
-- instalację i konfigurację PostgreSQL (baza `building_company`, użytkownik `buildingco`),
-- instalację PM2 i rejestrację serwisu systemd,
-- instalację Nginx i skopiowanie konfiguracji reverse proxy,
-- instalację zależności npm (`npm ci --omit=dev`),
-- skopiowanie `.env.example` → `.env` z wstępnie wygenerowanym hasłem do bazy.
+- instalację Node.js LTS v22,
+- instalację i konfigurację PostgreSQL,
+- instalację PM2 (process manager) i serwisu systemd,
+- instalację Nginx (reverse proxy),
+- instalację zależności npm,
+- wygenerowanie i zapisanie do `.env` losowych wartości `DATABASE_URL`, `JWT_SECRET` i `BOOTSTRAP_ADMIN_KEY`.
 
-### Konfiguracja środowiska
+Na końcu skrypt wydrukuje wygenerowany `BOOTSTRAP_ADMIN_KEY` – **zapisz go** przed zamknięciem terminala.
 
-Po wykonaniu skryptu uzupełnij plik `.env`:
+---
+
+### Krok 5 – Skonfiguruj SMTP (formularz kontaktowy)
+
+Otwórz plik `.env`:
 
 ```bash
 nano /var/www/building-company/.env
 ```
 
-Skrypt automatycznie generuje i wstrzykuje:
+Uzupełnij dane SMTP swojego dostawcy poczty (np. Mailgun, Brevo, Gmail SMTP):
 
-| Zmienna | Jak generowana |
+| Zmienna | Przykład |
 |---|---|
-| `DATABASE_URL` | Automatycznie – losowe hasło DB podczas setup |
-| `JWT_SECRET` | Automatycznie – `openssl rand -hex 32` |
-| `BOOTSTRAP_ADMIN_KEY` | Automatycznie – `openssl rand -hex 24` |
+| `SMTP_HOST` | `smtp.mailgun.org` |
+| `SMTP_PORT` | `587` |
+| `SMTP_SECURE` | `false` |
+| `SMTP_USER` | `postmaster@twoja-domena.pl` |
+| `SMTP_PASS` | `haslo-smtp` |
+| `CONTACT_TO` | `info@twoja-domena.pl` |
 
-Należy uzupełnić ręcznie (formularz kontaktowy):
+Zmienne `DATABASE_URL`, `JWT_SECRET` i `BOOTSTRAP_ADMIN_KEY` są już wypełnione automatycznie – **nie zmieniaj ich**.
 
-| Zmienna | Opis |
-|---|---|
-| `SMTP_HOST` / `SMTP_USER` / `SMTP_PASS` | Dane SMTP (np. Mailgun, Brevo) |
-| `CONTACT_TO` | Adres e-mail do odbierania formularzy |
-
-Następnie zrestartuj aplikację:
+Zapisz plik (`Ctrl+O`, `Enter`, `Ctrl+X`) i zrestartuj aplikację:
 
 ```bash
 pm2 restart building-company
 ```
 
-### SSL (Let's Encrypt)
+---
+
+### Krok 6 – Włącz SSL (Let's Encrypt)
+
+> Upewnij się, że rekord DNS domeny wskazuje już na IP Dropletu (może być potrzebny czas propagacji).
 
 ```bash
-sudo certbot --nginx -d example.com -d www.example.com
+sudo certbot --nginx -d twoja-domena.pl -d www.twoja-domena.pl
 ```
 
 Certbot automatycznie uzupełni konfigurację Nginx i doda przekierowanie HTTP → HTTPS.
+
+---
+
+### Krok 7 – Utwórz konto administratora
+
+Użyj `BOOTSTRAP_ADMIN_KEY` wydrukowanego przez skrypt w Kroku 4:
+
+```bash
+curl -sS -X POST https://twoja-domena.pl/api/auth/bootstrap/staff \
+  -H 'Content-Type: application/json' \
+  -H 'x-bootstrap-key: <BOOTSTRAP_ADMIN_KEY>' \
+  -d '{"email":"admin@twoja-domena.pl","password":"silne-haslo","name":"Admin","role":"admin"}'
+```
+
+> Po pierwszym udanym wywołaniu endpoint bootstrap jest automatycznie blokowany (zwraca `403`).
+
+---
+
+### Krok 8 – Sprawdź działanie
+
+Otwórz przeglądarkę i wejdź na `https://twoja-domena.pl`. Serwer API jest dostępny pod `https://twoja-domena.pl/api/`.
+
+---
 
 ### Aktualizacja aplikacji
 
@@ -244,5 +288,5 @@ pm2 restart building-company
 ```bash
 pm2 logs building-company        # live tail
 pm2 monit                         # dashboard CPU/RAM
-tail -f logs/pm2-error.log        # error log
+tail -f /var/www/building-company/logs/pm2-error.log
 ```
