@@ -17,6 +17,24 @@ strona firmy budowlanej
 	- `JWT_SECRET`
 	- `BOOTSTRAP_ADMIN_KEY`
 
+	`DATABASE_URL` musi wskazywać na działającą bazę PostgreSQL. Jeśli baza lokalnie nie działa, `npm start` zakończy się błędem `SequelizeConnectionRefusedError`.
+
+	Przykład szybkiego uruchomienia PostgreSQL w Dockerze:
+
+	```bash
+	docker run --name building-company-db \
+	  -e POSTGRES_USER=buildingco \
+	  -e POSTGRES_PASSWORD=buildingco \
+	  -e POSTGRES_DB=building_company \
+	  -p 5432:5432 -d postgres:16
+	```
+
+	Wtedy ustaw w `.env`:
+
+	```env
+	DATABASE_URL=postgresql://buildingco:buildingco@localhost:5432/building_company
+	```
+
 4. Uruchom serwer:
 
 	npm start
