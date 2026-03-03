@@ -36,22 +36,30 @@ const allowedOrigins = String(process.env.CORS_ORIGINS || '')
 
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 150
+  max: 150,
+  standardHeaders: true,
+  legacyHeaders: false
 });
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false
 });
 
 const claimLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false
 });
 
 const contactLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
-  max: 10
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false
 });
 
 const getContactTransporter = () => {
@@ -71,7 +79,28 @@ const getContactTransporter = () => {
   return cachedContactTransporter;
 };
 
-app.use(helmet());
+const escapeHtml = (str) =>
+  String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", 'https://fonts.googleapis.com'],
+      fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+      imgSrc: ["'self'", 'data:'],
+      connectSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      frameAncestors: ["'none'"]
+    }
+  }
+}));
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin || !allowedOrigins.length || allowedOrigins.includes(origin)) {
@@ -153,7 +182,7 @@ app.post('/api/contact', async (req, res, next) => {
       replyTo: email.trim(),
       subject: `New website enquiry from ${name.trim()}`,
       text: `New contact form enquiry\n\nName: ${name.trim()}\nEmail: ${email.trim()}\nPhone: ${phone.trim() || '-'}\nLocation: ${location.trim() || '-'}\nProject type: ${projectType.trim() || '-'}\nBudget: ${budget.trim() || '-'}\n\nMessage:\n${message.trim()}`,
-      html: `<h2>New contact form enquiry</h2>\n<p><strong>Name:</strong> ${name.trim()}</p>\n<p><strong>Email:</strong> ${email.trim()}</p>\n<p><strong>Phone:</strong> ${phone.trim() || '-'}</p>\n<p><strong>Location:</strong> ${location.trim() || '-'}</p>\n<p><strong>Project type:</strong> ${projectType.trim() || '-'}</p>\n<p><strong>Budget:</strong> ${budget.trim() || '-'}</p>\n<p><strong>Message:</strong></p>\n<p>${message.trim().replace(/\n/g, '<br />')}</p>`
+      html: `<h2>New contact form enquiry</h2>\n<p><strong>Name:</strong> ${escapeHtml(name.trim())}</p>\n<p><strong>Email:</strong> ${escapeHtml(email.trim())}</p>\n<p><strong>Phone:</strong> ${escapeHtml(phone.trim() || '-')}</p>\n<p><strong>Location:</strong> ${escapeHtml(location.trim() || '-')}</p>\n<p><strong>Project type:</strong> ${escapeHtml(projectType.trim() || '-')}</p>\n<p><strong>Budget:</strong> ${escapeHtml(budget.trim() || '-')}</p>\n<p><strong>Message:</strong></p>\n<p>${escapeHtml(message.trim()).replace(/\n/g, '<br />')}</p>`
     });
 
     return res.json({ ok: true });
