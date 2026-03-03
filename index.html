@@ -479,14 +479,32 @@
               <input type="text" id="name" name="name" placeholder="Your full name" required />
             </div>
             <div class="form-field">
-              <label for="email">Email</label>
-              <input type="email" id="email" name="email" placeholder="you@example.com" required />
+              <label for="postcode">Postcode</label>
+              <input type="text" id="postcode" name="postcode" placeholder="e.g. M1 1AA" required />
             </div>
           </div>
           <div class="form-row">
             <div class="form-field">
+              <label for="email">Email</label>
+              <input type="email" id="email" name="email" placeholder="you@example.com" aria-describedby="contact-hint" />
+            </div>
+            <div class="form-field">
               <label for="phone">Phone</label>
-              <input type="tel" id="phone" name="phone" placeholder="+44..." />
+              <input type="tel" id="phone" name="phone" placeholder="+44..." aria-describedby="contact-hint" />
+            </div>
+          </div>
+          <p id="contact-hint" class="form-footnote">Please provide at least one contact method: email or phone.</p>
+          <div class="form-row">
+            <div class="form-field">
+              <label for="project-type">Project type</label>
+              <select id="project-type" name="project-type">
+                <option value="">Select type</option>
+                <option>Bathroom renovation</option>
+                <option>Kitchen installation</option>
+                <option>Tiling only</option>
+                <option>Bespoke joinery</option>
+                <option>Multiple rooms / full interior</option>
+              </select>
             </div>
             <div class="form-field">
               <label for="location">Project location</label>
@@ -501,17 +519,6 @@
             </div>
           </div>
           <div class="form-row">
-            <div class="form-field">
-              <label for="project-type">Project type</label>
-              <select id="project-type" name="project-type">
-                <option value="">Select type</option>
-                <option>Bathroom renovation</option>
-                <option>Kitchen installation</option>
-                <option>Tiling only</option>
-                <option>Bespoke joinery</option>
-                <option>Multiple rooms / full interior</option>
-              </select>
-            </div>
             <div class="form-field">
               <label for="budget">Approximate budget</label>
               <select id="budget" name="budget">
@@ -599,6 +606,7 @@
 
         const formData = new FormData(form);
         const guestName = String(formData.get('name') || '').trim();
+        const postcode = String(formData.get('postcode') || '').trim();
         const guestEmail = String(formData.get('email') || '').trim();
         const guestPhone = String(formData.get('phone') || '').trim();
         const location = String(formData.get('location') || '').trim();
@@ -609,8 +617,8 @@
         status.textContent = '';
         status.className = 'form-status';
 
-        if (!guestName || !description || (!guestEmail && !guestPhone)) {
-          status.textContent = 'Please provide name, project details and at least email or phone.';
+        if (!guestName || !postcode || !description || (!guestEmail && !guestPhone)) {
+          status.textContent = 'Please provide name, postcode, project details and at least email or phone.';
           status.classList.add('is-error');
           return;
         }
@@ -627,6 +635,7 @@
             },
             body: JSON.stringify({
               guestName,
+              postcode,
               guestEmail: guestEmail || undefined,
               guestPhone: guestPhone || undefined,
               location: location || 'Manchester',

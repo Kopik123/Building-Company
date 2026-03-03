@@ -45,6 +45,10 @@ const Quote = sequelize.define('Quote', {
     type: DataTypes.STRING,
     allowNull: false
   },
+  postcode: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
   budgetRange: {
     type: DataTypes.STRING,
     allowNull: true
@@ -65,6 +69,10 @@ const Quote = sequelize.define('Quote', {
     type: DataTypes.ENUM('pending', 'in_progress', 'responded', 'closed'),
     allowNull: false,
     defaultValue: 'pending'
+  },
+  assignedManagerId: {
+    type: DataTypes.UUID,
+    allowNull: true
   },
   priority: {
     type: DataTypes.ENUM('low', 'medium', 'high'),

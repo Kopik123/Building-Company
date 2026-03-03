@@ -1,38 +1,42 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
-const InboxMessage = sequelize.define('InboxMessage', {
+const Notification = sequelize.define('Notification', {
   id: {
     type: DataTypes.UUID,
     defaultValue: DataTypes.UUIDV4,
     primaryKey: true
   },
-  threadId: {
+  userId: {
     type: DataTypes.UUID,
     allowNull: false
   },
-  senderId: {
-    type: DataTypes.UUID,
+  type: {
+    type: DataTypes.STRING,
     allowNull: false
   },
-  recipientId: {
-    type: DataTypes.UUID,
+  title: {
+    type: DataTypes.STRING,
     allowNull: false
   },
   body: {
     type: DataTypes.TEXT,
     allowNull: false
   },
+  data: {
+    type: DataTypes.JSON,
+    allowNull: true,
+    defaultValue: null
+  },
+  quoteId: {
+    type: DataTypes.UUID,
+    allowNull: true
+  },
   isRead: {
     type: DataTypes.BOOLEAN,
     allowNull: false,
     defaultValue: false
-  },
-  attachments: {
-    type: DataTypes.JSON,
-    allowNull: true,
-    defaultValue: []
   }
 });
 
-module.exports = InboxMessage;
+module.exports = Notification;

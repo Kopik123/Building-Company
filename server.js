@@ -21,6 +21,8 @@ const authRoutes = require('./routes/auth');
 const quotesRoutes = require('./routes/quotes');
 const inboxRoutes = require('./routes/inbox');
 const managerRoutes = require('./routes/manager');
+const notificationsRoutes = require('./routes/notifications');
+const groupRoutes = require('./routes/group');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -75,7 +77,10 @@ app.use('/api/auth', authRoutes);
 app.use('/api/quotes', quotesRoutes);
 app.use('/api/inbox', inboxRoutes);
 app.use('/api/manager', managerRoutes);
+app.use('/api/notifications', notificationsRoutes);
+app.use('/api/group', groupRoutes);
 
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(express.static(path.join(__dirname)));
 
 app.get('/api/gallery', (req, res) => {
