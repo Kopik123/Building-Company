@@ -40,6 +40,7 @@ curl -sS -X POST http://localhost:3000/api/quotes/guest \
 		"guestName":"Jan Test",
 		"guestEmail":"jan@example.com",
 		"guestPhone":"+447700900000",
+		"postcode":"M1 1AA",
 		"projectType":"bathroom",
 		"location":"Manchester",
 		"budgetRange":"£10,000–£25,000",
@@ -154,9 +155,73 @@ Opcjonalne:
 
 ## Wdrożenie na DigitalOcean Droplet (PM2 + Nginx + SSL)
 
-1. Przygotuj serwer (`apt`, `nginx`, `certbot`, `pm2`).
-2. Wgraj aplikację i wykonaj `npm ci`.
-3. Skonfiguruj `.env` dla produkcji (`NODE_ENV=production`, `APP_URL`, SMTP itd.).
-4. Uruchom przez PM2: `pm2 start ecosystem.config.js --env production`.
-5. Skonfiguruj reverse proxy Nginx i SSL przez certbot.
-6. Po zmianach: `git pull && npm ci && pm2 restart building-company`.
+### Wymagania
+
+- Ubuntu 22.04 lub 24.04 Droplet (min. 1 GB RAM)
+- Domena DNS wskazująca na IP Dropletu
+
+### Automatyczna instalacja
+
+Sklonuj repozytorium na Droplet, a następnie uruchom skrypt konfiguracyjny:
+
+```bash
+git clone https://github.com/Kopik123/Building-Company.git /var/www/building-company
+bash /var/www/building-company/deploy/setup-droplet.sh /var/www/building-company example.com
+```
+
+Skrypt wykona automatycznie:
+- instalację Node.js LTS (v22 przez NodeSource),
+- instalację i konfigurację PostgreSQL (baza `building_company`, użytkownik `buildingco`),
+- instalację PM2 i rejestrację serwisu systemd,
+- instalację Nginx i skopiowanie konfiguracji reverse proxy,
+- instalację zależności npm (`npm ci --omit=dev`),
+- skopiowanie `.env.example` → `.env` z wstępnie wygenerowanym hasłem do bazy.
+
+### Konfiguracja środowiska
+
+Po wykonaniu skryptu uzupełnij plik `.env`:
+
+```bash
+nano /var/www/building-company/.env
+```
+
+Minimalne wartości do uzupełnienia:
+
+| Zmienna | Opis |
+|---|---|
+| `JWT_SECRET` | Losowy klucz – `openssl rand -hex 32` |
+| `BOOTSTRAP_ADMIN_KEY` | Klucz do pierwszego konta – `openssl rand -hex 24` |
+| `SMTP_HOST` / `SMTP_USER` / `SMTP_PASS` | Dane SMTP (np. Mailgun, Brevo) |
+| `CONTACT_TO` | Adres e-mail do odbierania formularzy |
+
+Następnie zrestartuj aplikację:
+
+```bash
+pm2 restart building-company
+```
+
+### SSL (Let's Encrypt)
+
+```bash
+sudo certbot --nginx -d example.com -d www.example.com
+```
+
+Certbot automatycznie uzupełni konfigurację Nginx i doda przekierowanie HTTP → HTTPS.
+
+### Aktualizacja aplikacji
+
+```bash
+cd /var/www/building-company
+git pull
+npm ci --omit=dev
+pm2 restart building-company
+```
+
+### Logi i monitoring
+
+```bash
+pm2 logs building-company        # live tail
+pm2 monit                         # dashboard CPU/RAM
+tail -f logs/pm2-error.log        # error log
+```
+
