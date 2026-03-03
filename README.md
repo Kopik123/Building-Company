@@ -177,6 +177,37 @@ Skrypt wykona automatycznie:
 - instalację zależności npm (`npm ci --omit=dev`),
 - skopiowanie `.env.example` → `.env` z wstępnie wygenerowanym hasłem do bazy.
 
+### Lokalna baza danych PostgreSQL na DigitalOcean (na tym samym Droplet)
+
+Jeśli nie używasz `deploy/setup-droplet.sh`, możesz uruchomić bazę ręcznie:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y postgresql postgresql-contrib
+sudo systemctl enable --now postgresql
+
+sudo -u postgres psql -c "CREATE USER buildingco WITH PASSWORD 'CHANGE_ME_STRONG_PASSWORD';"
+sudo -u postgres psql -c "CREATE DATABASE building_company OWNER buildingco;"
+```
+
+Następnie ustaw połączenie aplikacji do tej lokalnej bazy w `.env`:
+
+```env
+DATABASE_URL=postgresql://buildingco:CHANGE_ME_STRONG_PASSWORD@localhost:5432/building_company
+```
+
+Sprawdzenie połączenia:
+
+```bash
+sudo -u postgres psql -d building_company -c '\dt'
+```
+
+Po zmianie `.env` zrestartuj aplikację:
+
+```bash
+pm2 restart building-company
+```
+
 ### Konfiguracja środowiska
 
 Po wykonaniu skryptu uzupełnij plik `.env`:
@@ -224,4 +255,3 @@ pm2 logs building-company        # live tail
 pm2 monit                         # dashboard CPU/RAM
 tail -f logs/pm2-error.log        # error log
 ```
-
