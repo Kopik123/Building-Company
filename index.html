@@ -5,6 +5,65 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>High-End Bathrooms, Kitchens, Extensions & Joinery | Manchester Building Company</title>
   <meta name="description" content="High-end bathrooms, kitchens, tiling, extensions, rendering, bespoke joinery and decorating in Manchester and the North West. New company led by experienced tradesmen focused on precision and quality." />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="High-End Bathrooms, Kitchens, Extensions & Joinery | Manchester Building Company" />
+  <meta property="og:description" content="Premium bathrooms, kitchens and bespoke interiors delivered by experienced tradesmen in Manchester and the North West." />
+  <meta property="og:image" content="/Gallery/cover.jpg" />
+  <meta property="og:url" content="https://levellines.co.uk" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="High-End Bathrooms, Kitchens, Extensions & Joinery" />
+  <meta name="twitter:description" content="Project, design support and high-standard execution for premium interiors in Manchester." />
+  <link rel="canonical" href="https://levellines.co.uk" />
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "LocalBusiness",
+          "@id": "https://levellines.co.uk/#business",
+          "name": "Building Company",
+          "url": "https://levellines.co.uk",
+          "description": "Premium bathroom, kitchen and interior fit-out services in Manchester and the North West.",
+          "areaServed": [
+            "Manchester",
+            "Salford",
+            "Trafford",
+            "Stockport",
+            "Greater Manchester",
+            "North West England"
+          ],
+          "priceRange": "GBP",
+          "serviceType": [
+            "Bathroom renovation",
+            "Kitchen fitting",
+            "Tiling and wet rooms",
+            "Bespoke joinery",
+            "Interior decorating"
+          ]
+        },
+        {
+          "@type": "Service",
+          "@id": "https://levellines.co.uk/#service-bathrooms",
+          "name": "Premium Bathroom Design Support and Installation",
+          "provider": {
+            "@id": "https://levellines.co.uk/#business"
+          },
+          "areaServed": "Manchester",
+          "serviceType": "Bathroom renovation"
+        },
+        {
+          "@type": "Service",
+          "@id": "https://levellines.co.uk/#service-kitchens",
+          "name": "Premium Kitchen Design Support and Installation",
+          "provider": {
+            "@id": "https://levellines.co.uk/#business"
+          },
+          "areaServed": "Greater Manchester",
+          "serviceType": "Kitchen fitting"
+        }
+      ]
+    }
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
@@ -21,11 +80,13 @@
         </span>
       </a>
       <nav class="main-nav">
-        <button class="nav-toggle" aria-label="Toggle navigation">
+        <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false" aria-controls="main-navigation">
           <span></span><span></span>
         </button>
-        <ul class="nav-list">
+        <ul class="nav-list" id="main-navigation">
           <li><a href="#services">Services</a></li>
+          <li><a href="premium-bathrooms-manchester.html">Bathrooms</a></li>
+          <li><a href="premium-kitchens-manchester.html">Kitchens</a></li>
           <li><a href="#projects">Projects</a></li>
           <li><a href="#gallery">Gallery</a></li>
           <li><a href="#process">Process</a></li>
@@ -63,7 +124,7 @@
             <span>&bull;</span>
             <span>Serving Greater Manchester &amp; North West</span>
             <span>&bull;</span>
-            <span>New for 2026 · Limited projects per year</span>
+            <span>Senior trades team · Limited projects per year</span>
           </div>
         </div>
         <div class="hero-highlight">
@@ -150,6 +211,7 @@
               Complete bathroom installations – from first fix to final finishing – with smart layouts, lighting and storage
               designed for everyday comfort and long-term durability.
             </p>
+            <p><a class="service-link" href="premium-bathrooms-manchester.html">See premium bathroom service</a></p>
           </article>
           <article class="service-card">
             <h3>Kitchen fitting</h3>
@@ -157,6 +219,7 @@
               Precise installation of kitchens, worktops and appliances.
               Adjustments and custom details create a seamless, high-standard finish that feels built-in, not just fitted.
             </p>
+            <p><a class="service-link" href="premium-kitchens-manchester.html">See premium kitchen service</a></p>
           </article>
           <article class="service-card">
             <h3>Bespoke joinery &amp; woodwork</h3>
@@ -460,8 +523,8 @@
           <div class="contact-details">
             <div>
               <h3>Contact details</h3>
-              <p><strong>Phone:</strong> <a href="tel:+440000000000">+44 (0)0000 000 000</a></p>
-              <p><strong>Email:</strong> <a href="mailto:info@example.com">info@example.com</a></p>
+              <p><strong>Phone:</strong> Shared after consultation booking.</p>
+              <p><strong>Email:</strong> Shared after consultation booking.</p>
             </div>
             <div>
               <h3>Areas we cover</h3>
@@ -536,6 +599,13 @@
           </div>
           <button type="submit" class="btn btn-primary btn-block" id="guest-quote-submit">Send quote request</button>
           <p class="form-status" id="guest-quote-status" aria-live="polite"></p>
+          <label class="consent-check" for="privacy-consent">
+            <input type="checkbox" id="privacy-consent" name="privacy-consent" required />
+            <span>
+              I agree to the processing of my data for the purpose of handling this enquiry.
+              See our <a href="privacy.html">Privacy Policy</a> and <a href="terms.html">Terms</a>.
+            </span>
+          </label>
           <p class="form-footnote">
             By submitting this form you agree for us to contact you regarding your enquiry. We do not share your details with third parties.
           </p>
@@ -552,12 +622,17 @@
       </div>
       <div class="footer-meta">
         <span>&copy; <span id="year"></span> Building Company. All rights reserved.</span>
-        <span>Website by your company.</span>
+        <span>Premium residential projects across Greater Manchester.</span>
       </div>
       <div class="footer-links">
         <a href="#hero">Home</a>
         <a href="#services">Services</a>
+        <a href="premium-bathrooms-manchester.html">Bathrooms</a>
+        <a href="premium-kitchens-manchester.html">Kitchens</a>
         <a href="#contact">Contact</a>
+        <a href="privacy.html">Privacy</a>
+        <a href="cookie-policy.html">Cookies</a>
+        <a href="terms.html">Terms</a>
       </div>
     </div>
   </footer>
@@ -567,6 +642,7 @@
     const header = document.querySelector('.site-header');
     const navToggle = document.querySelector('.nav-toggle');
     const navList = document.querySelector('.nav-list');
+    const navLinks = Array.from(document.querySelectorAll('.nav-list a'));
 
     window.addEventListener('scroll', () => {
       if (window.scrollY > 10) {
@@ -579,6 +655,15 @@
     navToggle.addEventListener('click', () => {
       navList.classList.toggle('is-open');
       navToggle.classList.toggle('is-open');
+      navToggle.setAttribute('aria-expanded', String(navList.classList.contains('is-open')));
+    });
+
+    navLinks.forEach((link) => {
+      link.addEventListener('click', () => {
+        navList.classList.remove('is-open');
+        navToggle.classList.remove('is-open');
+        navToggle.setAttribute('aria-expanded', 'false');
+      });
     });
 
     document.getElementById('year').textContent = new Date().getFullYear();
@@ -613,12 +698,19 @@
         const description = String(formData.get('message') || '').trim();
         const projectType = mapProjectType(formData.get('project-type'));
         const budgetRange = String(formData.get('budget') || '').trim();
+        const privacyConsent = formData.get('privacy-consent');
 
         status.textContent = '';
         status.className = 'form-status';
 
         if (!guestName || !postcode || !description || (!guestEmail && !guestPhone)) {
           status.textContent = 'Please provide name, postcode, project details and at least email or phone.';
+          status.classList.add('is-error');
+          return;
+        }
+
+        if (!privacyConsent) {
+          status.textContent = 'Please confirm the privacy consent before sending your enquiry.';
           status.classList.add('is-error');
           return;
         }

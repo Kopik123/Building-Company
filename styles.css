@@ -39,6 +39,16 @@ a {
   text-decoration: none;
 }
 
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible {
+  outline: 2px solid #e5b872;
+  outline-offset: 2px;
+}
+
 .container {
   width: 100%;
   max-width: 1200px;
@@ -449,6 +459,17 @@ a {
   color: var(--color-text-soft);
   font-size: 0.95rem;
   line-height: 1.7;
+}
+
+.service-link {
+  display: inline-flex;
+  margin-top: 0.75rem;
+  color: var(--color-primary);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .service-card:hover {
@@ -1011,6 +1032,26 @@ a {
   color: #fca5a5;
 }
 
+.consent-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  margin-top: 0.9rem;
+  font-size: 0.82rem;
+  color: rgba(229, 231, 235, 0.92);
+  line-height: 1.5;
+}
+
+.consent-check input {
+  margin-top: 0.2rem;
+}
+
+.consent-check a {
+  color: #f8d5a2;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 /* Footer */
 
 .site-footer {
@@ -1049,12 +1090,81 @@ a {
 .footer-links {
   display: flex;
   gap: 1rem;
+  flex-wrap: wrap;
 }
 
 .footer-links a {
   text-transform: uppercase;
   letter-spacing: 0.14em;
   font-size: 0.75rem;
+}
+
+/* Legal pages */
+
+.legal-page {
+  min-height: 100vh;
+  background: radial-gradient(circle at top left, #f1efe9 0, var(--color-bg) 45%, #eceef4 100%);
+}
+
+.legal-main {
+  padding: 6.5rem 0 4rem 0;
+}
+
+.legal-card {
+  max-width: 860px;
+  margin: 0 auto;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+  padding: 2rem;
+}
+
+.legal-card h1 {
+  margin: 0 0 0.4rem 0;
+  font-family: "Poppins", system-ui, sans-serif;
+  font-size: clamp(1.6rem, 2.8vw, 2.1rem);
+}
+
+.legal-meta {
+  margin: 0 0 1.4rem 0;
+  font-size: 0.9rem;
+  color: var(--color-text-soft);
+}
+
+.legal-card h2 {
+  margin: 1.45rem 0 0.45rem 0;
+  font-family: "Poppins", system-ui, sans-serif;
+  font-size: 1.08rem;
+}
+
+.legal-card p,
+.legal-card li {
+  margin: 0;
+  color: var(--color-text-soft);
+  line-height: 1.7;
+}
+
+.legal-card ul {
+  margin: 0.55rem 0 0 0;
+  padding-left: 1.15rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.legal-card section {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.legal-back {
+  margin-top: 1.8rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 /* Responsive */
@@ -1163,6 +1273,14 @@ a {
   .footer-inner {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .legal-main {
+    padding-top: 5.8rem;
+  }
+
+  .legal-card {
+    padding: 1.35rem;
   }
 }
 

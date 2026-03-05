@@ -224,6 +224,26 @@ npm ci --omit=dev
 pm2 restart building-company
 ```
 
+### Ustawienie domeny produkcyjnej (DigitalOcean)
+
+Po pierwszym deployu możesz podmienić placeholdery SEO i `server_name` w Nginx jednym poleceniem:
+
+```bash
+cd /var/www/building-company
+bash deploy/configure-domain.sh twojadomena.pl /var/www/building-company
+```
+
+Skrypt zaktualizuje:
+- `index.html` i podstrony `premium-*.html` (canonical, og:url),
+- `robots.txt` i `sitemap.xml`,
+- `server_name` w `/etc/nginx/sites-available/building-company`.
+
+Następnie uruchom SSL:
+
+```bash
+sudo certbot --nginx -d twojadomena.pl -d www.twojadomena.pl
+```
+
 ### Logi i monitoring
 
 ```bash
