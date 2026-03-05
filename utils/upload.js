@@ -10,6 +10,21 @@ if (!fs.existsSync(UPLOADS_DIR)) {
 
 const ALLOWED_TYPES = /jpeg|jpg|png|gif|webp|pdf|doc|docx|xls|xlsx|txt|zip/i;
 
+const ALLOWED_MIMETYPES = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'text/plain',
+  'application/zip',
+  'application/x-zip-compressed'
+]);
+
 const DEFAULT_ATTACHMENT_BODY = (count) => `Sent ${count} file(s)`;
 
 const storage = multer.diskStorage({
@@ -26,7 +41,7 @@ const upload = multer({
   limits: { fileSize: 20 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     const ext = path.extname(file.originalname).slice(1);
-    if (ALLOWED_TYPES.test(ext)) {
+    if (ALLOWED_TYPES.test(ext) && ALLOWED_MIMETYPES.has(file.mimetype)) {
       return cb(null, true);
     }
 
