@@ -153,6 +153,37 @@ Opcjonalne:
 
 - `BOOTSTRAP_ENABLED` (domyślnie aktywny, zablokowany gdy `false`)
 
+### SMTP lokalnie na DigitalOcean (localhost)
+
+Jeżeli chcesz obsługiwać e-mail przez lokalny serwer SMTP na Droplecie:
+
+1. Zainstaluj Postfix:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y postfix mailutils libsasl2-modules
+```
+
+2. Ustaw `.env` aplikacji:
+
+```env
+SMTP_HOST=127.0.0.1
+SMTP_PORT=25
+SMTP_SECURE=false
+SMTP_USER=
+SMTP_PASS=
+CONTACT_TO=info@levellines.co.uk
+CONTACT_FROM=no-reply@levellines.co.uk
+```
+
+3. Zrestartuj aplikację:
+
+```bash
+pm2 restart building-company
+```
+
+Uwaga: DigitalOcean często blokuje bezpośrednie wysyłanie na port 25 do internetu dla nowych kont. W praktyce Postfix zwykle powinien działać jako lokalny relay przez zewnętrzny SMTP smart host (Mailgun/Brevo/SES).
+
 ## Wdrożenie na DigitalOcean Droplet (PM2 + Nginx + SSL)
 
 ### Krok po kroku (od zera)
@@ -214,6 +245,52 @@ sudo certbot --nginx -d example.com -d www.example.com
 ```
 
 Certbot automatycznie uzupełni konfigurację Nginx i doda przekierowanie HTTP → HTTPS.
+
+## Security Baseline (DigitalOcean Production)
+
+Po podstawowym deployu uruchom pełny baseline bezpieczeństwa:
+
+```bash
+cd /var/www/building-company
+bash deploy/harden-droplet.sh
+```
+
+Skrypt automatycznie konfiguruje:
+- UFW (`deny incoming`, otwarte tylko `22/80/443`),
+- Fail2ban (`sshd`, `nginx-http-auth`, `nginx-botsearch`),
+- automatyczne aktualizacje bezpieczeństwa (`unattended-upgrades`),
+- cotygodniowe skany (`clamav`, `rkhunter`).
+
+### Weryfikacja po hardeningu
+
+```bash
+sudo ufw status verbose
+sudo fail2ban-client status
+sudo systemctl status unattended-upgrades --no-pager
+curl -I https://levellines.co.uk
+curl -I https://www.levellines.co.uk
+```
+
+### Dodatkowe kroki rekomendowane
+
+1. Włącz backupy DigitalOcean + snapshot tygodniowy.
+2. Używaj tylko logowania SSH kluczem; wyłącz hasło po weryfikacji dostępu.
+3. Ogranicz uprawnienia kont (oddzielny user deploy bez sudo do codziennej pracy).
+4. Rotuj sekrety (`JWT_SECRET`, `BOOTSTRAP_ADMIN_KEY`, SMTP relay hasła) co 90 dni.
+5. Monitoruj alerty certyfikatów i odnowienie certbot (`systemctl list-timers | grep certbot`).
+
+### Gdy AV (np. Avast) zgłasza zagrożenie
+
+1. Zweryfikuj certyfikat i redirecty HTTPS.
+2. Uruchom lokalny skan:
+
+```bash
+sudo clamscan -ri /var/www/building-company --exclude-dir=node_modules
+sudo rkhunter --check --skip-keypress --report-warnings-only
+```
+
+3. Sprawdź nagłówki i treść strony (`curl -I`, `view-source`).
+4. Zgłoś false positive do vendorów AV (częste dla nowych domen).
 
 ### Aktualizacja aplikacji
 

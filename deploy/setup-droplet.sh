@@ -144,4 +144,6 @@ else
   echo "  3. Set your domain in /etc/nginx/sites-available/building-company"
   echo "     then run: sudo certbot --nginx -d YOUR_DOMAIN"
 fi
+echo "  4. Run security hardening baseline (firewall, fail2ban, auto-updates):"
+echo "       bash ${APP_DIR}/deploy/harden-droplet.sh"
 echo "════════════════════════════════════════════════"

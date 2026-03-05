@@ -64,16 +64,23 @@ const contactLimiter = rateLimit({
 
 const getContactTransporter = () => {
   if (!cachedContactTransporter) {
-    cachedContactTransporter = nodemailer.createTransport({
+    const smtpUser = String(process.env.SMTP_USER || '').trim();
+    const smtpPass = String(process.env.SMTP_PASS || '').trim();
+    const transporterConfig = {
       host: process.env.SMTP_HOST,
       port: Number(process.env.SMTP_PORT) || 587,
       secure: process.env.SMTP_SECURE === 'true',
-      pool: true,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-      }
-    });
+      pool: true
+    };
+
+    if (smtpUser && smtpPass) {
+      transporterConfig.auth = {
+        user: smtpUser,
+        pass: smtpPass
+      };
+    }
+
+    cachedContactTransporter = nodemailer.createTransport(transporterConfig);
   }
 
   return cachedContactTransporter;
@@ -91,8 +98,9 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'"],
-      styleSrc: ["'self'", 'https://fonts.googleapis.com'],
+      // Static pages include inline JSON-LD and a small inline bootstrap script.
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
       fontSrc: ["'self'", 'https://fonts.gstatic.com'],
       imgSrc: ["'self'", 'data:'],
       connectSrc: ["'self'"],
@@ -170,8 +178,14 @@ app.post('/api/contact', async (req, res, next) => {
       return res.status(400).json({ error: 'Please provide a valid email address.' });
     }
 
-    if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS || !process.env.CONTACT_TO) {
+    const smtpUser = String(process.env.SMTP_USER || '').trim();
+    const smtpPass = String(process.env.SMTP_PASS || '').trim();
+    if (!process.env.SMTP_HOST || !process.env.CONTACT_TO) {
       return res.status(503).json({ error: 'Email service is not configured yet.' });
+    }
+
+    if ((smtpUser && !smtpPass) || (!smtpUser && smtpPass)) {
+      return res.status(503).json({ error: 'SMTP auth config is incomplete. Set both SMTP_USER and SMTP_PASS.' });
     }
 
     const transporter = getContactTransporter();

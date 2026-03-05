@@ -21,24 +21,40 @@ const normalizePhone = (value) => String(value || '').trim();
 
 const getClaimEmailTransporter = () => {
   if (!cachedClaimEmailTransporter) {
-    cachedClaimEmailTransporter = nodemailer.createTransport({
+    const smtpUser = String(process.env.SMTP_USER || '').trim();
+    const smtpPass = String(process.env.SMTP_PASS || '').trim();
+    const transporterConfig = {
       host: process.env.SMTP_HOST,
       port: Number(process.env.SMTP_PORT) || 587,
       secure: process.env.SMTP_SECURE === 'true',
-      pool: true,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-      }
-    });
+      pool: true
+    };
+
+    if (smtpUser && smtpPass) {
+      transporterConfig.auth = {
+        user: smtpUser,
+        pass: smtpPass
+      };
+    }
+
+    cachedClaimEmailTransporter = nodemailer.createTransport(transporterConfig);
   }
 
   return cachedClaimEmailTransporter;
 };
 
 const sendClaimCodeByEmail = async (email, code) => {
-  if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS || !process.env.CONTACT_FROM) {
+  const smtpUser = String(process.env.SMTP_USER || '').trim();
+  const smtpPass = String(process.env.SMTP_PASS || '').trim();
+
+  if (!process.env.SMTP_HOST || !process.env.CONTACT_FROM) {
     const err = new Error('Claim email service is not configured.');
+    err.statusCode = 503;
+    throw err;
+  }
+
+  if ((smtpUser && !smtpPass) || (!smtpUser && smtpPass)) {
+    const err = new Error('SMTP auth config is incomplete. Set both SMTP_USER and SMTP_PASS.');
     err.statusCode = 503;
     throw err;
   }
