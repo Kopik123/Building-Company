@@ -4,118 +4,327 @@ strona firmy budowlanej
 ## Uruchomienie lokalnie
 
 1. Zainstaluj zależności:
+
 	npm install
+
 2. Skopiuj konfigurację:
+
 	cp .env.example .env
-3. Uzupełnij dane SMTP w `.env`.
+
+3. Uzupełnij `.env` (minimum):
+
+	- `DATABASE_URL`
+	- `JWT_SECRET`
+	- `BOOTSTRAP_ADMIN_KEY`
+
 4. Uruchom serwer:
+
 	npm start
 
 Serwis będzie dostępny pod `http://localhost:3000`.
 
-## Formularz e-mail
+## Formularz e-mail i galeria
 
-- Frontend wysyła formularz do `POST /api/contact`.
-- Backend wysyła wiadomość przez SMTP (konfiguracja w `.env`).
-- Wymagane zmienne: `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `CONTACT_TO`.
+- Frontend wysyła formularz kontaktowy do `POST /api/contact`.
+- Backend wysyła wiadomość przez SMTP (`SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `CONTACT_TO`).
+- `GET /api/gallery` zwraca listę zdjęć z folderu `Gallery` (sortowanie po dacie z nazwy pliku).
 
-## Galeria
+## API testy (curl)
 
-- `GET /api/gallery` zwraca listę zdjęć z folderu `Gallery`.
-- Zdjęcia są sortowane od najnowszych do najstarszych po dacie w nazwie pliku (`IMG_YYYYMMDD_...`).
+### 1) Guest quote bez logowania
+
+```bash
+curl -sS -X POST http://localhost:3000/api/quotes/guest \
+	-H 'Content-Type: application/json' \
+	-d '{
+		"guestName":"Jan Test",
+		"guestEmail":"jan@example.com",
+		"guestPhone":"+447700900000",
+		"postcode":"M1 1AA",
+		"projectType":"bathroom",
+		"location":"Manchester",
+		"budgetRange":"£10,000–£25,000",
+		"description":"Guest quote test"
+	}'
+```
+
+### 2) Podgląd statusu guest quote (po tokenie)
+
+```bash
+curl -sS http://localhost:3000/api/quotes/guest/<PUBLIC_TOKEN>
+```
+
+### 3) Rejestracja i login (token JWT)
+
+```bash
+curl -sS -X POST http://localhost:3000/api/auth/register \
+	-H 'Content-Type: application/json' \
+	-d '{"email":"client@example.com","password":"secret123","name":"Client User"}'
+
+curl -sS -X POST http://localhost:3000/api/auth/login \
+	-H 'Content-Type: application/json' \
+	-d '{"email":"client@example.com","password":"secret123"}'
+```
+
+### 4) Claim request + confirm guest quote
+
+```bash
+curl -sS -X POST http://localhost:3000/api/quotes/guest/<QUOTE_ID>/claim/request \
+	-H 'Content-Type: application/json' \
+	-d '{"channel":"email","guestEmail":"jan@example.com"}'
+
+curl -sS -X POST http://localhost:3000/api/quotes/guest/<QUOTE_ID>/claim/request \
+	-H 'Content-Type: application/json' \
+	-d '{"channel":"phone","guestPhone":"+447700900000"}'
+
+curl -sS -X POST http://localhost:3000/api/quotes/guest/<QUOTE_ID>/claim/confirm \
+	-H 'Authorization: Bearer <JWT_TOKEN>' \
+	-H 'Content-Type: application/json' \
+	-d '{"claimToken":"<CLAIM_TOKEN>","claimCode":"123456"}'
+```
+
+Uwaga: endpoint `claim/request` nie zwraca `claimCode`. Kod jest dostarczany kanałem `email` albo `phone`.
+
+### 5) Local inbox (zalogowani użytkownicy)
+
+```bash
+curl -sS -X POST http://localhost:3000/api/inbox/threads \
+	-H 'Authorization: Bearer <JWT_TOKEN>' \
+	-H 'Content-Type: application/json' \
+	-d '{"recipientUserId":"<USER_ID>","subject":"Nowy temat","body":"Pierwsza wiadomość"}'
+
+curl -sS http://localhost:3000/api/inbox/threads \
+	-H 'Authorization: Bearer <JWT_TOKEN>'
+```
+
+### 6) Manager API (manager/admin)
+
+```bash
+curl -sS "http://localhost:3000/api/manager/quotes?status=pending" \
+	-H 'Authorization: Bearer <MANAGER_JWT_TOKEN>'
+
+curl -sS -X PATCH http://localhost:3000/api/manager/quotes/<QUOTE_ID> \
+	-H 'Authorization: Bearer <MANAGER_JWT_TOKEN>' \
+	-H 'Content-Type: application/json' \
+	-d '{"status":"in_progress","priority":"high"}'
+```
+
+### 7) Bootstrap konta manager/admin
+
+```bash
+curl -sS -X POST http://localhost:3000/api/auth/bootstrap/staff \
+	-H 'Content-Type: application/json' \
+	-H 'x-bootstrap-key: <BOOTSTRAP_ADMIN_KEY>' \
+	-d '{"email":"manager@example.com","password":"secret1234","name":"Manager User","role":"manager"}'
+
+curl -sS -X POST http://localhost:3000/api/auth/bootstrap/staff \
+	-H 'Content-Type: application/json' \
+	-H 'x-bootstrap-key: <BOOTSTRAP_ADMIN_KEY>' \
+	-d '{"email":"admin@example.com","password":"secret1234","name":"Admin User","role":"admin"}'
+```
+
+Uwaga: tworzenie `admin` jest jednorazowe (`409` przy kolejnej próbie).
+Endpoint bootstrap jest automatycznie wygaszany po pierwszym udanym utworzeniu konta staff (`manager` lub `admin`).
+Po wygaszeniu kolejne wywołania zwracają `403`.
+
+Aby włączyć bootstrap ponownie lokalnie:
+
+- ustaw `BOOTSTRAP_ENABLED=true`
+- usuń plik `.bootstrap.lock` z katalogu projektu
+
+### 8) Rotacja `BOOTSTRAP_ADMIN_KEY` bez restartu (tylko admin)
+
+```bash
+curl -sS -X POST http://localhost:3000/api/auth/bootstrap/rotate-key \
+	-H 'Authorization: Bearer <ADMIN_JWT_TOKEN>' \
+	-H 'Content-Type: application/json' \
+	-d '{"currentBootstrapKey":"<OLD_BOOTSTRAP_ADMIN_KEY>","newBootstrapKey":"<NEW_BOOTSTRAP_ADMIN_KEY>"}'
+```
+
+## Wymagane zmienne środowiskowe
+
+Serwer nie uruchomi się bez:
+
+- `DATABASE_URL`
+- `JWT_SECRET`
+- `BOOTSTRAP_ADMIN_KEY`
+
+Opcjonalne:
+
+- `BOOTSTRAP_ENABLED` (domyślnie aktywny, zablokowany gdy `false`)
+
+### SMTP lokalnie na DigitalOcean (localhost)
+
+Jeżeli chcesz obsługiwać e-mail przez lokalny serwer SMTP na Droplecie:
+
+1. Zainstaluj Postfix:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y postfix mailutils libsasl2-modules
+```
+
+2. Ustaw `.env` aplikacji:
+
+```env
+SMTP_HOST=127.0.0.1
+SMTP_PORT=25
+SMTP_SECURE=false
+SMTP_USER=
+SMTP_PASS=
+CONTACT_TO=info@levellines.co.uk
+CONTACT_FROM=no-reply@levellines.co.uk
+```
+
+3. Zrestartuj aplikację:
+
+```bash
+pm2 restart building-company
+```
+
+Uwaga: DigitalOcean często blokuje bezpośrednie wysyłanie na port 25 do internetu dla nowych kont. W praktyce Postfix zwykle powinien działać jako lokalny relay przez zewnętrzny SMTP smart host (Mailgun/Brevo/SES).
 
 ## Wdrożenie na DigitalOcean Droplet (PM2 + Nginx + SSL)
 
-### 1) Przygotuj serwer
+### Krok po kroku (od zera)
 
-1. Zaloguj się na Droplet przez SSH.
-2. Zainstaluj wymagane pakiety:
+1. W panelu DigitalOcean utwórz Droplet (Ubuntu 22.04/24.04, min. 1 GB RAM).
+2. Skieruj domenę na IP Dropletu (rekord DNS A).
+3. Zaloguj się przez SSH na serwer.
+4. Sklonuj repozytorium do katalogu aplikacji:
 
-	apt update
-	apt install -y nodejs npm nginx certbot python3-certbot-nginx
-	npm install -g pm2
+   ```bash
+   git clone https://github.com/Kopik123/Building-Company.git /var/www/building-company
+   ```
 
-3. (Opcjonalnie) uruchom helper z repo:
+5. Uruchom skrypt konfiguracji:
 
-	bash deploy/setup-droplet.sh /var/www/building-company
+   ```bash
+   bash /var/www/building-company/deploy/setup-droplet.sh /var/www/building-company example.com
+   ```
 
-### 2) Wgraj aplikację
+Skrypt wykona automatycznie:
+- instalację Node.js LTS (v22 przez NodeSource),
+- instalację i konfigurację PostgreSQL (baza `building_company`, użytkownik `buildingco`),
+- instalację PM2 i rejestrację serwisu systemd,
+- instalację Nginx i skopiowanie konfiguracji reverse proxy,
+- instalację zależności npm (`npm ci --omit=dev`),
+- skopiowanie `.env.example` → `.env` z wstępnie wygenerowanym hasłem do bazy.
 
-1. Sklonuj repo do katalogu aplikacji, np. `/var/www/building-company`.
-2. Przejdź do katalogu i zainstaluj zależności:
+6. Po wykonaniu skryptu uzupełnij plik `.env`:
 
-	cd /var/www/building-company
-	npm ci
+```bash
+nano /var/www/building-company/.env
+```
 
-### 3) Ustaw konfigurację `.env`
+Skrypt automatycznie generuje i wstrzykuje:
 
-1. Utwórz plik:
+| Zmienna | Jak generowana |
+|---|---|
+| `DATABASE_URL` | Automatycznie – losowe hasło DB podczas setup |
+| `JWT_SECRET` | Automatycznie – `openssl rand -hex 32` |
+| `BOOTSTRAP_ADMIN_KEY` | Automatycznie – `openssl rand -hex 24` |
 
-	cp .env.example .env
+Należy uzupełnić ręcznie (formularz kontaktowy):
 
-2. Uzupełnij minimum:
+| Zmienna | Opis |
+|---|---|
+| `SMTP_HOST` / `SMTP_USER` / `SMTP_PASS` | Dane SMTP (np. Mailgun, Brevo) |
+| `CONTACT_TO` | Adres e-mail do odbierania formularzy |
 
-	- `NODE_ENV=production`
-	- `PORT=3000`
-	- `APP_URL=https://twoja-domena.pl`
-	- `DATABASE_URL=...`
-	- `JWT_SECRET=...` (długi, losowy sekret)
-	- `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`
-	- `CONTACT_TO`, opcjonalnie `CONTACT_FROM`
+7. Zrestartuj aplikację:
 
-### 4) Uruchom aplikację przez PM2
+```bash
+pm2 restart building-company
+```
 
-1. Start:
+8. Włącz SSL (Let's Encrypt):
 
-	pm2 start ecosystem.config.js --env production
+```bash
+sudo certbot --nginx -d example.com -d www.example.com
+```
 
-2. Zapis autostartu po restarcie serwera:
+Certbot automatycznie uzupełni konfigurację Nginx i doda przekierowanie HTTP → HTTPS.
 
-	pm2 save
-	pm2 startup systemd -u $USER --hp $HOME
+## Security Baseline (DigitalOcean Production)
 
-3. Podgląd logów:
+Po podstawowym deployu uruchom pełny baseline bezpieczeństwa:
 
-	pm2 logs building-company
+```bash
+cd /var/www/building-company
+bash deploy/harden-droplet.sh
+```
 
-### 5) Skonfiguruj Nginx reverse proxy
+Skrypt automatycznie konfiguruje:
+- UFW (`deny incoming`, otwarte tylko `22/80/443`),
+- Fail2ban (`sshd`, `nginx-http-auth`, `nginx-botsearch`),
+- automatyczne aktualizacje bezpieczeństwa (`unattended-upgrades`),
+- cotygodniowe skany (`clamav`, `rkhunter`).
 
-1. Skopiuj gotowy plik:
+### Weryfikacja po hardeningu
 
-	sudo cp deploy/nginx/building-company.conf /etc/nginx/sites-available/building-company
+```bash
+sudo ufw status verbose
+sudo fail2ban-client status
+sudo systemctl status unattended-upgrades --no-pager
+curl -I https://levellines.co.uk
+curl -I https://www.levellines.co.uk
+```
 
-2. Edytuj `server_name` w pliku na swoją domenę.
-3. Włącz konfigurację:
+### Dodatkowe kroki rekomendowane
 
-	sudo ln -s /etc/nginx/sites-available/building-company /etc/nginx/sites-enabled/building-company
-	sudo nginx -t
-	sudo systemctl reload nginx
+1. Włącz backupy DigitalOcean + snapshot tygodniowy.
+2. Używaj tylko logowania SSH kluczem; wyłącz hasło po weryfikacji dostępu.
+3. Ogranicz uprawnienia kont (oddzielny user deploy bez sudo do codziennej pracy).
+4. Rotuj sekrety (`JWT_SECRET`, `BOOTSTRAP_ADMIN_KEY`, SMTP relay hasła) co 90 dni.
+5. Monitoruj alerty certyfikatów i odnowienie certbot (`systemctl list-timers | grep certbot`).
 
-### 6) Dodaj HTTPS (Let's Encrypt)
+### Gdy AV (np. Avast) zgłasza zagrożenie
 
-	sudo certbot --nginx -d twoja-domena.pl -d www.twoja-domena.pl
+1. Zweryfikuj certyfikat i redirecty HTTPS.
+2. Uruchom lokalny skan:
 
-Po tej komendzie Nginx zostanie automatycznie zaktualizowany o certyfikat SSL.
+```bash
+sudo clamscan -ri /var/www/building-company --exclude-dir=node_modules
+sudo rkhunter --check --skip-keypress --report-warnings-only
+```
 
-### 7) Firewall
+3. Sprawdź nagłówki i treść strony (`curl -I`, `view-source`).
+4. Zgłoś false positive do vendorów AV (częste dla nowych domen).
 
-	sudo ufw allow OpenSSH
-	sudo ufw allow 'Nginx Full'
-	sudo ufw enable
+### Aktualizacja aplikacji
 
-### 8) Test końcowy
+```bash
+cd /var/www/building-company
+git pull
+npm ci --omit=dev
+pm2 restart building-company
+```
 
-1. Sprawdź aplikację:
+### Ustawienie domeny produkcyjnej (DigitalOcean)
 
-	curl -I https://twoja-domena.pl
-	curl https://twoja-domena.pl/api/gallery
+Po pierwszym deployu możesz podmienić placeholdery SEO i `server_name` w Nginx jednym poleceniem:
 
-2. Jeśli endpointy działają i strona się otwiera, wdrożenie jest gotowe.
+```bash
+cd /var/www/building-company
+bash deploy/configure-domain.sh twojadomena.pl /var/www/building-company
+```
 
-### Aktualizacja aplikacji po zmianach
+Skrypt zaktualizuje:
+- `index.html` i podstrony `premium-*.html` (canonical, og:url),
+- `robots.txt` i `sitemap.xml`,
+- `server_name` w `/etc/nginx/sites-available/building-company`.
 
-	cd /var/www/building-company
-	git pull
-	npm ci
-	pm2 restart building-company
+Następnie uruchom SSL:
 
+```bash
+sudo certbot --nginx -d twojadomena.pl -d www.twojadomena.pl
+```
+
+### Logi i monitoring
+
+```bash
+pm2 logs building-company        # live tail
+pm2 monit                         # dashboard CPU/RAM
+tail -f logs/pm2-error.log        # error log
+```

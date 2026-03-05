@@ -1,183 +1,206 @@
 const express = require('express');
-const router = express.Router();
-const { body, validationResult } = require('express-validator');
-const { Quote, QuoteMessage, QuoteAssignment, User } = require('../models');
-const { auth, checkRole } = require('../middleware/auth');
 const { Op } = require('sequelize');
+const { body, param, query, validationResult } = require('express-validator');
+const { Quote, User, GroupThread, GroupMember, Notification } = require('../models');
+const { auth, roleCheck } = require('../middleware/auth');
+const asyncHandler = require('../utils/asyncHandler');
 
-// Get all quotes (manager/admin)
-router.get('/quotes', auth, checkRole('manager', 'admin'), async (req, res) => {
-  try {
-    const { status, priority, search } = req.query;
-    
-    const where = {};
-    if (status) where.status = status;
-    if (priority) where.priority = priority;
-    if (search) {
-      where[Op.or] = [
-        { location: { [Op.iLike]: `%${search}%` } },
-        { description: { [Op.iLike]: `%${search}%` } }
-      ];
+const router = express.Router();
+
+const managerGuard = [auth, roleCheck('manager', 'admin')];
+
+router.post(
+  '/staff',
+  [
+    ...managerGuard,
+    body('email').isEmail(),
+    body('password').isLength({ min: 8 }),
+    body('name').trim().notEmpty(),
+    body('role').isIn(['employee', 'manager']),
+    body('phone').optional().trim()
+  ],
+  asyncHandler(async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
     }
+
+    const { email, password, name, phone, role } = req.body;
+
+    // Only admins can create managers
+    if (role === 'manager' && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Only admins can create manager accounts' });
+    }
+
+    const existing = await User.findOne({ where: { email } });
+    if (existing) {
+      return res.status(400).json({ error: 'Email already registered' });
+    }
+
+    const user = await User.create({ email, password, name, phone: phone || null, role });
+    return res.status(201).json({ user });
+  })
+);
+
+router.post(
+  '/quotes/:id/accept',
+  [...managerGuard, param('id').isUUID()],
+  asyncHandler(async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const quote = await Quote.findByPk(req.params.id, {
+      include: [{ model: User, as: 'client', attributes: ['id', 'name', 'email'] }]
+    });
+
+    if (!quote) {
+      return res.status(404).json({ error: 'Quote not found' });
+    }
+
+    if (quote.assignedManagerId) {
+      return res.status(409).json({ error: 'Quote is already assigned to a manager' });
+    }
+
+    await quote.update({
+      assignedManagerId: req.user.id,
+      status: 'in_progress'
+    });
+
+    // Create a group chat for this project
+    const projectName = `${quote.projectType} – ${quote.guestName || (quote.client && quote.client.name) || 'Project'} (${quote.postcode || quote.location})`;
+
+    const groupThread = await GroupThread.create({
+      name: projectName,
+      quoteId: quote.id,
+      createdBy: req.user.id
+    });
+
+    // Add the manager to the group
+    await GroupMember.create({
+      groupThreadId: groupThread.id,
+      userId: req.user.id,
+      role: 'admin'
+    });
+
+    // Add the client to the group (if they have an account)
+    if (quote.clientId) {
+      await GroupMember.create({
+        groupThreadId: groupThread.id,
+        userId: quote.clientId,
+        role: 'member'
+      });
+    }
+
+    // Notify managers that this quote was accepted
+    const otherManagers = await User.findAll({
+      where: { role: ['manager', 'admin'], isActive: true, id: { [Op.ne]: req.user.id } }
+    });
+
+    await Promise.all(
+      otherManagers.map((m) =>
+        Notification.create({
+          userId: m.id,
+          type: 'quote_accepted',
+          title: `Quote accepted by ${req.user.name}`,
+          body: `Manager ${req.user.name} accepted the quote for "${projectName}".`,
+          quoteId: quote.id,
+          data: { quoteId: quote.id, managerId: req.user.id, groupThreadId: groupThread.id }
+        })
+      )
+    );
+
+    return res.status(201).json({ quote, groupThread });
+  })
+);
+
+router.get(
+  '/quotes',
+  [
+    ...managerGuard,
+    query('status').optional().isIn(['pending', 'in_progress', 'responded', 'closed']),
+    query('priority').optional().isIn(['low', 'medium', 'high']),
+    query('projectType').optional().isIn(['bathroom', 'kitchen', 'tiling', 'extension', 'joinery', 'rendering', 'decorating', 'other'])
+  ],
+  asyncHandler(async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const where = {};
+    if (req.query.status) where.status = req.query.status;
+    if (req.query.priority) where.priority = req.query.priority;
+    if (req.query.projectType) where.projectType = req.query.projectType;
 
     const quotes = await Quote.findAll({
       where,
       include: [
-        {
-          model: User,
-          as: 'client',
-          attributes: ['id', 'name', 'email', 'phone']
-        },
-        {
-          model: QuoteAssignment,
-          as: 'assignments',
-          include: [{ model: User, as: 'manager', attributes: ['id', 'name'] }]
-        },
-        {
-          model: QuoteMessage,
-          as: 'messages',
-          limit: 1,
-          order: [['createdAt', 'DESC']]
-        }
+        { model: User, as: 'client', attributes: ['id', 'name', 'email', 'phone'] },
+        { model: User, as: 'assignedManager', attributes: ['id', 'name', 'email'] }
       ],
       order: [['createdAt', 'DESC']]
     });
 
-    res.json({ quotes });
-  } catch (error) {
-    console.error('Error fetching quotes:', error);
-    res.status(500).json({ error: 'Failed to fetch quotes' });
-  }
-});
+    return res.json({ quotes });
+  })
+);
 
-// Assign quote to manager
-router.post('/quotes/:id/assign', [
-  auth,
-  checkRole('manager', 'admin'),
-  body('managerId').isUUID()
-], async (req, res) => {
-  try {
+router.get(
+  '/quotes/:id',
+  [...managerGuard, param('id').isUUID()],
+  asyncHandler(async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const quote = await Quote.findByPk(req.params.id);
-    if (!quote) {
-      return res.status(404).json({ error: 'Quote not found' });
-    }
-
-    const manager = await User.findOne({
-      where: { 
-        id: req.body.managerId,
-        role: { [Op.in]: ['manager', 'admin'] }
-      }
-    });
-
-    if (!manager) {
-      return res.status(404).json({ error: 'Manager not found' });
-    }
-
-    const assignment = await QuoteAssignment.create({
-      quoteId: req.params.id,
-      managerId: req.body.managerId,
-      assignedBy: req.user.id
-    });
-
-    res.status(201).json({ assignment });
-  } catch (error) {
-    console.error('Error assigning quote:', error);
-    res.status(500).json({ error: 'Failed to assign quote' });
-  }
-});
-
-// Update quote status
-router.patch('/quotes/:id/status', [
-  auth,
-  checkRole('manager', 'admin'),
-  body('status').isIn(['pending', 'in_progress', 'responded', 'closed'])
-], async (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    const quote = await Quote.findByPk(req.params.id);
-    if (!quote) {
-      return res.status(404).json({ error: 'Quote not found' });
-    }
-
-    await quote.update({ status: req.body.status });
-
-    res.json({ quote });
-  } catch (error) {
-    console.error('Error updating quote status:', error);
-    res.status(500).json({ error: 'Failed to update quote status' });
-  }
-});
-
-// Update quote priority
-router.patch('/quotes/:id/priority', [
-  auth,
-  checkRole('manager', 'admin'),
-  body('priority').isIn(['low', 'medium', 'high'])
-], async (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    const quote = await Quote.findByPk(req.params.id);
-    if (!quote) {
-      return res.status(404).json({ error: 'Quote not found' });
-    }
-
-    await quote.update({ priority: req.body.priority });
-
-    res.json({ quote });
-  } catch (error) {
-    console.error('Error updating quote priority:', error);
-    res.status(500).json({ error: 'Failed to update quote priority' });
-  }
-});
-
-// Dashboard statistics
-router.get('/dashboard', auth, checkRole('manager', 'admin'), async (req, res) => {
-  try {
-    const totalQuotes = await Quote.count();
-    const pendingQuotes = await Quote.count({ where: { status: 'pending' } });
-    const inProgressQuotes = await Quote.count({ where: { status: 'in_progress' } });
-    const respondedQuotes = await Quote.count({ where: { status: 'responded' } });
-    const closedQuotes = await Quote.count({ where: { status: 'closed' } });
-
-    const recentQuotes = await Quote.findAll({
-      limit: 5,
+    const quote = await Quote.findByPk(req.params.id, {
       include: [
-        {
-          model: User,
-          as: 'client',
-          attributes: ['id', 'name', 'email']
-        }
-      ],
-      order: [['createdAt', 'DESC']]
+        { model: User, as: 'client', attributes: ['id', 'name', 'email', 'phone'] },
+        { model: User, as: 'assignedManager', attributes: ['id', 'name', 'email'] }
+      ]
     });
 
-    res.json({
-      statistics: {
-        total: totalQuotes,
-        pending: pendingQuotes,
-        inProgress: inProgressQuotes,
-        responded: respondedQuotes,
-        closed: closedQuotes
-      },
-      recentQuotes
-    });
-  } catch (error) {
-    console.error('Error fetching dashboard data:', error);
-    res.status(500).json({ error: 'Failed to fetch dashboard data' });
-  }
-});
+    if (!quote) {
+      return res.status(404).json({ error: 'Quote not found' });
+    }
+
+    return res.json({ quote });
+  })
+);
+
+router.patch(
+  '/quotes/:id',
+  [
+    ...managerGuard,
+    param('id').isUUID(),
+    body('status').optional().isIn(['pending', 'in_progress', 'responded', 'closed']),
+    body('priority').optional().isIn(['low', 'medium', 'high'])
+  ],
+  asyncHandler(async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const quote = await Quote.findByPk(req.params.id);
+    if (!quote) {
+      return res.status(404).json({ error: 'Quote not found' });
+    }
+
+    const payload = {};
+    if (req.body.status) payload.status = req.body.status;
+    if (req.body.priority) payload.priority = req.body.priority;
+
+    if (!Object.keys(payload).length) {
+      return res.status(400).json({ error: 'No changes provided' });
+    }
+
+    await quote.update(payload);
+    return res.json({ quote });
+  })
+);
 
 module.exports = router;

@@ -1,202 +1,348 @@
+const crypto = require('crypto');
 const express = require('express');
-const router = express.Router();
-const { body, validationResult } = require('express-validator');
-const { Quote, QuoteMessage, User } = require('../models');
-const { auth, checkRole } = require('../middleware/auth');
 const nodemailer = require('nodemailer');
+const { Op } = require('sequelize');
+const { body, validationResult, param } = require('express-validator');
+const { Quote, QuoteClaimToken, User, Notification } = require('../models');
+const { auth } = require('../middleware/auth');
+const asyncHandler = require('../utils/asyncHandler');
 
-// Get my quotes (client)
-router.get('/', auth, checkRole('client'), async (req, res) => {
-  try {
-    const quotes = await Quote.findAll({
-      where: { clientId: req.user.id },
-      include: [
-        {
-          model: QuoteMessage,
-          as: 'messages',
-          include: [{ model: User, as: 'sender', attributes: ['id', 'name', 'role'] }]
-        }
-      ],
-      order: [['createdAt', 'DESC']]
-    });
+const router = express.Router();
 
-    res.json({ quotes });
-  } catch (error) {
-    console.error('Error fetching quotes:', error);
-    res.status(500).json({ error: 'Failed to fetch quotes' });
-  }
-});
+const createPublicToken = () => crypto.randomBytes(16).toString('hex');
+const createClaimToken = () => crypto.randomBytes(24).toString('hex');
+const createClaimCode = () => String(Math.floor(100000 + Math.random() * 900000));
+const createClaimCodeHash = (value) => crypto.createHash('sha256').update(value).digest('hex');
+const CLAIM_MAX_ATTEMPTS = 5;
+let cachedClaimEmailTransporter;
 
-// Get single quote details
-router.get('/:id', auth, async (req, res) => {
-  try {
-    const quote = await Quote.findOne({
-      where: { id: req.params.id },
-      include: [
-        {
-          model: QuoteMessage,
-          as: 'messages',
-          include: [{ model: User, as: 'sender', attributes: ['id', 'name', 'role'] }],
-          order: [['createdAt', 'ASC']]
-        },
-        {
-          model: User,
-          as: 'client',
-          attributes: ['id', 'name', 'email', 'phone']
-        }
-      ]
-    });
+const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
+const normalizePhone = (value) => String(value || '').trim();
 
-    if (!quote) {
-      return res.status(404).json({ error: 'Quote not found' });
+const getClaimEmailTransporter = () => {
+  if (!cachedClaimEmailTransporter) {
+    const smtpUser = String(process.env.SMTP_USER || '').trim();
+    const smtpPass = String(process.env.SMTP_PASS || '').trim();
+    const transporterConfig = {
+      host: process.env.SMTP_HOST,
+      port: Number(process.env.SMTP_PORT) || 587,
+      secure: process.env.SMTP_SECURE === 'true',
+      pool: true
+    };
+
+    if (smtpUser && smtpPass) {
+      transporterConfig.auth = {
+        user: smtpUser,
+        pass: smtpPass
+      };
     }
 
-    // Check permission
-    if (req.user.role === 'client' && quote.clientId !== req.user.id) {
-      return res.status(403).json({ error: 'Access denied' });
-    }
-
-    res.json({ quote });
-  } catch (error) {
-    console.error('Error fetching quote:', error);
-    res.status(500).json({ error: 'Failed to fetch quote' });
+    cachedClaimEmailTransporter = nodemailer.createTransport(transporterConfig);
   }
-});
 
-// Create new quote
-router.post('/', [
-  auth,
-  checkRole('client'),
-  body('projectType').isIn(['bathroom', 'kitchen', 'tiling', 'extension', 'joinery', 'rendering', 'decorating', 'other']),
-  body('location').trim().notEmpty(),
-  body('description').trim().notEmpty(),
-  body('contactEmail').isEmail(),
-  body('contactPhone').optional().trim(),
-  body('budgetRange').optional().trim()
-], async (req, res) => {
-  try {
+  return cachedClaimEmailTransporter;
+};
+
+const sendClaimCodeByEmail = async (email, code) => {
+  const smtpUser = String(process.env.SMTP_USER || '').trim();
+  const smtpPass = String(process.env.SMTP_PASS || '').trim();
+
+  if (!process.env.SMTP_HOST || !process.env.CONTACT_FROM) {
+    const err = new Error('Claim email service is not configured.');
+    err.statusCode = 503;
+    throw err;
+  }
+
+  if ((smtpUser && !smtpPass) || (!smtpUser && smtpPass)) {
+    const err = new Error('SMTP auth config is incomplete. Set both SMTP_USER and SMTP_PASS.');
+    err.statusCode = 503;
+    throw err;
+  }
+
+  const transporter = getClaimEmailTransporter();
+
+  await transporter.sendMail({
+    from: `Building Company <${process.env.CONTACT_FROM}>`,
+    to: email,
+    subject: 'Your quote claim code',
+    text: `Your quote claim code is ${code}. It expires in 15 minutes.`
+  });
+};
+
+const sendClaimCodeByPhone = async (phone, code) => {
+  const webhookUrl = process.env.CLAIM_SMS_WEBHOOK_URL;
+  if (!webhookUrl) {
+    const err = new Error('Phone claim delivery is not configured.');
+    err.statusCode = 503;
+    throw err;
+  }
+
+  const response = await fetch(webhookUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      to: phone,
+      message: `Your quote claim code is ${code}. It expires in 15 minutes.`
+    })
+  });
+
+  if (!response.ok) {
+    const err = new Error('Failed to deliver phone claim code.');
+    err.statusCode = 502;
+    throw err;
+  }
+};
+
+router.post(
+  '/guest',
+  [
+    body('projectType').isIn(['bathroom', 'kitchen', 'tiling', 'extension', 'joinery', 'rendering', 'decorating', 'other']),
+    body('location').trim().notEmpty(),
+    body('postcode').trim().notEmpty(),
+    body('description').trim().notEmpty(),
+    body('guestName').trim().notEmpty(),
+    body('guestEmail').optional().isEmail(),
+    body('guestPhone').optional().trim().isLength({ min: 5 }),
+    body('budgetRange').optional().trim()
+  ],
+  asyncHandler(async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { projectType, location, description, contactEmail, contactPhone, budgetRange } = req.body;
+    const { projectType, location, postcode, description, guestName, guestEmail, guestPhone, budgetRange } = req.body;
+
+    if (!guestEmail && !guestPhone) {
+      return res.status(400).json({ error: 'Provide guestEmail or guestPhone' });
+    }
+
+    const contactMethod = guestEmail && guestPhone ? 'both' : guestEmail ? 'email' : 'phone';
 
     const quote = await Quote.create({
-      clientId: req.user.id,
+      isGuest: true,
+      guestName,
+      guestEmail: guestEmail || null,
+      guestPhone: guestPhone || null,
+      contactMethod,
+      publicToken: createPublicToken(),
       projectType,
       location,
+      postcode,
       description,
-      contactEmail,
-      contactPhone,
-      budgetRange
+      budgetRange: budgetRange || null,
+      contactEmail: guestEmail || null,
+      contactPhone: guestPhone || null
     });
 
-    // Send email notification to managers
-    try {
-      const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST,
-        port: process.env.SMTP_PORT,
-        secure: process.env.SMTP_SECURE === 'true',
-        auth: {
-          user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASS
-        }
-      });
+    // Notify all managers via internal notification
+    const managers = await User.findAll({ where: { role: ['manager', 'admin'], isActive: true } });
 
-      await transporter.sendMail({
-        from: process.env.CONTACT_FROM || process.env.SMTP_USER,
-        to: process.env.CONTACT_TO,
-        subject: `New Quote Request - ${projectType}`,
-        html: `
-          <h2>New Quote Request</h2>
-          <p><strong>From:</strong> ${req.user.name}</p>
-          <p><strong>Email:</strong> ${contactEmail}</p>
-          <p><strong>Phone:</strong> ${contactPhone || 'N/A'}</p>
-          <p><strong>Project Type:</strong> ${projectType}</p>
-          <p><strong>Location:</strong> ${location}</p>
-          <p><strong>Budget:</strong> ${budgetRange || 'N/A'}</p>
-          <p><strong>Description:</strong></p>
-          <p>${description}</p>
-          <p><a href="${process.env.APP_URL || 'http://localhost:3000'}/manager/quotes/${quote.id}">View Quote</a></p>
-        `
-      });
-    } catch (emailError) {
-      console.error('Failed to send email notification:', emailError);
+    const notificationTitle = `New quote request from ${guestName}`;
+    const notificationBody = [
+      `Name: ${guestName}`,
+      `Postcode: ${postcode}`,
+      `Location: ${location}`,
+      `Project type: ${projectType}`,
+      guestEmail ? `Email: ${guestEmail}` : null,
+      guestPhone ? `Phone: ${guestPhone}` : null,
+      budgetRange ? `Budget: ${budgetRange}` : null,
+      `Description: ${description}`
+    ].filter(Boolean).join('\n');
+
+    await Promise.all(
+      managers.map((manager) =>
+        Notification.create({
+          userId: manager.id,
+          type: 'new_quote',
+          title: notificationTitle,
+          body: notificationBody,
+          quoteId: quote.id,
+          data: {
+            quoteId: quote.id,
+            guestName,
+            guestEmail: guestEmail || null,
+            guestPhone: guestPhone || null,
+            postcode,
+            location,
+            projectType
+          }
+        })
+      )
+    );
+
+    return res.status(201).json({
+      quoteId: quote.id,
+      publicToken: quote.publicToken,
+      status: quote.status
+    });
+  })
+);
+
+router.get('/guest/:publicToken', [param('publicToken').isLength({ min: 16 })], asyncHandler(async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  const quote = await Quote.findOne({
+    where: {
+      publicToken: req.params.publicToken,
+      isGuest: true
+    },
+    attributes: ['id', 'projectType', 'location', 'status', 'priority', 'createdAt', 'updatedAt']
+  });
+
+  if (!quote) {
+    return res.status(404).json({ error: 'Quote not found' });
+  }
+
+  return res.json({ quote });
+}));
+
+router.post(
+  '/guest/:id/claim/request',
+  [
+    param('id').isUUID(),
+    body('channel').isIn(['email', 'phone']),
+    body('guestEmail').optional().isEmail(),
+    body('guestPhone').optional().trim().isLength({ min: 5 })
+  ],
+  asyncHandler(async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
     }
 
-    res.status(201).json({ quote });
-  } catch (error) {
-    console.error('Error creating quote:', error);
-    res.status(500).json({ error: 'Failed to create quote' });
-  }
-});
+    const channel = String(req.body.channel || '').trim();
+    const inputEmail = normalizeEmail(req.body.guestEmail);
+    const inputPhone = normalizePhone(req.body.guestPhone);
 
-// Get messages for a quote
-router.get('/:id/messages', auth, async (req, res) => {
-  try {
-    const quote = await Quote.findByPk(req.params.id);
-    
+    if (channel === 'email' && !inputEmail) {
+      return res.status(400).json({ error: 'guestEmail is required for email claim channel' });
+    }
+
+    if (channel === 'phone' && !inputPhone) {
+      return res.status(400).json({ error: 'guestPhone is required for phone claim channel' });
+    }
+
+    const quote = await Quote.findOne({
+      where: {
+        id: req.params.id,
+        isGuest: true
+      }
+    });
+
     if (!quote) {
-      return res.status(404).json({ error: 'Quote not found' });
+      return res.status(404).json({ error: 'Guest quote not found' });
     }
 
-    // Check permission
-    if (req.user.role === 'client' && quote.clientId !== req.user.id) {
-      return res.status(403).json({ error: 'Access denied' });
+    if (channel === 'email' && normalizeEmail(quote.guestEmail) !== inputEmail) {
+      return res.status(404).json({ error: 'Guest quote not found' });
     }
 
-    const messages = await QuoteMessage.findAll({
-      where: { quoteId: req.params.id },
-      include: [{ model: User, as: 'sender', attributes: ['id', 'name', 'role'] }],
-      order: [['createdAt', 'ASC']]
+    if (channel === 'phone' && normalizePhone(quote.guestPhone) !== inputPhone) {
+      return res.status(404).json({ error: 'Guest quote not found' });
+    }
+
+    const token = createClaimToken();
+    const code = createClaimCode();
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+    const codeHash = createClaimCodeHash(code);
+    const target = channel === 'email' ? inputEmail : inputPhone;
+
+    await QuoteClaimToken.destroy({
+      where: {
+        quoteId: quote.id,
+        usedAt: null
+      }
     });
 
-    res.json({ messages });
-  } catch (error) {
-    console.error('Error fetching messages:', error);
-    res.status(500).json({ error: 'Failed to fetch messages' });
-  }
-});
+    await QuoteClaimToken.create({
+      quoteId: quote.id,
+      token,
+      channel,
+      target,
+      codeHash,
+      expiresAt,
+      attempts: 0
+    });
 
-// Send message to quote
-router.post('/:id/messages', [
-  auth,
-  body('messageText').trim().notEmpty()
-], async (req, res) => {
-  try {
+    if (channel === 'email') {
+      await sendClaimCodeByEmail(target, code);
+    } else {
+      await sendClaimCodeByPhone(target, code);
+    }
+
+    return res.json({
+      message: 'Claim verification code sent',
+      claimToken: token,
+      channel,
+      expiresAt
+    });
+  })
+);
+
+router.post(
+  '/guest/:id/claim/confirm',
+  [auth, param('id').isUUID(), body('claimToken').isLength({ min: 16 }), body('claimCode').isLength({ min: 6, max: 6 })],
+  asyncHandler(async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
 
     const quote = await Quote.findByPk(req.params.id);
-    
-    if (!quote) {
-      return res.status(404).json({ error: 'Quote not found' });
+    if (!quote || !quote.isGuest) {
+      return res.status(404).json({ error: 'Guest quote not found' });
     }
 
-    // Check permission
-    if (req.user.role === 'client' && quote.clientId !== req.user.id) {
-      return res.status(403).json({ error: 'Access denied' });
+    const claim = await QuoteClaimToken.findOne({
+      where: {
+        quoteId: quote.id,
+        token: req.body.claimToken,
+        usedAt: null,
+        expiresAt: {
+          [Op.gt]: new Date()
+        }
+      }
+    });
+
+    if (!claim) {
+      return res.status(400).json({ error: 'Invalid or expired claim code' });
     }
 
-    const message = await QuoteMessage.create({
-      quoteId: req.params.id,
-      senderId: req.user.id,
-      messageText: req.body.messageText,
-      attachments: req.body.attachments || []
+    if (claim.attempts >= CLAIM_MAX_ATTEMPTS) {
+      return res.status(429).json({ error: 'Too many failed attempts. Request a new claim code.' });
+    }
+
+    const requestHash = createClaimCodeHash(String(req.body.claimCode).trim());
+    const hashBufferA = Buffer.from(requestHash);
+    const hashBufferB = Buffer.from(String(claim.codeHash || ''));
+    const isMatch = hashBufferA.length === hashBufferB.length && crypto.timingSafeEqual(hashBufferA, hashBufferB);
+
+    if (!isMatch) {
+      const nextAttempts = claim.attempts + 1;
+      await claim.update({ attempts: nextAttempts });
+
+      if (nextAttempts >= CLAIM_MAX_ATTEMPTS) {
+        await claim.update({ usedAt: new Date() });
+      }
+
+      return res.status(400).json({ error: 'Invalid or expired claim code' });
+    }
+
+    await claim.update({ usedAt: new Date() });
+    await quote.update({
+      isGuest: false,
+      clientId: req.user.id,
+      publicToken: null
     });
 
-    const messageWithSender = await QuoteMessage.findByPk(message.id, {
-      include: [{ model: User, as: 'sender', attributes: ['id', 'name', 'role'] }]
-    });
-
-    res.status(201).json({ message: messageWithSender });
-  } catch (error) {
-    console.error('Error sending message:', error);
-    res.status(500).json({ error: 'Failed to send message' });
-  }
-});
+    return res.json({ message: 'Quote claimed successfully', quoteId: quote.id, clientId: req.user.id });
+  })
+);
 
 module.exports = router;

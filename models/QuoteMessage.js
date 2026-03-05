@@ -9,19 +9,11 @@ const QuoteMessage = sequelize.define('QuoteMessage', {
   },
   quoteId: {
     type: DataTypes.UUID,
-    allowNull: false,
-    references: {
-      model: 'Quotes',
-      key: 'id'
-    }
+    allowNull: false
   },
   senderId: {
     type: DataTypes.UUID,
-    allowNull: false,
-    references: {
-      model: 'Users',
-      key: 'id'
-    }
+    allowNull: false
   },
   messageText: {
     type: DataTypes.TEXT,
@@ -34,10 +26,9 @@ const QuoteMessage = sequelize.define('QuoteMessage', {
   },
   isRead: {
     type: DataTypes.BOOLEAN,
+    allowNull: false,
     defaultValue: false
   }
-}, {
-  timestamps: true
 });
 
 module.exports = QuoteMessage;

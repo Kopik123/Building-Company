@@ -1,0 +1,6 @@
+Contact: mailto:security@levellines.co.uk
+Contact: mailto:info@levellines.co.uk
+Expires: 2027-03-05T00:00:00.000Z
+Preferred-Languages: en, pl
+Canonical: https://levellines.co.uk/.well-known/security.txt
+Policy: https://levellines.co.uk/privacy.html

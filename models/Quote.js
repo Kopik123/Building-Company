@@ -9,11 +9,33 @@ const Quote = sequelize.define('Quote', {
   },
   clientId: {
     type: DataTypes.UUID,
+    allowNull: true
+  },
+  isGuest: {
+    type: DataTypes.BOOLEAN,
     allowNull: false,
-    references: {
-      model: 'Users',
-      key: 'id'
-    }
+    defaultValue: false
+  },
+  guestName: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  guestEmail: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  guestPhone: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  contactMethod: {
+    type: DataTypes.ENUM('email', 'phone', 'both'),
+    allowNull: true
+  },
+  publicToken: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    unique: true
   },
   projectType: {
     type: DataTypes.ENUM('bathroom', 'kitchen', 'tiling', 'extension', 'joinery', 'rendering', 'decorating', 'other'),
@@ -22,6 +44,10 @@ const Quote = sequelize.define('Quote', {
   location: {
     type: DataTypes.STRING,
     allowNull: false
+  },
+  postcode: {
+    type: DataTypes.STRING,
+    allowNull: true
   },
   budgetRange: {
     type: DataTypes.STRING,
@@ -33,7 +59,7 @@ const Quote = sequelize.define('Quote', {
   },
   contactEmail: {
     type: DataTypes.STRING,
-    allowNull: false
+    allowNull: true
   },
   contactPhone: {
     type: DataTypes.STRING,
@@ -41,16 +67,18 @@ const Quote = sequelize.define('Quote', {
   },
   status: {
     type: DataTypes.ENUM('pending', 'in_progress', 'responded', 'closed'),
-    defaultValue: 'pending',
-    allowNull: false
+    allowNull: false,
+    defaultValue: 'pending'
+  },
+  assignedManagerId: {
+    type: DataTypes.UUID,
+    allowNull: true
   },
   priority: {
     type: DataTypes.ENUM('low', 'medium', 'high'),
-    defaultValue: 'medium',
-    allowNull: false
+    allowNull: false,
+    defaultValue: 'medium'
   }
-}, {
-  timestamps: true
 });
 
 module.exports = Quote;
