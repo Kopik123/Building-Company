@@ -22,9 +22,11 @@
       const guestName = String(formData.get('name') || '').trim();
       const guestPhone = String(formData.get('phone') || '').trim();
       const guestEmail = String(formData.get('email') || '').trim();
-      const projectType = normalizeProjectType(formData.get('projectType'));
+      const projectTypeRaw = formData.get('projectType') || formData.get('project-type');
+      const projectType = normalizeProjectType(projectTypeRaw);
       const budgetRange = String(formData.get('budget') || '').trim();
       const description = String(formData.get('message') || '').trim();
+      const location = String(formData.get('location') || '').trim() || 'Greater Manchester';
 
       if (!guestName || !description || (!guestPhone && !guestEmail)) {
         status.className = 'form-status is-error';
@@ -47,7 +49,7 @@
             projectType,
             budgetRange: budgetRange || undefined,
             description,
-            location: 'Greater Manchester'
+            location
           })
         });
 

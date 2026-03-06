@@ -1,4 +1,4 @@
-(() => {
+﻿(() => {
   const roller = document.querySelector('[data-gallery-roller]');
   const stage = document.querySelector('[data-gallery-stage]');
   const projectStrip = document.querySelector('[data-gallery-projects]');
@@ -7,6 +7,7 @@
   const statusNode = document.querySelector('[data-gallery-status]');
 
   if (!roller || !stage || !projectStrip || !prevButton || !nextButton) return;
+  roller.setAttribute('tabindex', '0');
 
   const projects = [
     {
@@ -37,65 +38,88 @@
 
   let currentProjectIndex = 0;
   let currentImageIndex = 0;
-  let autoplayId = null;
-  const AUTOPLAY_MS = 4500;
-
-  const setStatus = (message) => {
-    if (!statusNode) return;
-    statusNode.textContent = message;
-  };
+  let rollingTimer = null;
 
   const normalize = (value, size) => {
     if (size <= 0) return 0;
     return (value % size + size) % size;
   };
 
-  const cardTemplate = (src, label, position) => {
-    const card = document.createElement('article');
-    card.className = `roller-card is-${position}`;
-
-    const image = document.createElement('img');
-    image.src = src;
-    image.alt = `${label} - ${position} view`;
-    image.loading = 'lazy';
-
-    const caption = document.createElement('p');
-    caption.className = 'roller-caption';
-    caption.textContent = label;
-
-    card.appendChild(image);
-    card.appendChild(caption);
-    return card;
-  };
-
-  const renderRoller = () => {
+  const setStatus = () => {
+    if (!statusNode) return;
     const project = projects[currentProjectIndex];
-    const images = project.images;
-    if (!images || images.length < 3) {
-      setStatus('Not enough images for this project.');
-      return;
-    }
-
-    const leftIndex = normalize(currentImageIndex - 1, images.length);
-    const centerIndex = normalize(currentImageIndex, images.length);
-    const rightIndex = normalize(currentImageIndex + 1, images.length);
-
-    stage.innerHTML = '';
-    stage.appendChild(cardTemplate(images[leftIndex], project.name, 'left'));
-    stage.appendChild(cardTemplate(images[centerIndex], project.name, 'center'));
-    stage.appendChild(cardTemplate(images[rightIndex], project.name, 'right'));
-
-    setStatus(`${project.name} - ${centerIndex + 1} / ${images.length}`);
+    const imageCount = project.images.length;
+    statusNode.textContent = `${project.name} - photo ${currentImageIndex + 1} of ${imageCount}`;
   };
 
-  const renderProjectStrip = () => {
+  const updateProjectStripState = () => {
+    const chips = Array.from(projectStrip.querySelectorAll('.project-chip'));
+    chips.forEach((chip, index) => {
+      const isActive = index === currentProjectIndex;
+      chip.classList.toggle('is-active', isActive);
+      chip.setAttribute('aria-pressed', String(isActive));
+    });
+  };
+
+  const applyRollerState = () => {
+    const cards = Array.from(stage.querySelectorAll('.roller-card'));
+    const total = cards.length;
+    if (!total) return;
+
+    const centerIndex = normalize(currentImageIndex, total);
+    const leftIndex = normalize(currentImageIndex - 1, total);
+    const rightIndex = normalize(currentImageIndex + 1, total);
+
+    cards.forEach((card, index) => {
+      card.classList.remove('is-center', 'is-left', 'is-right', 'is-hidden');
+
+      if (index === centerIndex) {
+        card.classList.add('is-center');
+      } else if (index === leftIndex) {
+        card.classList.add('is-left');
+      } else if (index === rightIndex) {
+        card.classList.add('is-right');
+      } else {
+        card.classList.add('is-hidden');
+      }
+    });
+
+    setStatus();
+  };
+
+  const buildRoller = () => {
+    const project = projects[currentProjectIndex];
+    stage.innerHTML = '';
+
+    project.images.forEach((src, index) => {
+      const card = document.createElement('article');
+      card.className = 'roller-card is-hidden';
+      card.dataset.index = String(index);
+
+      const image = document.createElement('img');
+      image.src = src;
+      image.alt = `${project.name} photo ${index + 1}`;
+      image.loading = 'lazy';
+
+      const caption = document.createElement('p');
+      caption.className = 'roller-caption';
+      caption.textContent = project.name;
+
+      card.appendChild(image);
+      card.appendChild(caption);
+      stage.appendChild(card);
+    });
+
+    applyRollerState();
+  };
+
+  const buildProjectStrip = () => {
     projectStrip.innerHTML = '';
 
     projects.forEach((project, index) => {
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'project-chip';
-      if (index === currentProjectIndex) button.classList.add('is-active');
       button.setAttribute('aria-label', `Show project ${project.name}`);
 
       const image = document.createElement('img');
@@ -112,61 +136,44 @@
       button.addEventListener('click', () => {
         currentProjectIndex = index;
         currentImageIndex = 0;
-        renderProjectStrip();
-        renderRoller();
+        updateProjectStripState();
+        buildRoller();
       });
 
       projectStrip.appendChild(button);
     });
+
+    updateProjectStripState();
   };
 
-  const moveNext = () => {
-    const images = projects[currentProjectIndex].images;
-    currentImageIndex = normalize(currentImageIndex + 1, images.length);
-    renderRoller();
+  const roll = (step) => {
+    const total = projects[currentProjectIndex].images.length;
+    currentImageIndex = normalize(currentImageIndex + step, total);
+
+    stage.classList.add('is-rolling');
+    applyRollerState();
+
+    if (rollingTimer) clearTimeout(rollingTimer);
+    rollingTimer = window.setTimeout(() => {
+      stage.classList.remove('is-rolling');
+    }, 560);
   };
 
-  const stopAutoplay = () => {
-    if (!autoplayId) return;
-    clearInterval(autoplayId);
-    autoplayId = null;
-  };
+  prevButton.addEventListener('click', () => roll(-1));
+  nextButton.addEventListener('click', () => roll(1));
 
-  const startAutoplay = () => {
-    stopAutoplay();
-    autoplayId = setInterval(() => {
-      moveNext();
-    }, AUTOPLAY_MS);
-  };
+  roller.addEventListener('keydown', (event) => {
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      roll(-1);
+    }
 
-  prevButton.addEventListener('click', () => {
-    const images = projects[currentProjectIndex].images;
-    currentImageIndex = normalize(currentImageIndex - 1, images.length);
-    renderRoller();
-  });
-
-  nextButton.addEventListener('click', () => {
-    moveNext();
-  });
-
-  roller.addEventListener('mouseenter', stopAutoplay);
-  roller.addEventListener('mouseleave', startAutoplay);
-  roller.addEventListener('focusin', stopAutoplay);
-  roller.addEventListener('focusout', () => {
-    if (!roller.contains(document.activeElement)) {
-      startAutoplay();
+    if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      roll(1);
     }
   });
 
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-      stopAutoplay();
-    } else {
-      startAutoplay();
-    }
-  });
-
-  renderProjectStrip();
-  renderRoller();
-  startAutoplay();
+  buildProjectStrip();
+  buildRoller();
 })();

@@ -7,35 +7,75 @@
   const beforeAfterNodes = document.querySelectorAll('[data-before-after]');
 
   if (navToggle && navMenu) {
+    let closeTimer = null;
+
+    const setMenuState = (isOpen) => {
+      navMenu.classList.toggle('is-open', isOpen);
+      navToggle.classList.toggle('is-open', isOpen);
+      if (menuWrap) {
+        menuWrap.classList.toggle('is-open', isOpen);
+      }
+      navToggle.setAttribute('aria-expanded', String(isOpen));
+    };
+
+    const openMenu = () => {
+      if (closeTimer) clearTimeout(closeTimer);
+      setMenuState(true);
+    };
+
+    const closeMenu = (delay = 0) => {
+      if (closeTimer) clearTimeout(closeTimer);
+      if (!delay) {
+        setMenuState(false);
+        return;
+      }
+
+      closeTimer = window.setTimeout(() => {
+        setMenuState(false);
+      }, delay);
+    };
+
     navToggle.addEventListener('click', () => {
       const next = !navMenu.classList.contains('is-open');
-      navMenu.classList.toggle('is-open', next);
-      navToggle.setAttribute('aria-expanded', String(next));
+      setMenuState(next);
     });
 
+    navToggle.addEventListener('mouseenter', openMenu);
+    navToggle.addEventListener('focus', openMenu);
+
     if (menuWrap) {
-      menuWrap.addEventListener('mouseenter', () => {
-        navToggle.setAttribute('aria-expanded', 'true');
+      menuWrap.addEventListener('mouseenter', openMenu);
+      menuWrap.addEventListener('mouseleave', () => {
+        closeMenu(120);
       });
 
-      menuWrap.addEventListener('mouseleave', () => {
-        if (!navMenu.classList.contains('is-open')) {
-          navToggle.setAttribute('aria-expanded', 'false');
-        }
+      menuWrap.addEventListener('focusout', () => {
+        window.setTimeout(() => {
+          if (!menuWrap.contains(document.activeElement)) {
+            closeMenu();
+          }
+        }, 0);
       });
+    } else {
+      navToggle.addEventListener('mouseleave', () => closeMenu(140));
+      navMenu.addEventListener('mouseenter', openMenu);
+      navMenu.addEventListener('mouseleave', () => closeMenu(140));
     }
 
     document.addEventListener('click', (event) => {
-      if (!menuWrap) return;
-      if (menuWrap.contains(event.target)) return;
-      navMenu.classList.remove('is-open');
-      navToggle.setAttribute('aria-expanded', 'false');
+      if (navToggle.contains(event.target) || navMenu.contains(event.target)) return;
+      closeMenu();
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        closeMenu();
+      }
     });
 
     navLinks.forEach((link) => {
       link.addEventListener('click', () => {
-        navMenu.classList.remove('is-open');
-        navToggle.setAttribute('aria-expanded', 'false');
+        closeMenu();
       });
     });
   }

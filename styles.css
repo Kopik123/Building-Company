@@ -170,40 +170,43 @@ p { margin: 0 0 var(--space-2); }
 
 .site-nav {
   position: absolute;
-  top: calc(100% + 10px);
+  top: calc(100% + 8px);
   right: 0;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  width: min(440px, calc(100vw - 52px));
-  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: min(250px, calc(100vw - 52px));
+  padding: 8px;
   background: #111;
   border: 1px solid rgba(198, 164, 108, 0.35);
   border-radius: 12px;
-  box-shadow: 0 20px 38px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.42);
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transform: translateY(-8px);
+  transform: translateY(-10px);
   transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s ease;
   z-index: 80;
+  max-height: 70vh;
+  overflow: auto;
 }
 
 .site-nav a {
   color: #ececec;
-  font-size: 0.72rem;
+  font-size: 0.73rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  min-height: 46px;
-  display: inline-flex;
+  min-height: 38px;
+  display: flex;
   align-items: center;
-  justify-content: center;
-  border: 1px solid rgba(198, 164, 108, 0.28);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.03);
+  justify-content: flex-start;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
   opacity: 0;
-  transform: translateY(8px);
-  transition: opacity 0.2s ease, transform 0.2s ease, background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  transform: translateY(7px);
+  transition: opacity 0.24s ease, transform 0.24s ease, background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
 .site-nav a:nth-child(1) { transition-delay: 0ms; }
@@ -216,12 +219,13 @@ p { margin: 0 0 var(--space-2); }
 
 .site-nav a:hover {
   color: var(--gold);
-  border-color: rgba(198, 164, 108, 0.55);
+  border-color: rgba(198, 164, 108, 0.35);
   background: rgba(198, 164, 108, 0.08);
 }
 
 .menu-wrap:hover .site-nav,
 .menu-wrap:focus-within .site-nav,
+.menu-wrap.is-open .site-nav,
 .site-nav.is-open {
   opacity: 1;
   visibility: visible;
@@ -231,6 +235,7 @@ p { margin: 0 0 var(--space-2); }
 
 .menu-wrap:hover .site-nav a,
 .menu-wrap:focus-within .site-nav a,
+.menu-wrap.is-open .site-nav a,
 .site-nav.is-open a {
   opacity: 1;
   transform: translateY(0);
@@ -261,6 +266,19 @@ p { margin: 0 0 var(--space-2); }
   height: 2px;
   border-radius: 3px;
   background: var(--white);
+  transition: transform 0.24s ease, opacity 0.24s ease;
+}
+
+.nav-toggle.is-open .nav-toggle-line:nth-child(1) {
+  transform: translateY(6px) rotate(45deg);
+}
+
+.nav-toggle.is-open .nav-toggle-line:nth-child(2) {
+  opacity: 0;
+}
+
+.nav-toggle.is-open .nav-toggle-line:nth-child(3) {
+  transform: translateY(-6px) rotate(-45deg);
 }
 
 .hero,
@@ -457,22 +475,24 @@ p { margin: 0 0 var(--space-2); }
 
 .gallery-stage {
   position: relative;
-  min-height: 390px;
+  min-height: 420px;
   perspective: 1300px;
   overflow: hidden;
+  border-radius: 16px;
+  background: radial-gradient(circle at 50% 42%, rgba(198, 164, 108, 0.14), rgba(11, 11, 11, 0.04) 52%, transparent 78%);
 }
 
 .roller-card {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: min(680px, 74vw);
+  width: min(660px, 64vw);
   border-radius: 16px;
   border: 1px solid rgba(198, 164, 108, 0.3);
   overflow: hidden;
   background: #101010;
   box-shadow: 0 24px 44px rgba(0, 0, 0, 0.42);
-  transition: transform 0.42s ease, opacity 0.42s ease, filter 0.42s ease;
+  transition: transform 0.48s cubic-bezier(0.2, 0.74, 0.2, 1), opacity 0.42s ease, filter 0.42s ease;
 }
 
 .roller-card img {
@@ -501,7 +521,7 @@ p { margin: 0 0 var(--space-2); }
 }
 
 .roller-card.is-center {
-  z-index: 3;
+  z-index: 4;
   opacity: 1;
   transform: translate(-50%, -50%) scale(1) rotateY(0deg);
   filter: brightness(1);
@@ -509,23 +529,37 @@ p { margin: 0 0 var(--space-2); }
 
 .roller-card.is-left {
   z-index: 2;
-  opacity: 0.72;
-  transform: translate(-77%, -50%) scale(0.86) rotateY(33deg);
-  filter: brightness(0.5) saturate(0.85);
+  opacity: 0.74;
+  transform: translate(-86%, -50%) scale(0.82) rotateY(46deg);
+  filter: brightness(0.36) saturate(0.8);
 }
 
 .roller-card.is-right {
   z-index: 2;
-  opacity: 0.72;
-  transform: translate(-23%, -50%) scale(0.86) rotateY(-33deg);
-  filter: brightness(0.5) saturate(0.85);
+  opacity: 0.74;
+  transform: translate(-14%, -50%) scale(0.82) rotateY(-46deg);
+  filter: brightness(0.36) saturate(0.8);
+}
+
+.roller-card.is-hidden {
+  z-index: 1;
+  opacity: 0;
+  transform: translate(-50%, -44%) scale(0.72) rotateY(0deg);
+  filter: brightness(0.2);
+  pointer-events: none;
+}
+
+.gallery-stage.is-rolling .roller-card {
+  transition-duration: 0.56s;
 }
 
 .gallery-project-strip {
-  margin-top: 14px;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(138px, 1fr));
+  margin-top: 16px;
+  display: flex;
   gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: thin;
 }
 
 .project-chip {
@@ -535,6 +569,7 @@ p { margin: 0 0 var(--space-2); }
   overflow: hidden;
   cursor: pointer;
   padding: 0;
+  flex: 0 0 min(180px, 42vw);
   transition: border-color 0.2s ease, transform 0.2s ease;
   text-align: left;
 }
@@ -839,8 +874,7 @@ p { margin: 0 0 var(--space-2); }
   .site-nav {
     right: 0;
     top: calc(100% + 8px);
-    width: min(320px, calc(100vw - 32px));
-    grid-template-columns: 1fr;
+    width: min(260px, calc(100vw - 32px));
   }
 
   .gallery-roller {
@@ -855,19 +889,19 @@ p { margin: 0 0 var(--space-2); }
   }
 
   .gallery-stage {
-    min-height: 300px;
+    min-height: 320px;
   }
 
   .roller-card {
-    width: min(92vw, 560px);
+    width: min(90vw, 560px);
   }
 
   .roller-card.is-left {
-    transform: translate(-74%, -50%) scale(0.82) rotateY(30deg);
+    transform: translate(-80%, -50%) scale(0.78) rotateY(34deg);
   }
 
   .roller-card.is-right {
-    transform: translate(-26%, -50%) scale(0.82) rotateY(-30deg);
+    transform: translate(-20%, -50%) scale(0.78) rotateY(-34deg);
   }
 
   .trust-items {
