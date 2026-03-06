@@ -476,13 +476,25 @@ p { margin: 0 0 var(--space-2); }
 .gallery-stage {
   position: relative;
   min-height: 420px;
-  perspective: 1300px;
+  perspective: 1680px;
+  transform-style: preserve-3d;
   overflow: hidden;
   border-radius: 16px;
-  background: radial-gradient(circle at 50% 42%, rgba(198, 164, 108, 0.14), rgba(11, 11, 11, 0.04) 52%, transparent 78%);
+  background: radial-gradient(circle at 50% 42%, rgba(198, 164, 108, 0.2), rgba(11, 11, 11, 0.05) 52%, transparent 78%);
+}
+
+.gallery-stage::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0;
+  height: 42%;
+  background: linear-gradient(180deg, transparent 0, rgba(8, 8, 8, 0.2) 42%, rgba(8, 8, 8, 0.62) 100%);
+  pointer-events: none;
+  z-index: 2;
 }
 
 .roller-card {
+  --motion-blur: 0px;
   position: absolute;
   top: 50%;
   left: 50%;
@@ -492,13 +504,21 @@ p { margin: 0 0 var(--space-2); }
   overflow: hidden;
   background: #101010;
   box-shadow: 0 24px 44px rgba(0, 0, 0, 0.42);
-  transition: transform 0.48s cubic-bezier(0.2, 0.74, 0.2, 1), opacity 0.42s ease, filter 0.42s ease;
+  transform-origin: center center;
+  backface-visibility: hidden;
+  will-change: transform, filter, opacity;
+  transition: box-shadow 0.24s ease, border-color 0.24s ease;
+  z-index: 1;
+  opacity: 0;
 }
 
 .roller-card img {
   aspect-ratio: 16 / 10;
   object-fit: cover;
   width: 100%;
+  filter: blur(var(--motion-blur));
+  transform: translateZ(0);
+  will-change: filter;
 }
 
 .roller-card::after {
@@ -521,36 +541,24 @@ p { margin: 0 0 var(--space-2); }
 }
 
 .roller-card.is-center {
-  z-index: 4;
-  opacity: 1;
-  transform: translate(-50%, -50%) scale(1) rotateY(0deg);
-  filter: brightness(1);
+  box-shadow: 0 28px 52px rgba(0, 0, 0, 0.52);
+  border-color: rgba(198, 164, 108, 0.42);
 }
 
 .roller-card.is-left {
-  z-index: 2;
-  opacity: 0.74;
-  transform: translate(-86%, -50%) scale(0.82) rotateY(46deg);
-  filter: brightness(0.36) saturate(0.8);
+  pointer-events: none;
 }
 
 .roller-card.is-right {
-  z-index: 2;
-  opacity: 0.74;
-  transform: translate(-14%, -50%) scale(0.82) rotateY(-46deg);
-  filter: brightness(0.36) saturate(0.8);
+  pointer-events: none;
 }
 
 .roller-card.is-hidden {
-  z-index: 1;
-  opacity: 0;
-  transform: translate(-50%, -44%) scale(0.72) rotateY(0deg);
-  filter: brightness(0.2);
   pointer-events: none;
 }
 
 .gallery-stage.is-rolling .roller-card {
-  transition-duration: 0.56s;
+  transition: none;
 }
 
 .gallery-project-strip {
@@ -894,14 +902,6 @@ p { margin: 0 0 var(--space-2); }
 
   .roller-card {
     width: min(90vw, 560px);
-  }
-
-  .roller-card.is-left {
-    transform: translate(-80%, -50%) scale(0.78) rotateY(34deg);
-  }
-
-  .roller-card.is-right {
-    transform: translate(-20%, -50%) scale(0.78) rotateY(-34deg);
   }
 
   .trust-items {
