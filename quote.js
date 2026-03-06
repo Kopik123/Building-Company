@@ -28,7 +28,7 @@
 
       if (!guestName || !description || (!guestPhone && !guestEmail)) {
         status.className = 'form-status is-error';
-        status.textContent = 'Please provide your name, project details, and either phone or email.';
+        status.textContent = 'Please provide your name, message, and at least one contact method (phone or email).';
         return;
       }
 
