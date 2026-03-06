@@ -121,7 +121,7 @@ router.get(
     ...managerGuard,
     query('status').optional().isIn(['pending', 'in_progress', 'responded', 'closed']),
     query('priority').optional().isIn(['low', 'medium', 'high']),
-    query('projectType').optional().isIn(['bathroom', 'kitchen', 'tiling', 'extension', 'joinery', 'rendering', 'decorating', 'other'])
+    query('projectType').optional().isIn(['bathroom', 'kitchen', 'interior', 'tiling', 'extension', 'joinery', 'rendering', 'decorating', 'other'])
   ],
   asyncHandler(async (req, res) => {
     const errors = validationResult(req);
