@@ -25,17 +25,23 @@
         <span class="brand-meta">Precision Renovations · Manchester</span>
       </a>
 
-      <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav">Menu</button>
+      <div class="menu-wrap" data-menu-wrap>
+        <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation menu">
+          <span class="nav-toggle-line"></span>
+          <span class="nav-toggle-line"></span>
+          <span class="nav-toggle-line"></span>
+        </button>
 
-      <nav class="site-nav" id="site-nav" data-nav-menu aria-label="Main navigation">
-        <a href="#services" data-nav-link>Services</a>
-        <a href="#projects" data-nav-link>Projects</a>
-        <a href="#gallery" data-nav-link>Gallery</a>
-        <a href="#process" data-nav-link>Process</a>
-        <a href="#about" data-nav-link>About</a>
-        <a href="#reviews" data-nav-link>Reviews</a>
-        <a href="#consultation" data-nav-link>Contact</a>
-      </nav>
+        <nav class="site-nav" id="site-nav" data-nav-menu aria-label="Main navigation">
+          <a href="#services" data-nav-link>Services</a>
+          <a href="#projects" data-nav-link>Projects</a>
+          <a href="#gallery" data-nav-link>Gallery</a>
+          <a href="#process" data-nav-link>Process</a>
+          <a href="#about" data-nav-link>About</a>
+          <a href="#reviews" data-nav-link>Reviews</a>
+          <a href="#consultation" data-nav-link>Contact</a>
+        </nav>
+      </div>
 
       <a class="btn btn-gold header-cta" href="#consultation">Request Consultation</a>
     </div>
@@ -191,7 +197,13 @@
           <p class="eyebrow">Gallery</p>
           <h2>Selected renovation details and completed spaces.</h2>
         </div>
-        <div class="gallery-grid" data-gallery-grid></div>
+        <div class="gallery-roller" data-gallery-roller>
+          <button class="gallery-arrow" type="button" data-gallery-prev aria-label="Previous photo">&#10094;</button>
+          <div class="gallery-stage" data-gallery-stage aria-live="polite"></div>
+          <button class="gallery-arrow" type="button" data-gallery-next aria-label="Next photo">&#10095;</button>
+        </div>
+
+        <div class="gallery-project-strip" data-gallery-projects aria-label="Project thumbnails"></div>
         <p class="gallery-status" data-gallery-status aria-live="polite"></p>
       </div>
     </section>
@@ -237,39 +249,41 @@
       </div>
     </section>
 
-    <section class="section" id="reviews">
+    <section class="section section-soft section-tight" id="reviews">
       <div class="container">
-        <div class="section-head">
-          <p class="eyebrow">Reviews</p>
-          <h2>Client feedback from completed renovations.</h2>
-        </div>
-        <div class="card-grid cols-3">
-          <article class="card"><p class="stars">★★★★★</p><p>“Our bathroom renovation Manchester project was handled with outstanding detail.”</p><p class="muted">Sarah · Didsbury</p></article>
-          <article class="card"><p class="stars">★★★★★</p><p>“Excellent kitchen renovation Manchester experience from planning to finish.”</p><p class="muted">Daniel · Stockport</p></article>
-          <article class="card"><p class="stars">★★★★★</p><p>“Premium finish, honest communication and a very professional team.”</p><p class="muted">Emma · Altrincham</p></article>
-        </div>
-      </div>
-    </section>
+        <div class="reviews-faq-grid">
+          <div>
+            <div class="section-head">
+              <p class="eyebrow">Reviews</p>
+              <h2>Client feedback from completed renovations.</h2>
+            </div>
+            <div class="review-list-compact">
+              <article class="card"><p class="stars">★★★★★</p><p>“Our bathroom renovation Manchester project was handled with outstanding detail.”</p><p class="muted">Sarah · Didsbury</p></article>
+              <article class="card"><p class="stars">★★★★★</p><p>“Excellent kitchen renovation Manchester experience from planning to finish.”</p><p class="muted">Daniel · Stockport</p></article>
+              <article class="card"><p class="stars">★★★★★</p><p>“Premium finish, honest communication and a very professional team.”</p><p class="muted">Emma · Altrincham</p></article>
+            </div>
+          </div>
 
-    <section class="section section-soft" id="faq">
-      <div class="container narrow">
-        <div class="section-head">
-          <p class="eyebrow">FAQ</p>
-          <h2>Common consultation questions.</h2>
-        </div>
-        <div class="faq-list">
-          <details>
-            <summary>What areas do you cover?</summary>
-            <p>We deliver projects across Manchester and wider Greater Manchester including Didsbury, Altrincham, Stockport, Sale, Chorlton and Wilmslow.</p>
-          </details>
-          <details>
-            <summary>What budgets do you typically work with?</summary>
-            <p>Most projects are between £8,000 and £30,000 depending on layout complexity, materials and scope.</p>
-          </details>
-          <details>
-            <summary>How do we start?</summary>
-            <p>Submit the consultation form and we will schedule an initial call to discuss budget, timing and suitability.</p>
-          </details>
+          <div id="faq" class="faq-compact">
+            <div class="section-head">
+              <p class="eyebrow">FAQ</p>
+              <h2>Common consultation questions.</h2>
+            </div>
+            <div class="faq-list">
+              <details>
+                <summary>What areas do you cover?</summary>
+                <p>We deliver projects across Manchester and wider Greater Manchester including Didsbury, Altrincham, Stockport, Sale, Chorlton and Wilmslow.</p>
+              </details>
+              <details>
+                <summary>What budgets do you typically work with?</summary>
+                <p>Most projects are between £8,000 and £30,000 depending on layout complexity, materials and scope.</p>
+              </details>
+              <details>
+                <summary>How do we start?</summary>
+                <p>Submit the consultation form and we will schedule an initial call to discuss budget, timing and suitability.</p>
+              </details>
+            </div>
+          </div>
         </div>
       </div>
     </section>
