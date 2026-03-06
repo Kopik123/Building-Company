@@ -6,6 +6,17 @@ const { upload, DEFAULT_ATTACHMENT_BODY } = require('../utils/upload');
 const asyncHandler = require('../utils/asyncHandler');
 
 const router = express.Router();
+const senderAttributes = ['id', 'name', 'email', 'role'];
+
+const formatMessageWithSender = (message, user) => ({
+  ...message.toJSON(),
+  sender: {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role
+  }
+});
 
 // List group threads the current user is a member of
 router.get('/threads', auth, asyncHandler(async (req, res) => {
@@ -53,7 +64,7 @@ router.get(
 
     const messages = await GroupMessage.findAll({
       where: { groupThreadId: thread.id },
-      include: [{ model: User, as: 'sender', attributes: ['id', 'name', 'email', 'role'] }],
+      include: [{ model: User, as: 'sender', attributes: senderAttributes }],
       order: [['createdAt', 'ASC']]
     });
 
@@ -86,11 +97,7 @@ router.post(
       attachments: []
     });
 
-    const populated = await GroupMessage.findByPk(message.id, {
-      include: [{ model: User, as: 'sender', attributes: ['id', 'name', 'email', 'role'] }]
-    });
-
-    return res.status(201).json({ message: populated });
+    return res.status(201).json({ message: formatMessageWithSender(message, req.user) });
   })
 );
 
@@ -134,11 +141,7 @@ router.post(
       attachments
     });
 
-    const populated = await GroupMessage.findByPk(message.id, {
-      include: [{ model: User, as: 'sender', attributes: ['id', 'name', 'email', 'role'] }]
-    });
-
-    return res.status(201).json({ message: populated });
+    return res.status(201).json({ message: formatMessageWithSender(message, req.user) });
   })
 );
 
