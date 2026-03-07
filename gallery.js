@@ -109,7 +109,9 @@
     rafId: null,
     lastInputAt: 0,
     inputStreak: 0,
-    inputEnergy: 0
+    inputEnergy: 0,
+    cards: [],
+    chips: []
   };
 
   const normalizeIndex = (value, size) => {
@@ -158,8 +160,7 @@
   };
 
   const updateProjectStripState = () => {
-    const chips = Array.from(projectStrip.querySelectorAll('.project-chip'));
-    chips.forEach((chip, index) => {
+    state.chips.forEach((chip, index) => {
       const isActive = index === state.projectIndex;
       chip.classList.toggle('is-active', isActive);
       chip.setAttribute('aria-pressed', String(isActive));
@@ -167,7 +168,7 @@
   };
 
   const applyTransforms = () => {
-    const cards = Array.from(stage.querySelectorAll('.roller-card'));
+    const cards = state.cards;
     const total = cards.length;
     if (!total) return;
 
@@ -243,6 +244,7 @@
 
     const project = currentProject();
     stage.innerHTML = '';
+    state.cards = [];
 
     project.images.forEach((src, index) => {
       const card = document.createElement('article');
@@ -261,6 +263,7 @@
       card.appendChild(image);
       card.appendChild(caption);
       stage.appendChild(card);
+      state.cards.push(card);
     });
 
     state.position = normalizePosition(state.target, project.images.length);
@@ -273,6 +276,7 @@
 
   const buildProjectStrip = () => {
     projectStrip.innerHTML = '';
+    state.chips = [];
 
     projects.forEach((project, index) => {
       const button = document.createElement('button');
@@ -306,6 +310,7 @@
       });
 
       projectStrip.appendChild(button);
+      state.chips.push(button);
     });
 
     updateProjectStripState();

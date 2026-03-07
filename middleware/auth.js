@@ -1,6 +1,19 @@
 const jwt = require('jsonwebtoken');
 const { User } = require('../models');
 
+const AUTH_USER_ATTRIBUTES = [
+  'id',
+  'email',
+  'role',
+  'name',
+  'phone',
+  'companyName',
+  'isActive',
+  'lastLogin',
+  'createdAt',
+  'updatedAt'
+];
+
 const auth = async (req, res, next) => {
   try {
     const header = req.header('Authorization');
@@ -11,7 +24,7 @@ const auth = async (req, res, next) => {
     }
 
     const payload = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findByPk(payload.id);
+    const user = await User.findByPk(payload.id, { attributes: AUTH_USER_ATTRIBUTES });
 
     if (!user || !user.isActive) {
       return res.status(401).json({ error: 'Invalid user' });

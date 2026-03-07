@@ -39,6 +39,41 @@ GroupMember.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 GroupMessage.belongsTo(GroupThread, { foreignKey: 'groupThreadId', as: 'thread' });
 GroupMessage.belongsTo(User, { foreignKey: 'senderId', as: 'sender' });
 
+const addIndexIfMissing = async (queryInterface, tableName, name, fields) => {
+  const existingIndexes = await queryInterface.showIndex(tableName);
+  if (existingIndexes.some((index) => index.name === name)) {
+    return;
+  }
+
+  await queryInterface.addIndex(tableName, { name, fields });
+};
+
+const ensureIndexes = async () => {
+  const queryInterface = sequelize.getQueryInterface();
+  const indexSpecs = [
+    { table: Notification.getTableName(), name: 'notifications_user_read_created_idx', fields: ['userId', 'isRead', 'createdAt'] },
+    { table: Notification.getTableName(), name: 'notifications_user_created_idx', fields: ['userId', 'createdAt'] },
+    { table: Quote.getTableName(), name: 'quotes_status_created_idx', fields: ['status', 'createdAt'] },
+    { table: Quote.getTableName(), name: 'quotes_priority_created_idx', fields: ['priority', 'createdAt'] },
+    { table: Quote.getTableName(), name: 'quotes_project_type_created_idx', fields: ['projectType', 'createdAt'] },
+    { table: Quote.getTableName(), name: 'quotes_assigned_manager_idx', fields: ['assignedManagerId'] },
+    { table: User.getTableName(), name: 'users_role_active_idx', fields: ['role', 'isActive'] },
+    { table: InboxThread.getTableName(), name: 'inbox_threads_participant_a_updated_idx', fields: ['participantAId', 'updatedAt'] },
+    { table: InboxThread.getTableName(), name: 'inbox_threads_participant_b_updated_idx', fields: ['participantBId', 'updatedAt'] },
+    { table: InboxMessage.getTableName(), name: 'inbox_messages_thread_created_idx', fields: ['threadId', 'createdAt'] },
+    { table: InboxMessage.getTableName(), name: 'inbox_messages_recipient_read_idx', fields: ['recipientId', 'isRead'] },
+    { table: GroupMember.getTableName(), name: 'group_members_user_thread_idx', fields: ['userId', 'groupThreadId'] },
+    { table: GroupMember.getTableName(), name: 'group_members_thread_user_idx', fields: ['groupThreadId', 'userId'] },
+    { table: GroupMessage.getTableName(), name: 'group_messages_thread_created_idx', fields: ['groupThreadId', 'createdAt'] },
+    { table: GroupThread.getTableName(), name: 'group_threads_quote_idx', fields: ['quoteId'] },
+    { table: QuoteClaimToken.getTableName(), name: 'quote_claim_tokens_quote_used_expires_idx', fields: ['quoteId', 'usedAt', 'expiresAt'] }
+  ];
+
+  for (const spec of indexSpecs) {
+    await addIndexIfMissing(queryInterface, spec.table, spec.name, spec.fields);
+  }
+};
+
 const syncDatabase = async () => {
   const shouldAlter = process.env.DB_SYNC_ALTER
     ? process.env.DB_SYNC_ALTER === 'true'
@@ -46,10 +81,12 @@ const syncDatabase = async () => {
 
   if (shouldAlter) {
     await sequelize.sync({ alter: true });
+    await ensureIndexes();
     return;
   }
 
   await sequelize.sync();
+  await ensureIndexes();
 };
 
 module.exports = {

@@ -1,20 +1,59 @@
 const express = require('express');
-const { param, validationResult } = require('express-validator');
+const { param, query, validationResult } = require('express-validator');
 const { Notification } = require('../models');
 const { auth } = require('../middleware/auth');
 const asyncHandler = require('../utils/asyncHandler');
 
 const router = express.Router();
+const DEFAULT_PAGE_SIZE = 25;
+const MAX_PAGE_SIZE = 100;
 
-router.get('/', auth, asyncHandler(async (req, res) => {
-  const notifications = await Notification.findAll({
-    where: { userId: req.user.id },
-    order: [['createdAt', 'DESC']],
-    limit: 100
-  });
+const getPagination = (req) => {
+  const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
+  const pageSize = Math.min(MAX_PAGE_SIZE, Math.max(1, Number.parseInt(req.query.pageSize, 10) || DEFAULT_PAGE_SIZE));
+  return {
+    page,
+    pageSize,
+    offset: (page - 1) * pageSize
+  };
+};
 
-  return res.json({ notifications });
-}));
+router.get(
+  '/',
+  [
+    auth,
+    query('page').optional().isInt({ min: 1 }).toInt(),
+    query('pageSize').optional().isInt({ min: 1, max: MAX_PAGE_SIZE }).toInt()
+  ],
+  asyncHandler(async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { page, pageSize, offset } = getPagination(req);
+    const where = { userId: req.user.id };
+    const [notifications, total] = await Promise.all([
+      Notification.findAll({
+        where,
+        order: [['createdAt', 'DESC']],
+        limit: pageSize,
+        offset
+      }),
+      Notification.count({ where })
+    ]);
+
+    return res.json({
+      notifications,
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / pageSize))
+      }
+    });
+  })
+);
 
 router.get('/unread-count', auth, asyncHandler(async (req, res) => {
   const count = await Notification.count({

@@ -1,5 +1,5 @@
 const express = require('express');
-const { body, param, validationResult } = require('express-validator');
+const { body, param, query, validationResult } = require('express-validator');
 const { GroupThread, GroupMember, GroupMessage, User } = require('../models');
 const { auth } = require('../middleware/auth');
 const { upload, DEFAULT_ATTACHMENT_BODY } = require('../utils/upload');
@@ -7,6 +7,18 @@ const asyncHandler = require('../utils/asyncHandler');
 
 const router = express.Router();
 const senderAttributes = ['id', 'name', 'email', 'role'];
+const DEFAULT_PAGE_SIZE = 20;
+const MAX_PAGE_SIZE = 100;
+
+const getPagination = (req) => {
+  const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
+  const pageSize = Math.min(MAX_PAGE_SIZE, Math.max(1, Number.parseInt(req.query.pageSize, 10) || DEFAULT_PAGE_SIZE));
+  return {
+    page,
+    pageSize,
+    offset: (page - 1) * pageSize
+  };
+};
 
 const formatMessageWithSender = (message, user) => ({
   ...message.toJSON(),
@@ -19,30 +31,63 @@ const formatMessageWithSender = (message, user) => ({
 });
 
 // List group threads the current user is a member of
-router.get('/threads', auth, asyncHandler(async (req, res) => {
-  const memberships = await GroupMember.findAll({
-    where: { userId: req.user.id },
-    include: [
-      {
-        model: GroupThread,
-        as: 'thread',
-        include: [
-          { model: User, as: 'creator', attributes: ['id', 'name', 'email'] },
-          { model: GroupMember, as: 'members', include: [{ model: User, as: 'user', attributes: ['id', 'name', 'email', 'role'] }] }
-        ]
-      }
-    ],
-    order: [[{ model: GroupThread, as: 'thread' }, 'updatedAt', 'DESC']]
-  });
+router.get(
+  '/threads',
+  [
+    auth,
+    query('page').optional().isInt({ min: 1 }).toInt(),
+    query('pageSize').optional().isInt({ min: 1, max: MAX_PAGE_SIZE }).toInt()
+  ],
+  asyncHandler(async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
 
-  const threads = memberships.map((m) => m.thread).filter(Boolean);
-  return res.json({ threads });
-}));
+    const where = { userId: req.user.id };
+    const { page, pageSize, offset } = getPagination(req);
+    const [memberships, total] = await Promise.all([
+      GroupMember.findAll({
+        where,
+        include: [
+          {
+            model: GroupThread,
+            as: 'thread',
+            include: [
+              { model: User, as: 'creator', attributes: ['id', 'name', 'email'] },
+              { model: GroupMember, as: 'members', include: [{ model: User, as: 'user', attributes: ['id', 'name', 'email', 'role'] }] }
+            ]
+          }
+        ],
+        order: [[{ model: GroupThread, as: 'thread' }, 'updatedAt', 'DESC']],
+        limit: pageSize,
+        offset
+      }),
+      GroupMember.count({ where })
+    ]);
+
+    const threads = memberships.map((m) => m.thread).filter(Boolean);
+    return res.json({
+      threads,
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / pageSize))
+      }
+    });
+  })
+);
 
 // Get messages in a group thread
 router.get(
   '/threads/:id/messages',
-  [auth, param('id').isUUID()],
+  [
+    auth,
+    param('id').isUUID(),
+    query('page').optional().isInt({ min: 1 }).toInt(),
+    query('pageSize').optional().isInt({ min: 1, max: MAX_PAGE_SIZE }).toInt()
+  ],
   asyncHandler(async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -62,13 +107,29 @@ router.get(
       return res.status(404).json({ error: 'Thread not found' });
     }
 
-    const messages = await GroupMessage.findAll({
-      where: { groupThreadId: thread.id },
-      include: [{ model: User, as: 'sender', attributes: senderAttributes }],
-      order: [['createdAt', 'ASC']]
-    });
+    const where = { groupThreadId: thread.id };
+    const { page, pageSize, offset } = getPagination(req);
+    const [messages, total] = await Promise.all([
+      GroupMessage.findAll({
+        where,
+        include: [{ model: User, as: 'sender', attributes: senderAttributes }],
+        order: [['createdAt', 'ASC']],
+        limit: pageSize,
+        offset
+      }),
+      GroupMessage.count({ where })
+    ]);
 
-    return res.json({ thread, messages });
+    return res.json({
+      thread,
+      messages,
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / pageSize))
+      }
+    });
   })
 );
 

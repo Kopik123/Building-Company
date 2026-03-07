@@ -8,6 +8,18 @@ const asyncHandler = require('../utils/asyncHandler');
 const router = express.Router();
 
 const managerGuard = [auth, roleCheck('manager', 'admin')];
+const DEFAULT_PAGE_SIZE = 25;
+const MAX_PAGE_SIZE = 100;
+
+const getPagination = (req) => {
+  const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
+  const pageSize = Math.min(MAX_PAGE_SIZE, Math.max(1, Number.parseInt(req.query.pageSize, 10) || DEFAULT_PAGE_SIZE));
+  return {
+    page,
+    pageSize,
+    offset: (page - 1) * pageSize
+  };
+};
 
 router.post(
   '/staff',
@@ -98,18 +110,18 @@ router.post(
       where: { role: ['manager', 'admin'], isActive: true, id: { [Op.ne]: req.user.id } }
     });
 
-    await Promise.all(
-      otherManagers.map((m) =>
-        Notification.create({
+    if (otherManagers.length) {
+      await Notification.bulkCreate(
+        otherManagers.map((m) => ({
           userId: m.id,
           type: 'quote_accepted',
           title: `Quote accepted by ${req.user.name}`,
           body: `Manager ${req.user.name} accepted the quote for "${projectName}".`,
           quoteId: quote.id,
           data: { quoteId: quote.id, managerId: req.user.id, groupThreadId: groupThread.id }
-        })
-      )
-    );
+        }))
+      );
+    }
 
     return res.status(201).json({ quote, groupThread });
   })
@@ -118,11 +130,13 @@ router.post(
 router.get(
   '/quotes',
   [
-    ...managerGuard,
-    query('status').optional().isIn(['pending', 'in_progress', 'responded', 'closed']),
-    query('priority').optional().isIn(['low', 'medium', 'high']),
-    query('projectType').optional().isIn(['bathroom', 'kitchen', 'interior', 'tiling', 'extension', 'joinery', 'rendering', 'decorating', 'other'])
-  ],
+      ...managerGuard,
+      query('status').optional().isIn(['pending', 'in_progress', 'responded', 'closed']),
+      query('priority').optional().isIn(['low', 'medium', 'high']),
+      query('projectType').optional().isIn(['bathroom', 'kitchen', 'interior', 'tiling', 'extension', 'joinery', 'rendering', 'decorating', 'other']),
+      query('page').optional().isInt({ min: 1 }).toInt(),
+      query('pageSize').optional().isInt({ min: 1, max: MAX_PAGE_SIZE }).toInt()
+    ],
   asyncHandler(async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -134,16 +148,30 @@ router.get(
     if (req.query.priority) where.priority = req.query.priority;
     if (req.query.projectType) where.projectType = req.query.projectType;
 
-    const quotes = await Quote.findAll({
-      where,
-      include: [
-        { model: User, as: 'client', attributes: ['id', 'name', 'email', 'phone'] },
-        { model: User, as: 'assignedManager', attributes: ['id', 'name', 'email'] }
-      ],
-      order: [['createdAt', 'DESC']]
-    });
+    const { page, pageSize, offset } = getPagination(req);
+    const [quotes, total] = await Promise.all([
+      Quote.findAll({
+        where,
+        include: [
+          { model: User, as: 'client', attributes: ['id', 'name', 'email', 'phone'] },
+          { model: User, as: 'assignedManager', attributes: ['id', 'name', 'email'] }
+        ],
+        order: [['createdAt', 'DESC']],
+        limit: pageSize,
+        offset
+      }),
+      Quote.count({ where })
+    ]);
 
-    return res.json({ quotes });
+    return res.json({
+      quotes,
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / pageSize))
+      }
+    });
   })
 );
 

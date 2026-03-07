@@ -33,6 +33,16 @@ const allowedOrigins = String(process.env.CORS_ORIGINS || '')
   .split(',')
   .map((origin) => origin.trim())
   .filter(Boolean);
+const GALLERY_PATH = path.join(__dirname, 'Gallery');
+const GALLERY_IMAGE_PATTERN = /\.(jpg|jpeg|png|gif|webp)$/i;
+const galleryCacheTtlRaw = Number(process.env.GALLERY_CACHE_TTL_MS);
+const GALLERY_CACHE_TTL_MS = Number.isFinite(galleryCacheTtlRaw) && galleryCacheTtlRaw > 0
+  ? galleryCacheTtlRaw
+  : 60 * 1000;
+let galleryCache = {
+  images: null,
+  expiresAt: 0
+};
 
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -94,6 +104,27 @@ const escapeHtml = (str) =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#x27;');
 
+const getDateTokenFromFilename = (filename) => filename.match(/\d{8}/)?.[0] || '00000000';
+
+const getGalleryImages = async () => {
+  const now = Date.now();
+  if (galleryCache.images && now < galleryCache.expiresAt) {
+    return galleryCache.images;
+  }
+
+  const files = await fs.promises.readdir(GALLERY_PATH);
+  const imageFiles = files
+    .filter((file) => GALLERY_IMAGE_PATTERN.test(file))
+    .sort((a, b) => getDateTokenFromFilename(b).localeCompare(getDateTokenFromFilename(a)));
+
+  galleryCache = {
+    images: imageFiles,
+    expiresAt: now + GALLERY_CACHE_TTL_MS
+  };
+
+  return imageFiles;
+};
+
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -138,19 +169,9 @@ app.use('/api/group', groupRoutes);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(express.static(path.join(__dirname)));
 
-app.get('/api/gallery', (req, res) => {
-  const galleryPath = path.join(__dirname, 'Gallery');
-
+app.get('/api/gallery', async (req, res) => {
   try {
-    const files = fs.readdirSync(galleryPath);
-    const imageFiles = files
-      .filter((file) => /\.(jpg|jpeg|png|gif|webp|JPG|JPEG|PNG|GIF|WEBP)$/.test(file))
-      .sort((a, b) => {
-        const dateA = a.match(/\d{8}/)?.[0] || '00000000';
-        const dateB = b.match(/\d{8}/)?.[0] || '00000000';
-        return dateB.localeCompare(dateA);
-      });
-
+    const imageFiles = await getGalleryImages();
     return res.json({ images: imageFiles });
   } catch (error) {
     return res.status(500).json({ error: 'Failed to read gallery folder' });
