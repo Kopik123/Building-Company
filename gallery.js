@@ -9,32 +9,41 @@
   if (!roller || !stage || !projectStrip || !prevButton || !nextButton) return;
   roller.setAttribute('tabindex', '0');
 
-  const projects = [
+  const defaultProjects = [
     {
-      name: 'Bathroom - Didsbury',
-      images: ['/Gallery/IMG_20250821_155034.jpg', '/Gallery/IMG_20240628_131954.jpg', '/Gallery/IMG_20231121_084642.jpg']
+      name: 'Premium Kitchens - Manchester',
+      images: [
+        '/Gallery/premium/kitchen-panorama-main.jpg',
+        '/Gallery/premium/kitchen-panorama-left.jpg',
+        '/Gallery/premium/kitchen-panorama-right.jpg'
+      ]
     },
     {
-      name: 'Kitchen - Altrincham',
-      images: ['/Gallery/IMG_20250515_134752.jpg', '/Gallery/IMG_20250516_104129.jpg', '/Gallery/IMG_20250728_105932.jpg']
+      name: 'Luxury Bathrooms - Manchester',
+      images: [
+        '/Gallery/premium/bathroom-main.jpg',
+        '/Gallery/premium/bathroom-bathtub.jpg',
+        '/Gallery/premium/bathroom-tiles.jpg'
+      ]
     },
     {
-      name: 'Interior - Stockport',
-      images: ['/Gallery/IMG_20250718_125837.jpg', '/Gallery/IMG_20230711_123641.jpg', '/Gallery/IMG_20240827_085437.jpg']
+      name: 'Exterior Finishes - Cheshire',
+      images: [
+        '/Gallery/premium/exterior-front.jpg',
+        '/Gallery/premium/exterior-chimney.jpg',
+        '/Gallery/premium/exterior-wood-gables.jpg'
+      ]
     },
     {
-      name: 'Bathroom - Sale',
-      images: ['/Gallery/IMG_20240604_163842.jpg', '/Gallery/IMG_20221018_155430.jpg', '/Gallery/IMG_20220812_110218.jpg']
-    },
-    {
-      name: 'Renovation - Chorlton',
-      images: ['/Gallery/IMG_20250821_155027.jpg', '/Gallery/IMG_20220124_090514.jpg', '/Gallery/IMG_20220407_161437.jpg']
-    },
-    {
-      name: 'Renovation - Wilmslow',
-      images: ['/Gallery/IMG_20220115_155412.jpg', '/Gallery/IMG_20211020_161312.jpg', '/Gallery/IMG_20200918_081720.jpg']
+      name: 'Feature Brickwork - North West',
+      images: [
+        '/Gallery/premium/brick-dark-main.jpg',
+        '/Gallery/premium/brick-detail-charcoal.jpg',
+        '/Gallery/premium/brick-detail-red.jpg'
+      ]
     }
   ];
+  let projects = defaultProjects.slice();
 
   const MOTION_PROFILES = {
     subtle: {
@@ -140,6 +149,29 @@
   };
 
   const currentProject = () => projects[state.projectIndex];
+
+  const loadManagedProjects = async () => {
+    try {
+      const response = await fetch('/api/gallery/projects', { headers: { Accept: 'application/json' } });
+      if (!response.ok) return;
+
+      const payload = await response.json().catch(() => ({}));
+      const managed = Array.isArray(payload.projects)
+        ? payload.projects
+          .map((project) => ({
+            name: String(project.name || '').trim() || 'Project',
+            images: Array.isArray(project.images) ? project.images.filter(Boolean) : []
+          }))
+          .filter((project) => project.images.length)
+        : [];
+
+      if (managed.length) {
+        projects = managed;
+      }
+    } catch (error) {
+      // Keep static fallback when API is unavailable.
+    }
+  };
 
   const setStatus = () => {
     if (!statusNode) return;
@@ -354,6 +386,20 @@
     }
   });
 
-  buildProjectStrip();
-  buildRoller();
+  const init = async () => {
+    await loadManagedProjects();
+
+    if (!projects.length) {
+      if (statusNode) statusNode.textContent = 'No gallery photos available yet.';
+      prevButton.disabled = true;
+      nextButton.disabled = true;
+      return;
+    }
+
+    state.projectIndex = normalizeIndex(state.projectIndex, projects.length);
+    buildProjectStrip();
+    buildRoller();
+  };
+
+  init();
 })();

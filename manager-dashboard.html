@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manager Dashboard | levels+lines</title>
+  <meta name="description" content="Project, gallery and quote management dashboard." />
+  <link rel="canonical" href="https://levellines.co.uk/manager-dashboard.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="site-header" id="top">
+    <div class="container header-inner grid-12">
+      <a class="brand" href="/index.html" aria-label="levels+lines home">
+        <span class="brand-mark">levels+lines</span>
+        <span class="brand-meta">Precision Renovations - Manchester</span>
+      </a>
+
+      <div class="menu-wrap" data-menu-wrap>
+        <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation menu">
+          <span class="nav-toggle-line"></span>
+          <span class="nav-toggle-line"></span>
+          <span class="nav-toggle-line"></span>
+        </button>
+
+        <nav class="site-nav" id="site-nav" data-nav-menu aria-label="Main navigation">
+          <a href="/index.html#services" data-nav-link>Services</a>
+          <a href="/index.html#projects" data-nav-link>Projects</a>
+          <a href="/index.html#gallery" data-nav-link>Gallery</a>
+          <a href="/manager-dashboard.html" data-nav-link>Dashboard</a>
+          <a href="/client-dashboard.html" data-nav-link>Client Portal</a>
+          <a href="/auth.html" data-nav-link>Login / Register</a>
+          <a href="/index.html#consultation" data-nav-link>Contact</a>
+        </nav>
+      </div>
+
+      <a class="btn btn-gold header-cta" href="/index.html#consultation">Request Consultation</a>
+    </div>
+  </header>
+
+  <main class="section dashboard-shell">
+    <div class="container">
+      <div class="section-head">
+        <p class="eyebrow">Back Office</p>
+        <h1>Manager Dashboard</h1>
+        <p class="lead">Manage projects, gallery visibility, media files, documents and quote workflow.</p>
+      </div>
+
+      <section class="card dashboard-session">
+        <p id="dashboard-session">Checking session...</p>
+        <div class="dashboard-session-actions">
+          <button type="button" class="btn btn-outline" id="dashboard-seed-btn">Run starter seed</button>
+          <a class="btn btn-outline" href="/auth.html">Auth Page</a>
+          <button type="button" class="btn btn-outline" id="dashboard-logout">Logout</button>
+        </div>
+      </section>
+      <p class="form-status" id="dashboard-seed-status" aria-live="polite"></p>
+
+      <div class="dashboard-grid">
+        <section class="card">
+          <h2>Create Project</h2>
+          <form id="project-create-form" novalidate>
+            <div class="form-grid">
+              <label>Title
+                <input type="text" name="title" required />
+              </label>
+              <label>Location
+                <input type="text" name="location" />
+              </label>
+              <label>Status
+                <select name="status">
+                  <option value="planning">Planning</option>
+                  <option value="in_progress">In progress</option>
+                  <option value="completed">Completed</option>
+                  <option value="on_hold">On hold</option>
+                </select>
+              </label>
+              <label>Quote ID (optional)
+                <input type="text" name="quoteId" placeholder="UUID" />
+              </label>
+              <label class="span-2">Client email
+                <div class="dashboard-search-row">
+                  <input type="email" name="clientEmail" placeholder="client@email.com" />
+                  <button type="button" class="btn btn-outline" id="project-create-client-lookup">Find</button>
+                </div>
+                <small class="muted" id="project-create-client-lookup-status"></small>
+              </label>
+              <label class="span-2">Assigned staff email
+                <div class="dashboard-search-row">
+                  <input type="email" name="assignedManagerEmail" placeholder="manager@email.com" />
+                  <button type="button" class="btn btn-outline" id="project-create-manager-lookup">Find</button>
+                </div>
+                <small class="muted" id="project-create-manager-lookup-status"></small>
+              </label>
+              <label>Gallery order
+                <input type="number" name="galleryOrder" value="0" />
+              </label>
+              <label class="span-2">Description
+                <textarea name="description" rows="4"></textarea>
+              </label>
+              <label class="span-2 dashboard-inline-check">
+                <input type="checkbox" name="showInGallery" />
+                <span>Show this project in public gallery</span>
+              </label>
+            </div>
+            <button type="submit" class="btn btn-gold btn-block">Create project</button>
+            <p class="form-status" id="project-create-status" aria-live="polite"></p>
+          </form>
+        </section>
+
+        <section class="card">
+          <h2>Projects</h2>
+          <div class="dashboard-filters">
+            <input type="search" id="projects-filter-q" placeholder="Search title/location/client email..." />
+            <select id="projects-filter-status">
+              <option value="">All statuses</option>
+              <option value="planning">Planning</option>
+              <option value="in_progress">In progress</option>
+              <option value="completed">Completed</option>
+              <option value="on_hold">On hold</option>
+            </select>
+            <select id="projects-filter-gallery">
+              <option value="">Gallery: all</option>
+              <option value="true">Gallery: visible</option>
+              <option value="false">Gallery: hidden</option>
+            </select>
+            <select id="projects-page-size">
+              <option value="10">10 / page</option>
+              <option value="25" selected>25 / page</option>
+              <option value="50">50 / page</option>
+            </select>
+            <button type="button" class="btn btn-outline" id="projects-filter-apply">Apply</button>
+          </div>
+          <div id="projects-list" class="dashboard-list"></div>
+          <div class="dashboard-pagination">
+            <button type="button" class="btn btn-outline" id="projects-prev-btn">Prev</button>
+            <span class="muted" id="projects-pagination">Page 1 / 1</span>
+            <button type="button" class="btn btn-outline" id="projects-next-btn">Next</button>
+          </div>
+        </section>
+      </div>
+
+      <section class="card" id="project-editor-card" hidden>
+        <h2>Project Editor</h2>
+        <form id="project-edit-form" novalidate>
+          <input type="hidden" name="id" />
+          <div class="form-grid">
+            <label>Title
+              <input type="text" name="title" required />
+            </label>
+            <label>Location
+              <input type="text" name="location" />
+            </label>
+            <label>Status
+              <select name="status">
+                <option value="planning">Planning</option>
+                <option value="in_progress">In progress</option>
+                <option value="completed">Completed</option>
+                <option value="on_hold">On hold</option>
+              </select>
+            </label>
+            <label>Quote ID
+              <input type="text" name="quoteId" placeholder="UUID" />
+            </label>
+            <label class="span-2">Client email
+              <div class="dashboard-search-row">
+                <input type="email" name="clientEmail" placeholder="client@email.com" />
+                <button type="button" class="btn btn-outline" id="project-edit-client-lookup">Find</button>
+              </div>
+              <small class="muted" id="project-edit-client-lookup-status"></small>
+            </label>
+            <label class="span-2">Assigned staff email
+              <div class="dashboard-search-row">
+                <input type="email" name="assignedManagerEmail" placeholder="manager@email.com" />
+                <button type="button" class="btn btn-outline" id="project-edit-manager-lookup">Find</button>
+              </div>
+              <small class="muted" id="project-edit-manager-lookup-status"></small>
+            </label>
+            <label>Gallery order
+              <input type="number" name="galleryOrder" />
+            </label>
+            <label>Budget estimate
+              <input type="text" name="budgetEstimate" />
+            </label>
+            <label>Start date
+              <input type="date" name="startDate" />
+            </label>
+            <label>End date
+              <input type="date" name="endDate" />
+            </label>
+            <label class="dashboard-inline-check">
+              <input type="checkbox" name="showInGallery" />
+              <span>Project visible in gallery</span>
+            </label>
+            <label class="dashboard-inline-check">
+              <input type="checkbox" name="isActive" />
+              <span>Project active</span>
+            </label>
+            <label class="span-2">Description
+              <textarea name="description" rows="4"></textarea>
+            </label>
+          </div>
+          <div class="dashboard-actions-row">
+            <button type="submit" class="btn btn-gold">Save project</button>
+            <button type="button" class="btn btn-outline" id="project-delete-btn">Delete project</button>
+          </div>
+          <p class="form-status" id="project-edit-status" aria-live="polite"></p>
+        </form>
+
+        <hr class="dashboard-divider" />
+
+        <h3>Upload Photos / Documents</h3>
+        <form id="media-upload-form" novalidate>
+          <div class="form-grid">
+            <label class="span-2">Files
+              <input type="file" name="files" multiple required />
+            </label>
+            <label>Type
+              <select name="mediaType">
+                <option value="">Auto detect</option>
+                <option value="image">Image</option>
+                <option value="document">Document</option>
+              </select>
+            </label>
+            <label>Gallery order start
+              <input type="number" name="galleryOrderStart" value="0" />
+            </label>
+            <label class="span-2">Caption (optional)
+              <input type="text" name="caption" />
+            </label>
+            <label class="dashboard-inline-check">
+              <input type="checkbox" name="showInGallery" />
+              <span>Show uploaded images in gallery</span>
+            </label>
+            <label class="dashboard-inline-check">
+              <input type="checkbox" name="isCover" />
+              <span>Set first image as cover</span>
+            </label>
+          </div>
+          <button type="submit" class="btn btn-gold">Upload</button>
+          <p class="form-status" id="media-upload-status" aria-live="polite"></p>
+        </form>
+
+        <h3>Media Library</h3>
+        <div id="media-list" class="dashboard-media-list"></div>
+      </section>
+
+      <section class="card">
+        <h2>Quotes / Wyceny</h2>
+        <div class="dashboard-filters">
+          <input type="search" id="quotes-filter-q" placeholder="Search email/name/location..." />
+          <select id="quotes-filter-status">
+            <option value="">All statuses</option>
+            <option value="pending">Pending</option>
+            <option value="in_progress">In progress</option>
+            <option value="responded">Responded</option>
+            <option value="closed">Closed</option>
+          </select>
+          <select id="quotes-page-size">
+            <option value="10">10 / page</option>
+            <option value="25" selected>25 / page</option>
+            <option value="50">50 / page</option>
+          </select>
+          <button type="button" class="btn btn-outline" id="quotes-refresh-btn">Apply</button>
+        </div>
+        <div id="quotes-list" class="dashboard-list"></div>
+        <div class="dashboard-pagination">
+          <button type="button" class="btn btn-outline" id="quotes-prev-btn">Prev</button>
+          <span class="muted" id="quotes-pagination">Page 1 / 1</span>
+          <button type="button" class="btn btn-outline" id="quotes-next-btn">Next</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Services (Website Offer)</h2>
+        <div class="dashboard-filters">
+          <input type="search" id="services-filter-q" placeholder="Search title/slug..." />
+          <select id="services-filter-category">
+            <option value="">All categories</option>
+            <option value="bathroom">Bathroom</option>
+            <option value="kitchen">Kitchen</option>
+            <option value="interior">Interior</option>
+            <option value="outdoor">Outdoor</option>
+            <option value="other">Other</option>
+          </select>
+          <select id="services-filter-public">
+            <option value="">Public: all</option>
+            <option value="true">Public only</option>
+            <option value="false">Hidden only</option>
+          </select>
+          <select id="services-page-size">
+            <option value="10">10 / page</option>
+            <option value="25" selected>25 / page</option>
+            <option value="50">50 / page</option>
+          </select>
+          <button type="button" class="btn btn-outline" id="services-refresh-btn">Apply</button>
+        </div>
+        <form id="service-create-form" novalidate>
+          <div class="form-grid">
+            <label>Title
+              <input type="text" name="title" required />
+            </label>
+            <label>Slug (optional)
+              <input type="text" name="slug" />
+            </label>
+            <label>Category
+              <select name="category">
+                <option value="bathroom">Bathroom</option>
+                <option value="kitchen">Kitchen</option>
+                <option value="interior">Interior</option>
+                <option value="outdoor">Outdoor</option>
+                <option value="other">Other</option>
+              </select>
+            </label>
+            <label>Price from
+              <input type="number" step="0.01" name="basePriceFrom" />
+            </label>
+            <label class="span-2">Short description
+              <input type="text" name="shortDescription" />
+            </label>
+            <label class="span-2">Hero image URL
+              <input type="text" name="heroImageUrl" />
+            </label>
+            <label>Display order
+              <input type="number" name="displayOrder" value="0" />
+            </label>
+            <label class="dashboard-inline-check">
+              <input type="checkbox" name="showOnWebsite" checked />
+              <span>Show on website</span>
+            </label>
+            <label class="dashboard-inline-check">
+              <input type="checkbox" name="isFeatured" />
+              <span>Featured</span>
+            </label>
+          </div>
+          <button type="submit" class="btn btn-gold">Add service</button>
+          <p class="form-status" id="service-create-status" aria-live="polite"></p>
+        </form>
+        <div id="services-list" class="dashboard-list"></div>
+        <div class="dashboard-pagination">
+          <button type="button" class="btn btn-outline" id="services-prev-btn">Prev</button>
+          <span class="muted" id="services-pagination">Page 1 / 1</span>
+          <button type="button" class="btn btn-outline" id="services-next-btn">Next</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Materials Inventory</h2>
+        <div class="dashboard-filters">
+          <input type="search" id="materials-filter-q" placeholder="Search name/SKU/supplier..." />
+          <select id="materials-filter-category">
+            <option value="">All categories</option>
+            <option value="tiles">Tiles</option>
+            <option value="plumbing">Plumbing</option>
+            <option value="electrical">Electrical</option>
+            <option value="joinery">Joinery</option>
+            <option value="paint">Paint</option>
+            <option value="hardware">Hardware</option>
+            <option value="other">Other</option>
+          </select>
+          <select id="materials-filter-low-stock">
+            <option value="">Stock: all</option>
+            <option value="true">Low stock only</option>
+            <option value="false">In stock only</option>
+          </select>
+          <select id="materials-page-size">
+            <option value="10">10 / page</option>
+            <option value="25" selected>25 / page</option>
+            <option value="50">50 / page</option>
+          </select>
+          <button type="button" class="btn btn-outline" id="materials-refresh-btn">Apply</button>
+        </div>
+        <form id="material-create-form" novalidate>
+          <div class="form-grid">
+            <label>Name
+              <input type="text" name="name" required />
+            </label>
+            <label>SKU
+              <input type="text" name="sku" />
+            </label>
+            <label>Category
+              <select name="category">
+                <option value="tiles">Tiles</option>
+                <option value="plumbing">Plumbing</option>
+                <option value="electrical">Electrical</option>
+                <option value="joinery">Joinery</option>
+                <option value="paint">Paint</option>
+                <option value="hardware">Hardware</option>
+                <option value="other">Other</option>
+              </select>
+            </label>
+            <label>Unit
+              <input type="text" name="unit" value="pcs" />
+            </label>
+            <label>Stock qty
+              <input type="number" step="0.01" name="stockQty" value="0" />
+            </label>
+            <label>Min stock qty
+              <input type="number" step="0.01" name="minStockQty" value="0" />
+            </label>
+            <label>Unit cost
+              <input type="number" step="0.01" name="unitCost" />
+            </label>
+            <label>Supplier
+              <input type="text" name="supplier" />
+            </label>
+            <label class="span-2">Notes
+              <input type="text" name="notes" />
+            </label>
+          </div>
+          <button type="submit" class="btn btn-gold">Add material</button>
+          <p class="form-status" id="material-create-status" aria-live="polite"></p>
+        </form>
+        <div id="materials-list" class="dashboard-list"></div>
+        <div class="dashboard-pagination">
+          <button type="button" class="btn btn-outline" id="materials-prev-btn">Prev</button>
+          <span class="muted" id="materials-pagination">Page 1 / 1</span>
+          <button type="button" class="btn btn-outline" id="materials-next-btn">Next</button>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-bottom">
+      <p>&copy; <span data-current-year></span> levels+lines. All rights reserved.</p>
+      <div class="legal-links">
+        <a href="/privacy.html">Privacy</a>
+        <a href="/terms.html">Terms</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/site.js" defer></script>
+  <script src="/manager-dashboard.js" defer></script>
+</body>
+</html>

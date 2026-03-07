@@ -15,7 +15,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const nodemailer = require('nodemailer');
-const { syncDatabase } = require('./models');
+const { syncDatabase, Project, ProjectMedia } = require('./models');
 
 const authRoutes = require('./routes/auth');
 const quotesRoutes = require('./routes/quotes');
@@ -23,6 +23,8 @@ const inboxRoutes = require('./routes/inbox');
 const managerRoutes = require('./routes/manager');
 const notificationsRoutes = require('./routes/notifications');
 const groupRoutes = require('./routes/group');
+const clientRoutes = require('./routes/client');
+const publicRoutes = require('./routes/public');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -125,6 +127,50 @@ const getGalleryImages = async () => {
   return imageFiles;
 };
 
+const mapManagedGalleryProjects = (projects) =>
+  projects
+    .map((project) => {
+      const images = (project.media || [])
+        .filter((item) => item.mediaType === 'image' && item.showInGallery)
+        .sort((a, b) => {
+          if (a.isCover !== b.isCover) return Number(b.isCover) - Number(a.isCover);
+          if (a.galleryOrder !== b.galleryOrder) return a.galleryOrder - b.galleryOrder;
+          return String(a.filename || '').localeCompare(String(b.filename || ''));
+        })
+        .map((item) => item.url);
+
+      return {
+        id: project.id,
+        name: project.title,
+        location: project.location || null,
+        images
+      };
+    })
+    .filter((project) => project.images.length);
+
+const getManagedGalleryProjects = async () => {
+  const projects = await Project.findAll({
+    where: {
+      showInGallery: true,
+      isActive: true
+    },
+    include: [
+      {
+        model: ProjectMedia,
+        as: 'media',
+        where: {
+          mediaType: 'image',
+          showInGallery: true
+        },
+        required: false
+      }
+    ],
+    order: [['galleryOrder', 'ASC'], ['createdAt', 'DESC']]
+  });
+
+  return mapManagedGalleryProjects(projects);
+};
+
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -165,14 +211,30 @@ app.use('/api/inbox', inboxRoutes);
 app.use('/api/manager', managerRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/group', groupRoutes);
+app.use('/api/client', clientRoutes);
+app.use('/api', publicRoutes);
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(express.static(path.join(__dirname)));
 
+app.get('/api/gallery/projects', async (req, res) => {
+  try {
+    const projects = await getManagedGalleryProjects();
+    return res.json({ projects });
+  } catch (error) {
+    return res.status(500).json({ error: 'Failed to load gallery projects' });
+  }
+});
+
 app.get('/api/gallery', async (req, res) => {
   try {
+    const managedProjects = await getManagedGalleryProjects();
+    if (managedProjects.length) {
+      return res.json({ images: managedProjects.flatMap((project) => project.images), projects: managedProjects });
+    }
+
     const imageFiles = await getGalleryImages();
-    return res.json({ images: imageFiles });
+    return res.json({ images: imageFiles, projects: [] });
   } catch (error) {
     return res.status(500).json({ error: 'Failed to read gallery folder' });
   }

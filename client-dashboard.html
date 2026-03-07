@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Client Portal | levels+lines</title>
+  <meta name="description" content="Client portal for projects, documents, quotes and communication." />
+  <link rel="canonical" href="https://levellines.co.uk/client-dashboard.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="site-header" id="top">
+    <div class="container header-inner grid-12">
+      <a class="brand" href="/index.html" aria-label="levels+lines home">
+        <span class="brand-mark">levels+lines</span>
+        <span class="brand-meta">Precision Renovations · Manchester</span>
+      </a>
+      <div class="menu-wrap" data-menu-wrap>
+        <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation menu">
+          <span class="nav-toggle-line"></span>
+          <span class="nav-toggle-line"></span>
+          <span class="nav-toggle-line"></span>
+        </button>
+        <nav class="site-nav" id="site-nav" data-nav-menu aria-label="Main navigation">
+          <a href="/index.html#services" data-nav-link>Services</a>
+          <a href="/index.html#projects" data-nav-link>Projects</a>
+          <a href="/index.html#gallery" data-nav-link>Gallery</a>
+          <a href="/client-dashboard.html" data-nav-link>Client Portal</a>
+          <a href="/auth.html" data-nav-link>Login / Register</a>
+          <a href="/index.html#consultation" data-nav-link>Contact</a>
+        </nav>
+      </div>
+      <a class="btn btn-gold header-cta" href="/index.html#consultation">Request Consultation</a>
+    </div>
+  </header>
+
+  <main class="section dashboard-shell">
+    <div class="container">
+      <div class="section-head">
+        <p class="eyebrow">Client Portal</p>
+        <h1>Your Projects & Documents</h1>
+        <p class="lead">Track project progress, upload files, review quotes and communicate with your project team.</p>
+      </div>
+
+      <section class="card dashboard-session">
+        <p id="client-session">Checking session...</p>
+        <div class="dashboard-session-actions">
+          <a class="btn btn-outline" href="/auth.html">Auth Page</a>
+          <button type="button" class="btn btn-outline" id="client-logout">Logout</button>
+        </div>
+      </section>
+
+      <section class="dashboard-grid" id="client-metrics"></section>
+
+      <section class="card">
+        <h2>Your Projects</h2>
+        <div id="client-projects-list" class="dashboard-list"></div>
+      </section>
+
+      <section class="card">
+        <h2>Project Documents Upload</h2>
+        <form id="client-upload-form" novalidate>
+          <div class="form-grid">
+            <label>Project
+              <select name="projectId" required></select>
+            </label>
+            <label>Caption
+              <input type="text" name="caption" />
+            </label>
+            <label class="span-2">Files
+              <input type="file" name="files" multiple required />
+            </label>
+          </div>
+          <button type="submit" class="btn btn-gold">Upload documents</button>
+          <p class="form-status" id="client-upload-status" aria-live="polite"></p>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>Communication</h2>
+        <div class="dashboard-grid">
+          <div>
+            <h3>Threads</h3>
+            <div id="client-threads-list" class="dashboard-list"></div>
+          </div>
+          <div>
+            <h3>Messages</h3>
+            <div id="client-messages-list" class="dashboard-list"></div>
+            <form id="client-message-form" novalidate>
+              <div class="form-grid">
+                <label class="span-2">Message
+                  <textarea name="body" rows="3" required></textarea>
+                </label>
+              </div>
+              <button type="submit" class="btn btn-gold">Send message</button>
+              <p class="form-status" id="client-message-status" aria-live="polite"></p>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Your Quotes</h2>
+        <div id="client-quotes-list" class="dashboard-list"></div>
+      </section>
+
+      <section class="card">
+        <h2>Recommended Services</h2>
+        <div id="client-services-list" class="dashboard-list"></div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-bottom">
+      <p>&copy; <span data-current-year></span> levels+lines. All rights reserved.</p>
+      <div class="legal-links">
+        <a href="/privacy.html">Privacy</a>
+        <a href="/terms.html">Terms</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/site.js" defer></script>
+  <script src="/client-dashboard.js" defer></script>
+</body>
+</html>

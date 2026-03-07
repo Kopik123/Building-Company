@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login / Register | levels+lines</title>
+  <meta name="description" content="Log in or create an account for your renovation project updates." />
+  <link rel="canonical" href="https://levellines.co.uk/auth.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="site-header" id="top">
+    <div class="container header-inner grid-12">
+      <a class="brand" href="/index.html" aria-label="levels+lines home">
+        <span class="brand-mark">levels+lines</span>
+        <span class="brand-meta">Precision Renovations · Manchester</span>
+      </a>
+
+      <div class="menu-wrap" data-menu-wrap>
+        <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation menu">
+          <span class="nav-toggle-line"></span>
+          <span class="nav-toggle-line"></span>
+          <span class="nav-toggle-line"></span>
+        </button>
+
+        <nav class="site-nav" id="site-nav" data-nav-menu aria-label="Main navigation">
+          <a href="/index.html#services" data-nav-link>Services</a>
+          <a href="/index.html#projects" data-nav-link>Projects</a>
+          <a href="/index.html#gallery" data-nav-link>Gallery</a>
+          <a href="/index.html#process" data-nav-link>Process</a>
+          <a href="/index.html#about" data-nav-link>About</a>
+          <a href="/client-dashboard.html" data-nav-link>Client Portal</a>
+          <a href="/auth.html" data-nav-link>Login / Register</a>
+          <a href="/index.html#consultation" data-nav-link>Contact</a>
+        </nav>
+      </div>
+
+      <a class="btn btn-gold header-cta" href="/index.html#consultation">Request Consultation</a>
+    </div>
+  </header>
+
+  <main class="section auth-shell">
+    <div class="container">
+      <div class="section-head">
+        <p class="eyebrow">Account</p>
+        <h1>Login / Register</h1>
+        <p class="lead">Access your renovation account to manage project communication and updates.</p>
+      </div>
+
+      <div class="auth-session card">
+        <p class="muted" id="auth-session-state">Not logged in.</p>
+        <div class="dashboard-session-actions">
+          <a href="/client-dashboard.html" class="btn btn-outline" id="auth-client-link" hidden>Client Portal</a>
+          <a href="/manager-dashboard.html" class="btn btn-outline" id="auth-dashboard-link" hidden>Open Dashboard</a>
+          <button type="button" class="btn btn-outline" id="auth-logout" hidden>Log out</button>
+        </div>
+      </div>
+
+      <div class="auth-grid">
+        <section class="card auth-card">
+          <h2>Login</h2>
+          <form id="login-form" novalidate>
+            <div class="form-grid">
+              <label>Email
+                <input type="email" name="email" autocomplete="email" required />
+              </label>
+              <label>Password
+                <input type="password" name="password" autocomplete="current-password" required />
+              </label>
+            </div>
+            <button type="submit" class="btn btn-gold btn-block">Login</button>
+            <p class="form-status" id="login-status" aria-live="polite"></p>
+          </form>
+        </section>
+
+        <section class="card auth-card">
+          <h2>Register</h2>
+          <form id="register-form" novalidate>
+            <div class="form-grid">
+              <label>Name
+                <input type="text" name="name" autocomplete="name" required />
+              </label>
+              <label>Email
+                <input type="email" name="email" autocomplete="email" required />
+              </label>
+              <label>Password
+                <input type="password" name="password" autocomplete="new-password" minlength="8" required />
+              </label>
+              <label>Phone
+                <input type="tel" name="phone" autocomplete="tel" />
+              </label>
+              <label class="span-2">Company (optional)
+                <input type="text" name="companyName" autocomplete="organization" />
+              </label>
+            </div>
+            <button type="submit" class="btn btn-gold btn-block">Create account</button>
+            <p class="form-status" id="register-status" aria-live="polite"></p>
+          </form>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-bottom">
+      <p>&copy; <span data-current-year></span> levels+lines. All rights reserved.</p>
+      <div class="legal-links">
+        <a href="/privacy.html">Privacy</a>
+        <a href="/terms.html">Terms</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/site.js" defer></script>
+  <script src="/auth.js" defer></script>
+</body>
+</html>

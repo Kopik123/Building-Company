@@ -159,9 +159,9 @@ router.post(
       `Description: ${description}`
     ].filter(Boolean).join('\n');
 
-    await Promise.all(
-      managers.map((manager) =>
-        Notification.create({
+    if (managers.length) {
+      await Notification.bulkCreate(
+        managers.map((manager) => ({
           userId: manager.id,
           type: 'new_quote',
           title: notificationTitle,
@@ -176,9 +176,9 @@ router.post(
             location,
             projectType
           }
-        })
-      )
-    );
+        }))
+      );
+    }
 
     return res.status(201).json({
       quoteId: quote.id,
