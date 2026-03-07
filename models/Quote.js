@@ -38,7 +38,7 @@ const Quote = sequelize.define('Quote', {
     unique: true
   },
   projectType: {
-    type: DataTypes.ENUM('bathroom', 'kitchen', 'tiling', 'extension', 'joinery', 'rendering', 'decorating', 'other'),
+    type: DataTypes.ENUM('bathroom', 'kitchen', 'interior', 'tiling', 'extension', 'joinery', 'rendering', 'decorating', 'other'),
     allowNull: false
   },
   location: {

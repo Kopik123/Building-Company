@@ -98,9 +98,9 @@ const sendClaimCodeByPhone = async (phone, code) => {
 router.post(
   '/guest',
   [
-    body('projectType').isIn(['bathroom', 'kitchen', 'tiling', 'extension', 'joinery', 'rendering', 'decorating', 'other']),
-    body('location').trim().notEmpty(),
-    body('postcode').trim().notEmpty(),
+    body('projectType').isIn(['bathroom', 'kitchen', 'interior', 'tiling', 'extension', 'joinery', 'rendering', 'decorating', 'other']),
+    body('location').optional({ checkFalsy: true }).trim(),
+    body('postcode').optional({ checkFalsy: true }).trim(),
     body('description').trim().notEmpty(),
     body('guestName').trim().notEmpty(),
     body('guestEmail').optional().isEmail(),
@@ -113,7 +113,14 @@ router.post(
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { projectType, location, postcode, description, guestName, guestEmail, guestPhone, budgetRange } = req.body;
+    const projectType = String(req.body.projectType || '').trim();
+    const description = String(req.body.description || '').trim();
+    const guestName = String(req.body.guestName || '').trim();
+    const guestEmail = normalizeEmail(req.body.guestEmail);
+    const guestPhone = normalizePhone(req.body.guestPhone);
+    const budgetRange = String(req.body.budgetRange || '').trim() || null;
+    const location = String(req.body.location || '').trim() || 'Greater Manchester';
+    const postcode = String(req.body.postcode || '').trim() || null;
 
     if (!guestEmail && !guestPhone) {
       return res.status(400).json({ error: 'Provide guestEmail or guestPhone' });
@@ -130,9 +137,9 @@ router.post(
       publicToken: createPublicToken(),
       projectType,
       location,
-      postcode,
+      postcode: postcode || null,
       description,
-      budgetRange: budgetRange || null,
+      budgetRange,
       contactEmail: guestEmail || null,
       contactPhone: guestPhone || null
     });
@@ -143,7 +150,7 @@ router.post(
     const notificationTitle = `New quote request from ${guestName}`;
     const notificationBody = [
       `Name: ${guestName}`,
-      `Postcode: ${postcode}`,
+      postcode ? `Postcode: ${postcode}` : null,
       `Location: ${location}`,
       `Project type: ${projectType}`,
       guestEmail ? `Email: ${guestEmail}` : null,
@@ -152,9 +159,9 @@ router.post(
       `Description: ${description}`
     ].filter(Boolean).join('\n');
 
-    await Promise.all(
-      managers.map((manager) =>
-        Notification.create({
+    if (managers.length) {
+      await Notification.bulkCreate(
+        managers.map((manager) => ({
           userId: manager.id,
           type: 'new_quote',
           title: notificationTitle,
@@ -169,9 +176,9 @@ router.post(
             location,
             projectType
           }
-        })
-      )
-    );
+        }))
+      );
+    }
 
     return res.status(201).json({
       quoteId: quote.id,

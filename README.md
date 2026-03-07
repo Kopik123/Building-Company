@@ -109,6 +109,87 @@ curl -sS -X PATCH http://localhost:3000/api/manager/quotes/<QUOTE_ID> \
 	-d '{"status":"in_progress","priority":"high"}'
 ```
 
+### 6a) Project / gallery management API (employee/manager/admin)
+
+```bash
+curl -sS http://localhost:3000/api/manager/projects?includeMedia=true \
+	-H 'Authorization: Bearer <STAFF_JWT_TOKEN>'
+
+curl -sS "http://localhost:3000/api/manager/projects?includeMedia=true&page=1&pageSize=25&status=in_progress&q=didsbury" \
+	-H 'Authorization: Bearer <STAFF_JWT_TOKEN>'
+
+curl -sS -X POST http://localhost:3000/api/manager/projects \
+	-H 'Authorization: Bearer <STAFF_JWT_TOKEN>' \
+	-H 'Content-Type: application/json' \
+	-d '{"title":"Didsbury Bathroom 2026","location":"Didsbury","status":"in_progress","showInGallery":true,"galleryOrder":1,"clientEmail":"client@example.com","assignedManagerEmail":"manager@example.com"}'
+
+curl -sS -X POST http://localhost:3000/api/manager/projects/<PROJECT_ID>/media/upload \
+	-H 'Authorization: Bearer <STAFF_JWT_TOKEN>' \
+	-F "files=@/path/photo1.jpg" \
+	-F "files=@/path/spec.pdf" \
+	-F "showInGallery=true"
+
+curl -sS "http://localhost:3000/api/manager/clients/search?email=client@example.com" \
+	-H 'Authorization: Bearer <STAFF_JWT_TOKEN>'
+
+curl -sS "http://localhost:3000/api/manager/staff/search?email=manager@example.com" \
+	-H 'Authorization: Bearer <STAFF_JWT_TOKEN>'
+```
+
+Public gallery data now supports managed project/image selection:
+
+```bash
+curl -sS http://localhost:3000/api/gallery/projects
+```
+
+### 6b) Services + materials management API (employee/manager/admin)
+
+```bash
+curl -sS http://localhost:3000/api/manager/services \
+	-H 'Authorization: Bearer <STAFF_JWT_TOKEN>'
+
+curl -sS "http://localhost:3000/api/manager/services?page=1&pageSize=25&q=bathroom&showOnWebsite=true" \
+	-H 'Authorization: Bearer <STAFF_JWT_TOKEN>'
+
+curl -sS -X POST http://localhost:3000/api/manager/services \
+	-H 'Authorization: Bearer <STAFF_JWT_TOKEN>' \
+	-H 'Content-Type: application/json' \
+	-d '{"title":"Premium Bathroom Renovation","category":"bathroom","showOnWebsite":true,"displayOrder":1}'
+
+curl -sS http://localhost:3000/api/manager/materials \
+	-H 'Authorization: Bearer <STAFF_JWT_TOKEN>'
+
+curl -sS "http://localhost:3000/api/manager/materials?page=1&pageSize=25&lowStock=true&q=tile" \
+	-H 'Authorization: Bearer <STAFF_JWT_TOKEN>'
+```
+
+### 6d) Starter seed (manager/admin)
+
+```bash
+curl -sS -X POST http://localhost:3000/api/manager/seed/starter \
+	-H 'Authorization: Bearer <MANAGER_JWT_TOKEN>' \
+	-H 'Content-Type: application/json' \
+	-d '{"force":false}'
+```
+
+### 6c) Client portal API (client role)
+
+```bash
+curl -sS http://localhost:3000/api/client/overview \
+	-H 'Authorization: Bearer <CLIENT_JWT_TOKEN>'
+
+curl -sS -X POST http://localhost:3000/api/client/projects/<PROJECT_ID>/documents/upload \
+	-H 'Authorization: Bearer <CLIENT_JWT_TOKEN>' \
+	-F "files=@/path/to/document.pdf" \
+	-F "caption=Invoice"
+```
+
+Public services endpoint used by the website:
+
+```bash
+curl -sS http://localhost:3000/api/services
+```
+
 ### 7) Bootstrap konta manager/admin
 
 ```bash
