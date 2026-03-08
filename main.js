@@ -34,34 +34,42 @@
     return href.includes('auth.html') || /login\s*\/\s*register/i.test(link.textContent || '');
   };
 
-  const createLogoutAnchor = () => {
-    const anchor = document.createElement('a');
-    anchor.href = '#logout';
-    anchor.dataset.navLink = '';
-    anchor.dataset.navLogout = '1';
-    anchor.classList.add('nav-logout-link');
-    anchor.textContent = 'Logout';
-    anchor.addEventListener('click', (event) => {
-      event.preventDefault();
-      clearSession();
-      window.location.assign('/index.html');
+  const clearInjectedAccountItems = () => {
+    document.querySelectorAll('[data-nav-injected]').forEach((node) => {
+      node.remove();
     });
+  };
+
+  const insertNavItemAfter = (baseNode, anchor) => {
+    const baseParent = baseNode.parentElement;
+    if (baseParent && baseParent.tagName === 'LI') {
+      const li = document.createElement('li');
+      li.dataset.navInjected = '1';
+      li.appendChild(anchor);
+      baseParent.insertAdjacentElement('afterend', li);
+      return li;
+    }
+
+    anchor.dataset.navInjected = '1';
+    baseNode.insertAdjacentElement('afterend', anchor);
     return anchor;
   };
 
-  const ensureLogoutLink = (authLink) => {
-    if (!authLink || document.querySelector('[data-nav-logout]')) return;
+  const createMenuAnchor = (href, label, extraClass = '') => {
+    const anchor = document.createElement('a');
+    anchor.href = href;
+    anchor.dataset.navLink = '';
+    anchor.classList.add('nav-account-sub');
+    if (extraClass) anchor.classList.add(extraClass);
+    anchor.textContent = label;
+    return anchor;
+  };
 
-    const anchor = createLogoutAnchor();
-    const parent = authLink.parentElement;
-    if (parent && parent.tagName === 'LI') {
-      const li = document.createElement('li');
-      li.appendChild(anchor);
-      parent.insertAdjacentElement('afterend', li);
-      return;
-    }
-
-    authLink.insertAdjacentElement('afterend', anchor);
+  const panelLabelForRole = (roleRaw) => {
+    const role = String(roleRaw || '').toLowerCase();
+    if (role === 'client') return 'Client Panel';
+    if (['employee', 'manager', 'admin'].includes(role)) return 'Staff Dashboard';
+    return 'Account';
   };
 
   const syncAuthLinks = (user) => {
@@ -73,8 +81,8 @@
 
     authLinks.forEach((link) => {
       if (loggedIn) {
-        link.textContent = 'Account';
-        link.setAttribute('href', accountHref);
+        link.textContent = 'Account Menu';
+        link.setAttribute('href', '/auth.html');
         link.classList.add('nav-account-link');
       } else {
         link.textContent = 'Login / Register';
@@ -83,20 +91,26 @@
       }
     });
 
-    const existingLogout = document.querySelectorAll('[data-nav-logout]');
+    clearInjectedAccountItems();
+
     if (loggedIn) {
-      ensureLogoutLink(authLinks[0]);
+      let insertionPoint = authLinks[0];
+
+      const settingsAnchor = createMenuAnchor('/auth.html', 'Account Settings');
+      insertionPoint = insertNavItemAfter(insertionPoint, settingsAnchor);
+
+      const panelAnchor = createMenuAnchor(accountHref, panelLabelForRole(user?.role));
+      insertionPoint = insertNavItemAfter(insertionPoint, panelAnchor);
+
+      const logoutAnchor = createMenuAnchor('#logout', 'Logout', 'nav-logout-link');
+      logoutAnchor.addEventListener('click', (event) => {
+        event.preventDefault();
+        clearSession();
+        window.location.assign('/index.html');
+      });
+      insertNavItemAfter(insertionPoint, logoutAnchor);
       return;
     }
-
-    existingLogout.forEach((node) => {
-      const parent = node.parentElement;
-      if (parent && parent.tagName === 'LI') {
-        parent.remove();
-        return;
-      }
-      node.remove();
-    });
   };
 
   const validateSession = async () => {
@@ -203,6 +217,12 @@
       link.addEventListener('click', () => {
         closeMenu();
       });
+    });
+
+    navMenu.addEventListener('click', (event) => {
+      if (event.target.closest('a[data-nav-link]')) {
+        closeMenu();
+      }
     });
   }
 

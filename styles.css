@@ -238,6 +238,14 @@ p { margin: 0 0 var(--space-2); }
   background: rgba(198, 164, 108, 0.08);
 }
 
+.site-nav a.nav-account-sub,
+.nav-menu a.nav-account-sub {
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  padding-left: 20px;
+  opacity: 0.92;
+}
+
 .menu-wrap:hover .site-nav,
 .menu-wrap:focus-within .site-nav,
 .menu-wrap.is-open .site-nav,
