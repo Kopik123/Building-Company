@@ -83,16 +83,16 @@
               </label>
               <label class="span-2">Client email
                 <div class="dashboard-search-row">
-                  <input type="email" name="clientEmail" placeholder="client@email.com" />
-                  <button type="button" class="btn btn-outline" id="project-create-client-lookup">Find</button>
+                  <input type="email" name="clientEmail" placeholder="client@email.com" list="project-create-client-suggestions" autocomplete="off" />
                 </div>
+                <datalist id="project-create-client-suggestions"></datalist>
                 <small class="muted" id="project-create-client-lookup-status"></small>
               </label>
               <label class="span-2">Assigned staff email
                 <div class="dashboard-search-row">
-                  <input type="email" name="assignedManagerEmail" placeholder="manager@email.com" />
-                  <button type="button" class="btn btn-outline" id="project-create-manager-lookup">Find</button>
+                  <input type="email" name="assignedManagerEmail" placeholder="manager@email.com" list="project-create-manager-suggestions" autocomplete="off" />
                 </div>
+                <datalist id="project-create-manager-suggestions"></datalist>
                 <small class="muted" id="project-create-manager-lookup-status"></small>
               </label>
               <label>Gallery order
@@ -167,16 +167,16 @@
             </label>
             <label class="span-2">Client email
               <div class="dashboard-search-row">
-                <input type="email" name="clientEmail" placeholder="client@email.com" />
-                <button type="button" class="btn btn-outline" id="project-edit-client-lookup">Find</button>
+                <input type="email" name="clientEmail" placeholder="client@email.com" list="project-edit-client-suggestions" autocomplete="off" />
               </div>
+              <datalist id="project-edit-client-suggestions"></datalist>
               <small class="muted" id="project-edit-client-lookup-status"></small>
             </label>
             <label class="span-2">Assigned staff email
               <div class="dashboard-search-row">
-                <input type="email" name="assignedManagerEmail" placeholder="manager@email.com" />
-                <button type="button" class="btn btn-outline" id="project-edit-manager-lookup">Find</button>
+                <input type="email" name="assignedManagerEmail" placeholder="manager@email.com" list="project-edit-manager-suggestions" autocomplete="off" />
               </div>
+              <datalist id="project-edit-manager-suggestions"></datalist>
               <small class="muted" id="project-edit-manager-lookup-status"></small>
             </label>
             <label>Gallery order

@@ -145,7 +145,7 @@ router.post(
     });
 
     // Notify all managers via internal notification
-    const managers = await User.findAll({ where: { role: ['manager', 'admin'], isActive: true } });
+    const managers = await User.findAll({ where: { role: { [Op.in]: ['manager', 'admin'] }, isActive: true } });
 
     const notificationTitle = `New quote request from ${guestName}`;
     const notificationBody = [

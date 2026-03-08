@@ -15,7 +15,8 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const nodemailer = require('nodemailer');
-const { syncDatabase, Project, ProjectMedia } = require('./models');
+const { Project, ProjectMedia } = require('./models');
+const { runMigrations } = require('./db/migrator');
 
 const authRoutes = require('./routes/auth');
 const quotesRoutes = require('./routes/quotes');
@@ -41,8 +42,16 @@ const galleryCacheTtlRaw = Number(process.env.GALLERY_CACHE_TTL_MS);
 const GALLERY_CACHE_TTL_MS = Number.isFinite(galleryCacheTtlRaw) && galleryCacheTtlRaw > 0
   ? galleryCacheTtlRaw
   : 60 * 1000;
+const publicGalleryCacheTtlRaw = Number(process.env.PUBLIC_GALLERY_CACHE_TTL_MS);
+const PUBLIC_GALLERY_CACHE_TTL_MS = Number.isFinite(publicGalleryCacheTtlRaw) && publicGalleryCacheTtlRaw > 0
+  ? publicGalleryCacheTtlRaw
+  : 30 * 1000;
 let galleryCache = {
   images: null,
+  expiresAt: 0
+};
+let managedGalleryCache = {
+  payload: null,
   expiresAt: 0
 };
 
@@ -107,6 +116,10 @@ const escapeHtml = (str) =>
     .replace(/'/g, '&#x27;');
 
 const getDateTokenFromFilename = (filename) => filename.match(/\d{8}/)?.[0] || '00000000';
+const applyPublicCacheHeaders = (res, ttlMs) => {
+  const maxAgeSeconds = Math.max(1, Math.floor(ttlMs / 1000));
+  res.set('Cache-Control', `public, max-age=${maxAgeSeconds}, stale-while-revalidate=${maxAgeSeconds * 2}`);
+};
 
 const getGalleryImages = async () => {
   const now = Date.now();
@@ -154,10 +167,12 @@ const getManagedGalleryProjects = async () => {
       showInGallery: true,
       isActive: true
     },
+    attributes: ['id', 'title', 'location'],
     include: [
       {
         model: ProjectMedia,
         as: 'media',
+        attributes: ['url', 'mediaType', 'showInGallery', 'isCover', 'galleryOrder', 'filename'],
         where: {
           mediaType: 'image',
           showInGallery: true
@@ -169,6 +184,27 @@ const getManagedGalleryProjects = async () => {
   });
 
   return mapManagedGalleryProjects(projects);
+};
+
+const getManagedGalleryProjectsCached = async () => {
+  const now = Date.now();
+  if (managedGalleryCache.payload && now < managedGalleryCache.expiresAt) {
+    return {
+      cacheHit: true,
+      projects: managedGalleryCache.payload.projects
+    };
+  }
+
+  const projects = await getManagedGalleryProjects();
+  managedGalleryCache = {
+    payload: { projects },
+    expiresAt: now + PUBLIC_GALLERY_CACHE_TTL_MS
+  };
+
+  return {
+    cacheHit: false,
+    projects
+  };
 };
 
 app.use(helmet({
@@ -219,7 +255,9 @@ app.use(express.static(path.join(__dirname)));
 
 app.get('/api/gallery/projects', async (req, res) => {
   try {
-    const projects = await getManagedGalleryProjects();
+    const { cacheHit, projects } = await getManagedGalleryProjectsCached();
+    applyPublicCacheHeaders(res, PUBLIC_GALLERY_CACHE_TTL_MS);
+    res.set('X-Cache', cacheHit ? 'HIT' : 'MISS');
     return res.json({ projects });
   } catch (error) {
     return res.status(500).json({ error: 'Failed to load gallery projects' });
@@ -228,8 +266,9 @@ app.get('/api/gallery/projects', async (req, res) => {
 
 app.get('/api/gallery', async (req, res) => {
   try {
-    const managedProjects = await getManagedGalleryProjects();
+    const { projects: managedProjects } = await getManagedGalleryProjectsCached();
     if (managedProjects.length) {
+      applyPublicCacheHeaders(res, PUBLIC_GALLERY_CACHE_TTL_MS);
       return res.json({ images: managedProjects.flatMap((project) => project.images), projects: managedProjects });
     }
 
@@ -309,7 +348,7 @@ app.use((error, req, res, next) => {
 
 const startServer = async () => {
   try {
-    await syncDatabase();
+    await runMigrations();
     app.listen(PORT, () => {
       console.log(`Server running at http://localhost:${PORT}`);
     });
