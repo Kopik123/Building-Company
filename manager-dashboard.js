@@ -10,9 +10,9 @@
     seedStatus: document.getElementById('dashboard-seed-status'),
     projectCreateForm: document.getElementById('project-create-form'),
     projectCreateStatus: document.getElementById('project-create-status'),
-    projectCreateClientLookup: document.getElementById('project-create-client-lookup'),
+    projectCreateClientSuggestions: document.getElementById('project-create-client-suggestions'),
     projectCreateClientLookupStatus: document.getElementById('project-create-client-lookup-status'),
-    projectCreateManagerLookup: document.getElementById('project-create-manager-lookup'),
+    projectCreateManagerSuggestions: document.getElementById('project-create-manager-suggestions'),
     projectCreateManagerLookupStatus: document.getElementById('project-create-manager-lookup-status'),
     projectsFilterQ: document.getElementById('projects-filter-q'),
     projectsFilterStatus: document.getElementById('projects-filter-status'),
@@ -27,9 +27,9 @@
     projectEditForm: document.getElementById('project-edit-form'),
     projectEditStatus: document.getElementById('project-edit-status'),
     projectDelete: document.getElementById('project-delete-btn'),
-    projectEditClientLookup: document.getElementById('project-edit-client-lookup'),
+    projectEditClientSuggestions: document.getElementById('project-edit-client-suggestions'),
     projectEditClientLookupStatus: document.getElementById('project-edit-client-lookup-status'),
-    projectEditManagerLookup: document.getElementById('project-edit-manager-lookup'),
+    projectEditManagerSuggestions: document.getElementById('project-edit-manager-suggestions'),
     projectEditManagerLookupStatus: document.getElementById('project-edit-manager-lookup-status'),
     mediaUploadForm: document.getElementById('media-upload-form'),
     mediaUploadStatus: document.getElementById('media-upload-status'),
@@ -85,6 +85,8 @@
     materialsQuery: { page: 1, pageSize: DEFAULT_PAGE_SIZE, q: '', category: '', lowStock: '' },
     materialsPagination: { page: 1, totalPages: 1, total: 0, pageSize: DEFAULT_PAGE_SIZE }
   };
+  const USER_SEARCH_CACHE_TTL_MS = 30 * 1000;
+  const userSearchCache = new Map();
 
   const parseError = (payload) => {
     if (payload?.error) return payload.error;
@@ -93,6 +95,13 @@
     }
     return 'Request failed.';
   };
+  const escapeHtml = (value) =>
+    String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#x27;');
 
   const setStatus = (node, msg, type) => {
     node.className = 'form-status';
@@ -170,7 +179,7 @@
     state.projects.forEach((project) => {
       const card = document.createElement('article');
       card.className = `dashboard-item ${project.id === state.selectedProjectId ? 'is-active' : ''}`;
-      card.innerHTML = `<h3>${project.title}</h3><p class=\"muted\">${project.status} | ${project.location || 'No location'} | ${project.imageCount || 0} images/${project.documentCount || 0} docs | Client: ${project.client?.email || 'No client'} | Staff: ${project.assignedManager?.email || 'No staff'}</p>`;
+      card.innerHTML = `<h3>${escapeHtml(project.title)}</h3><p class=\"muted\">${escapeHtml(project.status)} | ${escapeHtml(project.location || 'No location')} | ${escapeHtml(project.imageCount || 0)} images/${escapeHtml(project.documentCount || 0)} docs | Client: ${escapeHtml(project.client?.email || 'No client')} | Staff: ${escapeHtml(project.assignedManager?.email || 'No staff')}</p>`;
       const row = document.createElement('div');
       row.className = 'dashboard-actions-row';
       const btn = document.createElement('button');
@@ -203,7 +212,7 @@
     media.forEach((item) => {
       const card = document.createElement('article');
       card.className = 'dashboard-media-item';
-      card.innerHTML = `<div class=\"dashboard-media-top\"><strong>${item.filename}</strong><span class=\"muted\">${item.mediaType}</span></div>`;
+      card.innerHTML = `<div class=\"dashboard-media-top\"><strong>${escapeHtml(item.filename)}</strong><span class=\"muted\">${escapeHtml(item.mediaType)}</span></div>`;
       const row = document.createElement('div');
       row.className = 'dashboard-actions-row';
       const openLink = document.createElement('a');
@@ -275,7 +284,7 @@
       const owner = quote.guestName || quote.client?.name || quote.client?.email || 'Unknown client';
       const card = document.createElement('article');
       card.className = 'dashboard-item';
-      card.innerHTML = `<h3>${quote.projectType} | ${owner}</h3><p class=\"muted\">${quote.status} | priority ${quote.priority} | ${quote.location || '-'} ${quote.postcode || ''}</p><p>${quote.description || ''}</p>`;
+      card.innerHTML = `<h3>${escapeHtml(quote.projectType)} | ${escapeHtml(owner)}</h3><p class=\"muted\">${escapeHtml(quote.status)} | priority ${escapeHtml(quote.priority)} | ${escapeHtml(quote.location || '-')} ${escapeHtml(quote.postcode || '')}</p><p>${escapeHtml(quote.description || '')}</p>`;
       const row = document.createElement('div');
       row.className = 'dashboard-actions-row';
       const statusSelect = document.createElement('select');
@@ -347,7 +356,7 @@
     state.services.forEach((service) => {
       const card = document.createElement('article');
       card.className = 'dashboard-item';
-      card.innerHTML = `<h3>${service.title}</h3><p class=\"muted\">${service.slug} | ${service.category} | order ${service.displayOrder} | ${service.showOnWebsite ? 'public' : 'hidden'}</p>`;
+      card.innerHTML = `<h3>${escapeHtml(service.title)}</h3><p class=\"muted\">${escapeHtml(service.slug)} | ${escapeHtml(service.category)} | order ${escapeHtml(service.displayOrder)} | ${service.showOnWebsite ? 'public' : 'hidden'}</p>`;
       const row = document.createElement('div');
       row.className = 'dashboard-actions-row';
       const title = document.createElement('input');
@@ -428,7 +437,7 @@
       const lowStock = Number(material.stockQty) <= Number(material.minStockQty);
       const card = document.createElement('article');
       card.className = 'dashboard-item';
-      card.innerHTML = `<h3>${material.name}</h3><p class=\"muted\">${material.category} | SKU: ${material.sku || '-'} | stock ${material.stockQty}/${material.minStockQty} | ${lowStock ? 'LOW STOCK' : 'OK'}</p>`;
+      card.innerHTML = `<h3>${escapeHtml(material.name)}</h3><p class=\"muted\">${escapeHtml(material.category)} | SKU: ${escapeHtml(material.sku || '-')} | stock ${escapeHtml(material.stockQty)}/${escapeHtml(material.minStockQty)} | ${lowStock ? 'LOW STOCK' : 'OK'}</p>`;
       const row = document.createElement('div');
       row.className = 'dashboard-actions-row';
       const stock = document.createElement('input');
@@ -551,23 +560,79 @@
     renderMaterials();
   };
 
-  const lookupByEmail = async (type, email, statusNode) => {
-    const normalized = normEmail(email);
-    if (!normalized) {
-      setSmallStatus(statusNode, 'Enter email first.', 'error');
-      return null;
+  const searchUsersByEmail = async (type, queryText) => {
+    const normalized = normEmail(queryText);
+    if (!normalized || normalized.length < 2) return [];
+    const cacheKey = `${type}:${normalized}`;
+    const cached = userSearchCache.get(cacheKey);
+    if (cached && Date.now() < cached.expiresAt) {
+      return cached.users;
     }
     const path = type === 'client' ? '/api/manager/clients/search' : '/api/manager/staff/search';
     const key = type === 'client' ? 'clients' : 'staff';
-    const payload = await api(`${path}?${buildQuery({ email: normalized, pageSize: 5 })}`);
-    const list = Array.isArray(payload[key]) ? payload[key] : [];
-    const exact = list.find((item) => normEmail(item.email) === normalized);
-    if (!exact) {
-      setSmallStatus(statusNode, 'No exact user match for this email.', 'error');
-      return null;
-    }
-    setSmallStatus(statusNode, `Matched: ${exact.name || exact.email} (${exact.email})`, '');
-    return exact;
+    const payload = await api(`${path}?${buildQuery({ q: normalized, pageSize: 6 })}`);
+    const users = Array.isArray(payload[key]) ? payload[key] : [];
+    userSearchCache.set(cacheKey, {
+      users,
+      expiresAt: Date.now() + USER_SEARCH_CACHE_TTL_MS
+    });
+    return users;
+  };
+
+  const fillDatalist = (datalist, users) => {
+    datalist.innerHTML = '';
+    users.forEach((user) => {
+      const option = document.createElement('option');
+      option.value = user.email || '';
+      option.label = user.name ? `${user.name}` : user.email || '';
+      datalist.appendChild(option);
+    });
+  };
+
+  const setupLiveEmailAutocomplete = ({ input, datalist, type, statusNode }) => {
+    let debounceTimer = null;
+    let requestCounter = 0;
+
+    const runSearch = () => {
+      const value = normEmail(input.value);
+      clearTimeout(debounceTimer);
+      if (value.length < 2) {
+        fillDatalist(datalist, []);
+        if (!value) setSmallStatus(statusNode, '', '');
+        return;
+      }
+
+      debounceTimer = setTimeout(async () => {
+        const requestId = ++requestCounter;
+        try {
+          const users = await searchUsersByEmail(type, value);
+          if (requestId !== requestCounter) return;
+          fillDatalist(datalist, users);
+          if (!users.length) {
+            setSmallStatus(statusNode, 'No matches.', 'error');
+            return;
+          }
+          const exact = users.find((user) => normEmail(user.email) === value);
+          if (exact) {
+            setSmallStatus(statusNode, `Matched: ${exact.name || exact.email} (${exact.email})`, '');
+          } else {
+            setSmallStatus(statusNode, `${users.length} suggestion(s). Keep typing or pick from list.`, '');
+          }
+        } catch (error) {
+          if (requestId !== requestCounter) return;
+          fillDatalist(datalist, []);
+          setSmallStatus(statusNode, error.message || 'Lookup failed.', 'error');
+        }
+      }, 260);
+    };
+
+    input.addEventListener('input', runSearch);
+    input.addEventListener('blur', () => {
+      const value = normEmail(input.value);
+      if (!value) {
+        setSmallStatus(statusNode, '', '');
+      }
+    });
   };
 
   const applyProjectsFiltersFromUI = () => {
@@ -602,9 +667,13 @@
   };
 
   const bootstrap = async () => {
+    const loginUrl = `/auth.html?next=${encodeURIComponent('/manager-dashboard.html')}`;
     state.token = getToken();
     if (!state.token) {
-      el.session.textContent = 'No token. Log in on /auth.html.';
+      el.session.textContent = 'No active session. Redirecting to login...';
+      window.setTimeout(() => {
+        window.location.assign(loginUrl);
+      }, 700);
       return;
     }
     try {
@@ -634,25 +703,37 @@
       }
     } catch (error) {
       clearSession();
-      el.session.textContent = error.message || 'Session expired. Log in again.';
+      el.session.textContent = error.message || 'Session expired. Redirecting to login...';
+      window.setTimeout(() => {
+        window.location.assign(loginUrl);
+      }, 700);
     }
   };
 
-  el.projectCreateClientLookup.addEventListener('click', () =>
-    lookupByEmail('client', el.projectCreateForm.elements.clientEmail.value, el.projectCreateClientLookupStatus)
-      .catch((error) => setSmallStatus(el.projectCreateClientLookupStatus, error.message || 'Lookup failed.', 'error')));
-
-  el.projectCreateManagerLookup.addEventListener('click', () =>
-    lookupByEmail('staff', el.projectCreateForm.elements.assignedManagerEmail.value, el.projectCreateManagerLookupStatus)
-      .catch((error) => setSmallStatus(el.projectCreateManagerLookupStatus, error.message || 'Lookup failed.', 'error')));
-
-  el.projectEditClientLookup.addEventListener('click', () =>
-    lookupByEmail('client', el.projectEditForm.elements.clientEmail.value, el.projectEditClientLookupStatus)
-      .catch((error) => setSmallStatus(el.projectEditClientLookupStatus, error.message || 'Lookup failed.', 'error')));
-
-  el.projectEditManagerLookup.addEventListener('click', () =>
-    lookupByEmail('staff', el.projectEditForm.elements.assignedManagerEmail.value, el.projectEditManagerLookupStatus)
-      .catch((error) => setSmallStatus(el.projectEditManagerLookupStatus, error.message || 'Lookup failed.', 'error')));
+  setupLiveEmailAutocomplete({
+    input: el.projectCreateForm.elements.clientEmail,
+    datalist: el.projectCreateClientSuggestions,
+    type: 'client',
+    statusNode: el.projectCreateClientLookupStatus
+  });
+  setupLiveEmailAutocomplete({
+    input: el.projectCreateForm.elements.assignedManagerEmail,
+    datalist: el.projectCreateManagerSuggestions,
+    type: 'staff',
+    statusNode: el.projectCreateManagerLookupStatus
+  });
+  setupLiveEmailAutocomplete({
+    input: el.projectEditForm.elements.clientEmail,
+    datalist: el.projectEditClientSuggestions,
+    type: 'client',
+    statusNode: el.projectEditClientLookupStatus
+  });
+  setupLiveEmailAutocomplete({
+    input: el.projectEditForm.elements.assignedManagerEmail,
+    datalist: el.projectEditManagerSuggestions,
+    type: 'staff',
+    statusNode: el.projectEditManagerLookupStatus
+  });
 
   el.projectCreateForm.addEventListener('submit', async (event) => {
     event.preventDefault();

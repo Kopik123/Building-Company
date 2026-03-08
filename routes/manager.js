@@ -83,7 +83,7 @@ const STARTER_PROJECT_SEED = [
     location: 'Didsbury',
     status: 'completed',
     description: 'Full strip-out and premium bathroom rebuild with concealed storage.',
-    budgetEstimate: '£12,000 - £18,000',
+    budgetEstimate: 'GBP 12,000 - GBP 18,000',
     showInGallery: true,
     galleryOrder: 1,
     media: ['bathroom-main.jpg', 'bathroom-tiles.jpg', 'bathroom-bathtub.jpg']
@@ -93,7 +93,7 @@ const STARTER_PROJECT_SEED = [
     location: 'Wilmslow',
     status: 'in_progress',
     description: 'Open-plan kitchen upgrade with custom joinery and smart lighting.',
-    budgetEstimate: '£25,000 - £40,000',
+    budgetEstimate: 'GBP 25,000 - GBP 40,000',
     showInGallery: true,
     galleryOrder: 2,
     media: ['kitchen-panorama-main.jpg', 'kitchen-panorama-left.jpg', 'kitchen-panorama-right.jpg']
@@ -102,8 +102,8 @@ const STARTER_PROJECT_SEED = [
     title: 'Stockport Exterior Brick Refresh',
     location: 'Stockport',
     status: 'planning',
-    description: 'Exterior brickwork, detailing and façade enhancement package.',
-    budgetEstimate: '£9,000 - £15,000',
+    description: 'Exterior brickwork, detailing and facade enhancement package.',
+    budgetEstimate: 'GBP 9,000 - GBP 15,000',
     showInGallery: true,
     galleryOrder: 3,
     media: ['exterior-front.jpg', 'exterior-chimney.jpg', 'brick-detail-charcoal.jpg']
@@ -267,7 +267,8 @@ router.post(
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { email, password, name, phone, role } = req.body;
+    const email = normalizeEmail(req.body.email);
+    const { password, name, phone, role } = req.body;
 
     // Only admins can create managers
     if (role === 'manager' && req.user.role !== 'admin') {
@@ -521,7 +522,7 @@ router.post(
     });
 
     // Create a group chat for this project
-    const projectName = `${quote.projectType} – ${quote.guestName || (quote.client && quote.client.name) || 'Project'} (${quote.postcode || quote.location})`;
+    const projectName = `${quote.projectType} - ${quote.guestName || (quote.client && quote.client.name) || 'Project'} (${quote.postcode || quote.location})`;
 
     const groupThread = await GroupThread.create({
       name: projectName,
@@ -547,7 +548,7 @@ router.post(
 
     // Notify managers that this quote was accepted
     const otherManagers = await User.findAll({
-      where: { role: ['manager', 'admin'], isActive: true, id: { [Op.ne]: req.user.id } }
+      where: { role: { [Op.in]: ['manager', 'admin'] }, isActive: true, id: { [Op.ne]: req.user.id } }
     });
 
     if (otherManagers.length) {
@@ -601,27 +602,25 @@ router.get(
     }
 
     const { page, pageSize, offset } = getPagination(req);
-    const [quotes, total] = await Promise.all([
-      Quote.findAll({
-        where,
-        include: [
-          { model: User, as: 'client', attributes: ['id', 'name', 'email', 'phone'] },
-          { model: User, as: 'assignedManager', attributes: ['id', 'name', 'email'] }
-        ],
-        order: [['createdAt', 'DESC']],
-        limit: pageSize,
-        offset
-      }),
-      Quote.count({ where })
-    ]);
+    const { rows, count } = await Quote.findAndCountAll({
+      where,
+      include: [
+        { model: User, as: 'client', attributes: ['id', 'name', 'email', 'phone'] },
+        { model: User, as: 'assignedManager', attributes: ['id', 'name', 'email'] }
+      ],
+      order: [['createdAt', 'DESC']],
+      distinct: true,
+      limit: pageSize,
+      offset
+    });
 
     return res.json({
-      quotes,
+      quotes: rows,
       pagination: {
         page,
         pageSize,
-        total,
-        totalPages: Math.max(1, Math.ceil(total / pageSize))
+        total: count,
+        totalPages: Math.max(1, Math.ceil(count / pageSize))
       }
     });
   })

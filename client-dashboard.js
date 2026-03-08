@@ -37,6 +37,13 @@
     }
     return 'Request failed.';
   };
+  const escapeHtml = (value) =>
+    String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#x27;');
 
   const setStatus = (node, message, type) => {
     node.className = 'form-status';
@@ -73,7 +80,7 @@
     cards.forEach((card) => {
       const node = document.createElement('article');
       node.className = 'card dashboard-item';
-      node.innerHTML = `<p class="muted">${card.label}</p><h2>${card.value}</h2>`;
+      node.innerHTML = `<p class="muted">${escapeHtml(card.label)}</p><h2>${escapeHtml(card.value)}</h2>`;
       el.metrics.appendChild(node);
     });
   };
@@ -98,7 +105,7 @@
       card.className = 'dashboard-item';
       const manager = project.assignedManager?.name || project.assignedManager?.email || 'Not assigned';
       const docsCount = Array.isArray(project.documents) ? project.documents.length : 0;
-      card.innerHTML = `<h3>${project.title}</h3><p class="muted">${project.status} · ${project.location || '-'} · Manager: ${manager} · Docs: ${docsCount}</p><p>${project.description || ''}</p>`;
+      card.innerHTML = `<h3>${escapeHtml(project.title)}</h3><p class="muted">${escapeHtml(project.status)} · ${escapeHtml(project.location || '-')} · Manager: ${escapeHtml(manager)} · Docs: ${escapeHtml(docsCount)}</p><p>${escapeHtml(project.description || '')}</p>`;
 
       const docsWrap = document.createElement('div');
       docsWrap.className = 'dashboard-list';
@@ -134,7 +141,7 @@
     state.quotes.forEach((quote) => {
       const card = document.createElement('article');
       card.className = 'dashboard-item';
-      card.innerHTML = `<h3>${quote.projectType}</h3><p class="muted">${quote.status} · priority ${quote.priority} · ${quote.location || '-'}</p><p>${quote.description || ''}</p>`;
+      card.innerHTML = `<h3>${escapeHtml(quote.projectType)}</h3><p class="muted">${escapeHtml(quote.status)} · priority ${escapeHtml(quote.priority)} · ${escapeHtml(quote.location || '-')}</p><p>${escapeHtml(quote.description || '')}</p>`;
       frag.appendChild(card);
     });
     el.quotesList.appendChild(frag);
@@ -152,7 +159,7 @@
       const card = document.createElement('article');
       card.className = 'dashboard-item';
       const price = service.basePriceFrom ? `from £${Number(service.basePriceFrom).toLocaleString('en-GB')}` : 'custom quote';
-      card.innerHTML = `<h3>${service.title}</h3><p class="muted">${service.category} · ${price}</p><p>${service.shortDescription || ''}</p>`;
+      card.innerHTML = `<h3>${escapeHtml(service.title)}</h3><p class="muted">${escapeHtml(service.category)} · ${escapeHtml(price)}</p><p>${escapeHtml(service.shortDescription || '')}</p>`;
       frag.appendChild(card);
     });
     el.servicesList.appendChild(frag);
@@ -169,7 +176,7 @@
     state.threads.forEach((thread) => {
       const card = document.createElement('article');
       card.className = `dashboard-item ${thread.id === state.selectedThreadId ? 'is-active' : ''}`;
-      card.innerHTML = `<h3>${thread.name || thread.subject || 'Thread'}</h3><p class="muted">Updated: ${new Date(thread.updatedAt).toLocaleString('en-GB')}</p>`;
+      card.innerHTML = `<h3>${escapeHtml(thread.name || thread.subject || 'Thread')}</h3><p class="muted">Updated: ${escapeHtml(new Date(thread.updatedAt).toLocaleString('en-GB'))}</p>`;
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'btn btn-outline';
@@ -201,7 +208,7 @@
       const card = document.createElement('article');
       card.className = 'dashboard-item';
       const sender = message.sender?.name || message.sender?.email || 'Unknown';
-      card.innerHTML = `<p class="muted">${sender} · ${new Date(message.createdAt).toLocaleString('en-GB')}</p><p>${message.body || ''}</p>`;
+      card.innerHTML = `<p class="muted">${escapeHtml(sender)} · ${escapeHtml(new Date(message.createdAt).toLocaleString('en-GB'))}</p><p>${escapeHtml(message.body || '')}</p>`;
       frag.appendChild(card);
     });
     el.messagesList.appendChild(frag);
@@ -242,9 +249,13 @@
   };
 
   const bootstrap = async () => {
+    const loginUrl = `/auth.html?next=${encodeURIComponent('/client-dashboard.html')}`;
     state.token = localStorage.getItem(TOKEN_KEY) || '';
     if (!state.token) {
-      el.session.textContent = 'No token. Login on /auth.html.';
+      el.session.textContent = 'No active session. Redirecting to login...';
+      window.setTimeout(() => {
+        window.location.assign(loginUrl);
+      }, 700);
       return;
     }
 
@@ -260,7 +271,10 @@
       await Promise.all([loadOverview(), loadThreads()]);
     } catch (error) {
       clearSession();
-      el.session.textContent = error.message || 'Session expired. Login again.';
+      el.session.textContent = error.message || 'Session expired. Redirecting to login...';
+      window.setTimeout(() => {
+        window.location.assign(loginUrl);
+      }, 700);
     }
   };
 

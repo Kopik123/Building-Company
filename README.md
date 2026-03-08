@@ -1,6 +1,21 @@
 # Building Company
 strona firmy budowlanej
 
+## API v2 / Web v2 / Mobile v1
+
+- API v2 routes: `api/v2/*`
+- Web v2 app scaffold: `apps/web-v2`
+- Mobile v1 app scaffold: `apps/mobile-v1`
+- Cutover checklist: `deploy/CUTOVER_CHECKLIST_STAGING_PROD_v2.md`
+
+### Test commands
+
+```bash
+npm run test:api:v2
+npm run test:e2e:mobile
+npm run test:all
+```
+
 ## Uruchomienie lokalnie
 
 1. Zainstaluj zależności:
@@ -22,6 +37,16 @@ strona firmy budowlanej
 	npm start
 
 Serwis będzie dostępny pod `http://localhost:3000`.
+## Migracje bazy (Umzug)
+
+Migracje uruchamiają się automatycznie przy starcie aplikacji (dev i production).
+
+Ręcznie:
+
+```bash
+npm run migrate
+npm run migrate:status
+```
 
 ## Formularz e-mail i galeria
 
@@ -233,6 +258,8 @@ Serwer nie uruchomi się bez:
 Opcjonalne:
 
 - `BOOTSTRAP_ENABLED` (domyślnie aktywny, zablokowany gdy `false`)
+- `PUBLIC_SERVICES_CACHE_TTL_MS` (cache HTTP dla `GET /api/services`, domyslnie `30000`)
+- `PUBLIC_GALLERY_CACHE_TTL_MS` (cache HTTP dla `GET /api/gallery/projects`, domyslnie `30000`)
 
 ### SMTP lokalnie na DigitalOcean (localhost)
 
@@ -409,3 +436,5 @@ pm2 logs building-company        # live tail
 pm2 monit                         # dashboard CPU/RAM
 tail -f logs/pm2-error.log        # error log
 ```
+
+

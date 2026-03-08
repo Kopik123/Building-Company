@@ -4,5 +4,9 @@
             "approve": true,
             "matchCommandLine": true
         }
+    },
+    "sonarlint.connectedMode.project": {
+        "connectionId": "kopik123",
+        "projectKey": "Kopik123_Building-Company"
     }
 }
