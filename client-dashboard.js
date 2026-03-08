@@ -242,9 +242,13 @@
   };
 
   const bootstrap = async () => {
+    const loginUrl = `/auth.html?next=${encodeURIComponent('/client-dashboard.html')}`;
     state.token = localStorage.getItem(TOKEN_KEY) || '';
     if (!state.token) {
-      el.session.textContent = 'No token. Login on /auth.html.';
+      el.session.textContent = 'No active session. Redirecting to login...';
+      window.setTimeout(() => {
+        window.location.assign(loginUrl);
+      }, 700);
       return;
     }
 
@@ -260,7 +264,10 @@
       await Promise.all([loadOverview(), loadThreads()]);
     } catch (error) {
       clearSession();
-      el.session.textContent = error.message || 'Session expired. Login again.';
+      el.session.textContent = error.message || 'Session expired. Redirecting to login...';
+      window.setTimeout(() => {
+        window.location.assign(loginUrl);
+      }, 700);
     }
   };
 

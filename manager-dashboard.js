@@ -660,9 +660,13 @@
   };
 
   const bootstrap = async () => {
+    const loginUrl = `/auth.html?next=${encodeURIComponent('/manager-dashboard.html')}`;
     state.token = getToken();
     if (!state.token) {
-      el.session.textContent = 'No token. Log in on /auth.html.';
+      el.session.textContent = 'No active session. Redirecting to login...';
+      window.setTimeout(() => {
+        window.location.assign(loginUrl);
+      }, 700);
       return;
     }
     try {
@@ -692,7 +696,10 @@
       }
     } catch (error) {
       clearSession();
-      el.session.textContent = error.message || 'Session expired. Log in again.';
+      el.session.textContent = error.message || 'Session expired. Redirecting to login...';
+      window.setTimeout(() => {
+        window.location.assign(loginUrl);
+      }, 700);
     }
   };
 

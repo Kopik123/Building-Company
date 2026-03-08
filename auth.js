@@ -61,6 +61,15 @@
     return '/auth.html';
   };
 
+  const resolveNextPath = () => {
+    const raw = new URLSearchParams(window.location.search).get('next');
+    if (!raw) return '';
+    if (!raw.startsWith('/')) return '';
+    if (raw.startsWith('//')) return '';
+    if (raw.includes('://')) return '';
+    return raw;
+  };
+
   const humanRole = (roleRaw) => {
     const role = String(roleRaw || '').toLowerCase();
     if (role === 'client') return 'Client';
@@ -161,7 +170,8 @@
   };
 
   const redirectAfterLogin = (user) => {
-    const destination = dashboardPathForRole(user?.role);
+    const requestedNext = resolveNextPath();
+    const destination = requestedNext || dashboardPathForRole(user?.role);
     if (!destination || destination === '/auth.html') return;
     window.setTimeout(() => {
       window.location.assign(destination);

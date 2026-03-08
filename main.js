@@ -72,12 +72,36 @@
     return 'Account';
   };
 
+  const syncHeaderAccountButton = (loggedIn) => {
+    const headerInner = document.querySelector('.header-inner');
+    if (!headerInner) return;
+    const isMobile = window.matchMedia('(max-width: 768px)').matches;
+
+    let button = headerInner.querySelector('[data-header-account-btn]');
+    if (!button) {
+      button = document.createElement('a');
+      button.dataset.headerAccountBtn = '1';
+      button.className = 'btn btn-outline header-account-btn';
+      const headerCta = headerInner.querySelector('.header-cta');
+      if (headerCta) {
+        headerCta.insertAdjacentElement('beforebegin', button);
+      } else {
+        headerInner.appendChild(button);
+      }
+    }
+
+    button.href = '/auth.html';
+    button.textContent = loggedIn ? 'Account' : (isMobile ? 'Login' : 'Login / Register');
+    button.title = loggedIn ? 'Open account settings' : 'Login or register account';
+    button.classList.toggle('is-authenticated', loggedIn);
+  };
+
   const syncAuthLinks = (user) => {
     const authLinks = navLinks.filter(isAuthLink);
-    if (!authLinks.length) return;
-
     const loggedIn = Boolean(user && localStorage.getItem(TOKEN_KEY));
     const accountHref = accountPathForRole(user?.role);
+    syncHeaderAccountButton(loggedIn);
+    if (!authLinks.length) return;
 
     authLinks.forEach((link) => {
       if (loggedIn) {
