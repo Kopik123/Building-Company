@@ -95,6 +95,13 @@
     }
     return 'Request failed.';
   };
+  const escapeHtml = (value) =>
+    String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#x27;');
 
   const setStatus = (node, msg, type) => {
     node.className = 'form-status';
@@ -172,7 +179,7 @@
     state.projects.forEach((project) => {
       const card = document.createElement('article');
       card.className = `dashboard-item ${project.id === state.selectedProjectId ? 'is-active' : ''}`;
-      card.innerHTML = `<h3>${project.title}</h3><p class=\"muted\">${project.status} | ${project.location || 'No location'} | ${project.imageCount || 0} images/${project.documentCount || 0} docs | Client: ${project.client?.email || 'No client'} | Staff: ${project.assignedManager?.email || 'No staff'}</p>`;
+      card.innerHTML = `<h3>${escapeHtml(project.title)}</h3><p class=\"muted\">${escapeHtml(project.status)} | ${escapeHtml(project.location || 'No location')} | ${escapeHtml(project.imageCount || 0)} images/${escapeHtml(project.documentCount || 0)} docs | Client: ${escapeHtml(project.client?.email || 'No client')} | Staff: ${escapeHtml(project.assignedManager?.email || 'No staff')}</p>`;
       const row = document.createElement('div');
       row.className = 'dashboard-actions-row';
       const btn = document.createElement('button');
@@ -205,7 +212,7 @@
     media.forEach((item) => {
       const card = document.createElement('article');
       card.className = 'dashboard-media-item';
-      card.innerHTML = `<div class=\"dashboard-media-top\"><strong>${item.filename}</strong><span class=\"muted\">${item.mediaType}</span></div>`;
+      card.innerHTML = `<div class=\"dashboard-media-top\"><strong>${escapeHtml(item.filename)}</strong><span class=\"muted\">${escapeHtml(item.mediaType)}</span></div>`;
       const row = document.createElement('div');
       row.className = 'dashboard-actions-row';
       const openLink = document.createElement('a');
@@ -277,7 +284,7 @@
       const owner = quote.guestName || quote.client?.name || quote.client?.email || 'Unknown client';
       const card = document.createElement('article');
       card.className = 'dashboard-item';
-      card.innerHTML = `<h3>${quote.projectType} | ${owner}</h3><p class=\"muted\">${quote.status} | priority ${quote.priority} | ${quote.location || '-'} ${quote.postcode || ''}</p><p>${quote.description || ''}</p>`;
+      card.innerHTML = `<h3>${escapeHtml(quote.projectType)} | ${escapeHtml(owner)}</h3><p class=\"muted\">${escapeHtml(quote.status)} | priority ${escapeHtml(quote.priority)} | ${escapeHtml(quote.location || '-')} ${escapeHtml(quote.postcode || '')}</p><p>${escapeHtml(quote.description || '')}</p>`;
       const row = document.createElement('div');
       row.className = 'dashboard-actions-row';
       const statusSelect = document.createElement('select');
@@ -349,7 +356,7 @@
     state.services.forEach((service) => {
       const card = document.createElement('article');
       card.className = 'dashboard-item';
-      card.innerHTML = `<h3>${service.title}</h3><p class=\"muted\">${service.slug} | ${service.category} | order ${service.displayOrder} | ${service.showOnWebsite ? 'public' : 'hidden'}</p>`;
+      card.innerHTML = `<h3>${escapeHtml(service.title)}</h3><p class=\"muted\">${escapeHtml(service.slug)} | ${escapeHtml(service.category)} | order ${escapeHtml(service.displayOrder)} | ${service.showOnWebsite ? 'public' : 'hidden'}</p>`;
       const row = document.createElement('div');
       row.className = 'dashboard-actions-row';
       const title = document.createElement('input');
@@ -430,7 +437,7 @@
       const lowStock = Number(material.stockQty) <= Number(material.minStockQty);
       const card = document.createElement('article');
       card.className = 'dashboard-item';
-      card.innerHTML = `<h3>${material.name}</h3><p class=\"muted\">${material.category} | SKU: ${material.sku || '-'} | stock ${material.stockQty}/${material.minStockQty} | ${lowStock ? 'LOW STOCK' : 'OK'}</p>`;
+      card.innerHTML = `<h3>${escapeHtml(material.name)}</h3><p class=\"muted\">${escapeHtml(material.category)} | SKU: ${escapeHtml(material.sku || '-')} | stock ${escapeHtml(material.stockQty)}/${escapeHtml(material.minStockQty)} | ${lowStock ? 'LOW STOCK' : 'OK'}</p>`;
       const row = document.createElement('div');
       row.className = 'dashboard-actions-row';
       const stock = document.createElement('input');

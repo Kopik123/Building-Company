@@ -75,7 +75,7 @@
     return 'Account';
   };
 
-  const syncHeaderAccountButton = (loggedIn) => {
+  const syncHeaderAccountButton = (loggedIn, accountHref = '/auth.html') => {
     const headerInner = document.querySelector('.header-inner');
     if (!headerInner) return;
     const isMobile = window.matchMedia('(max-width: 768px)').matches;
@@ -93,7 +93,7 @@
       }
     }
 
-    button.href = '/auth.html';
+    button.href = loggedIn ? accountHref : '/auth.html';
     button.textContent = loggedIn ? 'Account' : (isMobile ? 'Login' : 'Login / Register');
     button.title = loggedIn ? 'Open account settings' : 'Login or register account';
     button.classList.toggle('is-authenticated', loggedIn);
@@ -103,7 +103,7 @@
     const authLinks = navLinks.filter(isAuthLink);
     const loggedIn = Boolean(user && localStorage.getItem(TOKEN_KEY));
     const accountHref = accountPathForRole(user?.role);
-    syncHeaderAccountButton(loggedIn);
+    syncHeaderAccountButton(loggedIn, accountHref);
     if (!authLinks.length) return;
 
     authLinks.forEach((link) => {
@@ -264,6 +264,9 @@
   }
 
   validateSession();
+  window.addEventListener('ll:session-changed', () => {
+    validateSession();
+  });
 
   if (yearNodes.length) {
     const year = String(new Date().getFullYear());

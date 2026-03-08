@@ -267,7 +267,8 @@ router.post(
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { email, password, name, phone, role } = req.body;
+    const email = normalizeEmail(req.body.email);
+    const { password, name, phone, role } = req.body;
 
     // Only admins can create managers
     if (role === 'manager' && req.user.role !== 'admin') {

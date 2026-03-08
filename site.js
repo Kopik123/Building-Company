@@ -73,7 +73,7 @@
     return 'Account';
   };
 
-  const syncHeaderAccountButton = (loggedIn) => {
+  const syncHeaderAccountButton = (loggedIn, accountHref = '/auth.html') => {
     const headerInner = document.querySelector('.header-inner');
     if (!headerInner) return;
     const isMobile = window.matchMedia('(max-width: 768px)').matches;
@@ -91,7 +91,7 @@
       }
     }
 
-    button.href = '/auth.html';
+    button.href = loggedIn ? accountHref : '/auth.html';
     button.textContent = loggedIn ? 'Account' : (isMobile ? 'Login' : 'Login / Register');
     button.title = loggedIn ? 'Open account settings' : 'Login or register account';
     button.classList.toggle('is-authenticated', loggedIn);
@@ -101,7 +101,7 @@
     const authLinks = navLinks.filter(isAuthLink);
     const loggedIn = Boolean(user && localStorage.getItem(TOKEN_KEY));
     const accountHref = accountPathForRole(user?.role);
-    syncHeaderAccountButton(loggedIn);
+    syncHeaderAccountButton(loggedIn, accountHref);
     if (!authLinks.length) return;
 
     authLinks.forEach((link) => {
@@ -224,6 +224,9 @@
   }
 
   validateSession();
+  window.addEventListener('ll:session-changed', () => {
+    validateSession();
+  });
 
   const yearEls = document.querySelectorAll('[data-current-year]');
   if (yearEls.length) {
@@ -260,9 +263,26 @@
     range.addEventListener('input', () => apply(range.value));
   });
 
-  const mapProjectType = (value) => {
-    const raw = String(value || '').toLowerCase();
+  const normalizeProjectType = (value) => {
+    const raw = String(value || '').trim().toLowerCase();
+    if (!raw) return 'other';
 
+    const aliases = new Map([
+      ['bathroom', 'bathroom'],
+      ['premium bathroom', 'bathroom'],
+      ['kitchen', 'kitchen'],
+      ['premium kitchen', 'kitchen'],
+      ['interior', 'interior'],
+      ['interior renovation', 'interior'],
+      ['tiling', 'tiling'],
+      ['extension', 'extension'],
+      ['joinery', 'joinery'],
+      ['rendering', 'rendering'],
+      ['decorating', 'decorating'],
+      ['other', 'other']
+    ]);
+
+    if (aliases.has(raw)) return aliases.get(raw);
     if (raw.includes('bath')) return 'bathroom';
     if (raw.includes('kitch')) return 'kitchen';
     if (raw.includes('interior')) return 'interior';
@@ -271,11 +291,11 @@
     if (raw.includes('extension')) return 'extension';
     if (raw.includes('render')) return 'rendering';
     if (raw.includes('decor')) return 'decorating';
-
     return 'other';
   };
 
-  const quoteForms = document.querySelectorAll('.quote-form');
+  // Handle non-js quote forms only to avoid double submit when quote.js is present.
+  const quoteForms = document.querySelectorAll('.quote-form:not(.js-quote-form)');
 
   quoteForms.forEach((form) => {
     const status = form.querySelector('.form-status');
@@ -291,7 +311,7 @@
       const guestEmail = String(formData.get('email') || '').trim();
       const guestPhone = String(formData.get('phone') || '').trim();
       const description = String(formData.get('message') || '').trim();
-      const projectType = mapProjectType(formData.get('project-type'));
+      const projectType = normalizeProjectType(formData.get('projectType') || formData.get('project-type'));
       const budgetRange = String(formData.get('budget') || '').trim();
       const location = String(formData.get('location') || '').trim() || 'Greater Manchester';
       const postcode = String(formData.get('postcode') || '').trim();
@@ -334,7 +354,9 @@
         }
 
         status.className = 'form-status is-success';
-        status.textContent = `Request sent successfully. Reference: ${payload.quoteId}.`;
+        status.textContent = payload.quoteId
+          ? `Request sent successfully. Reference: ${payload.quoteId}.`
+          : 'Request sent successfully.';
         form.reset();
       } catch (error) {
         status.className = 'form-status is-error';

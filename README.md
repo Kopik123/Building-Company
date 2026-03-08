@@ -1,6 +1,21 @@
 # Building Company
 strona firmy budowlanej
 
+## API v2 / Web v2 / Mobile v1
+
+- API v2 routes: `api/v2/*`
+- Web v2 app scaffold: `apps/web-v2`
+- Mobile v1 app scaffold: `apps/mobile-v1`
+- Cutover checklist: `deploy/CUTOVER_CHECKLIST_STAGING_PROD_v2.md`
+
+### Test commands
+
+```bash
+npm run test:api:v2
+npm run test:e2e:mobile
+npm run test:all
+```
+
 ## Uruchomienie lokalnie
 
 1. Zainstaluj zależności:

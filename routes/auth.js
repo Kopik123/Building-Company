@@ -14,6 +14,7 @@ const signToken = (userId) =>
   jwt.sign({ id: userId }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN || '7d'
   });
+const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
 
 const bootstrapLockPath = path.join(__dirname, '..', '.bootstrap.lock');
 
@@ -44,7 +45,8 @@ router.post(
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { email, password, name, phone, companyName } = req.body;
+    const email = normalizeEmail(req.body.email);
+    const { password, name, phone, companyName } = req.body;
     const existing = await User.findOne({ where: { email } });
 
     if (existing) {
@@ -66,7 +68,8 @@ router.post(
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { email, password } = req.body;
+    const email = normalizeEmail(req.body.email);
+    const { password } = req.body;
     const user = await User.findOne({ where: { email } });
 
     if (!user) {
@@ -180,7 +183,8 @@ router.post(
       return res.status(403).json({ error: 'Invalid bootstrap key' });
     }
 
-    const { email, password, name, phone, role } = req.body;
+    const email = normalizeEmail(req.body.email);
+    const { password, name, phone, role } = req.body;
     const existing = await User.findOne({ where: { email } });
     if (existing) {
       return res.status(400).json({ error: 'Email already registered' });

@@ -51,6 +51,11 @@ const User = sequelize.define(
   },
   {
     hooks: {
+      beforeValidate: (user) => {
+        if (typeof user.email !== 'undefined' && user.email !== null) {
+          user.email = String(user.email).trim().toLowerCase();
+        }
+      },
       beforeCreate: async (user) => {
         const salt = await bcrypt.genSalt(10);
         user.password = await bcrypt.hash(user.password, salt);

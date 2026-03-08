@@ -13,6 +13,8 @@ const Project = require('./Project');
 const ProjectMedia = require('./ProjectMedia');
 const ServiceOffering = require('./ServiceOffering');
 const Material = require('./Material');
+const SessionRefreshToken = require('./SessionRefreshToken');
+const DevicePushToken = require('./DevicePushToken');
 
 User.hasMany(Quote, { foreignKey: 'clientId', as: 'quotes' });
 Quote.belongsTo(User, { foreignKey: 'clientId', as: 'client' });
@@ -56,6 +58,10 @@ Project.belongsTo(User, { foreignKey: 'clientId', as: 'client' });
 User.hasMany(Project, { foreignKey: 'clientId', as: 'projects' });
 Project.belongsTo(User, { foreignKey: 'assignedManagerId', as: 'assignedManager' });
 User.hasMany(Project, { foreignKey: 'assignedManagerId', as: 'managedProjects' });
+User.hasMany(SessionRefreshToken, { foreignKey: 'userId', as: 'refreshTokens' });
+SessionRefreshToken.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+User.hasMany(DevicePushToken, { foreignKey: 'userId', as: 'devicePushTokens' });
+DevicePushToken.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 
 const toTableCacheKey = (tableName) => (typeof tableName === 'string' ? tableName : JSON.stringify(tableName));
 
@@ -133,7 +139,10 @@ const ensureIndexes = async () => {
     { table: ServiceOffering.getTableName(), name: 'service_offerings_public_order_idx', fields: ['showOnWebsite', 'displayOrder'] },
     { table: ServiceOffering.getTableName(), name: 'service_offerings_category_active_idx', fields: ['category', 'isActive'] },
     { table: Material.getTableName(), name: 'materials_category_active_idx', fields: ['category', 'isActive'] },
-    { table: Material.getTableName(), name: 'materials_stock_min_idx', fields: ['stockQty', 'minStockQty'] }
+    { table: Material.getTableName(), name: 'materials_stock_min_idx', fields: ['stockQty', 'minStockQty'] },
+    { table: SessionRefreshToken.getTableName(), name: 'session_refresh_tokens_user_expires_idx', fields: ['userId', 'expiresAt'] },
+    { table: SessionRefreshToken.getTableName(), name: 'session_refresh_tokens_revoked_idx', fields: ['revokedAt'] },
+    { table: DevicePushToken.getTableName(), name: 'device_push_tokens_user_platform_idx', fields: ['userId', 'platform'] }
   ];
 
   for (const spec of indexSpecs) {
@@ -157,5 +166,7 @@ module.exports = {
   ProjectMedia,
   ServiceOffering,
   Material,
+  SessionRefreshToken,
+  DevicePushToken,
   ensureIndexes
 };

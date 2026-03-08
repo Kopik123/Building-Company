@@ -353,6 +353,15 @@ p { margin: 0 0 var(--space-2); }
   transform: translateY(-50%);
   min-height: 42px;
   z-index: 82;
+  border-color: rgba(198, 164, 108, 0.45);
+  color: #ececec;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.header-account-btn:hover {
+  border-color: rgba(198, 164, 108, 0.8);
+  color: #f6d9a8;
+  background: rgba(198, 164, 108, 0.12);
 }
 
 .header-account-btn.is-authenticated {
@@ -374,6 +383,8 @@ p { margin: 0 0 var(--space-2); }
   color: var(--white);
   border-radius: 10px;
   padding: 0;
+  position: relative;
+  z-index: 132;
 }
 
 .nav-toggle-line {
@@ -1223,6 +1234,12 @@ p { margin: 0 0 var(--space-2); }
     min-height: 44px;
     font-size: 0.76rem;
     letter-spacing: 0.1em;
+  }
+
+  .site-nav.is-open a,
+  .nav-menu.is-open a {
+    opacity: 1;
+    transform: translateY(0);
   }
 
   .card {

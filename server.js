@@ -26,6 +26,7 @@ const notificationsRoutes = require('./routes/notifications');
 const groupRoutes = require('./routes/group');
 const clientRoutes = require('./routes/client');
 const publicRoutes = require('./routes/public');
+const apiV2Routes = require('./api/v2');
 
 const app = express();
 app.set('trust proxy', 1);
@@ -238,6 +239,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use('/api/', globalLimiter);
 app.use('/api/auth', authLimiter);
+app.use('/api/v2/auth', authLimiter);
 app.use('/api/quotes/guest/:id/claim', claimLimiter);
 app.use('/api/contact', contactLimiter);
 
@@ -248,6 +250,7 @@ app.use('/api/manager', managerRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/group', groupRoutes);
 app.use('/api/client', clientRoutes);
+app.use('/api/v2', apiV2Routes);
 app.use('/api', publicRoutes);
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

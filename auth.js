@@ -82,11 +82,13 @@
   const saveSession = (token, user) => {
     localStorage.setItem(TOKEN_KEY, token);
     localStorage.setItem(USER_KEY, JSON.stringify(user || {}));
+    window.dispatchEvent(new Event('ll:session-changed'));
   };
 
   const clearSession = () => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
+    window.dispatchEvent(new Event('ll:session-changed'));
   };
 
   const getSavedUser = () => {
@@ -171,8 +173,9 @@
 
   const redirectAfterLogin = (user) => {
     const requestedNext = resolveNextPath();
-    const destination = requestedNext || dashboardPathForRole(user?.role);
-    if (!destination || destination === '/auth.html') return;
+    const roleDestination = dashboardPathForRole(user?.role || getSavedUser()?.role);
+    const destination = requestedNext || (roleDestination === '/auth.html' ? '/client-dashboard.html' : roleDestination);
+    if (!destination) return;
     window.setTimeout(() => {
       window.location.assign(destination);
     }, 350);
