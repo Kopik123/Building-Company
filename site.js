@@ -1,8 +1,128 @@
-﻿(() => {
+(() => {
+  const TOKEN_KEY = 'll_auth_token';
+  const USER_KEY = 'll_auth_user';
   const header = document.querySelector('.site-header');
   const navToggle = document.querySelector('[data-nav-toggle]');
   const navMenu = document.querySelector('[data-nav-menu]');
   const navLinks = Array.from(document.querySelectorAll('[data-nav-link]'));
+
+  const clearSession = () => {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
+  };
+
+  const getSavedUser = () => {
+    try {
+      return JSON.parse(localStorage.getItem(USER_KEY) || 'null');
+    } catch {
+      return null;
+    }
+  };
+
+  const accountPathForRole = (roleRaw) => {
+    const role = String(roleRaw || '').toLowerCase();
+    if (role === 'client') return '/client-dashboard.html';
+    if (['employee', 'manager', 'admin'].includes(role)) return '/manager-dashboard.html';
+    return '/auth.html';
+  };
+
+  const isAuthLink = (link) => {
+    const href = String(link.getAttribute('href') || '').toLowerCase();
+    return href.includes('auth.html') || /login\s*\/\s*register/i.test(link.textContent || '');
+  };
+
+  const createLogoutAnchor = () => {
+    const anchor = document.createElement('a');
+    anchor.href = '#logout';
+    anchor.dataset.navLink = '';
+    anchor.dataset.navLogout = '1';
+    anchor.classList.add('nav-logout-link');
+    anchor.textContent = 'Logout';
+    anchor.addEventListener('click', (event) => {
+      event.preventDefault();
+      clearSession();
+      window.location.assign('/index.html');
+    });
+    return anchor;
+  };
+
+  const ensureLogoutLink = (authLink) => {
+    if (!authLink || document.querySelector('[data-nav-logout]')) return;
+
+    const anchor = createLogoutAnchor();
+    const parent = authLink.parentElement;
+    if (parent && parent.tagName === 'LI') {
+      const li = document.createElement('li');
+      li.appendChild(anchor);
+      parent.insertAdjacentElement('afterend', li);
+      return;
+    }
+
+    authLink.insertAdjacentElement('afterend', anchor);
+  };
+
+  const syncAuthLinks = (user) => {
+    const authLinks = navLinks.filter(isAuthLink);
+    if (!authLinks.length) return;
+
+    const loggedIn = Boolean(user && localStorage.getItem(TOKEN_KEY));
+    const accountHref = accountPathForRole(user?.role);
+
+    authLinks.forEach((link) => {
+      if (loggedIn) {
+        link.textContent = 'Account';
+        link.setAttribute('href', accountHref);
+        link.classList.add('nav-account-link');
+      } else {
+        link.textContent = 'Login / Register';
+        link.setAttribute('href', '/auth.html');
+        link.classList.remove('nav-account-link');
+      }
+    });
+
+    const existingLogout = document.querySelectorAll('[data-nav-logout]');
+    if (loggedIn) {
+      ensureLogoutLink(authLinks[0]);
+      return;
+    }
+
+    existingLogout.forEach((node) => {
+      const parent = node.parentElement;
+      if (parent && parent.tagName === 'LI') {
+        parent.remove();
+        return;
+      }
+      node.remove();
+    });
+  };
+
+  const validateSession = async () => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) {
+      syncAuthLinks(null);
+      return;
+    }
+
+    syncAuthLinks(getSavedUser());
+
+    try {
+      const response = await fetch('/api/auth/me', {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      if (!response.ok) throw new Error('Session expired');
+
+      const payload = await response.json().catch(() => ({}));
+      if (!payload?.user) throw new Error('Invalid session');
+
+      localStorage.setItem(USER_KEY, JSON.stringify(payload.user));
+      syncAuthLinks(payload.user);
+    } catch {
+      clearSession();
+      syncAuthLinks(null);
+    }
+  };
 
   if (header) {
     const syncHeader = () => {
@@ -31,6 +151,8 @@
       });
     });
   }
+
+  validateSession();
 
   const yearEls = document.querySelectorAll('[data-current-year]');
   if (yearEls.length) {

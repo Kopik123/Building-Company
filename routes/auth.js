@@ -88,6 +88,75 @@ router.get('/me', auth, asyncHandler(async (req, res) => {
   return res.json({ user: req.user });
 }));
 
+router.patch(
+  '/profile',
+  [
+    auth,
+    body('name').optional().trim().isLength({ min: 2, max: 120 }),
+    body('phone').optional({ nullable: true }).trim().isLength({ max: 40 }),
+    body('companyName').optional({ nullable: true }).trim().isLength({ max: 120 })
+  ],
+  asyncHandler(async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const payload = {};
+    if (Object.prototype.hasOwnProperty.call(req.body, 'name')) {
+      payload.name = String(req.body.name || '').trim();
+    }
+    if (Object.prototype.hasOwnProperty.call(req.body, 'phone')) {
+      payload.phone = String(req.body.phone || '').trim() || null;
+    }
+    if (Object.prototype.hasOwnProperty.call(req.body, 'companyName')) {
+      payload.companyName = String(req.body.companyName || '').trim() || null;
+    }
+
+    if (!Object.keys(payload).length) {
+      return res.status(400).json({ error: 'No profile fields provided' });
+    }
+
+    await req.user.update(payload);
+    return res.json({ user: req.user });
+  })
+);
+
+router.patch(
+  '/password',
+  [
+    auth,
+    body('currentPassword').isString().isLength({ min: 1 }),
+    body('newPassword').isString().isLength({ min: 8 })
+  ],
+  asyncHandler(async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const currentPassword = String(req.body.currentPassword || '');
+    const newPassword = String(req.body.newPassword || '');
+
+    if (currentPassword === newPassword) {
+      return res.status(400).json({ error: 'New password must be different' });
+    }
+
+    const userWithPassword = await User.findByPk(req.user.id);
+    if (!userWithPassword) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const valid = await userWithPassword.validatePassword(currentPassword);
+    if (!valid) {
+      return res.status(401).json({ error: 'Current password is invalid' });
+    }
+
+    await userWithPassword.update({ password: newPassword });
+    return res.json({ message: 'Password updated successfully' });
+  })
+);
+
 router.post(
   '/bootstrap/staff',
   [

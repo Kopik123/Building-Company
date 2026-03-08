@@ -59,7 +59,49 @@
         </div>
       </div>
 
-      <div class="auth-grid">
+      <section class="card auth-account-panel" id="auth-account-panel" hidden>
+        <div class="auth-account-head">
+          <h2>Account Settings</h2>
+          <p class="muted" id="auth-account-role"></p>
+        </div>
+        <div class="auth-account-grid">
+          <form id="profile-form" novalidate>
+            <h3>Profile</h3>
+            <div class="form-grid">
+              <label>Name
+                <input type="text" name="name" id="profile-name" autocomplete="name" required />
+              </label>
+              <label>Phone
+                <input type="tel" name="phone" id="profile-phone" autocomplete="tel" />
+              </label>
+              <label class="span-2">Company
+                <input type="text" name="companyName" id="profile-company" autocomplete="organization" />
+              </label>
+            </div>
+            <button type="submit" class="btn btn-gold">Save Profile</button>
+            <p class="form-status" id="profile-status" aria-live="polite"></p>
+          </form>
+
+          <form id="password-form" novalidate>
+            <h3>Password</h3>
+            <div class="form-grid">
+              <label class="span-2">Current password
+                <input type="password" name="currentPassword" autocomplete="current-password" required />
+              </label>
+              <label>New password
+                <input type="password" name="newPassword" autocomplete="new-password" minlength="8" required />
+              </label>
+              <label>Confirm new password
+                <input type="password" name="confirmPassword" autocomplete="new-password" minlength="8" required />
+              </label>
+            </div>
+            <button type="submit" class="btn btn-outline">Change Password</button>
+            <p class="form-status" id="password-status" aria-live="polite"></p>
+          </form>
+        </div>
+      </section>
+
+      <div class="auth-grid" id="auth-guest-grid">
         <section class="card auth-card">
           <h2>Login</h2>
           <form id="login-form" novalidate>
