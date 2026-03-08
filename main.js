@@ -41,17 +41,20 @@
   };
 
   const insertNavItemAfter = (baseNode, anchor) => {
-    const baseParent = baseNode.parentElement;
-    if (baseParent && baseParent.tagName === 'LI') {
+    const insertionTarget = baseNode?.tagName === 'LI' ? baseNode : (baseNode?.closest('li') || baseNode);
+    const targetParent = insertionTarget?.parentElement;
+
+    anchor.dataset.navInjected = '1';
+
+    if (targetParent && targetParent.tagName === 'UL') {
       const li = document.createElement('li');
       li.dataset.navInjected = '1';
       li.appendChild(anchor);
-      baseParent.insertAdjacentElement('afterend', li);
-      return li;
+      insertionTarget.insertAdjacentElement('afterend', li);
+      return anchor;
     }
 
-    anchor.dataset.navInjected = '1';
-    baseNode.insertAdjacentElement('afterend', anchor);
+    insertionTarget?.insertAdjacentElement('afterend', anchor);
     return anchor;
   };
 
@@ -171,6 +174,7 @@
   };
 
   if (navToggle && navMenu) {
+    const hoverMenuQuery = window.matchMedia('(hover: hover) and (pointer: fine)');
     let closeTimer = null;
 
     const setMenuState = (isOpen) => {
@@ -179,6 +183,7 @@
       if (menuWrap) {
         menuWrap.classList.toggle('is-open', isOpen);
       }
+      document.body.classList.toggle('nav-open', isOpen);
       navToggle.setAttribute('aria-expanded', String(isOpen));
     };
 
@@ -199,31 +204,33 @@
       }, delay);
     };
 
-    navToggle.addEventListener('click', () => {
+    navToggle.addEventListener('click', (event) => {
+      event.preventDefault();
       const next = !navMenu.classList.contains('is-open');
       setMenuState(next);
     });
 
-    navToggle.addEventListener('mouseenter', openMenu);
-    navToggle.addEventListener('focus', openMenu);
+    if (hoverMenuQuery.matches) {
+      navToggle.addEventListener('mouseenter', openMenu);
 
-    if (menuWrap) {
-      menuWrap.addEventListener('mouseenter', openMenu);
-      menuWrap.addEventListener('mouseleave', () => {
-        closeMenu(120);
-      });
+      if (menuWrap) {
+        menuWrap.addEventListener('mouseenter', openMenu);
+        menuWrap.addEventListener('mouseleave', () => {
+          closeMenu(120);
+        });
 
-      menuWrap.addEventListener('focusout', () => {
-        window.setTimeout(() => {
-          if (!menuWrap.contains(document.activeElement)) {
-            closeMenu();
-          }
-        }, 0);
-      });
-    } else {
-      navToggle.addEventListener('mouseleave', () => closeMenu(140));
-      navMenu.addEventListener('mouseenter', openMenu);
-      navMenu.addEventListener('mouseleave', () => closeMenu(140));
+        menuWrap.addEventListener('focusout', () => {
+          window.setTimeout(() => {
+            if (!menuWrap.contains(document.activeElement)) {
+              closeMenu();
+            }
+          }, 0);
+        });
+      } else {
+        navToggle.addEventListener('mouseleave', () => closeMenu(140));
+        navMenu.addEventListener('mouseenter', openMenu);
+        navMenu.addEventListener('mouseleave', () => closeMenu(140));
+      }
     }
 
     document.addEventListener('click', (event) => {
@@ -233,6 +240,12 @@
 
     document.addEventListener('keydown', (event) => {
       if (event.key === 'Escape') {
+        closeMenu();
+      }
+    });
+
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 768 && navMenu.classList.contains('is-open')) {
         closeMenu();
       }
     });

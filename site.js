@@ -4,6 +4,7 @@
   const header = document.querySelector('.site-header');
   const navToggle = document.querySelector('[data-nav-toggle]');
   const navMenu = document.querySelector('[data-nav-menu]');
+  const menuWrap = document.querySelector('[data-menu-wrap]');
   const navLinks = Array.from(document.querySelectorAll('[data-nav-link]'));
 
   const clearSession = () => {
@@ -38,17 +39,20 @@
   };
 
   const insertNavItemAfter = (baseNode, anchor) => {
-    const baseParent = baseNode.parentElement;
-    if (baseParent && baseParent.tagName === 'LI') {
+    const insertionTarget = baseNode?.tagName === 'LI' ? baseNode : (baseNode?.closest('li') || baseNode);
+    const targetParent = insertionTarget?.parentElement;
+
+    anchor.dataset.navInjected = '1';
+
+    if (targetParent && targetParent.tagName === 'UL') {
       const li = document.createElement('li');
       li.dataset.navInjected = '1';
       li.appendChild(anchor);
-      baseParent.insertAdjacentElement('afterend', li);
-      return li;
+      insertionTarget.insertAdjacentElement('afterend', li);
+      return anchor;
     }
 
-    anchor.dataset.navInjected = '1';
-    baseNode.insertAdjacentElement('afterend', anchor);
+    insertionTarget?.insertAdjacentElement('afterend', anchor);
     return anchor;
   };
 
@@ -172,15 +176,23 @@
   }
 
   if (navToggle && navMenu) {
+    const setMenuState = (isOpen) => {
+      navMenu.classList.toggle('is-open', isOpen);
+      navToggle.classList.toggle('is-open', isOpen);
+      if (menuWrap) {
+        menuWrap.classList.toggle('is-open', isOpen);
+      }
+      document.body.classList.toggle('nav-open', isOpen);
+      navToggle.setAttribute('aria-expanded', String(isOpen));
+    };
+
     const closeMenu = () => {
-      navMenu.classList.remove('is-open');
-      navToggle.setAttribute('aria-expanded', 'false');
+      setMenuState(false);
     };
 
     navToggle.addEventListener('click', () => {
       const nextState = !navMenu.classList.contains('is-open');
-      navMenu.classList.toggle('is-open', nextState);
-      navToggle.setAttribute('aria-expanded', String(nextState));
+      setMenuState(nextState);
     });
 
     navLinks.forEach((link) => {
@@ -191,6 +203,21 @@
 
     navMenu.addEventListener('click', (event) => {
       if (event.target.closest('a[data-nav-link]')) {
+        closeMenu();
+      }
+    });
+
+    document.addEventListener('click', (event) => {
+      if (navToggle.contains(event.target) || navMenu.contains(event.target)) return;
+      closeMenu();
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') closeMenu();
+    });
+
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 768 && navMenu.classList.contains('is-open')) {
         closeMenu();
       }
     });
