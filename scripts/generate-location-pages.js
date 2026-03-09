@@ -41,7 +41,7 @@ const buildLocationPages = () =>
         title: page.heroTitle,
         lead: page.heroLead,
         chips: [
-          { label: 'Six studio service lines' },
+          { label: 'Seven studio service lines' },
           { label: shared.region, isBrandRegion: true },
           { label: 'Private consultation first' }
         ]
