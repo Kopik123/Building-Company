@@ -29,7 +29,8 @@ Aktualny stan roboczy i ryzyka techniczne:
 
 - Naprawa kompatybilnosci migracji `quoteTable` zostala przygotowana i przetestowana.
 - Naprawa detekcji brakujacych tabel dla `SessionRefreshTokens` / `DevicePushTokens` zostala przygotowana i przetestowana.
-- Glowny otwarty problem deployu pozostaje nierozwiazany: repo ma sledzone pliki z `node_modules`, przez co `npm ci` brudzi worktree i moze blokowac kolejne `git pull` na serwerze.
+- Deploy na Ubuntu po hotfixach przeszedl przez migracje `202603080002-v2-session-device-and-email-hardening.js` oraz `202603090000-performance-search-trgm-indexes.js`, a aplikacja wystartowala poprawnie.
+- Naprawa repo-level dla tracked `node_modules` zostala wykonana lokalnie przez usuniecie `node_modules` z indeksu Gita; pozostaje wypchnac te zmiane i wdrozyc ja na Ubuntu.
 
 ## Architektura i glowne obszary
 
@@ -67,7 +68,7 @@ Aktualny stan roboczy i ryzyka techniczne:
 
 ### Priorytet produkcyjny
 
-- Rozwiazac problem tracked `node_modules`, bo kolejne `npm ci` na serwerze znowu brudzi repo i moze blokowac deploy.
+- Wdrozyc na Ubuntu commit usuwajacy `node_modules` z indeksu Gita, aby kolejne `npm ci` nie brudzily worktree i nie blokowaly `git pull`.
 - Potwierdzic na DigitalOcean, ze po drugim hotfixie migracja `202603080002-v2-session-device-and-email-hardening.js` przechodzi i proces zostaje stabilnie online.
 
 ### Ryzyka techniczne
@@ -123,3 +124,18 @@ Aktualny stan roboczy i ryzyka techniczne:
 - Doprecyzowano, ze docelowe srodowisko serwerowe projektu to Ubuntu na DigitalOcean, a nie ogolny opis "Linux".
 - To doprecyzowanie ma byc stosowane w dalszych instrukcjach deployowych i diagnostycznych.
 - Status: zapisane jako stala informacja operacyjna.
+
+### 2026-03-09 - Potwierdzenie skutecznego deployu po hotfixach migracji
+
+- Na serwerze Ubuntu na DigitalOcean branch `vscode` zostal zaktualizowany do `b4b45dc`.
+- Migracje `202603080002-v2-session-device-and-email-hardening.js` oraz `202603090000-performance-search-trgm-indexes.js` przeszly z wpisami `migrated`.
+- `building-company` zakonczyl start komunikatem `Server running at http://localhost:3000`.
+- Stare wpisy w `building-company-error.log` pozostaja historyczne; nie sa juz dowodem aktualnego crash loop po tym restarcie.
+- Status: deploy potwierdzony jako udany; pozostawal otwarty tylko problem tracked `node_modules`.
+
+### 2026-03-09 - Naprawa tracked `node_modules` w repo
+
+- Usunieto `node_modules` z indeksu Gita przy zachowaniu katalogu lokalnie na dysku, zgodnie z istniejacym `.gitignore`.
+- To jest wlasciwa naprawa zrodla problemu, przez ktory `npm ci` na Ubuntu brudzil worktree i blokowal kolejne `git pull`.
+- Po zacommitowaniu i wdrozeniu tego commita serwer nie powinien juz wymagac `git restore node_modules/.package-lock.json node_modules/.bin/mime` przed kazdym deployem.
+- Status: naprawa wykonana lokalnie; oczekuje na commit, push i deploy.
