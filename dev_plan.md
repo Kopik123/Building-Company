@@ -68,7 +68,8 @@ Aktualny stan roboczy i ryzyka techniczne:
 
 ### Priorytet produkcyjny
 
-- Potwierdzic na DigitalOcean, ze po drugim hotfixie migracja `202603080002-v2-session-device-and-email-hardening.js` przechodzi i proces zostaje stabilnie online.
+- Utrzymac nowy standard deployu na Ubuntu: po `git pull`, `npm ci` i `pm2 restart` zawsze sprawdzac `git status`, `git ls-files node_modules`, wynik migracji i finalny stan procesu.
+- Rozwazyc oddzielenie migracji od startu aplikacji, bo obecny model nadal niesie ryzyko crash loop przy przyszlej nieudanej migracji.
 
 ### Ryzyka techniczne
 
