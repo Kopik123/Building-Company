@@ -1,4 +1,4 @@
-﻿(() => {
+(() => {
   const roller = document.querySelector('[data-gallery-roller]');
   const stage = document.querySelector('[data-gallery-stage]');
   const projectStrip = document.querySelector('[data-gallery-projects]');
@@ -11,15 +11,7 @@
 
   const defaultProjects = [
     {
-      name: 'Premium Kitchens - Manchester',
-      images: [
-        '/Gallery/premium/kitchen-panorama-main.jpg',
-        '/Gallery/premium/kitchen-panorama-left.jpg',
-        '/Gallery/premium/kitchen-panorama-right.jpg'
-      ]
-    },
-    {
-      name: 'Luxury Bathrooms - Manchester',
+      name: 'Bathrooms - Didsbury',
       images: [
         '/Gallery/premium/bathroom-main.jpg',
         '/Gallery/premium/bathroom-bathtub.jpg',
@@ -27,7 +19,15 @@
       ]
     },
     {
-      name: 'Exterior Finishes - Cheshire',
+      name: 'Kitchens - Altrincham',
+      images: [
+        '/Gallery/premium/kitchen-panorama-main.jpg',
+        '/Gallery/premium/kitchen-panorama-left.jpg',
+        '/Gallery/premium/kitchen-panorama-right.jpg'
+      ]
+    },
+    {
+      name: 'Exterior Craft - Wilmslow',
       images: [
         '/Gallery/premium/exterior-front.jpg',
         '/Gallery/premium/exterior-chimney.jpg',
@@ -35,7 +35,7 @@
       ]
     },
     {
-      name: 'Feature Brickwork - North West',
+      name: 'Stone Detail - Chorlton',
       images: [
         '/Gallery/premium/brick-dark-main.jpg',
         '/Gallery/premium/brick-detail-charcoal.jpg',

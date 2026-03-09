@@ -51,6 +51,9 @@
     if (type === 'error') node.classList.add('is-error');
     node.textContent = message || '';
   };
+  const requestAccordionRefresh = () => {
+    window.dispatchEvent(new CustomEvent('ll:dashboard-accordions-refresh'));
+  };
 
   const clearSession = () => {
     localStorage.removeItem(TOKEN_KEY);
@@ -107,7 +110,7 @@
 
     cards.forEach((card) => {
       const node = document.createElement('article');
-      node.className = 'card dashboard-item';
+      node.className = 'card dashboard-item dashboard-metric-card';
       node.innerHTML = `<p class="muted">${escapeHtml(card.label)}</p><h2>${escapeHtml(card.value)}</h2>`;
       el.metrics.appendChild(node);
     });
@@ -133,10 +136,10 @@
       card.className = 'dashboard-item';
       const manager = project.assignedManager?.name || project.assignedManager?.email || 'Not assigned';
       const docsCount = Array.isArray(project.documents) ? project.documents.length : 0;
-      card.innerHTML = `<h3>${escapeHtml(project.title)}</h3><p class="muted">${escapeHtml(project.status)} · ${escapeHtml(project.location || '-')} · Manager: ${escapeHtml(manager)} · Docs: ${escapeHtml(docsCount)}</p><p>${escapeHtml(project.description || '')}</p>`;
+      card.innerHTML = `<h3>${escapeHtml(project.title)}</h3><p class="muted">${escapeHtml(project.status)} | ${escapeHtml(project.location || '-')} | Manager: ${escapeHtml(manager)} | Docs: ${escapeHtml(docsCount)}</p><p>${escapeHtml(project.description || '')}</p>`;
 
       const docsWrap = document.createElement('div');
-      docsWrap.className = 'dashboard-list';
+      docsWrap.className = 'dashboard-pill-list';
       (project.documents || []).slice(0, 5).forEach((doc) => {
         const link = document.createElement('a');
         link.className = 'btn btn-outline';
@@ -169,7 +172,7 @@
     state.quotes.forEach((quote) => {
       const card = document.createElement('article');
       card.className = 'dashboard-item';
-      card.innerHTML = `<h3>${escapeHtml(quote.projectType)}</h3><p class="muted">${escapeHtml(quote.status)} · priority ${escapeHtml(quote.priority)} · ${escapeHtml(quote.location || '-')}</p><p>${escapeHtml(quote.description || '')}</p>`;
+      card.innerHTML = `<h3>${escapeHtml(quote.projectType)}</h3><p class="muted">${escapeHtml(quote.status)} | Priority ${escapeHtml(quote.priority)} | ${escapeHtml(quote.location || '-')}</p><p>${escapeHtml(quote.description || '')}</p>`;
       frag.appendChild(card);
     });
     el.quotesList.appendChild(frag);
@@ -186,8 +189,8 @@
     state.services.forEach((service) => {
       const card = document.createElement('article');
       card.className = 'dashboard-item';
-      const price = service.basePriceFrom ? `from £${Number(service.basePriceFrom).toLocaleString('en-GB')}` : 'custom quote';
-      card.innerHTML = `<h3>${escapeHtml(service.title)}</h3><p class="muted">${escapeHtml(service.category)} · ${escapeHtml(price)}</p><p>${escapeHtml(service.shortDescription || '')}</p>`;
+      const price = service.basePriceFrom ? `from GBP ${Number(service.basePriceFrom).toLocaleString('en-GB')}` : 'custom quote';
+      card.innerHTML = `<h3>${escapeHtml(service.title)}</h3><p class="muted">${escapeHtml(service.category)} | ${escapeHtml(price)}</p><p>${escapeHtml(service.shortDescription || '')}</p>`;
       frag.appendChild(card);
     });
     el.servicesList.appendChild(frag);
@@ -236,7 +239,7 @@
       const card = document.createElement('article');
       card.className = 'dashboard-item';
       const sender = message.sender?.name || message.sender?.email || 'Unknown';
-      card.innerHTML = `<p class="muted">${escapeHtml(sender)} · ${escapeHtml(new Date(message.createdAt).toLocaleString('en-GB'))}</p><p>${escapeHtml(message.body || '')}</p>`;
+      card.innerHTML = `<p class="muted">${escapeHtml(sender)} | ${escapeHtml(new Date(message.createdAt).toLocaleString('en-GB'))}</p><p>${escapeHtml(message.body || '')}</p>`;
       frag.appendChild(card);
     });
     el.messagesList.appendChild(frag);
@@ -264,6 +267,7 @@
     renderProjects();
     renderQuotes();
     renderServices();
+    requestAccordionRefresh();
   };
 
   const loadThreads = async () => {
@@ -274,6 +278,7 @@
     }
     renderThreads();
     await loadMessages();
+    requestAccordionRefresh();
   };
 
   const bootstrap = async () => {

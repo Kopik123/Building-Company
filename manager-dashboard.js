@@ -115,6 +115,44 @@
     node.textContent = msg || '';
     node.className = type === 'error' ? 'muted form-status is-error' : 'muted';
   };
+  const requestAccordionRefresh = () => {
+    window.dispatchEvent(new CustomEvent('ll:dashboard-accordions-refresh'));
+  };
+  const createControlField = (labelText, control) => {
+    const field = document.createElement('label');
+    field.className = 'dashboard-control-field';
+    const label = document.createElement('span');
+    label.className = 'dashboard-control-label';
+    label.textContent = labelText;
+    field.appendChild(label);
+    field.appendChild(control);
+    return field;
+  };
+  const createCheckboxField = (labelText, checkboxText, checked) => {
+    const field = document.createElement('div');
+    field.className = 'dashboard-control-field dashboard-control-field--checkbox';
+    const label = document.createElement('span');
+    label.className = 'dashboard-control-label';
+    label.textContent = labelText;
+    const wrap = document.createElement('label');
+    wrap.className = 'dashboard-inline-check dashboard-inline-check--field';
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.checked = Boolean(checked);
+    const text = document.createElement('span');
+    text.textContent = checkboxText;
+    wrap.appendChild(input);
+    wrap.appendChild(text);
+    field.appendChild(label);
+    field.appendChild(wrap);
+    return { field, input };
+  };
+  const createEditActions = (buttons) => {
+    const row = document.createElement('div');
+    row.className = 'dashboard-edit-actions';
+    buttons.filter(Boolean).forEach((button) => row.appendChild(button));
+    return row;
+  };
 
   const renderPagination = (node, prevBtn, nextBtn, pagination) => {
     const page = Number(pagination?.page || 1);
@@ -286,6 +324,7 @@
     const project = selectedProject();
     if (!project) {
       el.projectEditorCard.hidden = true;
+      requestAccordionRefresh();
       return;
     }
     const f = el.projectEditForm.elements;
@@ -307,6 +346,7 @@
     setSmallStatus(el.projectEditClientLookupStatus, '', '');
     setSmallStatus(el.projectEditManagerLookupStatus, '', '');
     renderMedia();
+    requestAccordionRefresh();
   };
 
   const renderQuotes = () => {
@@ -325,7 +365,7 @@
       card.className = 'dashboard-item';
       card.innerHTML = `<h3>${escapeHtml(quote.projectType)} | ${escapeHtml(owner)}</h3><p class=\"muted\">${escapeHtml(quote.status)} | priority ${escapeHtml(quote.priority)} | ${escapeHtml(quote.location || '-')} ${escapeHtml(quote.postcode || '')}</p><p>${escapeHtml(quote.description || '')}</p>`;
       const row = document.createElement('div');
-      row.className = 'dashboard-actions-row';
+      row.className = 'dashboard-edit-grid';
       const statusSelect = document.createElement('select');
       ['pending', 'in_progress', 'responded', 'closed'].forEach((value) => {
         const option = document.createElement('option');
@@ -359,10 +399,11 @@
           window.alert(error.message || 'Failed to update quote');
         }
       });
-      row.appendChild(statusSelect);
-      row.appendChild(prioritySelect);
+      row.appendChild(createControlField('Status', statusSelect));
+      row.appendChild(createControlField('Priority', prioritySelect));
+      let acceptBtn = null;
       if (!quote.assignedManagerId && quote.status === 'pending' && canManage) {
-        const acceptBtn = document.createElement('button');
+        acceptBtn = document.createElement('button');
         acceptBtn.type = 'button';
         acceptBtn.className = 'btn btn-outline';
         acceptBtn.textContent = 'Accept';
@@ -374,9 +415,8 @@
             window.alert(error.message || 'Failed to accept quote');
           }
         });
-        row.appendChild(acceptBtn);
       }
-      row.appendChild(saveBtn);
+      row.appendChild(createEditActions([acceptBtn, saveBtn]));
       card.appendChild(row);
       frag.appendChild(card);
     });
@@ -397,25 +437,19 @@
       card.className = 'dashboard-item';
       card.innerHTML = `<h3>${escapeHtml(service.title)}</h3><p class=\"muted\">${escapeHtml(service.slug)} | ${escapeHtml(service.category)} | order ${escapeHtml(service.displayOrder)} | ${service.showOnWebsite ? 'public' : 'hidden'}</p>`;
       const row = document.createElement('div');
-      row.className = 'dashboard-actions-row';
+      row.className = 'dashboard-edit-grid dashboard-edit-grid--wide';
       const title = document.createElement('input');
       title.type = 'text';
+      title.placeholder = 'Service title';
       title.value = service.title || '';
       const shortDescription = document.createElement('input');
       shortDescription.type = 'text';
+      shortDescription.placeholder = 'Short description';
       shortDescription.value = service.shortDescription || '';
       const order = document.createElement('input');
       order.type = 'number';
       order.value = Number.isFinite(service.displayOrder) ? service.displayOrder : 0;
-      const publicWrap = document.createElement('label');
-      publicWrap.className = 'dashboard-inline-check';
-      const publicCheck = document.createElement('input');
-      publicCheck.type = 'checkbox';
-      publicCheck.checked = Boolean(service.showOnWebsite);
-      const publicText = document.createElement('span');
-      publicText.textContent = 'Public';
-      publicWrap.appendChild(publicCheck);
-      publicWrap.appendChild(publicText);
+      const { field: publicField, input: publicCheck } = createCheckboxField('Visibility', 'Show on website', service.showOnWebsite);
       const save = document.createElement('button');
       save.type = 'button';
       save.className = 'btn btn-gold';
@@ -451,12 +485,11 @@
           setStatus(el.serviceCreateStatus, error.message || 'Failed to delete service.', 'error');
         }
       });
-      row.appendChild(title);
-      row.appendChild(shortDescription);
-      row.appendChild(order);
-      row.appendChild(publicWrap);
-      row.appendChild(save);
-      row.appendChild(del);
+      row.appendChild(createControlField('Title', title));
+      row.appendChild(createControlField('Summary', shortDescription));
+      row.appendChild(createControlField('Display Order', order));
+      row.appendChild(publicField);
+      row.appendChild(createEditActions([save, del]));
       card.appendChild(row);
       frag.appendChild(card);
     });
@@ -478,7 +511,7 @@
       card.className = 'dashboard-item';
       card.innerHTML = `<h3>${escapeHtml(material.name)}</h3><p class=\"muted\">${escapeHtml(material.category)} | SKU: ${escapeHtml(material.sku || '-')} | stock ${escapeHtml(material.stockQty)}/${escapeHtml(material.minStockQty)} | ${lowStock ? 'LOW STOCK' : 'OK'}</p>`;
       const row = document.createElement('div');
-      row.className = 'dashboard-actions-row';
+      row.className = 'dashboard-edit-grid dashboard-edit-grid--wide';
       const stock = document.createElement('input');
       stock.type = 'number';
       stock.step = '0.01';
@@ -531,12 +564,11 @@
           setStatus(el.materialCreateStatus, error.message || 'Failed to delete material.', 'error');
         }
       });
-      row.appendChild(stock);
-      row.appendChild(minStock);
-      row.appendChild(unitCost);
-      row.appendChild(supplier);
-      row.appendChild(save);
-      row.appendChild(del);
+      row.appendChild(createControlField('Stock Qty', stock));
+      row.appendChild(createControlField('Min Stock', minStock));
+      row.appendChild(createControlField('Unit Cost', unitCost));
+      row.appendChild(createControlField('Supplier', supplier));
+      row.appendChild(createEditActions([save, del]));
       card.appendChild(row);
       frag.appendChild(card);
     });

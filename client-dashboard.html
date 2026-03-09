@@ -1,23 +1,25 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Client Portal | levels+lines</title>
-  <meta name="description" content="Client portal for projects, documents, quotes and communication." />
+  <title>Client Portal | Level Lines Studio</title>
+  <meta name="description" content="Client portal for project visibility, documents, quotes and communication at Level Lines Studio." />
   <link rel="canonical" href="https://levellines.co.uk/client-dashboard.html" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles.css" />
 </head>
-<body>
+<body class="public-site workspace-site page-client-dashboard">
   <header class="site-header" id="top">
     <div class="container header-inner grid-12">
       <a class="brand" href="/index.html" aria-label="Level Lines Studio home">
         <img src="/logo4.png" alt="Level Lines Studio logo" class="brand-logo" />
-        <span class="brand-mark">Level Lines Studio</span>
-        <span class="brand-meta">Plan · Design · Craft</span>
+        <span class="brand-copy">
+          <span class="brand-name" data-brand-name>Level Lines Studio</span>
+          <span class="brand-sub" data-brand-claim>Plan / Design / Craft</span>
+        </span>
       </a>
       <div class="menu-wrap" data-menu-wrap>
         <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation menu">
@@ -27,6 +29,7 @@
         </button>
         <nav class="site-nav" id="site-nav" data-nav-menu aria-label="Main navigation">
           <a href="/index.html#services" data-nav-link>Services</a>
+          <a href="/index.html#areas" data-nav-link>Coverage</a>
           <a href="/index.html#projects" data-nav-link>Projects</a>
           <a href="/index.html#gallery" data-nav-link>Gallery</a>
           <a href="/client-dashboard.html" data-nav-link>Client Portal</a>
@@ -38,104 +41,163 @@
     </div>
   </header>
 
-  <main class="section dashboard-shell workspace-shell">
-    <div class="container">
-      <nav class="workspace-breadcrumbs" aria-label="Breadcrumb">
-        <a href="/index.html">Home</a>
-        <span>/</span>
-        <span>Client Portal</span>
-      </nav>
-      <div class="section-head">
-        <p class="eyebrow">Client Portal</p>
-        <h1>Your Projects & Documents</h1>
-        <p class="lead">Track project progress, upload files, review quotes and communicate with your project team.</p>
+  <main class="workspace-main dashboard-shell workspace-shell">
+    <section class="section workspace-hero-shell">
+      <div class="container">
+        <nav class="workspace-breadcrumbs" aria-label="Breadcrumb">
+          <a href="/index.html">Home</a>
+          <span>/</span>
+          <span>Client Portal</span>
+        </nav>
+        <div class="workspace-hero">
+          <div class="workspace-hero-copy surface-card surface-card--dark">
+            <p class="section-eyebrow">Client Portal</p>
+            <h1>Project visibility, documents and direct communication in one place.</h1>
+            <p class="section-lead">The client dashboard now shares the same premium black-stone, white-marble and gold-detail language as the public site while keeping the same project, quote and message workflows.</p>
+            <div class="workspace-chip-row">
+              <span class="stat-chip">Projects</span>
+              <span class="stat-chip">Documents</span>
+              <span class="stat-chip">Messages</span>
+            </div>
+          </div>
+          <aside class="workspace-hero-panel surface-card surface-card--light">
+            <p class="workspace-panel-title">Portal overview</p>
+            <div class="workspace-contact-list">
+              <a class="workspace-contact-link" data-brand-phone="0" href="tel:+447942874446">+44 7942 874 446</a>
+              <a class="workspace-contact-link" data-brand-email href="mailto:LevelLineStudioMCR@gmail.com">LevelLineStudioMCR@gmail.com</a>
+            </div>
+            <ul class="workspace-points">
+              <li>Review linked projects and uploaded documents.</li>
+              <li>Continue conversations through project threads.</li>
+              <li>Track quotes and recommended services without leaving the portal.</li>
+            </ul>
+          </aside>
+        </div>
       </div>
+    </section>
 
-      <section class="card dashboard-session">
-        <p id="client-session">Checking session...</p>
-        <div class="dashboard-session-actions">
-          <a class="btn btn-outline" href="/auth.html">Auth Page</a>
-          <button type="button" class="btn btn-outline" id="client-logout">Logout</button>
-        </div>
-      </section>
-
-      <section class="dashboard-grid" id="client-metrics"></section>
-
-      <section class="card">
-        <h2>Your Projects</h2>
-        <div id="client-projects-list" class="dashboard-list"></div>
-      </section>
-
-      <section class="card">
-        <h2>Project Documents Upload</h2>
-        <form id="client-upload-form" novalidate>
-          <div class="form-grid">
-            <label>Project
-              <select name="projectId" required></select>
-            </label>
-            <label>Caption
-              <input type="text" name="caption" />
-            </label>
-            <label class="span-2">Files
-              <input type="file" name="files" multiple required />
-            </label>
-          </div>
-          <button type="submit" class="btn btn-gold">Upload documents</button>
-          <p class="form-status" id="client-upload-status" aria-live="polite"></p>
-        </form>
-      </section>
-
-      <section class="card">
-        <h2>Communication</h2>
-        <div class="dashboard-grid">
+    <section class="section section--light workspace-content-shell">
+      <div class="container workspace-stack">
+        <section class="card dashboard-session surface-card surface-card--dark">
           <div>
-            <h3>Threads</h3>
-            <div id="client-threads-list" class="dashboard-list"></div>
+            <p class="workspace-card-label">Session</p>
+            <p id="client-session">Checking session...</p>
           </div>
-          <div>
-            <h3>Messages</h3>
-            <div id="client-messages-list" class="dashboard-list"></div>
-            <form id="client-message-form" novalidate>
-              <div class="form-grid">
-                <label class="span-2">Message
-                  <textarea name="body" rows="3" required></textarea>
-                </label>
-              </div>
-              <button type="submit" class="btn btn-gold">Send message</button>
-              <p class="form-status" id="client-message-status" aria-live="polite"></p>
-            </form>
+          <div class="dashboard-session-actions">
+            <a class="btn btn-outline" href="/auth.html">Auth Page</a>
+            <button type="button" class="btn btn-outline" id="client-logout">Logout</button>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section class="card">
-        <h2>Your Quotes</h2>
-        <div id="client-quotes-list" class="dashboard-list"></div>
-      </section>
+        <section class="dashboard-grid dashboard-metric-grid" id="client-metrics"></section>
 
-      <section class="card">
-        <h2>Recommended Services</h2>
-        <div id="client-services-list" class="dashboard-list"></div>
-      </section>
-    </div>
+        <section class="card surface-card surface-card--light" data-dashboard-mobile-open="true">
+          <h2>Your Projects</h2>
+          <div id="client-projects-list" class="dashboard-list"></div>
+        </section>
+
+        <section class="card surface-card surface-card--light">
+          <h2>Project Documents Upload</h2>
+          <form id="client-upload-form" novalidate>
+            <div class="form-grid">
+              <label>Project
+                <select name="projectId" required></select>
+              </label>
+              <label>Caption
+                <input type="text" name="caption" />
+              </label>
+              <label class="span-2">Files
+                <input type="file" name="files" multiple required />
+              </label>
+            </div>
+            <button type="submit" class="btn btn-gold">Upload documents</button>
+            <p class="form-status" id="client-upload-status" aria-live="polite"></p>
+          </form>
+        </section>
+
+        <section class="card surface-card surface-card--light" data-dashboard-mobile-open="true">
+          <h2>Communication</h2>
+          <div class="dashboard-grid dashboard-communication-grid">
+            <div>
+              <h3>Threads</h3>
+              <div id="client-threads-list" class="dashboard-list"></div>
+            </div>
+            <div>
+              <h3>Messages</h3>
+              <div id="client-messages-list" class="dashboard-list"></div>
+              <form id="client-message-form" novalidate>
+                <div class="form-grid">
+                  <label class="span-2">Message
+                    <textarea name="body" rows="3" required></textarea>
+                  </label>
+                </div>
+                <button type="submit" class="btn btn-gold">Send message</button>
+                <p class="form-status" id="client-message-status" aria-live="polite"></p>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <section class="card surface-card surface-card--light">
+          <h2>Your Quotes</h2>
+          <div id="client-quotes-list" class="dashboard-list"></div>
+        </section>
+
+        <section class="card surface-card surface-card--light">
+          <h2>Recommended Services</h2>
+          <div id="client-services-list" class="dashboard-list"></div>
+        </section>
+      </div>
+    </section>
   </main>
 
   <footer class="site-footer">
+    <div class="container footer-grid">
+      <div class="footer-block footer-block--brand">
+        <p class="section-eyebrow section-eyebrow--compact">Level Lines Studio</p>
+        <h3 data-brand-name>Level Lines Studio</h3>
+        <p class="footer-copy">Client access stays aligned with the public studio identity while keeping project information, files and communication close at hand.</p>
+        <div class="footer-contact-list">
+          <a class="footer-contact-link" data-brand-phone="0" href="tel:+447942874446">+44 7942 874 446</a>
+          <a class="footer-contact-link" data-brand-phone="1" href="tel:+447304506391">+44 7304 506 391</a>
+          <a class="footer-contact-link" data-brand-email href="mailto:LevelLineStudioMCR@gmail.com">LevelLineStudioMCR@gmail.com</a>
+        </div>
+      </div>
+      <div class="footer-block">
+        <h3>Services</h3>
+        <div class="footer-links" data-brand-service-links data-link-class="footer-service-link">
+          <a class="footer-service-link" href="/premium-bathrooms-manchester.html">Bathrooms</a>
+          <a class="footer-service-link" href="/premium-kitchens-manchester.html">Kitchens</a>
+          <a class="footer-service-link" href="/index.html#consultation">Tiling</a>
+          <a class="footer-service-link" href="/index.html#consultation">Carpentry</a>
+          <a class="footer-service-link" href="/index.html#consultation">Internal Wall Systems</a>
+          <a class="footer-service-link" href="/index.html#consultation">External Wall Systems</a>
+        </div>
+      </div>
+      <div class="footer-block">
+        <h3>Workspace</h3>
+        <div class="footer-links">
+          <a href="/auth.html">Account access</a>
+          <a href="/manager-dashboard.html">Manager Dashboard</a>
+          <a href="/index.html#consultation">Private consultation</a>
+          <a href="/privacy.html">Privacy</a>
+          <a href="/terms.html">Terms</a>
+        </div>
+      </div>
+      <div class="footer-block">
+        <h3>Coverage</h3>
+        <p class="footer-copy" data-brand-region>North West - Lancashire</p>
+        <div class="footer-area-list" data-brand-area-list data-item-class="footer-area-chip"></div>
+      </div>
+    </div>
     <div class="container footer-bottom">
       <p>&copy; <span data-current-year></span> Level Lines Studio. All rights reserved.</p>
-      <div class="legal-links">
-        <a href="/privacy.html">Privacy</a>
-        <a href="/terms.html">Terms</a>
-      </div>
+      <p class="footer-bottom-note">Plan / Design / Craft</p>
     </div>
   </footer>
 
+  <script src="/brand.js" defer></script>
   <script src="/site.js" defer></script>
   <script src="/client-dashboard.js" defer></script>
 </body>
 </html>
-
-
-
-
-

@@ -1,6 +1,7 @@
-﻿(() => {
+(() => {
   const TOKEN_KEY = 'll_auth_token';
   const USER_KEY = 'll_auth_user';
+  const brand = window.LEVEL_LINES_BRAND || null;
 
   const body = document.body;
   const header = document.querySelector('.site-header');
@@ -24,6 +25,86 @@
     } catch {
       return null;
     }
+  };
+
+  const setBrandNodeValue = (node, value, href) => {
+    if (!node || value == null) return;
+
+    const tagName = node.tagName ? node.tagName.toLowerCase() : '';
+    if (tagName === 'a' && href) {
+      node.setAttribute('href', href);
+    }
+
+    if (tagName === 'input' || tagName === 'textarea') {
+      node.value = value;
+      return;
+    }
+
+    node.textContent = value;
+  };
+
+  const renderBrandAreas = (container) => {
+    if (!brand || !container || !Array.isArray(brand.serviceAreas)) return;
+
+    const itemClass = container.getAttribute('data-item-class') || 'area-chip';
+    container.innerHTML = '';
+
+    brand.serviceAreas.forEach((area) => {
+      const item = document.createElement('span');
+      item.className = itemClass;
+      item.textContent = area;
+      container.appendChild(item);
+    });
+  };
+
+  const renderBrandServices = (container) => {
+    if (!brand || !container || !Array.isArray(brand.services)) return;
+
+    const linkClass = container.getAttribute('data-link-class') || '';
+    container.innerHTML = '';
+
+    brand.services.forEach((service) => {
+      const link = document.createElement('a');
+      link.href = service.href || '/index.html#consultation';
+      link.textContent = service.title || 'Service';
+      if (linkClass) link.className = linkClass;
+      container.appendChild(link);
+    });
+  };
+
+  const applyBrandContent = () => {
+    if (!brand) return;
+
+    document.querySelectorAll('[data-brand-name]').forEach((node) => {
+      setBrandNodeValue(node, brand.name);
+    });
+
+    document.querySelectorAll('[data-brand-short-name]').forEach((node) => {
+      setBrandNodeValue(node, brand.shortName || brand.name);
+    });
+
+    document.querySelectorAll('[data-brand-claim]').forEach((node) => {
+      setBrandNodeValue(node, brand.claim);
+    });
+
+    document.querySelectorAll('[data-brand-region]').forEach((node) => {
+      setBrandNodeValue(node, brand.region);
+    });
+
+    document.querySelectorAll('[data-brand-email]').forEach((node) => {
+      setBrandNodeValue(node, brand.email, `mailto:${brand.email}`);
+    });
+
+    document.querySelectorAll('[data-brand-phone]').forEach((node) => {
+      const indexRaw = Number(node.getAttribute('data-brand-phone'));
+      const phone = brand.phones?.[Number.isFinite(indexRaw) ? indexRaw : 0] || brand.phones?.[0];
+      if (!phone) return;
+      setBrandNodeValue(node, phone.display, phone.href);
+      if (phone.label) node.setAttribute('aria-label', phone.label);
+    });
+
+    document.querySelectorAll('[data-brand-area-list]').forEach(renderBrandAreas);
+    document.querySelectorAll('[data-brand-service-links]').forEach(renderBrandServices);
   };
 
   const accountPathForRole = (roleRaw) => {
@@ -292,7 +373,9 @@
     const dashboardShell = document.querySelector('.dashboard-shell');
     if (!dashboardShell) return;
 
-    const cards = Array.from(dashboardShell.querySelectorAll('section.card'));
+    const cards = Array.from(dashboardShell.querySelectorAll('section.card:not(.dashboard-session)'));
+    const mobileQuery = window.matchMedia('(max-width: 768px)');
+    const isTruthyFlag = (value) => ['1', 'true', 'yes', 'open'].includes(String(value || '').toLowerCase());
 
     const setExpanded = (card, expanded) => {
       const toggle = card.querySelector('.dashboard-accordion-toggle');
@@ -333,7 +416,7 @@
       toggle.setAttribute('aria-expanded', 'true');
 
       toggle.addEventListener('click', () => {
-        if (!window.matchMedia('(max-width: 768px)').matches) return;
+        if (!mobileQuery.matches) return;
         const expanded = toggle.getAttribute('aria-expanded') === 'true';
         setExpanded(card, !expanded);
       });
@@ -342,21 +425,34 @@
     });
 
     const apply = () => {
-      const mobile = window.matchMedia('(max-width: 768px)').matches;
+      const mobile = mobileQuery.matches;
       cards.forEach((card, index) => {
         if (!card.querySelector('.dashboard-accordion-toggle')) return;
-        setExpanded(card, !mobile || index === 0);
+        if (!mobile) {
+          setExpanded(card, true);
+          return;
+        }
+
+        if (card.hidden) {
+          setExpanded(card, false);
+          return;
+        }
+
+        const shouldOpen = isTruthyFlag(card.dataset.dashboardMobileOpen) || index === 0;
+        setExpanded(card, shouldOpen);
       });
     };
 
     apply();
     window.addEventListener('resize', apply);
+    window.addEventListener('ll:dashboard-accordions-refresh', apply);
 
     dashboardShell.querySelectorAll('.dashboard-session-actions').forEach((row) => {
       row.classList.add('dashboard-sticky-actions');
     });
   };
 
+  applyBrandContent();
   validateSession();
   window.addEventListener('ll:session-changed', validateSession);
 
@@ -410,10 +506,17 @@
       ['kitchen renovation', 'kitchen'],
       ['interior', 'interior'],
       ['interior renovation', 'interior'],
+      ['internal wall systems', 'interior'],
+      ['internal wall system', 'interior'],
+      ['internal walls', 'interior'],
       ['tiling', 'tiling'],
-      ['extension', 'extension'],
+      ['carpentry', 'joinery'],
       ['joinery', 'joinery'],
+      ['external wall systems', 'rendering'],
+      ['external wall system', 'rendering'],
+      ['external walls', 'rendering'],
       ['rendering', 'rendering'],
+      ['extension', 'extension'],
       ['decorating', 'decorating'],
       ['other', 'other']
     ]);
@@ -421,9 +524,10 @@
     if (aliases.has(raw)) return aliases.get(raw);
     if (raw.includes('bath')) return 'bathroom';
     if (raw.includes('kitch')) return 'kitchen';
-    if (raw.includes('interior')) return 'interior';
+    if (raw.includes('interior') || raw.includes('internal wall')) return 'interior';
     if (raw.includes('tile')) return 'tiling';
-    if (raw.includes('joinery')) return 'joinery';
+    if (raw.includes('carpent') || raw.includes('joinery')) return 'joinery';
+    if (raw.includes('external wall')) return 'rendering';
     if (raw.includes('extension')) return 'extension';
     if (raw.includes('render')) return 'rendering';
     if (raw.includes('decor')) return 'decorating';

@@ -4,9 +4,24 @@
 
   const normalizeProjectType = (value) => {
     const lower = String(value || '').trim().toLowerCase();
-    if (['bathroom', 'kitchen', 'interior', 'tiling', 'extension', 'joinery', 'rendering', 'decorating', 'other'].includes(lower)) {
-      return lower;
-    }
+    const aliases = new Map([
+      ['bathroom', 'bathroom'],
+      ['kitchen', 'kitchen'],
+      ['interior', 'interior'],
+      ['tiling', 'tiling'],
+      ['carpentry', 'joinery'],
+      ['joinery', 'joinery'],
+      ['internal wall systems', 'interior'],
+      ['internal wall system', 'interior'],
+      ['external wall systems', 'rendering'],
+      ['external wall system', 'rendering'],
+      ['rendering', 'rendering'],
+      ['extension', 'extension'],
+      ['decorating', 'decorating'],
+      ['other', 'other']
+    ]);
+
+    if (aliases.has(lower)) return aliases.get(lower);
     return 'other';
   };
 
