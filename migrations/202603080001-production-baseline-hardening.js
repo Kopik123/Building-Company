@@ -23,6 +23,30 @@ const resolveColumnName = (tableDefinition, desired) => {
   return keys.find((key) => String(key).toLowerCase() === normalized) || null;
 };
 
+const quoteIdentifier = (queryInterface, value) => {
+  if (typeof queryInterface.quoteIdentifier === 'function') {
+    return queryInterface.quoteIdentifier(value);
+  }
+
+  if (typeof queryInterface.queryGenerator?.quoteIdentifier === 'function') {
+    return queryInterface.queryGenerator.quoteIdentifier(value);
+  }
+
+  throw new TypeError('No quoteIdentifier function available on queryInterface');
+};
+
+const quoteTable = (queryInterface, tableName) => {
+  if (typeof queryInterface.quoteTable === 'function') {
+    return queryInterface.quoteTable(tableName);
+  }
+
+  if (typeof queryInterface.queryGenerator?.quoteTable === 'function') {
+    return queryInterface.queryGenerator.quoteTable(tableName);
+  }
+
+  throw new TypeError('No quoteTable function available on queryInterface');
+};
+
 const addIndexIfMissing = async (queryInterface, tableName, indexName, fields, options = {}) => {
   const indexes = await queryInterface.showIndex(tableName);
   if (indexes.some((index) => index.name === indexName)) {
@@ -36,9 +60,9 @@ const addTrigramIndexIfPossible = async (queryInterface, tableName, tableDefinit
   const resolvedColumn = resolveColumnName(tableDefinition, columnName);
   if (!resolvedColumn) return;
 
-  const quotedIndex = queryInterface.quoteIdentifier(indexName);
-  const quotedTable = queryInterface.quoteTable(tableName);
-  const quotedColumn = queryInterface.quoteIdentifier(resolvedColumn);
+  const quotedIndex = quoteIdentifier(queryInterface, indexName);
+  const quotedTable = quoteTable(queryInterface, tableName);
+  const quotedColumn = quoteIdentifier(queryInterface, resolvedColumn);
   await queryInterface.sequelize.query(
     `CREATE INDEX IF NOT EXISTS ${quotedIndex} ON ${quotedTable} USING gin (LOWER(${quotedColumn}) gin_trgm_ops)`
   );
@@ -103,4 +127,3 @@ module.exports = {
     }
   }
 };
-
