@@ -1,3 +1,4 @@
+const { query } = require('express-validator');
 const { ServiceOffering } = require('../models');
 const { servicesCache, getCached, setCached } = require('./publicCache');
 
@@ -22,6 +23,11 @@ const buildServicesWhere = (query = {}) => {
   return where;
 };
 
+const publicServicesQueryValidators = [
+  query('category').optional().isIn(['bathroom', 'kitchen', 'interior', 'outdoor', 'other']),
+  query('featured').optional().isIn(['true', 'false', '1', '0'])
+];
+
 const fetchPublicServices = async (query = {}) => {
   const cacheKey = getServicesCacheKey(query);
   const cached = getCached(servicesCache, cacheKey);
@@ -45,9 +51,7 @@ const applyPublicServicesCacheHeaders = (res) => {
 };
 
 module.exports = {
-  PUBLIC_SERVICES_TTL_MS,
-  getServicesCacheKey,
-  buildServicesWhere,
+  publicServicesQueryValidators,
   fetchPublicServices,
   applyPublicServicesCacheHeaders
 };

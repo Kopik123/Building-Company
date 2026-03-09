@@ -228,6 +228,7 @@ test('auth page shows account panel for logged session', async ({ page }) => {
 });
 
 test('client dashboard mobile menu opens', async ({ page }) => {
+  await mockClientSession(page);
   await page.goto('/client-dashboard.html');
   await expect(page.locator('body.public-site.workspace-site.page-client-dashboard')).toBeVisible();
   await page.getByRole('button', { name: /open navigation menu/i }).click();
@@ -242,6 +243,7 @@ test('client dashboard keeps key logged-in cards open on mobile', async ({ page 
 });
 
 test('manager dashboard mobile menu opens', async ({ page }) => {
+  await mockManagerSession(page);
   await page.goto('/manager-dashboard.html');
   await expect(page.locator('body.public-site.workspace-site.page-manager-dashboard')).toBeVisible();
   await page.getByRole('button', { name: /open navigation menu/i }).click();

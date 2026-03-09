@@ -1,16 +1,17 @@
 const express = require('express');
-const { query, validationResult } = require('express-validator');
+const { validationResult } = require('express-validator');
 const asyncHandler = require('../utils/asyncHandler');
-const { fetchPublicServices, applyPublicServicesCacheHeaders } = require('../utils/publicServices');
+const {
+  fetchPublicServices,
+  applyPublicServicesCacheHeaders,
+  publicServicesQueryValidators
+} = require('../utils/publicServices');
 
 const router = express.Router();
 
 router.get(
   '/services',
-  [
-    query('category').optional().isIn(['bathroom', 'kitchen', 'interior', 'outdoor', 'other']),
-    query('featured').optional().isIn(['true', 'false', '1', '0'])
-  ],
+  publicServicesQueryValidators,
   asyncHandler(async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {

@@ -23,7 +23,7 @@ const pages = [
     hero: {
       image: '/Gallery/premium/bathroom-main.jpg',
       eyebrow: 'Bathrooms',
-      title: 'Bathrooms planned, waterproofed and finished with measured detail.',
+      title: 'Bathrooms designed for calm, waterproofed and finished with measured detail.',
       lead:
         'The bathroom line on the studio card becomes a full delivery scope here: planning, waterproofing, tiling, fitting and final finish control.',
       chips: [

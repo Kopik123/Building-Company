@@ -140,11 +140,11 @@ const renderContactSection = ({ title, lead, shared }) => `  <section class="sec
         <h2>${escapeHtml(title)}</h2>
         <p>${escapeHtml(lead)}</p>
       </div>
-      <div class="contact-band-links">
+      <address class="contact-band-links" aria-label="${escapeHtml(shared.brandName)} contact details">
         <a class="contact-band-link" data-brand-phone="0" href="${escapeHtml(shared.phones[0].href)}">${escapeHtml(shared.phones[0].display)}</a>
         <a class="contact-band-link" data-brand-phone="1" href="${escapeHtml(shared.phones[1].href)}">${escapeHtml(shared.phones[1].display)}</a>
         <a class="contact-band-link" data-brand-email href="mailto:${escapeHtml(shared.email)}">${escapeHtml(shared.email)}</a>
-      </div>
+      </address>
     </div>
   </section>`;
 
@@ -185,11 +185,11 @@ const renderFooter = (shared) => `  <footer class="site-footer">
         <p class="section-eyebrow section-eyebrow--compact">${escapeHtml(shared.brandName)}</p>
         <h3 data-brand-name>${escapeHtml(shared.brandName)}</h3>
         <p class="footer-copy" data-brand-footer-copy>${escapeHtml(shared.footerCopy)}</p>
-        <div class="footer-contact-list">
+        <address class="footer-contact-list" aria-label="${escapeHtml(shared.brandName)} contact details">
           <a class="footer-contact-link" data-brand-phone="0" href="${escapeHtml(shared.phones[0].href)}">${escapeHtml(shared.phones[0].display)}</a>
           <a class="footer-contact-link" data-brand-phone="1" href="${escapeHtml(shared.phones[1].href)}">${escapeHtml(shared.phones[1].display)}</a>
           <a class="footer-contact-link" data-brand-email href="mailto:${escapeHtml(shared.email)}">${escapeHtml(shared.email)}</a>
-        </div>
+        </address>
       </div>
       <div class="footer-block">
         <h3>Services</h3>

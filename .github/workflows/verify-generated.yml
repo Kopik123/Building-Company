@@ -1,4 +1,4 @@
-name: Verify Generated Pages
+name: CI
 
 on:
   pull_request:
@@ -8,7 +8,7 @@ on:
       - master
 
 jobs:
-  verify-generated:
+  quality-gate:
     runs-on: ubuntu-latest
 
     steps:
@@ -24,5 +24,5 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Verify generated public pages
-        run: npm run verify:generated
+      - name: Run generated pages + API v2 gate
+        run: npm run test:ci
