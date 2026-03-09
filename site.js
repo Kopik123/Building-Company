@@ -1,11 +1,18 @@
 (() => {
   const TOKEN_KEY = 'll_auth_token';
   const USER_KEY = 'll_auth_user';
+  const brand = window.LEVEL_LINES_BRAND || null;
+
+  const body = document.body;
   const header = document.querySelector('.site-header');
   const navToggle = document.querySelector('[data-nav-toggle]');
   const navMenu = document.querySelector('[data-nav-menu]');
-  const menuWrap = document.querySelector('[data-menu-wrap]');
-  const navLinks = Array.from(document.querySelectorAll('[data-nav-link]'));
+  const menuWrap =
+    document.querySelector('[data-menu-wrap]') ||
+    (navMenu ? navMenu.closest('.menu-wrap') : null) ||
+    (navMenu ? navMenu.closest('.main-nav') : null);
+
+  let menuPreviouslyFocused = null;
 
   const clearSession = () => {
     localStorage.removeItem(TOKEN_KEY);
@@ -20,6 +27,86 @@
     }
   };
 
+  const setBrandNodeValue = (node, value, href) => {
+    if (!node || value == null) return;
+
+    const tagName = node.tagName ? node.tagName.toLowerCase() : '';
+    if (tagName === 'a' && href) {
+      node.setAttribute('href', href);
+    }
+
+    if (tagName === 'input' || tagName === 'textarea') {
+      node.value = value;
+      return;
+    }
+
+    node.textContent = value;
+  };
+
+  const renderBrandAreas = (container) => {
+    if (!brand || !container || !Array.isArray(brand.serviceAreas)) return;
+
+    const itemClass = container.getAttribute('data-item-class') || 'area-chip';
+    container.innerHTML = '';
+
+    brand.serviceAreas.forEach((area) => {
+      const item = document.createElement('span');
+      item.className = itemClass;
+      item.textContent = area;
+      container.appendChild(item);
+    });
+  };
+
+  const renderBrandServices = (container) => {
+    if (!brand || !container || !Array.isArray(brand.services)) return;
+
+    const linkClass = container.getAttribute('data-link-class') || '';
+    container.innerHTML = '';
+
+    brand.services.forEach((service) => {
+      const link = document.createElement('a');
+      link.href = service.href || '/index.html#consultation';
+      link.textContent = service.title || 'Service';
+      if (linkClass) link.className = linkClass;
+      container.appendChild(link);
+    });
+  };
+
+  const applyBrandContent = () => {
+    if (!brand) return;
+
+    document.querySelectorAll('[data-brand-name]').forEach((node) => {
+      setBrandNodeValue(node, brand.name);
+    });
+
+    document.querySelectorAll('[data-brand-short-name]').forEach((node) => {
+      setBrandNodeValue(node, brand.shortName || brand.name);
+    });
+
+    document.querySelectorAll('[data-brand-claim]').forEach((node) => {
+      setBrandNodeValue(node, brand.claim);
+    });
+
+    document.querySelectorAll('[data-brand-region]').forEach((node) => {
+      setBrandNodeValue(node, brand.region);
+    });
+
+    document.querySelectorAll('[data-brand-email]').forEach((node) => {
+      setBrandNodeValue(node, brand.email, `mailto:${brand.email}`);
+    });
+
+    document.querySelectorAll('[data-brand-phone]').forEach((node) => {
+      const indexRaw = Number(node.getAttribute('data-brand-phone'));
+      const phone = brand.phones?.[Number.isFinite(indexRaw) ? indexRaw : 0] || brand.phones?.[0];
+      if (!phone) return;
+      setBrandNodeValue(node, phone.display, phone.href);
+      if (phone.label) node.setAttribute('aria-label', phone.label);
+    });
+
+    document.querySelectorAll('[data-brand-area-list]').forEach(renderBrandAreas);
+    document.querySelectorAll('[data-brand-service-links]').forEach(renderBrandServices);
+  };
+
   const accountPathForRole = (roleRaw) => {
     const role = String(roleRaw || '').toLowerCase();
     if (role === 'client') return '/client-dashboard.html';
@@ -32,120 +119,125 @@
     return href.includes('auth.html') || /login\s*\/\s*register/i.test(link.textContent || '');
   };
 
+  const getNavLinks = () => {
+    if (!navMenu) return [];
+    return Array.from(navMenu.querySelectorAll('[data-nav-link]'));
+  };
+
   const clearInjectedAccountItems = () => {
-    document.querySelectorAll('[data-nav-injected]').forEach((node) => {
-      node.remove();
-    });
+    if (!navMenu) return;
+    navMenu.querySelectorAll('[data-nav-injected="account"]').forEach((node) => node.remove());
   };
 
-  const insertNavItemAfter = (baseNode, anchor) => {
-    const insertionTarget = baseNode?.tagName === 'LI' ? baseNode : (baseNode?.closest('li') || baseNode);
-    const targetParent = insertionTarget?.parentElement;
-
-    anchor.dataset.navInjected = '1';
-
-    if (targetParent && targetParent.tagName === 'UL') {
-      const li = document.createElement('li');
-      li.dataset.navInjected = '1';
-      li.appendChild(anchor);
-      insertionTarget.insertAdjacentElement('afterend', li);
-      return anchor;
-    }
-
-    insertionTarget?.insertAdjacentElement('afterend', anchor);
-    return anchor;
-  };
-
-  const createMenuAnchor = (href, label, extraClass = '') => {
+  const createNavAnchor = (href, label) => {
     const anchor = document.createElement('a');
     anchor.href = href;
+    anchor.textContent = label;
     anchor.dataset.navLink = '';
     anchor.classList.add('nav-account-sub');
-    if (extraClass) anchor.classList.add(extraClass);
-    anchor.textContent = label;
     return anchor;
   };
 
-  const panelLabelForRole = (roleRaw) => {
-    const role = String(roleRaw || '').toLowerCase();
-    if (role === 'client') return 'Client Panel';
-    if (['employee', 'manager', 'admin'].includes(role)) return 'Staff Dashboard';
-    return 'Account';
-  };
+  const insertNavItemAfter = (baseLink, newAnchor) => {
+    if (!baseLink || !newAnchor) return;
 
-  const syncHeaderAccountButton = (loggedIn, accountHref = '/auth.html') => {
-    const headerInner = document.querySelector('.header-inner');
-    if (!headerInner) return;
-    const isMobile = window.matchMedia('(max-width: 768px)').matches;
+    if (navMenu && navMenu.tagName === 'UL') {
+      const li = document.createElement('li');
+      li.dataset.navInjected = 'account';
+      li.appendChild(newAnchor);
 
-    let button = headerInner.querySelector('[data-header-account-btn]');
-    if (!button) {
-      button = document.createElement('a');
-      button.dataset.headerAccountBtn = '1';
-      button.className = 'btn btn-outline header-account-btn';
-      const headerCta = headerInner.querySelector('.header-cta');
-      if (headerCta) {
-        headerCta.insertAdjacentElement('beforebegin', button);
+      const baseLi = baseLink.closest('li');
+      if (baseLi && baseLi.parentElement === navMenu) {
+        baseLi.insertAdjacentElement('afterend', li);
       } else {
-        headerInner.appendChild(button);
+        navMenu.appendChild(li);
       }
-    }
-
-    button.href = loggedIn ? accountHref : '/auth.html';
-    button.textContent = loggedIn ? 'Account' : (isMobile ? 'Login' : 'Login / Register');
-    button.title = loggedIn ? 'Open account settings' : 'Login or register account';
-    button.classList.toggle('is-authenticated', loggedIn);
-  };
-
-  const syncAuthLinks = (user) => {
-    const authLinks = navLinks.filter(isAuthLink);
-    const loggedIn = Boolean(user && localStorage.getItem(TOKEN_KEY));
-    const accountHref = accountPathForRole(user?.role);
-    syncHeaderAccountButton(loggedIn, accountHref);
-    if (!authLinks.length) return;
-
-    authLinks.forEach((link) => {
-      if (loggedIn) {
-        link.textContent = 'Account Menu';
-        link.setAttribute('href', '/auth.html');
-        link.classList.add('nav-account-link');
-      } else {
-        link.textContent = 'Login / Register';
-        link.setAttribute('href', '/auth.html');
-        link.classList.remove('nav-account-link');
-      }
-    });
-
-    clearInjectedAccountItems();
-
-    if (loggedIn) {
-      let insertionPoint = authLinks[0];
-
-      const settingsAnchor = createMenuAnchor('/auth.html', 'Account Settings');
-      insertionPoint = insertNavItemAfter(insertionPoint, settingsAnchor);
-
-      const panelAnchor = createMenuAnchor(accountHref, panelLabelForRole(user?.role));
-      insertionPoint = insertNavItemAfter(insertionPoint, panelAnchor);
-
-      const logoutAnchor = createMenuAnchor('#logout', 'Logout', 'nav-logout-link');
-      logoutAnchor.addEventListener('click', (event) => {
-        event.preventDefault();
-        clearSession();
-        window.location.assign('/index.html');
-      });
-      insertNavItemAfter(insertionPoint, logoutAnchor);
       return;
     }
+
+    newAnchor.dataset.navInjected = 'account';
+    baseLink.insertAdjacentElement('afterend', newAnchor);
+  };
+
+  const ensureHeaderAccountButton = (loggedIn, href) => {
+    const headerInner = document.querySelector('.header-inner');
+    if (!headerInner) return;
+
+    let accountBtn = headerInner.querySelector('[data-header-account-btn]');
+    if (!accountBtn) {
+      accountBtn = document.createElement('a');
+      accountBtn.dataset.headerAccountBtn = '1';
+      accountBtn.className = 'btn btn-outline header-account-btn';
+
+      const cta = headerInner.querySelector('.header-cta');
+      if (cta) {
+        cta.insertAdjacentElement('beforebegin', accountBtn);
+      } else {
+        headerInner.appendChild(accountBtn);
+      }
+    }
+
+    const mobile = window.matchMedia('(max-width: 992px)').matches;
+    accountBtn.href = loggedIn ? href : '/auth.html';
+    accountBtn.textContent = loggedIn ? 'Account' : (mobile ? 'Login' : 'Login / Register');
+    accountBtn.classList.toggle('is-authenticated', loggedIn);
+  };
+
+  const ensureDrawerCta = () => {
+    if (!navMenu || navMenu.querySelector('[data-nav-drawer-cta]')) return;
+
+    const cta = document.createElement('a');
+    cta.href = '/index.html#consultation';
+    cta.className = 'btn btn-gold nav-drawer-cta';
+    cta.dataset.navDrawerCta = '1';
+    cta.textContent = 'Request Private Consultation';
+
+    if (navMenu.tagName === 'UL') {
+      const li = document.createElement('li');
+      li.className = 'nav-drawer-cta-wrap';
+      li.appendChild(cta);
+      navMenu.appendChild(li);
+      return;
+    }
+
+    navMenu.appendChild(cta);
+  };
+
+  const updateNavigationForSession = (user) => {
+    const loggedIn = Boolean(user && localStorage.getItem(TOKEN_KEY));
+    const accountHref = accountPathForRole(user?.role);
+    const navLinks = getNavLinks();
+    const authLink = navLinks.find(isAuthLink);
+
+    ensureHeaderAccountButton(loggedIn, accountHref);
+    clearInjectedAccountItems();
+
+    if (!authLink) return;
+
+    authLink.textContent = loggedIn ? 'Account' : 'Login / Register';
+    authLink.setAttribute('href', loggedIn ? accountHref : '/auth.html');
+    authLink.classList.toggle('nav-account-link', loggedIn);
+
+    if (!loggedIn) return;
+
+    const settings = createNavAnchor('/auth.html', 'Account Settings');
+    const workspace = createNavAnchor(accountHref, user?.role === 'client' ? 'Client Workspace' : 'Staff Workspace');
+    const logout = createNavAnchor('#logout', 'Logout');
+    logout.dataset.navLogout = '1';
+
+    insertNavItemAfter(authLink, settings);
+    insertNavItemAfter(settings, workspace);
+    insertNavItemAfter(workspace, logout);
   };
 
   const validateSession = async () => {
     const token = localStorage.getItem(TOKEN_KEY);
     if (!token) {
-      syncAuthLinks(null);
+      updateNavigationForSession(null);
       return;
     }
 
-    syncAuthLinks(getSavedUser());
+    updateNavigationForSession(getSavedUser());
 
     try {
       const response = await fetch('/api/auth/me', {
@@ -153,82 +245,220 @@
           Authorization: `Bearer ${token}`
         }
       });
-      if (!response.ok) throw new Error('Session expired');
 
+      if (!response.ok) throw new Error('Session expired');
       const payload = await response.json().catch(() => ({}));
-      if (!payload?.user) throw new Error('Invalid session');
+      if (!payload?.user) throw new Error('Session expired');
 
       localStorage.setItem(USER_KEY, JSON.stringify(payload.user));
-      syncAuthLinks(payload.user);
+      updateNavigationForSession(payload.user);
     } catch {
       clearSession();
-      syncAuthLinks(null);
+      updateNavigationForSession(null);
     }
   };
 
+  const isMobileMenuMode = () => window.matchMedia('(max-width: 992px)').matches;
+
+  const getMenuFocusable = () => {
+    if (!navMenu) return [];
+    return Array.from(navMenu.querySelectorAll('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])')).filter(
+      (node) => !node.hasAttribute('hidden')
+    );
+  };
+
+  const setMenuState = (isOpen) => {
+    if (!navMenu || !navToggle) return;
+
+    navMenu.classList.toggle('is-open', isOpen);
+    navToggle.classList.toggle('is-open', isOpen);
+    navToggle.setAttribute('aria-expanded', String(isOpen));
+    body.classList.toggle('nav-open', isOpen);
+
+    if (menuWrap) {
+      menuWrap.classList.toggle('is-open', isOpen);
+    }
+
+    if (isOpen && isMobileMenuMode()) {
+      menuPreviouslyFocused = document.activeElement;
+      const first = getMenuFocusable()[0];
+      if (first) first.focus();
+    }
+
+    if (!isOpen && menuPreviouslyFocused && typeof menuPreviouslyFocused.focus === 'function') {
+      menuPreviouslyFocused.focus();
+      menuPreviouslyFocused = null;
+    }
+  };
+
+  const closeMenu = () => setMenuState(false);
+
   if (header) {
     const syncHeader = () => {
-      header.classList.toggle('is-scrolled', window.scrollY > 12);
+      header.classList.toggle('is-scrolled', window.scrollY > 8);
     };
 
     syncHeader();
     window.addEventListener('scroll', syncHeader, { passive: true });
   }
 
-  if (navToggle && navMenu) {
-    const setMenuState = (isOpen) => {
-      navMenu.classList.toggle('is-open', isOpen);
-      navToggle.classList.toggle('is-open', isOpen);
-      if (menuWrap) {
-        menuWrap.classList.toggle('is-open', isOpen);
-      }
-      document.body.classList.toggle('nav-open', isOpen);
-      navToggle.setAttribute('aria-expanded', String(isOpen));
-    };
-
-    const closeMenu = () => {
-      setMenuState(false);
-    };
+  if (navMenu && navToggle) {
+    ensureDrawerCta();
 
     navToggle.addEventListener('click', () => {
-      const nextState = !navMenu.classList.contains('is-open');
-      setMenuState(nextState);
-    });
-
-    navLinks.forEach((link) => {
-      link.addEventListener('click', () => {
-        closeMenu();
-      });
+      const willOpen = !navMenu.classList.contains('is-open');
+      setMenuState(willOpen);
     });
 
     navMenu.addEventListener('click', (event) => {
-      if (event.target.closest('a[data-nav-link]')) {
+      const link = event.target.closest('a');
+      if (!link) return;
+
+      if (link.dataset.navLogout === '1') {
+        event.preventDefault();
+        clearSession();
+        updateNavigationForSession(null);
+        closeMenu();
+        window.location.assign('/auth.html');
+        return;
+      }
+
+      if (link.hasAttribute('data-nav-link')) {
         closeMenu();
       }
     });
 
     document.addEventListener('click', (event) => {
-      if (navToggle.contains(event.target) || navMenu.contains(event.target)) return;
+      if (!navMenu.classList.contains('is-open')) return;
+      if (navMenu.contains(event.target) || navToggle.contains(event.target)) return;
       closeMenu();
     });
 
     document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape') closeMenu();
+      if (!navMenu.classList.contains('is-open')) return;
+
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeMenu();
+        return;
+      }
+
+      if (event.key !== 'Tab' || !isMobileMenuMode()) return;
+
+      const focusable = getMenuFocusable();
+      if (!focusable.length) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement;
+
+      if (event.shiftKey && active === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
+      }
     });
 
     window.addEventListener('resize', () => {
-      if (window.innerWidth > 768 && navMenu.classList.contains('is-open')) {
+      if (!isMobileMenuMode() && navMenu.classList.contains('is-open')) {
         closeMenu();
       }
+      ensureHeaderAccountButton(Boolean(localStorage.getItem(TOKEN_KEY)), accountPathForRole(getSavedUser()?.role));
     });
   }
 
-  validateSession();
-  window.addEventListener('ll:session-changed', () => {
-    validateSession();
-  });
+  const setupDashboardAccordions = () => {
+    const dashboardShell = document.querySelector('.dashboard-shell');
+    if (!dashboardShell) return;
 
-  const yearEls = document.querySelectorAll('[data-current-year]');
+    const cards = Array.from(dashboardShell.querySelectorAll('section.card:not(.dashboard-session)'));
+    const mobileQuery = window.matchMedia('(max-width: 768px)');
+    const isTruthyFlag = (value) => ['1', 'true', 'yes', 'open'].includes(String(value || '').toLowerCase());
+
+    const setExpanded = (card, expanded) => {
+      const toggle = card.querySelector('.dashboard-accordion-toggle');
+      if (!toggle) return;
+      card.classList.toggle('is-collapsed', !expanded);
+      toggle.setAttribute('aria-expanded', String(expanded));
+    };
+
+    cards.forEach((card, index) => {
+      if (card.dataset.accordionReady === '1') return;
+      const heading = card.querySelector(':scope > h2');
+      if (!heading) return;
+
+      const toggle = document.createElement('button');
+      toggle.type = 'button';
+      toggle.className = 'dashboard-accordion-toggle';
+      toggle.textContent = heading.textContent.trim();
+      toggle.id = `dashboard-toggle-${index + 1}`;
+
+      card.insertBefore(toggle, heading);
+      heading.remove();
+
+      const body = document.createElement('div');
+      body.className = 'dashboard-accordion-body';
+      body.id = `dashboard-panel-${index + 1}`;
+      body.setAttribute('role', 'region');
+      body.setAttribute('aria-labelledby', toggle.id);
+
+      let sibling = toggle.nextSibling;
+      while (sibling) {
+        const next = sibling.nextSibling;
+        body.appendChild(sibling);
+        sibling = next;
+      }
+
+      card.appendChild(body);
+      toggle.setAttribute('aria-controls', body.id);
+      toggle.setAttribute('aria-expanded', 'true');
+
+      toggle.addEventListener('click', () => {
+        if (!mobileQuery.matches) return;
+        const expanded = toggle.getAttribute('aria-expanded') === 'true';
+        setExpanded(card, !expanded);
+      });
+
+      card.dataset.accordionReady = '1';
+    });
+
+    const apply = () => {
+      const mobile = mobileQuery.matches;
+      cards.forEach((card, index) => {
+        if (!card.querySelector('.dashboard-accordion-toggle')) return;
+        if (!mobile) {
+          setExpanded(card, true);
+          return;
+        }
+
+        if (card.hidden) {
+          setExpanded(card, false);
+          return;
+        }
+
+        const shouldOpen = isTruthyFlag(card.dataset.dashboardMobileOpen) || index === 0;
+        setExpanded(card, shouldOpen);
+      });
+    };
+
+    apply();
+    window.addEventListener('resize', apply);
+    window.addEventListener('ll:dashboard-accordions-refresh', apply);
+
+    dashboardShell.querySelectorAll('.dashboard-session-actions').forEach((row) => {
+      row.classList.add('dashboard-sticky-actions');
+    });
+  };
+
+  applyBrandContent();
+  validateSession();
+  window.addEventListener('ll:session-changed', validateSession);
+
+  setupDashboardAccordions();
+
+  const yearEls = document.querySelectorAll('[data-current-year], [data-year]');
   if (yearEls.length) {
     const year = String(new Date().getFullYear());
     yearEls.forEach((el) => {
@@ -270,14 +500,23 @@
     const aliases = new Map([
       ['bathroom', 'bathroom'],
       ['premium bathroom', 'bathroom'],
+      ['bathroom renovation', 'bathroom'],
       ['kitchen', 'kitchen'],
       ['premium kitchen', 'kitchen'],
+      ['kitchen renovation', 'kitchen'],
       ['interior', 'interior'],
       ['interior renovation', 'interior'],
+      ['internal wall systems', 'interior'],
+      ['internal wall system', 'interior'],
+      ['internal walls', 'interior'],
       ['tiling', 'tiling'],
-      ['extension', 'extension'],
+      ['carpentry', 'joinery'],
       ['joinery', 'joinery'],
+      ['external wall systems', 'rendering'],
+      ['external wall system', 'rendering'],
+      ['external walls', 'rendering'],
       ['rendering', 'rendering'],
+      ['extension', 'extension'],
       ['decorating', 'decorating'],
       ['other', 'other']
     ]);
@@ -285,16 +524,16 @@
     if (aliases.has(raw)) return aliases.get(raw);
     if (raw.includes('bath')) return 'bathroom';
     if (raw.includes('kitch')) return 'kitchen';
-    if (raw.includes('interior')) return 'interior';
+    if (raw.includes('interior') || raw.includes('internal wall')) return 'interior';
     if (raw.includes('tile')) return 'tiling';
-    if (raw.includes('joinery')) return 'joinery';
+    if (raw.includes('carpent') || raw.includes('joinery')) return 'joinery';
+    if (raw.includes('external wall')) return 'rendering';
     if (raw.includes('extension')) return 'extension';
     if (raw.includes('render')) return 'rendering';
     if (raw.includes('decor')) return 'decorating';
     return 'other';
   };
 
-  // Handle non-js quote forms only to avoid double submit when quote.js is present.
   const quoteForms = document.querySelectorAll('.quote-form:not(.js-quote-form)');
 
   quoteForms.forEach((form) => {
@@ -321,7 +560,7 @@
 
       if (!guestName || !description || (!guestEmail && !guestPhone)) {
         status.classList.add('is-error');
-        status.textContent = 'Please add your name, project details, and either an email or phone number.';
+        status.textContent = 'Please provide your name, project details, and either email or phone.';
         return;
       }
 
@@ -355,8 +594,8 @@
 
         status.className = 'form-status is-success';
         status.textContent = payload.quoteId
-          ? `Request sent successfully. Reference: ${payload.quoteId}.`
-          : 'Request sent successfully.';
+          ? `Request sent. Reference: ${payload.quoteId}.`
+          : 'Request sent.';
         form.reset();
       } catch (error) {
         status.className = 'form-status is-error';

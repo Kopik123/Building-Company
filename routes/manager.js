@@ -18,6 +18,7 @@ const {
 const { auth, roleCheck } = require('../middleware/auth');
 const asyncHandler = require('../utils/asyncHandler');
 const { upload } = require('../utils/upload');
+const { clearServicesCache, clearGalleryCache } = require('../utils/publicCache');
 
 const router = express.Router();
 
@@ -231,7 +232,37 @@ const paginationDto = (page, pageSize, total) => ({
   totalPages: Math.max(1, Math.ceil(total / pageSize))
 });
 
-const toProjectDto = (project) => {
+const buildProjectMediaCountMap = async (projectIds) => {
+  const uniqueProjectIds = Array.from(new Set((projectIds || []).filter(Boolean)));
+  if (!uniqueProjectIds.length) return new Map();
+
+  const rows = await ProjectMedia.findAll({
+    attributes: ['projectId', 'mediaType', [fn('COUNT', col('id')), 'count']],
+    where: { projectId: { [Op.in]: uniqueProjectIds } },
+    group: ['projectId', 'mediaType'],
+    raw: true
+  });
+
+  const mediaCountByProjectId = new Map();
+  uniqueProjectIds.forEach((projectId) => {
+    mediaCountByProjectId.set(projectId, { imageCount: 0, documentCount: 0 });
+  });
+
+  rows.forEach((row) => {
+    const projectId = row.projectId;
+    const counts = mediaCountByProjectId.get(projectId) || { imageCount: 0, documentCount: 0 };
+    const count = Number.parseInt(row.count, 10) || 0;
+    if (row.mediaType === 'image') counts.imageCount = count;
+    if (row.mediaType === 'document') counts.documentCount = count;
+    mediaCountByProjectId.set(projectId, counts);
+  });
+
+  return mediaCountByProjectId;
+};
+
+const toProjectDto = (project, options = {}) => {
+  const includeMedia = options.includeMedia !== false;
+  const mediaCountByProjectId = options.mediaCountByProjectId || null;
   const plain = project.toJSON();
   const media = Array.isArray(plain.media) ? plain.media : [];
   const sortedMedia = media
@@ -243,12 +274,27 @@ const toProjectDto = (project) => {
       return String(a.filename || '').localeCompare(String(b.filename || ''));
     });
 
-  return {
+  const countedFromQuery = mediaCountByProjectId && plain.id ? mediaCountByProjectId.get(plain.id) : null;
+  const imageCount = includeMedia
+    ? sortedMedia.filter((item) => item.mediaType === 'image').length
+    : Number.parseInt(countedFromQuery?.imageCount, 10) || 0;
+  const documentCount = includeMedia
+    ? sortedMedia.filter((item) => item.mediaType === 'document').length
+    : Number.parseInt(countedFromQuery?.documentCount, 10) || 0;
+
+  const dto = {
     ...plain,
-    media: sortedMedia,
-    imageCount: sortedMedia.filter((item) => item.mediaType === 'image').length,
-    documentCount: sortedMedia.filter((item) => item.mediaType === 'document').length
+    imageCount,
+    documentCount
   };
+
+  if (includeMedia) {
+    dto.media = sortedMedia;
+  } else {
+    delete dto.media;
+  }
+
+  return dto;
 };
 
 router.post(
@@ -487,6 +533,8 @@ router.post(
       }
 
       await tx.commit();
+      clearServicesCache();
+      clearGalleryCache();
       return res.json({ message: 'Starter seed completed', force, stats });
     } catch (error) {
       await tx.rollback();
@@ -741,8 +789,12 @@ router.get(
       offset
     });
 
+    const mediaCountByProjectId = includeMedia
+      ? null
+      : await buildProjectMediaCountMap(rows.map((project) => project.id));
+
     return res.json({
-      projects: rows.map((project) => toProjectDto(project)),
+      projects: rows.map((project) => toProjectDto(project, { includeMedia, mediaCountByProjectId })),
       pagination: paginationDto(page, pageSize, count)
     });
   })
@@ -840,6 +892,7 @@ router.post(
     }
 
     const project = await Project.create(payload);
+    clearGalleryCache();
     return res.status(201).json({ project });
   })
 );
@@ -926,6 +979,7 @@ router.patch(
     }
 
     await project.update(payload);
+    clearGalleryCache();
     return res.json({ project });
   })
 );
@@ -953,6 +1007,7 @@ router.delete(
     await ProjectMedia.destroy({ where: { projectId: project.id } });
     await project.destroy();
 
+    clearGalleryCache();
     return res.json({ message: 'Project deleted' });
   })
 );
@@ -1035,6 +1090,7 @@ router.post(
     }
 
     const created = await ProjectMedia.bulkCreate(records, { returning: true });
+    clearGalleryCache();
     return res.status(201).json({ media: created });
   })
 );
@@ -1098,6 +1154,7 @@ router.patch(
     }
 
     await media.update(payload);
+    clearGalleryCache();
     return res.json({ media });
   })
 );
@@ -1123,6 +1180,7 @@ router.delete(
 
     await safeUnlink(media.storagePath);
     await media.destroy();
+    clearGalleryCache();
     return res.json({ message: 'Media deleted' });
   })
 );
@@ -1226,6 +1284,7 @@ router.post(
       isActive: parseBoolean(req.body.isActive, true)
     });
 
+    clearServicesCache();
     return res.status(201).json({ service });
   })
 );
@@ -1283,6 +1342,7 @@ router.patch(
     }
 
     await service.update(payload);
+    clearServicesCache();
     return res.json({ service });
   })
 );
@@ -1302,6 +1362,7 @@ router.delete(
     }
 
     await service.destroy();
+    clearServicesCache();
     return res.json({ message: 'Service deleted' });
   })
 );

@@ -1,7 +1,7 @@
 const express = require('express');
 const path = require('path');
 const { Op } = require('sequelize');
-const { param, validationResult } = require('express-validator');
+const { param, query, validationResult } = require('express-validator');
 const {
   Project,
   ProjectMedia,
@@ -22,6 +22,14 @@ const clientGuard = [auth, roleCheck('client')];
 const normalizeStoragePath = (absolutePath) => {
   const relative = path.relative(path.join(__dirname, '..'), absolutePath);
   return relative.replace(/\\/g, '/');
+};
+
+const parseBoolean = (value, fallback = false) => {
+  if (typeof value === 'boolean') return value;
+  const normalized = String(value || '').trim().toLowerCase();
+  if (['true', '1', 'yes', 'on'].includes(normalized)) return true;
+  if (['false', '0', 'no', 'off'].includes(normalized)) return false;
+  return fallback;
 };
 
 const mapProject = (project) => {
@@ -47,8 +55,14 @@ const mapProject = (project) => {
 
 router.get(
   '/overview',
-  clientGuard,
+  [...clientGuard, query('includeThreads').optional().isIn(['true', 'false', '1', '0'])],
   asyncHandler(async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const includeThreads = parseBoolean(req.query.includeThreads, true);
     const [projects, quotes, memberships, unreadCount, services] = await Promise.all([
       Project.findAll({
         where: { clientId: req.user.id, isActive: true },
@@ -65,11 +79,13 @@ router.get(
         order: [['createdAt', 'DESC']],
         limit: 100
       }),
-      GroupMember.findAll({
-        where: { userId: req.user.id },
-        include: [{ model: GroupThread, as: 'thread' }],
-        order: [['createdAt', 'DESC']]
-      }),
+      includeThreads
+        ? GroupMember.findAll({
+          where: { userId: req.user.id },
+          include: [{ model: GroupThread, as: 'thread' }],
+          order: [['createdAt', 'DESC']]
+        })
+        : Promise.resolve([]),
       Notification.count({ where: { userId: req.user.id, isRead: false } }),
       ServiceOffering.findAll({
         where: { showOnWebsite: true, isActive: true },
@@ -87,7 +103,7 @@ router.get(
       },
       projects: projects.map(mapProject),
       quotes,
-      threads: memberships.map((membership) => membership.thread).filter(Boolean),
+      threads: includeThreads ? memberships.map((membership) => membership.thread).filter(Boolean) : [],
       services
     });
   })

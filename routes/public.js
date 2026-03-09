@@ -2,15 +2,13 @@ const express = require('express');
 const { query, validationResult } = require('express-validator');
 const { ServiceOffering } = require('../models');
 const asyncHandler = require('../utils/asyncHandler');
+const { servicesCache, getCached, setCached } = require('../utils/publicCache');
 
 const router = express.Router();
 const servicesCacheTtlRaw = Number(process.env.PUBLIC_SERVICES_CACHE_TTL_MS);
 const PUBLIC_SERVICES_CACHE_TTL_MS = Number.isFinite(servicesCacheTtlRaw) && servicesCacheTtlRaw > 0
   ? servicesCacheTtlRaw
   : 30 * 1000;
-const servicesCache = new Map();
-const SERVICES_CACHE_MAX_ENTRIES = 100;
-
 const getServicesCacheKey = (req) => JSON.stringify({
   category: req.query.category || '',
   featured: req.query.featured || ''
@@ -33,11 +31,11 @@ router.get(
       return res.status(400).json({ errors: errors.array() });
     }
     const cacheKey = getServicesCacheKey(req);
-    const cached = servicesCache.get(cacheKey);
-    if (cached && Date.now() < cached.expiresAt) {
+    const cached = getCached(servicesCache, cacheKey);
+    if (cached) {
       applyPublicCacheHeaders(res);
       res.set('X-Cache', 'HIT');
-      return res.json(cached.payload);
+      return res.json(cached);
     }
 
     const where = { showOnWebsite: true, isActive: true };
@@ -53,13 +51,7 @@ router.get(
     });
 
     const payload = { services };
-    if (servicesCache.size >= SERVICES_CACHE_MAX_ENTRIES) {
-      servicesCache.clear();
-    }
-    servicesCache.set(cacheKey, {
-      payload,
-      expiresAt: Date.now() + PUBLIC_SERVICES_CACHE_TTL_MS
-    });
+    setCached(servicesCache, cacheKey, payload, PUBLIC_SERVICES_CACHE_TTL_MS);
 
     applyPublicCacheHeaders(res);
     res.set('X-Cache', 'MISS');

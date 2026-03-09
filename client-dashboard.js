@@ -51,11 +51,42 @@
     if (type === 'error') node.classList.add('is-error');
     node.textContent = message || '';
   };
+  const requestAccordionRefresh = () => {
+    window.dispatchEvent(new CustomEvent('ll:dashboard-accordions-refresh'));
+  };
 
   const clearSession = () => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
+    state.token = '';
+    state.user = null;
   };
+  const getStoredUser = () => {
+    try {
+      return JSON.parse(localStorage.getItem(USER_KEY) || 'null');
+    } catch {
+      return null;
+    }
+  };
+  const waitForStoredUser = (timeoutMs = 900) =>
+    new Promise((resolve) => {
+      const startedAt = Date.now();
+      const tick = () => {
+        const user = getStoredUser();
+        if (user && user.role) {
+          resolve(user);
+          return;
+        }
+
+        if (Date.now() - startedAt >= timeoutMs || !localStorage.getItem(TOKEN_KEY)) {
+          resolve(null);
+          return;
+        }
+
+        window.setTimeout(tick, 60);
+      };
+      tick();
+    });
 
   const api = async (url, options = {}) => {
     const headers = new Headers(options.headers || {});
@@ -79,7 +110,7 @@
 
     cards.forEach((card) => {
       const node = document.createElement('article');
-      node.className = 'card dashboard-item';
+      node.className = 'card dashboard-item dashboard-metric-card';
       node.innerHTML = `<p class="muted">${escapeHtml(card.label)}</p><h2>${escapeHtml(card.value)}</h2>`;
       el.metrics.appendChild(node);
     });
@@ -105,10 +136,10 @@
       card.className = 'dashboard-item';
       const manager = project.assignedManager?.name || project.assignedManager?.email || 'Not assigned';
       const docsCount = Array.isArray(project.documents) ? project.documents.length : 0;
-      card.innerHTML = `<h3>${escapeHtml(project.title)}</h3><p class="muted">${escapeHtml(project.status)} · ${escapeHtml(project.location || '-')} · Manager: ${escapeHtml(manager)} · Docs: ${escapeHtml(docsCount)}</p><p>${escapeHtml(project.description || '')}</p>`;
+      card.innerHTML = `<h3>${escapeHtml(project.title)}</h3><p class="muted">${escapeHtml(project.status)} | ${escapeHtml(project.location || '-')} | Manager: ${escapeHtml(manager)} | Docs: ${escapeHtml(docsCount)}</p><p>${escapeHtml(project.description || '')}</p>`;
 
       const docsWrap = document.createElement('div');
-      docsWrap.className = 'dashboard-list';
+      docsWrap.className = 'dashboard-pill-list';
       (project.documents || []).slice(0, 5).forEach((doc) => {
         const link = document.createElement('a');
         link.className = 'btn btn-outline';
@@ -141,7 +172,7 @@
     state.quotes.forEach((quote) => {
       const card = document.createElement('article');
       card.className = 'dashboard-item';
-      card.innerHTML = `<h3>${escapeHtml(quote.projectType)}</h3><p class="muted">${escapeHtml(quote.status)} · priority ${escapeHtml(quote.priority)} · ${escapeHtml(quote.location || '-')}</p><p>${escapeHtml(quote.description || '')}</p>`;
+      card.innerHTML = `<h3>${escapeHtml(quote.projectType)}</h3><p class="muted">${escapeHtml(quote.status)} | Priority ${escapeHtml(quote.priority)} | ${escapeHtml(quote.location || '-')}</p><p>${escapeHtml(quote.description || '')}</p>`;
       frag.appendChild(card);
     });
     el.quotesList.appendChild(frag);
@@ -158,8 +189,8 @@
     state.services.forEach((service) => {
       const card = document.createElement('article');
       card.className = 'dashboard-item';
-      const price = service.basePriceFrom ? `from £${Number(service.basePriceFrom).toLocaleString('en-GB')}` : 'custom quote';
-      card.innerHTML = `<h3>${escapeHtml(service.title)}</h3><p class="muted">${escapeHtml(service.category)} · ${escapeHtml(price)}</p><p>${escapeHtml(service.shortDescription || '')}</p>`;
+      const price = service.basePriceFrom ? `from GBP ${Number(service.basePriceFrom).toLocaleString('en-GB')}` : 'custom quote';
+      card.innerHTML = `<h3>${escapeHtml(service.title)}</h3><p class="muted">${escapeHtml(service.category)} | ${escapeHtml(price)}</p><p>${escapeHtml(service.shortDescription || '')}</p>`;
       frag.appendChild(card);
     });
     el.servicesList.appendChild(frag);
@@ -208,7 +239,7 @@
       const card = document.createElement('article');
       card.className = 'dashboard-item';
       const sender = message.sender?.name || message.sender?.email || 'Unknown';
-      card.innerHTML = `<p class="muted">${escapeHtml(sender)} · ${escapeHtml(new Date(message.createdAt).toLocaleString('en-GB'))}</p><p>${escapeHtml(message.body || '')}</p>`;
+      card.innerHTML = `<p class="muted">${escapeHtml(sender)} | ${escapeHtml(new Date(message.createdAt).toLocaleString('en-GB'))}</p><p>${escapeHtml(message.body || '')}</p>`;
       frag.appendChild(card);
     });
     el.messagesList.appendChild(frag);
@@ -227,7 +258,7 @@
   };
 
   const loadOverview = async () => {
-    const payload = await api('/api/client/overview');
+    const payload = await api('/api/client/overview?includeThreads=false');
     state.user = payload.user || null;
     state.projects = Array.isArray(payload.projects) ? payload.projects : [];
     state.quotes = Array.isArray(payload.quotes) ? payload.quotes : [];
@@ -236,6 +267,7 @@
     renderProjects();
     renderQuotes();
     renderServices();
+    requestAccordionRefresh();
   };
 
   const loadThreads = async () => {
@@ -246,6 +278,7 @@
     }
     renderThreads();
     await loadMessages();
+    requestAccordionRefresh();
   };
 
   const bootstrap = async () => {
@@ -260,14 +293,18 @@
     }
 
     try {
-      const me = await api('/api/auth/me');
-      const role = String(me.user?.role || '').toLowerCase();
+      state.user = getStoredUser() || await waitForStoredUser();
+      const role = String(state.user?.role || '').toLowerCase();
       if (role !== 'client') {
-        el.session.textContent = 'This portal is for client role only.';
+        clearSession();
+        el.session.textContent = 'Session expired. Redirecting to login...';
+        window.setTimeout(() => {
+          window.location.assign(loginUrl);
+        }, 700);
         return;
       }
 
-      el.session.textContent = `Logged as ${me.user.name || me.user.email} (${me.user.role})`;
+      el.session.textContent = `Logged as ${state.user.name || state.user.email} (${state.user.role})`;
       await Promise.all([loadOverview(), loadThreads()]);
     } catch (error) {
       clearSession();

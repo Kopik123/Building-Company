@@ -3,160 +3,233 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Login / Register | levels+lines</title>
-  <meta name="description" content="Log in or create an account for your renovation project updates." />
+  <title>Login / Register | Level Lines Studio</title>
+  <meta name="description" content="Secure account access for clients and project staff at Level Lines Studio." />
   <link rel="canonical" href="https://levellines.co.uk/auth.html" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles.css" />
 </head>
-<body>
+<body class="public-site workspace-site page-auth">
   <header class="site-header" id="top">
     <div class="container header-inner grid-12">
-      <a class="brand" href="/index.html" aria-label="levels+lines home">
-        <img src="/logo4.png" alt="levels+lines logo" class="brand-logo" />
-        <span class="brand-mark">levels+lines</span>
-        <span class="brand-meta">Precision Renovations · Manchester</span>
+      <a class="brand" href="/index.html" aria-label="Level Lines Studio home">
+        <img src="/logo4.png" alt="Level Lines Studio logo" class="brand-logo" />
+        <span class="brand-copy">
+          <span class="brand-name" data-brand-name>Level Lines Studio</span>
+          <span class="brand-sub" data-brand-claim>Plan / Design / Craft</span>
+        </span>
       </a>
-
       <div class="menu-wrap" data-menu-wrap>
         <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation menu">
           <span class="nav-toggle-line"></span>
           <span class="nav-toggle-line"></span>
           <span class="nav-toggle-line"></span>
         </button>
-
         <nav class="site-nav" id="site-nav" data-nav-menu aria-label="Main navigation">
           <a href="/index.html#services" data-nav-link>Services</a>
+          <a href="/index.html#areas" data-nav-link>Coverage</a>
           <a href="/index.html#projects" data-nav-link>Projects</a>
           <a href="/index.html#gallery" data-nav-link>Gallery</a>
-          <a href="/index.html#process" data-nav-link>Process</a>
-          <a href="/index.html#about" data-nav-link>About</a>
           <a href="/client-dashboard.html" data-nav-link>Client Portal</a>
           <a href="/auth.html" data-nav-link>Login / Register</a>
           <a href="/index.html#consultation" data-nav-link>Contact</a>
         </nav>
       </div>
-
-      <a class="btn btn-gold header-cta" href="/index.html#consultation">Request Consultation</a>
+      <a class="btn btn-gold header-cta" href="/index.html#consultation">Request Private Consultation</a>
     </div>
   </header>
 
-  <main class="section auth-shell">
-    <div class="container">
-      <div class="section-head">
-        <p class="eyebrow">Account</p>
-        <h1>Login / Register</h1>
-        <p class="lead">Access your renovation account to manage project communication and updates.</p>
-      </div>
-
-      <div class="auth-session card">
-        <p class="muted" id="auth-session-state">Not logged in.</p>
-        <div class="dashboard-session-actions">
-          <a href="/client-dashboard.html" class="btn btn-outline" id="auth-client-link" hidden>Client Portal</a>
-          <a href="/manager-dashboard.html" class="btn btn-outline" id="auth-dashboard-link" hidden>Open Dashboard</a>
-          <button type="button" class="btn btn-outline" id="auth-logout" hidden>Log out</button>
+  <main class="workspace-main auth-shell workspace-shell">
+    <section class="section workspace-hero-shell">
+      <div class="container">
+        <nav class="workspace-breadcrumbs" aria-label="Breadcrumb">
+          <a href="/index.html">Home</a>
+          <span>/</span>
+          <span>Account</span>
+        </nav>
+        <div class="workspace-hero">
+          <div class="workspace-hero-copy surface-card surface-card--dark">
+            <p class="section-eyebrow">Account Access</p>
+            <h1>Private account access for clients and project staff.</h1>
+            <p class="section-lead">Use one entry point for client communication, project visibility and back-office control. The visual language now matches the main site while the login flow and session logic remain unchanged.</p>
+            <div class="workspace-chip-row">
+              <span class="stat-chip">Client Portal</span>
+              <span class="stat-chip">Manager Dashboard</span>
+              <span class="stat-chip" data-brand-region>North West - Lancashire</span>
+            </div>
+          </div>
+          <aside class="workspace-hero-panel surface-card surface-card--light">
+            <p class="workspace-panel-title">Studio access notes</p>
+            <div class="workspace-contact-list">
+              <a class="workspace-contact-link" data-brand-phone="0" href="tel:+447942874446">+44 7942 874 446</a>
+              <a class="workspace-contact-link" data-brand-phone="1" href="tel:+447304506391">+44 7304 506 391</a>
+              <a class="workspace-contact-link" data-brand-email href="mailto:LevelLineStudioMCR@gmail.com">LevelLineStudioMCR@gmail.com</a>
+            </div>
+            <ul class="workspace-points">
+              <li>Clients can review project documents, quotes and messages.</li>
+              <li>Managers and staff can continue through to the back-office dashboard.</li>
+              <li>Account settings and password management stay on this page.</li>
+            </ul>
+          </aside>
         </div>
       </div>
+    </section>
 
-      <section class="card auth-account-panel" id="auth-account-panel" hidden>
-        <div class="auth-account-head">
-          <h2>Account Settings</h2>
-          <p class="muted" id="auth-account-role"></p>
+    <section class="section section--light workspace-content-shell">
+      <div class="container workspace-stack">
+        <div class="auth-session card surface-card surface-card--dark">
+          <div>
+            <p class="workspace-card-label">Session State</p>
+            <p class="muted" id="auth-session-state">Not logged in.</p>
+          </div>
+          <div class="dashboard-session-actions">
+            <a href="/client-dashboard.html" class="btn btn-outline" id="auth-client-link" hidden>Client Portal</a>
+            <a href="/manager-dashboard.html" class="btn btn-outline" id="auth-dashboard-link" hidden>Open Dashboard</a>
+            <button type="button" class="btn btn-outline" id="auth-logout" hidden>Log out</button>
+          </div>
         </div>
-        <div class="auth-account-grid">
-          <form id="profile-form" novalidate>
-            <h3>Profile</h3>
-            <div class="form-grid">
-              <label>Name
-                <input type="text" name="name" id="profile-name" autocomplete="name" required />
-              </label>
-              <label>Phone
-                <input type="tel" name="phone" id="profile-phone" autocomplete="tel" />
-              </label>
-              <label class="span-2">Company
-                <input type="text" name="companyName" id="profile-company" autocomplete="organization" />
-              </label>
-            </div>
-            <button type="submit" class="btn btn-gold">Save Profile</button>
-            <p class="form-status" id="profile-status" aria-live="polite"></p>
-          </form>
 
-          <form id="password-form" novalidate>
-            <h3>Password</h3>
-            <div class="form-grid">
-              <label class="span-2">Current password
-                <input type="password" name="currentPassword" autocomplete="current-password" required />
-              </label>
-              <label>New password
-                <input type="password" name="newPassword" autocomplete="new-password" minlength="8" required />
-              </label>
-              <label>Confirm new password
-                <input type="password" name="confirmPassword" autocomplete="new-password" minlength="8" required />
-              </label>
+        <section class="card auth-account-panel surface-card surface-card--light" id="auth-account-panel" hidden>
+          <div class="auth-account-head">
+            <div>
+              <p class="workspace-card-label">Account Settings</p>
+              <h2>Profile and security</h2>
             </div>
-            <button type="submit" class="btn btn-outline">Change Password</button>
-            <p class="form-status" id="password-status" aria-live="polite"></p>
-          </form>
-        </div>
-      </section>
+            <p class="muted" id="auth-account-role"></p>
+          </div>
+          <div class="auth-account-grid">
+            <form id="profile-form" class="workspace-form-panel" novalidate>
+              <h3>Profile</h3>
+              <div class="form-grid">
+                <label>Name
+                  <input type="text" name="name" id="profile-name" autocomplete="name" required />
+                </label>
+                <label>Phone
+                  <input type="tel" name="phone" id="profile-phone" autocomplete="tel" />
+                </label>
+                <label class="span-2">Company
+                  <input type="text" name="companyName" id="profile-company" autocomplete="organization" />
+                </label>
+              </div>
+              <button type="submit" class="btn btn-gold">Save Profile</button>
+              <p class="form-status" id="profile-status" aria-live="polite"></p>
+            </form>
 
-      <div class="auth-grid" id="auth-guest-grid">
-        <section class="card auth-card">
-          <h2>Login</h2>
-          <form id="login-form" novalidate>
-            <div class="form-grid">
-              <label>Email
-                <input type="email" name="email" autocomplete="email" required />
-              </label>
-              <label>Password
-                <input type="password" name="password" autocomplete="current-password" required />
-              </label>
-            </div>
-            <button type="submit" class="btn btn-gold btn-block">Login</button>
-            <p class="form-status" id="login-status" aria-live="polite"></p>
-          </form>
+            <form id="password-form" class="workspace-form-panel" novalidate>
+              <h3>Password</h3>
+              <div class="form-grid">
+                <label class="span-2">Current password
+                  <input type="password" name="currentPassword" autocomplete="current-password" required />
+                </label>
+                <label>New password
+                  <input type="password" name="newPassword" autocomplete="new-password" minlength="8" required />
+                </label>
+                <label>Confirm new password
+                  <input type="password" name="confirmPassword" autocomplete="new-password" minlength="8" required />
+                </label>
+              </div>
+              <button type="submit" class="btn btn-outline">Change Password</button>
+              <p class="form-status" id="password-status" aria-live="polite"></p>
+            </form>
+          </div>
         </section>
 
-        <section class="card auth-card">
-          <h2>Register</h2>
-          <form id="register-form" novalidate>
-            <div class="form-grid">
-              <label>Name
-                <input type="text" name="name" autocomplete="name" required />
-              </label>
-              <label>Email
-                <input type="email" name="email" autocomplete="email" required />
-              </label>
-              <label>Password
-                <input type="password" name="password" autocomplete="new-password" minlength="8" required />
-              </label>
-              <label>Phone
-                <input type="tel" name="phone" autocomplete="tel" />
-              </label>
-              <label class="span-2">Company (optional)
-                <input type="text" name="companyName" autocomplete="organization" />
-              </label>
-            </div>
-            <button type="submit" class="btn btn-gold btn-block">Create account</button>
-            <p class="form-status" id="register-status" aria-live="polite"></p>
-          </form>
-        </section>
+        <div class="auth-grid" id="auth-guest-grid">
+          <section class="card auth-card surface-card surface-card--light">
+            <p class="workspace-card-label">Existing Account</p>
+            <h2>Login</h2>
+            <form id="login-form" novalidate>
+              <div class="form-grid">
+                <label>Email
+                  <input type="email" name="email" autocomplete="email" required />
+                </label>
+                <label>Password
+                  <input type="password" name="password" autocomplete="current-password" required />
+                </label>
+              </div>
+              <button type="submit" class="btn btn-gold btn-block">Login</button>
+              <p class="form-status" id="login-status" aria-live="polite"></p>
+            </form>
+          </section>
+
+          <section class="card auth-card surface-card surface-card--light">
+            <p class="workspace-card-label">New Account</p>
+            <h2>Register</h2>
+            <form id="register-form" novalidate>
+              <div class="form-grid">
+                <label>Name
+                  <input type="text" name="name" autocomplete="name" required />
+                </label>
+                <label>Email
+                  <input type="email" name="email" autocomplete="email" required />
+                </label>
+                <label>Password
+                  <input type="password" name="password" autocomplete="new-password" minlength="8" required />
+                </label>
+                <label>Phone
+                  <input type="tel" name="phone" autocomplete="tel" />
+                </label>
+                <label class="span-2">Company (optional)
+                  <input type="text" name="companyName" autocomplete="organization" />
+                </label>
+              </div>
+              <button type="submit" class="btn btn-gold btn-block">Create account</button>
+              <p class="form-status" id="register-status" aria-live="polite"></p>
+            </form>
+          </section>
+        </div>
       </div>
-    </div>
+    </section>
   </main>
 
   <footer class="site-footer">
-    <div class="container footer-bottom">
-      <p>&copy; <span data-current-year></span> levels+lines. All rights reserved.</p>
-      <div class="legal-links">
-        <a href="/privacy.html">Privacy</a>
-        <a href="/terms.html">Terms</a>
+    <div class="container footer-grid">
+      <div class="footer-block footer-block--brand">
+        <p class="section-eyebrow section-eyebrow--compact">Level Lines Studio</p>
+        <h3 data-brand-name>Level Lines Studio</h3>
+        <p class="footer-copy">Account access, project communication and back-office control in the same visual language as the public studio site.</p>
+        <div class="footer-contact-list">
+          <a class="footer-contact-link" data-brand-phone="0" href="tel:+447942874446">+44 7942 874 446</a>
+          <a class="footer-contact-link" data-brand-phone="1" href="tel:+447304506391">+44 7304 506 391</a>
+          <a class="footer-contact-link" data-brand-email href="mailto:LevelLineStudioMCR@gmail.com">LevelLineStudioMCR@gmail.com</a>
+        </div>
       </div>
+      <div class="footer-block">
+        <h3>Services</h3>
+        <div class="footer-links" data-brand-service-links data-link-class="footer-service-link">
+          <a class="footer-service-link" href="/premium-bathrooms-manchester.html">Bathrooms</a>
+          <a class="footer-service-link" href="/premium-kitchens-manchester.html">Kitchens</a>
+          <a class="footer-service-link" href="/index.html#consultation">Tiling</a>
+          <a class="footer-service-link" href="/index.html#consultation">Carpentry</a>
+          <a class="footer-service-link" href="/index.html#consultation">Internal Wall Systems</a>
+          <a class="footer-service-link" href="/index.html#consultation">External Wall Systems</a>
+        </div>
+      </div>
+      <div class="footer-block">
+        <h3>Workspace</h3>
+        <div class="footer-links">
+          <a href="/client-dashboard.html">Client Portal</a>
+          <a href="/manager-dashboard.html">Manager Dashboard</a>
+          <a href="/index.html#consultation">Private consultation</a>
+          <a href="/privacy.html">Privacy</a>
+          <a href="/terms.html">Terms</a>
+        </div>
+      </div>
+      <div class="footer-block">
+        <h3>Coverage</h3>
+        <p class="footer-copy" data-brand-region>North West - Lancashire</p>
+        <div class="footer-area-list" data-brand-area-list data-item-class="footer-area-chip"></div>
+      </div>
+    </div>
+    <div class="container footer-bottom">
+      <p>&copy; <span data-current-year></span> Level Lines Studio. All rights reserved.</p>
+      <p class="footer-bottom-note">Plan / Design / Craft</p>
     </div>
   </footer>
 
+  <script src="/brand.js" defer></script>
   <script src="/site.js" defer></script>
   <script src="/auth.js" defer></script>
 </body>

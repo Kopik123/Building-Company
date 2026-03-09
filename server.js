@@ -17,6 +17,7 @@ const rateLimit = require('express-rate-limit');
 const nodemailer = require('nodemailer');
 const { Project, ProjectMedia } = require('./models');
 const { runMigrations } = require('./db/migrator');
+const { galleryCache, getCached, setCached } = require('./utils/publicCache');
 
 const authRoutes = require('./routes/auth');
 const quotesRoutes = require('./routes/quotes');
@@ -47,14 +48,11 @@ const publicGalleryCacheTtlRaw = Number(process.env.PUBLIC_GALLERY_CACHE_TTL_MS)
 const PUBLIC_GALLERY_CACHE_TTL_MS = Number.isFinite(publicGalleryCacheTtlRaw) && publicGalleryCacheTtlRaw > 0
   ? publicGalleryCacheTtlRaw
   : 30 * 1000;
-let galleryCache = {
+let galleryFilesCache = {
   images: null,
   expiresAt: 0
 };
-let managedGalleryCache = {
-  payload: null,
-  expiresAt: 0
-};
+const MANAGED_GALLERY_CACHE_KEY = 'legacy:managed-projects';
 
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -124,8 +122,8 @@ const applyPublicCacheHeaders = (res, ttlMs) => {
 
 const getGalleryImages = async () => {
   const now = Date.now();
-  if (galleryCache.images && now < galleryCache.expiresAt) {
-    return galleryCache.images;
+  if (galleryFilesCache.images && now < galleryFilesCache.expiresAt) {
+    return galleryFilesCache.images;
   }
 
   const files = await fs.promises.readdir(GALLERY_PATH);
@@ -133,7 +131,7 @@ const getGalleryImages = async () => {
     .filter((file) => GALLERY_IMAGE_PATTERN.test(file))
     .sort((a, b) => getDateTokenFromFilename(b).localeCompare(getDateTokenFromFilename(a)));
 
-  galleryCache = {
+  galleryFilesCache = {
     images: imageFiles,
     expiresAt: now + GALLERY_CACHE_TTL_MS
   };
@@ -188,19 +186,16 @@ const getManagedGalleryProjects = async () => {
 };
 
 const getManagedGalleryProjectsCached = async () => {
-  const now = Date.now();
-  if (managedGalleryCache.payload && now < managedGalleryCache.expiresAt) {
+  const cached = getCached(galleryCache, MANAGED_GALLERY_CACHE_KEY);
+  if (cached) {
     return {
       cacheHit: true,
-      projects: managedGalleryCache.payload.projects
+      projects: cached.projects
     };
   }
 
   const projects = await getManagedGalleryProjects();
-  managedGalleryCache = {
-    payload: { projects },
-    expiresAt: now + PUBLIC_GALLERY_CACHE_TTL_MS
-  };
+  setCached(galleryCache, MANAGED_GALLERY_CACHE_KEY, { projects }, PUBLIC_GALLERY_CACHE_TTL_MS);
 
   return {
     cacheHit: false,
