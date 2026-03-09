@@ -20,6 +20,37 @@ const getPagination = (req) => {
   };
 };
 
+const encodeCursor = (message) =>
+  Buffer.from(`${new Date(message.createdAt).toISOString()}|${message.id}`, 'utf8').toString('base64url');
+
+const decodeCursor = (rawCursor) => {
+  if (!rawCursor) return null;
+
+  try {
+    const decoded = Buffer.from(String(rawCursor), 'base64url').toString('utf8');
+    const [createdAtRaw, id] = decoded.split('|');
+    const createdAt = new Date(createdAtRaw);
+    if (!id || Number.isNaN(createdAt.getTime())) return null;
+    return { createdAt, id };
+  } catch (_error) {
+    return null;
+  }
+};
+
+const getCursorPagination = (req) => {
+  const limit = Math.min(MAX_PAGE_SIZE, Math.max(1, Number.parseInt(req.query.limit, 10) || DEFAULT_PAGE_SIZE));
+  const cursor = decodeCursor(req.query.cursor);
+  if (req.query.cursor && !cursor) {
+    return { error: 'Invalid cursor' };
+  }
+
+  return {
+    mode: req.query.cursor || typeof req.query.limit !== 'undefined' ? 'cursor' : 'legacy',
+    limit,
+    cursor
+  };
+};
+
 router.get(
   '/threads',
   [
@@ -115,6 +146,8 @@ router.get(
   [
     auth,
     param('id').isUUID(),
+    query('cursor').optional().isString().isLength({ min: 8, max: 400 }),
+    query('limit').optional().isInt({ min: 1, max: MAX_PAGE_SIZE }).toInt(),
     query('page').optional().isInt({ min: 1 }).toInt(),
     query('pageSize').optional().isInt({ min: 1, max: MAX_PAGE_SIZE }).toInt()
   ],
@@ -133,7 +166,45 @@ router.get(
       return res.status(403).json({ error: 'Access denied' });
     }
 
+    const cursorPaging = getCursorPagination(req);
+    if (cursorPaging.error) {
+      return res.status(400).json({ error: cursorPaging.error });
+    }
+
     const where = { threadId: thread.id };
+    if (cursorPaging.mode === 'cursor') {
+      if (cursorPaging.cursor) {
+        where[Op.or] = [
+          { createdAt: { [Op.lt]: cursorPaging.cursor.createdAt } },
+          {
+            createdAt: cursorPaging.cursor.createdAt,
+            id: { [Op.lt]: cursorPaging.cursor.id }
+          }
+        ];
+      }
+
+      const rows = await InboxMessage.findAll({
+        where,
+        include: [{ model: User, as: 'sender', attributes: ['id', 'name', 'email'] }],
+        order: [['createdAt', 'DESC'], ['id', 'DESC']],
+        limit: cursorPaging.limit + 1
+      });
+
+      const hasMore = rows.length > cursorPaging.limit;
+      const messages = hasMore ? rows.slice(0, cursorPaging.limit) : rows;
+      const nextCursor = hasMore && messages.length ? encodeCursor(messages[messages.length - 1]) : null;
+
+      return res.json({
+        thread,
+        messages,
+        meta: {
+          mode: 'cursor',
+          limit: cursorPaging.limit,
+          nextCursor
+        }
+      });
+    }
+
     const { page, pageSize, offset } = getPagination(req);
     const [messages, total] = await Promise.all([
       InboxMessage.findAll({

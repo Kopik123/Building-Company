@@ -73,6 +73,7 @@
     user: null,
     selectedProjectId: '',
     projects: [],
+    projectDetailsById: new Map(),
     quotes: [],
     services: [],
     materials: [],
@@ -142,11 +143,39 @@
   };
 
   const getToken = () => localStorage.getItem(TOKEN_KEY) || '';
+  const getStoredUser = () => {
+    try {
+      return JSON.parse(localStorage.getItem(USER_KEY) || 'null');
+    } catch {
+      return null;
+    }
+  };
+  const waitForStoredUser = (timeoutMs = 900) =>
+    new Promise((resolve) => {
+      const startedAt = Date.now();
+      const tick = () => {
+        const user = getStoredUser();
+        if (user && user.role) {
+          resolve(user);
+          return;
+        }
+
+        if (Date.now() - startedAt >= timeoutMs || !localStorage.getItem(TOKEN_KEY)) {
+          resolve(null);
+          return;
+        }
+
+        window.setTimeout(tick, 60);
+      };
+      tick();
+    });
+
   const clearSession = () => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
     state.token = '';
     state.user = null;
+    state.projectDetailsById.clear();
   };
 
   const api = async (url, options = {}) => {
@@ -158,7 +187,10 @@
     return payload;
   };
 
-  const selectedProject = () => state.projects.find((p) => p.id === state.selectedProjectId) || null;
+  const selectedProject = () =>
+    state.projectDetailsById.get(state.selectedProjectId)
+    || state.projects.find((p) => p.id === state.selectedProjectId)
+    || null;
 
   const renderSession = () => {
     if (!state.user) {
@@ -186,8 +218,15 @@
       btn.type = 'button';
       btn.className = 'btn btn-outline';
       btn.textContent = 'Select';
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         state.selectedProjectId = project.id;
+        if (!state.projectDetailsById.has(project.id)) {
+          try {
+            await loadProjectDetail(project.id, true);
+          } catch (error) {
+            window.alert(error.message || 'Could not load project details');
+          }
+        }
         fillProjectEditor();
         renderProjects();
       });
@@ -505,9 +544,27 @@
     renderPagination(el.materialsPagination, el.materialsPrev, el.materialsNext, state.materialsPagination);
   };
 
+  const loadProjectDetail = async (projectId, force = false) => {
+    const id = String(projectId || '').trim();
+    if (!id) return null;
+    if (!force && state.projectDetailsById.has(id)) {
+      return state.projectDetailsById.get(id);
+    }
+
+    const payload = await api(`/api/manager/projects/${id}`);
+    const project = payload?.project || null;
+    if (project && project.id) {
+      state.projectDetailsById.set(project.id, project);
+      return project;
+    }
+
+    state.projectDetailsById.delete(id);
+    return null;
+  };
+
   const loadProjects = async (selectedId) => {
     const payload = await api(`/api/manager/projects?${buildQuery({
-      includeMedia: true,
+      includeMedia: false,
       page: state.projectsQuery.page,
       pageSize: state.projectsQuery.pageSize,
       q: state.projectsQuery.q,
@@ -518,6 +575,18 @@
     state.projectsPagination = payload.pagination || state.projectsPagination;
     if (selectedId) state.selectedProjectId = selectedId;
     if (!state.projects.some((item) => item.id === state.selectedProjectId)) state.selectedProjectId = state.projects[0]?.id || '';
+
+    const visibleProjectIds = new Set(state.projects.map((item) => item.id));
+    Array.from(state.projectDetailsById.keys()).forEach((projectId) => {
+      if (!visibleProjectIds.has(projectId)) {
+        state.projectDetailsById.delete(projectId);
+      }
+    });
+
+    if (state.selectedProjectId) {
+      await loadProjectDetail(state.selectedProjectId, Boolean(selectedId));
+    }
+
     renderProjects();
     fillProjectEditor();
   };
@@ -677,11 +746,14 @@
       return;
     }
     try {
-      const payload = await api('/api/auth/me');
-      state.user = payload.user || null;
+      state.user = getStoredUser() || await waitForStoredUser();
       const role = String(state.user?.role || '').toLowerCase();
       if (!state.user || !['employee', 'manager', 'admin'].includes(role)) {
-        el.session.textContent = 'Access only for employee/manager/admin roles.';
+        clearSession();
+        el.session.textContent = 'Session expired. Redirecting to login...';
+        window.setTimeout(() => {
+          window.location.assign(loginUrl);
+        }, 700);
         return;
       }
       renderSession();

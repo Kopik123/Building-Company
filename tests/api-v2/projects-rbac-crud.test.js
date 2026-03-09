@@ -1,6 +1,7 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
 const request = require('supertest');
+const { Op } = require('sequelize');
 const { buildExpressApp, loadRoute, mock, mockModels, signAccessToken } = require('./_helpers');
 
 process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-secret-v2';
@@ -107,6 +108,28 @@ const createProjectStubs = () => {
     }
   };
 
+  const ProjectMedia = {
+    async findAll({ where = {} }) {
+      const projectIds = where?.projectId?.[Op.in] || [];
+      const counts = new Map();
+
+      projectIds.forEach((projectId) => {
+        const project = projects.find((item) => item.id === projectId);
+        const media = Array.isArray(project?.media) ? project.media : [];
+        const imageCount = media.filter((item) => item.mediaType === 'image').length;
+        const documentCount = media.filter((item) => item.mediaType === 'document').length;
+        counts.set(projectId, { imageCount, documentCount });
+      });
+
+      const rows = [];
+      counts.forEach((value, projectId) => {
+        rows.push({ projectId, mediaType: 'image', count: String(value.imageCount) });
+        rows.push({ projectId, mediaType: 'document', count: String(value.documentCount) });
+      });
+      return rows;
+    }
+  };
+
   const User = {
     async findByPk(id) {
       return users[id] || null;
@@ -118,7 +141,7 @@ const createProjectStubs = () => {
     models: {
       User,
       Project,
-      ProjectMedia: {},
+      ProjectMedia,
       Quote: {}
     }
   };
@@ -165,6 +188,19 @@ test('projects v2 RBAC + CRUD for staff/client', async () => {
     .set('Authorization', `Bearer ${clientToken}`)
     .expect(200);
   assert.equal(clientListResponse.body?.data?.projects?.length, 1);
+
+  stubs.projects[0].media = [
+    { id: 'media-image', mediaType: 'image' },
+    { id: 'media-doc', mediaType: 'document' }
+  ];
+  const leanListResponse = await request(app)
+    .get('/api/v2/projects?includeMedia=false')
+    .set('Authorization', `Bearer ${clientToken}`)
+    .expect(200);
+  const leanProject = leanListResponse.body?.data?.projects?.[0];
+  assert.equal(leanProject?.media, undefined);
+  assert.equal(leanProject?.imageCount, 1);
+  assert.equal(leanProject?.documentCount, 1);
 
   await request(app)
     .get(`/api/v2/projects/${projectId}`)

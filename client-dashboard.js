@@ -55,7 +55,35 @@
   const clearSession = () => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
+    state.token = '';
+    state.user = null;
   };
+  const getStoredUser = () => {
+    try {
+      return JSON.parse(localStorage.getItem(USER_KEY) || 'null');
+    } catch {
+      return null;
+    }
+  };
+  const waitForStoredUser = (timeoutMs = 900) =>
+    new Promise((resolve) => {
+      const startedAt = Date.now();
+      const tick = () => {
+        const user = getStoredUser();
+        if (user && user.role) {
+          resolve(user);
+          return;
+        }
+
+        if (Date.now() - startedAt >= timeoutMs || !localStorage.getItem(TOKEN_KEY)) {
+          resolve(null);
+          return;
+        }
+
+        window.setTimeout(tick, 60);
+      };
+      tick();
+    });
 
   const api = async (url, options = {}) => {
     const headers = new Headers(options.headers || {});
@@ -227,7 +255,7 @@
   };
 
   const loadOverview = async () => {
-    const payload = await api('/api/client/overview');
+    const payload = await api('/api/client/overview?includeThreads=false');
     state.user = payload.user || null;
     state.projects = Array.isArray(payload.projects) ? payload.projects : [];
     state.quotes = Array.isArray(payload.quotes) ? payload.quotes : [];
@@ -260,14 +288,18 @@
     }
 
     try {
-      const me = await api('/api/auth/me');
-      const role = String(me.user?.role || '').toLowerCase();
+      state.user = getStoredUser() || await waitForStoredUser();
+      const role = String(state.user?.role || '').toLowerCase();
       if (role !== 'client') {
-        el.session.textContent = 'This portal is for client role only.';
+        clearSession();
+        el.session.textContent = 'Session expired. Redirecting to login...';
+        window.setTimeout(() => {
+          window.location.assign(loginUrl);
+        }, 700);
         return;
       }
 
-      el.session.textContent = `Logged as ${me.user.name || me.user.email} (${me.user.role})`;
+      el.session.textContent = `Logged as ${state.user.name || state.user.email} (${state.user.role})`;
       await Promise.all([loadOverview(), loadThreads()]);
     } catch (error) {
       clearSession();

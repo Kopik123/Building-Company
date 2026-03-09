@@ -1,4 +1,5 @@
 const express = require('express');
+const { Op } = require('sequelize');
 const { body, param, query, validationResult } = require('express-validator');
 const { GroupMember, GroupMessage, GroupThread, User } = require('../../../models');
 const { upload, DEFAULT_ATTACHMENT_BODY } = require('../../../utils/upload');
@@ -17,6 +18,37 @@ const getPagination = (req) => {
     page,
     pageSize,
     offset: (page - 1) * pageSize
+  };
+};
+
+const encodeCursor = (message) =>
+  Buffer.from(`${new Date(message.createdAt).toISOString()}|${message.id}`, 'utf8').toString('base64url');
+
+const decodeCursor = (rawCursor) => {
+  if (!rawCursor) return null;
+
+  try {
+    const decoded = Buffer.from(String(rawCursor), 'base64url').toString('utf8');
+    const [createdAtRaw, id] = decoded.split('|');
+    const createdAt = new Date(createdAtRaw);
+    if (!id || Number.isNaN(createdAt.getTime())) return null;
+    return { createdAt, id };
+  } catch (_error) {
+    return null;
+  }
+};
+
+const getCursorPagination = (req) => {
+  const limit = Math.min(MAX_PAGE_SIZE, Math.max(1, Number.parseInt(req.query.limit, 10) || DEFAULT_PAGE_SIZE));
+  const cursor = decodeCursor(req.query.cursor);
+  if (req.query.cursor && !cursor) {
+    return { error: 'Invalid cursor' };
+  }
+
+  return {
+    mode: req.query.cursor || typeof req.query.limit !== 'undefined' ? 'cursor' : 'legacy',
+    limit,
+    cursor
   };
 };
 
@@ -53,6 +85,8 @@ router.get(
   [
     authV2,
     param('id').isUUID(),
+    query('cursor').optional().isString().isLength({ min: 8, max: 400 }),
+    query('limit').optional().isInt({ min: 1, max: MAX_PAGE_SIZE }).toInt(),
     query('page').optional().isInt({ min: 1 }).toInt(),
     query('pageSize').optional().isInt({ min: 1, max: MAX_PAGE_SIZE }).toInt()
   ],
@@ -65,10 +99,41 @@ router.get(
     });
     if (!membership) return fail(res, 403, 'access_denied', 'Access denied');
 
+    const cursorPaging = getCursorPagination(req);
+    if (cursorPaging.error) {
+      return fail(res, 400, 'validation_failed', cursorPaging.error);
+    }
+
+    const where = { groupThreadId: req.params.id };
+    if (cursorPaging.mode === 'cursor') {
+      if (cursorPaging.cursor) {
+        where[Op.or] = [
+          { createdAt: { [Op.lt]: cursorPaging.cursor.createdAt } },
+          {
+            createdAt: cursorPaging.cursor.createdAt,
+            id: { [Op.lt]: cursorPaging.cursor.id }
+          }
+        ];
+      }
+
+      const rows = await GroupMessage.findAll({
+        where,
+        include: [{ model: User, as: 'sender', attributes: ['id', 'name', 'email', 'role'] }],
+        order: [['createdAt', 'DESC'], ['id', 'DESC']],
+        limit: cursorPaging.limit + 1
+      });
+
+      const hasMore = rows.length > cursorPaging.limit;
+      const messages = hasMore ? rows.slice(0, cursorPaging.limit) : rows;
+      const nextCursor = hasMore && messages.length ? encodeCursor(messages[messages.length - 1]) : null;
+
+      return ok(res, { messages }, { mode: 'cursor', limit: cursorPaging.limit, nextCursor });
+    }
+
     const { page, pageSize, offset } = getPagination(req);
     const [messages, total] = await Promise.all([
       GroupMessage.findAll({
-        where: { groupThreadId: req.params.id },
+        where,
         include: [{ model: User, as: 'sender', attributes: ['id', 'name', 'email', 'role'] }],
         order: [['createdAt', 'ASC']],
         limit: pageSize,

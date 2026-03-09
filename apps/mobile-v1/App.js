@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AppState, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import Constants from 'expo-constants';
 
 const API_BASE = Constants?.expoConfig?.extra?.apiBaseUrl || 'https://levellines.co.uk/api/v2';
@@ -21,37 +21,57 @@ async function authRequest(path, accessToken) {
   });
 }
 
-function useApiList(path, accessToken, pollMs = 0) {
+function useApiList(path, accessToken, pollMs = 0, registerPoller = null) {
   const [state, setState] = useState({ loading: true, error: '', items: [] });
+  const mountedRef = useRef(true);
 
-  useEffect(() => {
-    let active = true;
-    let timer = null;
+  useEffect(() => () => {
+    mountedRef.current = false;
+  }, []);
 
-    const load = async () => {
-      if (!accessToken) return;
-      setState((prev) => ({ ...prev, loading: true, error: '' }));
-      try {
-        const data = await authRequest(path, accessToken);
-        const key = Object.keys(data).find((item) => Array.isArray(data[item]));
-        const items = key ? data[key] : [];
-        if (active) setState({ loading: false, error: '', items });
-      } catch (error) {
-        if (active) setState({ loading: false, error: error.message || 'Could not load data', items: [] });
+  const load = useCallback(async ({ silent = false } = {}) => {
+    if (!accessToken) {
+      if (mountedRef.current) {
+        setState({ loading: false, error: '', items: [] });
       }
-    };
-
-    load();
-
-    if (pollMs > 0) {
-      timer = setInterval(load, pollMs);
+      return;
     }
 
-    return () => {
-      active = false;
-      if (timer) clearInterval(timer);
-    };
-  }, [path, accessToken, pollMs]);
+    if (!silent) {
+      if (mountedRef.current) {
+        setState((prev) => ({ ...prev, loading: true, error: '' }));
+      }
+    }
+
+    try {
+      const data = await authRequest(path, accessToken);
+      const key = Object.keys(data).find((item) => Array.isArray(data[item]));
+      const items = key ? data[key] : [];
+      if (mountedRef.current) {
+        setState({ loading: false, error: '', items });
+      }
+    } catch (error) {
+      if (mountedRef.current) {
+        setState((prev) => ({
+          loading: false,
+          error: error.message || 'Could not load data',
+          items: silent ? prev.items : []
+        }));
+      }
+    }
+  }, [accessToken, path]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  useEffect(() => {
+    if (!registerPoller || pollMs <= 0 || !accessToken) return undefined;
+
+    return registerPoller(`${path}:${pollMs}`, pollMs, async () => {
+      await load({ silent: true });
+    });
+  }, [accessToken, load, path, pollMs, registerPoller]);
 
   return state;
 }
@@ -84,8 +104,8 @@ function AccountScreen({ user, unreadCount }) {
   );
 }
 
-function NotificationsScreen({ accessToken }) {
-  const list = useApiList('/notifications?page=1&pageSize=30', accessToken, 30000);
+function NotificationsScreen({ accessToken, registerPoller }) {
+  const list = useApiList('/notifications?page=1&pageSize=30', accessToken, 30000, registerPoller);
   return (
     <ScreenCard
       title="Notifications"
@@ -103,8 +123,8 @@ function NotificationsScreen({ accessToken }) {
   );
 }
 
-function InboxScreen({ accessToken }) {
-  const list = useApiList('/messages/threads?page=1&pageSize=30', accessToken, 20000);
+function InboxScreen({ accessToken, registerPoller }) {
+  const list = useApiList('/messages/threads?page=1&pageSize=30', accessToken, 20000, registerPoller);
   return (
     <ScreenCard
       title="Inbox / Threads"
@@ -121,8 +141,8 @@ function InboxScreen({ accessToken }) {
   );
 }
 
-function ProjectsScreen({ accessToken }) {
-  const list = useApiList('/projects?page=1&pageSize=30', accessToken, 20000);
+function ProjectsScreen({ accessToken, registerPoller }) {
+  const list = useApiList('/projects?page=1&pageSize=30', accessToken, 20000, registerPoller);
   return (
     <ScreenCard
       title="Projects"
@@ -141,8 +161,8 @@ function ProjectsScreen({ accessToken }) {
   );
 }
 
-function QuotesScreen({ accessToken }) {
-  const list = useApiList('/quotes?page=1&pageSize=30', accessToken, 20000);
+function QuotesScreen({ accessToken, registerPoller }) {
+  const list = useApiList('/quotes?page=1&pageSize=30', accessToken, 20000, registerPoller);
   return (
     <ScreenCard
       title="Quotes"
@@ -162,8 +182,8 @@ function QuotesScreen({ accessToken }) {
   );
 }
 
-function CrmScreen({ accessToken }) {
-  const clients = useApiList('/crm/clients?page=1&pageSize=30', accessToken, 30000);
+function CrmScreen({ accessToken, registerPoller }) {
+  const clients = useApiList('/crm/clients?page=1&pageSize=30', accessToken, 30000, registerPoller);
   return (
     <ScreenCard
       title="CRM Clients"
@@ -180,8 +200,8 @@ function CrmScreen({ accessToken }) {
   );
 }
 
-function InventoryScreen({ accessToken }) {
-  const materials = useApiList('/inventory/materials?page=1&pageSize=30', accessToken, 30000);
+function InventoryScreen({ accessToken, registerPoller }) {
+  const materials = useApiList('/inventory/materials?page=1&pageSize=30', accessToken, 30000, registerPoller);
   return (
     <ScreenCard
       title="Inventory"
@@ -200,8 +220,8 @@ function InventoryScreen({ accessToken }) {
   );
 }
 
-function ServiceCatalogueScreen({ accessToken }) {
-  const list = useApiList('/services', accessToken, 60000);
+function ServiceCatalogueScreen({ accessToken, registerPoller }) {
+  const list = useApiList('/services', accessToken, 60000, registerPoller);
   return (
     <ScreenCard
       title="Service Catalogue"
@@ -226,9 +246,25 @@ export default function App() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [appState, setAppState] = useState(AppState.currentState);
+  const pollersRef = useRef(new Map());
 
   const role = String(session.user?.role || 'client').toLowerCase();
   const staffRole = ['employee', 'manager', 'admin'].includes(role);
+
+  const registerPoller = useCallback((baseKey, intervalMs, callback) => {
+    const id = `${baseKey}:${Math.random().toString(36).slice(2)}`;
+    const safeInterval = Math.max(1000, Number(intervalMs) || 1000);
+    pollersRef.current.set(id, {
+      intervalMs: safeInterval,
+      nextRunAt: Date.now() + safeInterval,
+      callback
+    });
+
+    return () => {
+      pollersRef.current.delete(id);
+    };
+  }, []);
 
   const tabs = useMemo(() => {
     const common = ['account', 'projects', 'quotes', 'inbox', 'notifications', 'services'];
@@ -237,8 +273,43 @@ export default function App() {
   }, [staffRole]);
 
   useEffect(() => {
-    if (!session.accessToken) return;
-    let timer = null;
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      setAppState(nextState);
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!session.accessToken || appState !== 'active') return undefined;
+
+    const timer = setInterval(() => {
+      const now = Date.now();
+      pollersRef.current.forEach((entry) => {
+        if (!entry || now < entry.nextRunAt) return;
+        entry.nextRunAt = now + entry.intervalMs;
+        Promise.resolve(entry.callback()).catch(() => {});
+      });
+    }, 1000);
+
+    return () => {
+      clearInterval(timer);
+    };
+  }, [appState, session.accessToken]);
+
+  useEffect(() => {
+    if (appState !== 'active') return;
+    const now = Date.now();
+    pollersRef.current.forEach((entry) => {
+      if (!entry) return;
+      entry.nextRunAt = now + entry.intervalMs;
+    });
+  }, [appState, session.accessToken]);
+
+  useEffect(() => {
+    if (!session.accessToken) return undefined;
     let active = true;
 
     const pullUnread = async () => {
@@ -251,13 +322,13 @@ export default function App() {
     };
 
     pullUnread();
-    timer = setInterval(pullUnread, 30000);
+    const unregister = registerPoller('notifications-unread', 30000, pullUnread);
 
     return () => {
       active = false;
-      if (timer) clearInterval(timer);
+      unregister();
     };
-  }, [session.accessToken]);
+  }, [registerPoller, session.accessToken]);
 
   const login = async () => {
     setError('');
@@ -340,13 +411,13 @@ export default function App() {
         </View>
 
         {activeTab === 'account' ? <AccountScreen user={session.user} unreadCount={unreadCount} /> : null}
-        {activeTab === 'projects' ? <ProjectsScreen accessToken={session.accessToken} /> : null}
-        {activeTab === 'quotes' ? <QuotesScreen accessToken={session.accessToken} /> : null}
-        {activeTab === 'inbox' ? <InboxScreen accessToken={session.accessToken} /> : null}
-        {activeTab === 'notifications' ? <NotificationsScreen accessToken={session.accessToken} /> : null}
-        {activeTab === 'services' ? <ServiceCatalogueScreen accessToken={session.accessToken} /> : null}
-        {activeTab === 'crm' && staffRole ? <CrmScreen accessToken={session.accessToken} /> : null}
-        {activeTab === 'inventory' && staffRole ? <InventoryScreen accessToken={session.accessToken} /> : null}
+        {activeTab === 'projects' ? <ProjectsScreen accessToken={session.accessToken} registerPoller={registerPoller} /> : null}
+        {activeTab === 'quotes' ? <QuotesScreen accessToken={session.accessToken} registerPoller={registerPoller} /> : null}
+        {activeTab === 'inbox' ? <InboxScreen accessToken={session.accessToken} registerPoller={registerPoller} /> : null}
+        {activeTab === 'notifications' ? <NotificationsScreen accessToken={session.accessToken} registerPoller={registerPoller} /> : null}
+        {activeTab === 'services' ? <ServiceCatalogueScreen accessToken={session.accessToken} registerPoller={registerPoller} /> : null}
+        {activeTab === 'crm' && staffRole ? <CrmScreen accessToken={session.accessToken} registerPoller={registerPoller} /> : null}
+        {activeTab === 'inventory' && staffRole ? <InventoryScreen accessToken={session.accessToken} registerPoller={registerPoller} /> : null}
       </ScrollView>
     </SafeAreaView>
   );

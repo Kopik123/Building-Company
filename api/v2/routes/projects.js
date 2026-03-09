@@ -32,14 +32,58 @@ const parseBoolean = (value, fallback = false) => {
   return fallback;
 };
 
-const projectDto = (project) => {
+const buildProjectMediaCountMap = async (projectIds) => {
+  const uniqueProjectIds = Array.from(new Set((projectIds || []).filter(Boolean)));
+  if (!uniqueProjectIds.length) return new Map();
+
+  const rows = await ProjectMedia.findAll({
+    attributes: ['projectId', 'mediaType', [fn('COUNT', col('id')), 'count']],
+    where: { projectId: { [Op.in]: uniqueProjectIds } },
+    group: ['projectId', 'mediaType'],
+    raw: true
+  });
+
+  const mediaCountByProjectId = new Map();
+  uniqueProjectIds.forEach((projectId) => {
+    mediaCountByProjectId.set(projectId, { imageCount: 0, documentCount: 0 });
+  });
+
+  rows.forEach((row) => {
+    const projectId = row.projectId;
+    const counts = mediaCountByProjectId.get(projectId) || { imageCount: 0, documentCount: 0 };
+    const count = Number.parseInt(row.count, 10) || 0;
+    if (row.mediaType === 'image') counts.imageCount = count;
+    if (row.mediaType === 'document') counts.documentCount = count;
+    mediaCountByProjectId.set(projectId, counts);
+  });
+
+  return mediaCountByProjectId;
+};
+
+const projectDto = (project, options = {}) => {
+  const includeMedia = options.includeMedia !== false;
+  const mediaCountByProjectId = options.mediaCountByProjectId || null;
   const plain = project.toJSON();
   const media = Array.isArray(plain.media) ? plain.media : [];
-  return {
+  const countedFromQuery = mediaCountByProjectId && plain.id ? mediaCountByProjectId.get(plain.id) : null;
+  const imageCount = includeMedia
+    ? media.filter((item) => item.mediaType === 'image').length
+    : Number.parseInt(countedFromQuery?.imageCount, 10) || 0;
+  const documentCount = includeMedia
+    ? media.filter((item) => item.mediaType === 'document').length
+    : Number.parseInt(countedFromQuery?.documentCount, 10) || 0;
+
+  const dto = {
     ...plain,
-    imageCount: media.filter((item) => item.mediaType === 'image').length,
-    documentCount: media.filter((item) => item.mediaType === 'document').length
+    imageCount,
+    documentCount
   };
+
+  if (!includeMedia) {
+    delete dto.media;
+  }
+
+  return dto;
 };
 
 router.get(
@@ -49,6 +93,7 @@ router.get(
     roleCheckV2('client', 'employee', 'manager', 'admin'),
     query('status').optional().isIn(PROJECT_STATUSES),
     query('showInGallery').optional().isIn(['true', 'false', '1', '0']),
+    query('includeMedia').optional().isIn(['true', 'false', '1', '0']),
     query('q').optional().trim().isLength({ min: 1, max: 255 }),
     query('page').optional().isInt({ min: 1 }).toInt(),
     query('pageSize').optional().isInt({ min: 1, max: MAX_PAGE_SIZE }).toInt()
@@ -77,11 +122,12 @@ router.get(
       ];
     }
 
+    const includeMedia = parseBoolean(req.query.includeMedia, true);
     const { page, pageSize, offset } = getPagination(req);
     const { rows, count } = await Project.findAndCountAll({
       where,
       include: [
-        { model: ProjectMedia, as: 'media', required: false },
+        ...(includeMedia ? [{ model: ProjectMedia, as: 'media', required: false }] : []),
         { model: User, as: 'client', attributes: ['id', 'name', 'email'], required: false },
         { model: User, as: 'assignedManager', attributes: ['id', 'name', 'email'], required: false },
         { model: Quote, as: 'quote', attributes: ['id', 'status', 'projectType', 'location'], required: false }
@@ -92,9 +138,13 @@ router.get(
       offset
     });
 
+    const mediaCountByProjectId = includeMedia
+      ? null
+      : await buildProjectMediaCountMap(rows.map((project) => project.id));
+
     return ok(
       res,
-      { projects: rows.map((project) => projectDto(project)) },
+      { projects: rows.map((project) => projectDto(project, { includeMedia, mediaCountByProjectId })) },
       { page, pageSize, total: count, totalPages: Math.max(1, Math.ceil(count / pageSize)) }
     );
   })

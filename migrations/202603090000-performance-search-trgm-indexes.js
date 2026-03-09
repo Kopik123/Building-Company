@@ -1,0 +1,104 @@
+const findExistingTable = async (queryInterface, candidates) => {
+  for (const tableName of candidates) {
+    try {
+      // describeTable throws when table does not exist
+      // eslint-disable-next-line no-await-in-loop
+      await queryInterface.describeTable(tableName);
+      return tableName;
+    } catch (error) {
+      const message = String(error && error.message ? error.message : '');
+      if (!/does not exist|unknown table|relation .* does not exist/i.test(message)) {
+        throw error;
+      }
+    }
+  }
+  return null;
+};
+
+const resolveColumnName = (tableDefinition, desired) => {
+  const keys = Object.keys(tableDefinition || {});
+  const exact = keys.find((key) => key === desired);
+  if (exact) return exact;
+  const normalized = String(desired).toLowerCase();
+  return keys.find((key) => String(key).toLowerCase() === normalized) || null;
+};
+
+const addTrigramIndexIfPossible = async (queryInterface, tableName, tableDefinition, columnName, indexName) => {
+  const resolvedColumn = resolveColumnName(tableDefinition, columnName);
+  if (!resolvedColumn) return;
+
+  const quotedIndex = queryInterface.quoteIdentifier(indexName);
+  const quotedTable = queryInterface.quoteTable(tableName);
+  const quotedColumn = queryInterface.quoteIdentifier(resolvedColumn);
+  await queryInterface.sequelize.query(
+    `CREATE INDEX IF NOT EXISTS ${quotedIndex} ON ${quotedTable} USING gin (LOWER(${quotedColumn}) gin_trgm_ops)`
+  );
+};
+
+module.exports = {
+  up: async (queryInterface) => {
+    await queryInterface.sequelize.query('CREATE EXTENSION IF NOT EXISTS pg_trgm');
+
+    const projectsTable = await findExistingTable(queryInterface, ['Projects', 'projects']);
+    if (projectsTable) {
+      const projectColumns = await queryInterface.describeTable(projectsTable);
+      await addTrigramIndexIfPossible(queryInterface, projectsTable, projectColumns, 'title', 'projects_title_trgm_idx');
+      await addTrigramIndexIfPossible(queryInterface, projectsTable, projectColumns, 'location', 'projects_location_trgm_idx');
+      await addTrigramIndexIfPossible(queryInterface, projectsTable, projectColumns, 'description', 'projects_description_trgm_idx');
+    }
+
+    const servicesTable = await findExistingTable(queryInterface, ['ServiceOfferings', 'service_offerings']);
+    if (servicesTable) {
+      const serviceColumns = await queryInterface.describeTable(servicesTable);
+      await addTrigramIndexIfPossible(
+        queryInterface,
+        servicesTable,
+        serviceColumns,
+        'title',
+        'service_offerings_title_trgm_idx'
+      );
+      await addTrigramIndexIfPossible(
+        queryInterface,
+        servicesTable,
+        serviceColumns,
+        'slug',
+        'service_offerings_slug_trgm_idx'
+      );
+      await addTrigramIndexIfPossible(
+        queryInterface,
+        servicesTable,
+        serviceColumns,
+        'shortDescription',
+        'service_offerings_short_description_trgm_idx'
+      );
+    }
+
+    const materialsTable = await findExistingTable(queryInterface, ['Materials', 'materials']);
+    if (materialsTable) {
+      const materialColumns = await queryInterface.describeTable(materialsTable);
+      await addTrigramIndexIfPossible(queryInterface, materialsTable, materialColumns, 'name', 'materials_name_trgm_idx');
+      await addTrigramIndexIfPossible(queryInterface, materialsTable, materialColumns, 'sku', 'materials_sku_trgm_idx');
+      await addTrigramIndexIfPossible(
+        queryInterface,
+        materialsTable,
+        materialColumns,
+        'supplier',
+        'materials_supplier_trgm_idx'
+      );
+    }
+  },
+
+  down: async (queryInterface) => {
+    await queryInterface.sequelize.query('DROP INDEX IF EXISTS projects_title_trgm_idx');
+    await queryInterface.sequelize.query('DROP INDEX IF EXISTS projects_location_trgm_idx');
+    await queryInterface.sequelize.query('DROP INDEX IF EXISTS projects_description_trgm_idx');
+
+    await queryInterface.sequelize.query('DROP INDEX IF EXISTS service_offerings_title_trgm_idx');
+    await queryInterface.sequelize.query('DROP INDEX IF EXISTS service_offerings_slug_trgm_idx');
+    await queryInterface.sequelize.query('DROP INDEX IF EXISTS service_offerings_short_description_trgm_idx');
+
+    await queryInterface.sequelize.query('DROP INDEX IF EXISTS materials_name_trgm_idx');
+    await queryInterface.sequelize.query('DROP INDEX IF EXISTS materials_sku_trgm_idx');
+    await queryInterface.sequelize.query('DROP INDEX IF EXISTS materials_supplier_trgm_idx');
+  }
+};
