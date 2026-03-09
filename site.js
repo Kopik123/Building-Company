@@ -43,6 +43,13 @@
     node.textContent = value;
   };
 
+  const getBrandValueByPath = (path) => {
+    return String(path || '')
+      .split('.')
+      .filter(Boolean)
+      .reduce((result, key) => (result && typeof result === 'object' ? result[key] : undefined), brand);
+  };
+
   const renderBrandAreas = (container) => {
     if (!brand || !container || !Array.isArray(brand.serviceAreas)) return;
 
@@ -70,6 +77,48 @@
       if (linkClass) link.className = linkClass;
       container.appendChild(link);
     });
+  };
+
+  const renderBrandSelectOptions = (select) => {
+    if (!select) return;
+
+    if (select.hasAttribute('data-brand-project-type-select') && Array.isArray(brand?.services)) {
+      const defaultLabel = select.getAttribute('data-default-label') || 'Select';
+      const selectedValue = String(select.getAttribute('data-selected-value') || '').trim().toLowerCase();
+      select.innerHTML = '';
+
+      const emptyOption = document.createElement('option');
+      emptyOption.value = '';
+      emptyOption.textContent = defaultLabel;
+      select.appendChild(emptyOption);
+
+      brand.services.forEach((service) => {
+        const option = document.createElement('option');
+        option.value = service.category || service.key || 'other';
+        option.textContent = service.title || 'Service';
+        if (selectedValue && option.value.toLowerCase() === selectedValue) {
+          option.selected = true;
+        }
+        select.appendChild(option);
+      });
+    }
+
+    if (select.hasAttribute('data-brand-budget-select') && Array.isArray(brand?.budgetRanges)) {
+      const defaultLabel = select.getAttribute('data-default-label') || 'Select';
+      select.innerHTML = '';
+
+      const emptyOption = document.createElement('option');
+      emptyOption.value = '';
+      emptyOption.textContent = defaultLabel;
+      select.appendChild(emptyOption);
+
+      brand.budgetRanges.forEach((range) => {
+        const option = document.createElement('option');
+        option.value = range;
+        option.textContent = range;
+        select.appendChild(option);
+      });
+    }
   };
 
   const applyBrandContent = () => {
@@ -105,6 +154,15 @@
 
     document.querySelectorAll('[data-brand-area-list]').forEach(renderBrandAreas);
     document.querySelectorAll('[data-brand-service-links]').forEach(renderBrandServices);
+    document.querySelectorAll('[data-brand-footer-copy]').forEach((node) => {
+      setBrandNodeValue(node, brand.footerCopy);
+    });
+    document.querySelectorAll('[data-brand-copy]').forEach((node) => {
+      const path = node.getAttribute('data-brand-copy');
+      const value = getBrandValueByPath(path);
+      setBrandNodeValue(node, value);
+    });
+    document.querySelectorAll('select[data-brand-project-type-select], select[data-brand-budget-select]').forEach(renderBrandSelectOptions);
   };
 
   const accountPathForRole = (roleRaw) => {
@@ -493,116 +551,4 @@
     range.addEventListener('input', () => apply(range.value));
   });
 
-  const normalizeProjectType = (value) => {
-    const raw = String(value || '').trim().toLowerCase();
-    if (!raw) return 'other';
-
-    const aliases = new Map([
-      ['bathroom', 'bathroom'],
-      ['premium bathroom', 'bathroom'],
-      ['bathroom renovation', 'bathroom'],
-      ['kitchen', 'kitchen'],
-      ['premium kitchen', 'kitchen'],
-      ['kitchen renovation', 'kitchen'],
-      ['interior', 'interior'],
-      ['interior renovation', 'interior'],
-      ['internal wall systems', 'interior'],
-      ['internal wall system', 'interior'],
-      ['internal walls', 'interior'],
-      ['tiling', 'tiling'],
-      ['carpentry', 'joinery'],
-      ['joinery', 'joinery'],
-      ['external wall systems', 'rendering'],
-      ['external wall system', 'rendering'],
-      ['external walls', 'rendering'],
-      ['rendering', 'rendering'],
-      ['extension', 'extension'],
-      ['decorating', 'decorating'],
-      ['other', 'other']
-    ]);
-
-    if (aliases.has(raw)) return aliases.get(raw);
-    if (raw.includes('bath')) return 'bathroom';
-    if (raw.includes('kitch')) return 'kitchen';
-    if (raw.includes('interior') || raw.includes('internal wall')) return 'interior';
-    if (raw.includes('tile')) return 'tiling';
-    if (raw.includes('carpent') || raw.includes('joinery')) return 'joinery';
-    if (raw.includes('external wall')) return 'rendering';
-    if (raw.includes('extension')) return 'extension';
-    if (raw.includes('render')) return 'rendering';
-    if (raw.includes('decor')) return 'decorating';
-    return 'other';
-  };
-
-  const quoteForms = document.querySelectorAll('.quote-form:not(.js-quote-form)');
-
-  quoteForms.forEach((form) => {
-    const status = form.querySelector('.form-status');
-    const submitButton = form.querySelector('button[type="submit"]');
-
-    if (!status || !submitButton) return;
-
-    form.addEventListener('submit', async (event) => {
-      event.preventDefault();
-
-      const formData = new FormData(form);
-      const guestName = String(formData.get('name') || '').trim();
-      const guestEmail = String(formData.get('email') || '').trim();
-      const guestPhone = String(formData.get('phone') || '').trim();
-      const description = String(formData.get('message') || '').trim();
-      const projectType = normalizeProjectType(formData.get('projectType') || formData.get('project-type'));
-      const budgetRange = String(formData.get('budget') || '').trim();
-      const location = String(formData.get('location') || '').trim() || 'Greater Manchester';
-      const postcode = String(formData.get('postcode') || '').trim();
-
-      status.className = 'form-status';
-      status.textContent = '';
-
-      if (!guestName || !description || (!guestEmail && !guestPhone)) {
-        status.classList.add('is-error');
-        status.textContent = 'Please provide your name, project details, and either email or phone.';
-        return;
-      }
-
-      submitButton.disabled = true;
-      status.classList.add('is-loading');
-      status.textContent = 'Sending your request...';
-
-      try {
-        const response = await fetch('/api/quotes/guest', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            guestName,
-            guestEmail: guestEmail || undefined,
-            guestPhone: guestPhone || undefined,
-            projectType,
-            budgetRange: budgetRange || undefined,
-            description,
-            location,
-            postcode: postcode || undefined
-          })
-        });
-
-        const payload = await response.json().catch(() => ({}));
-
-        if (!response.ok) {
-          throw new Error(payload.error || 'Could not submit your consultation request.');
-        }
-
-        status.className = 'form-status is-success';
-        status.textContent = payload.quoteId
-          ? `Request sent. Reference: ${payload.quoteId}.`
-          : 'Request sent.';
-        form.reset();
-      } catch (error) {
-        status.className = 'form-status is-error';
-        status.textContent = error.message || 'Could not submit your consultation request.';
-      } finally {
-        submitButton.disabled = false;
-      }
-    });
-  });
 })();

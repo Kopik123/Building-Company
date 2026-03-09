@@ -1,12 +1,12 @@
 const express = require('express');
 const { query, validationResult } = require('express-validator');
-const { Project, ProjectMedia, ServiceOffering } = require('../../../models');
+const { Project, ProjectMedia } = require('../../../models');
 const asyncHandler = require('../../../utils/asyncHandler');
 const { ok, fail } = require('../utils/response');
-const { servicesCache, galleryCache, getCached, setCached } = require('../utils/publicCache');
+const { galleryCache, getCached, setCached } = require('../utils/publicCache');
+const { fetchPublicServices } = require('../../../utils/publicServices');
 
 const router = express.Router();
-const SERVICES_TTL = Math.max(1000, Number.parseInt(process.env.PUBLIC_SERVICES_CACHE_TTL_MS || '30000', 10));
 const GALLERY_TTL = Math.max(1000, Number.parseInt(process.env.PUBLIC_GALLERY_CACHE_TTL_MS || '30000', 10));
 
 router.get(
@@ -21,27 +21,8 @@ router.get(
       return fail(res, 400, 'validation_failed', 'Validation failed', errors.array());
     }
 
-    const cacheKey = JSON.stringify({
-      category: req.query.category || '',
-      featured: req.query.featured || ''
-    });
-    const cached = getCached(servicesCache, cacheKey);
-    if (cached) return ok(res, cached, { cache: 'HIT' });
-
-    const where = { showOnWebsite: true, isActive: true };
-    if (req.query.category) where.category = req.query.category;
-    if (typeof req.query.featured !== 'undefined') {
-      where.isFeatured = ['true', '1'].includes(String(req.query.featured).toLowerCase());
-    }
-
-    const services = await ServiceOffering.findAll({
-      where,
-      order: [['displayOrder', 'ASC'], ['createdAt', 'DESC']]
-    });
-
-    const payload = { services };
-    setCached(servicesCache, cacheKey, payload, SERVICES_TTL);
-    return ok(res, payload, { cache: 'MISS' });
+    const { payload, cacheStatus } = await fetchPublicServices(req.query);
+    return ok(res, payload, { cache: cacheStatus });
   })
 );
 
