@@ -6,18 +6,19 @@ module.exports = {
   email: 'LevelLineStudioMCR@gmail.com',
   logoPath: '/logo4.png',
   footerCopy:
-    'Bathrooms, kitchens, tiling, carpentry and internal or external wall systems delivered across the North West with measured project control.',
+    'Full bathroom renovations, kitchen installation and refurbishment, large-format tiling, carpentry, wall systems and flooring installation delivered across the North West with measured project control.',
   phones: [
     { href: 'tel:+447942874446', display: '+44 7942 874 446', label: 'Studio line 1' },
     { href: 'tel:+447304506391', display: '+44 7304 506 391', label: 'Studio line 2' }
   ],
   serviceLinks: [
-    { href: '/premium-bathrooms-manchester.html', label: 'Bathrooms' },
-    { href: '/premium-kitchens-manchester.html', label: 'Kitchens' },
-    { href: '/index.html#consultation', label: 'Tiling' },
+    { href: '/premium-bathrooms-manchester.html', label: 'Full Bathroom Renovations' },
+    { href: '/premium-kitchens-manchester.html', label: 'Kitchen Installation and Refurbishment' },
+    { href: '/index.html#consultation', label: 'Tiling incl. Large Format / Wet Showers' },
     { href: '/index.html#consultation', label: 'Carpentry' },
-    { href: '/index.html#consultation', label: 'Internal Wall Systems' },
-    { href: '/index.html#consultation', label: 'External Wall Systems' }
+    { href: '/index.html#consultation', label: 'External Wall Systems' },
+    { href: '/index.html#consultation', label: 'Interior Wall Systems' },
+    { href: '/index.html#consultation', label: 'Flooring Installation' }
   ],
   studioLinks: [
     { href: '/index.html#projects', label: 'Projects' },
