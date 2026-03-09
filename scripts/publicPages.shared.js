@@ -5,6 +5,14 @@ module.exports = {
   region: 'North West - Lancashire',
   email: 'LevelLineStudioMCR@gmail.com',
   logoPath: '/logo4.png',
+  coreServiceOffer:
+    'full bathroom renovations, kitchen installation and refurbishment, large-format tiling, carpentry, wall systems and flooring installation',
+  joinedUpOfferLead:
+    'Full bathroom renovations, kitchen installation and refurbishment, tiling for large-format surfaces and wet showers, carpentry, wall systems and flooring installation are presented as one joined-up offer.',
+  serviceLineLabel: 'Seven studio service lines',
+  privateConsultationLabel: 'Private consultation first',
+  contactLead:
+    'The same direct studio numbers and email shown on the business card are surfaced prominently on the website.',
   footerCopy:
     'Full bathroom renovations, kitchen installation and refurbishment, large-format tiling, carpentry, wall systems and flooring installation delivered across the North West with measured project control.',
   phones: [

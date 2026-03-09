@@ -1,11 +1,15 @@
 const shared = require('./publicPages.shared');
 
+const coreServiceOffer = shared.coreServiceOffer;
+const consultationRouteLead =
+  'Use the same private consultation route used across the homepage and location pages, then tell us what finish level and timing you want.';
+
 const pages = [
   {
     fileName: 'premium-bathrooms-manchester.html',
     title: 'Bathrooms Manchester | Level Lines Studio',
     metaDescription:
-      'Bathrooms, tiling and finish-led bathroom renovation across Manchester and the North West by Level Lines Studio.',
+      'Full bathroom renovations in Manchester by Level Lines Studio, with large-format tiling, carpentry, wall systems and flooring installation coordinated as one joined-up offer.',
     ogImage: 'https://levellines.co.uk/Gallery/premium/bathroom-main.jpg',
     bodyClass: 'public-site page-service',
     jsonLd: {
@@ -25,7 +29,7 @@ const pages = [
       eyebrow: 'Bathrooms',
       title: 'Bathrooms designed for calm, waterproofed and finished with measured detail.',
       lead:
-        'The bathroom line on the studio card becomes a full delivery scope here: planning, waterproofing, tiling, fitting and final finish control.',
+        `Bathrooms sit inside the same ${coreServiceOffer} offer shown on the homepage, with planning, waterproofing, tiling, fitting and finish control kept in one sequence.`,
       chips: [
         { label: 'Manchester' },
         { label: shared.region, isBrandRegion: true },
@@ -36,7 +40,7 @@ const pages = [
       eyebrow: 'Service Overview',
       title: 'A bathroom service built around detail control.',
       lead:
-        'From strip-out and first-fix planning to tile setting, brassware alignment and final detailing, the bathroom scope is managed as one joined-up service.',
+        'The bathroom line is delivered as one service inside that joined-up studio offer, so survey planning, waterproofing, tile setting, carpentry support and final detailing stay tightly coordinated.',
       detailListItems: [
         'Survey-led planning before demolition and first-fix.',
         'Feature tile layouts and stone-led finish palettes.',
@@ -85,17 +89,18 @@ const pages = [
         },
         {
           q: 'What budget range suits this service?',
-          a: 'Most premium bathroom briefs sit between £8,000 and £20,000 depending on layout change, materials and bespoke detailing.'
+          a: 'Most premium bathroom briefs sit between GBP 8,000 and GBP 20,000 depending on layout change, materials and bespoke detailing.'
         }
       ]
     },
     contact: {
       title: 'Discuss bathrooms directly with the studio.',
-      lead: 'The same direct phones and studio email from the business card are surfaced here so bathroom enquiries can move quickly.'
+      lead:
+        'The same direct studio numbers and email shown on the business card are surfaced here so bathroom enquiries move through one direct consultation route.'
     },
     consultation: {
       title: 'Start your bathroom brief with a private consultation.',
-      lead: 'Tell us where the project sits, what finish level you want and how soon you want to move.',
+      lead: consultationRouteLead,
       formContext: 'Bathrooms',
       locationValue: 'Manchester',
       selectedProjectType: 'bathroom'
@@ -105,7 +110,7 @@ const pages = [
     fileName: 'premium-kitchens-manchester.html',
     title: 'Kitchens Manchester | Level Lines Studio',
     metaDescription:
-      'Kitchen renovation, fitting and finish-led installation across Manchester and the North West by Level Lines Studio.',
+      'Kitchen installation and refurbishment in Manchester by Level Lines Studio, with bathroom renovation, large-format tiling, carpentry, wall systems and flooring installation coordinated as one joined-up offer.',
     ogImage: 'https://levellines.co.uk/Gallery/premium/kitchen-panorama-main.jpg',
     bodyClass: 'public-site page-service',
     jsonLd: {
@@ -125,7 +130,7 @@ const pages = [
       eyebrow: 'Kitchens',
       title: 'Kitchens planned around layout logic, storage and finish control.',
       lead:
-        'The kitchen line from the studio card becomes a complete service here: layout planning, service coordination, fitting and premium finishing.',
+        `Kitchens sit inside the same ${coreServiceOffer} offer shown on the homepage, with layout planning, service coordination, fitting and finishing kept in one joined-up sequence.`,
       chips: [
         { label: 'Manchester' },
         { label: shared.region, isBrandRegion: true },
@@ -136,7 +141,7 @@ const pages = [
       eyebrow: 'Service Overview',
       title: 'Kitchen work that feels designed, not assembled.',
       lead:
-        'Kitchens are treated as complete rooms rather than cabinet-only jobs, so circulation, appliances, lighting and surfaces are resolved together.',
+        'The kitchen line is delivered as one service inside that joined-up studio offer, so cabinetry, lighting, worktops, carpentry touchpoints and final finishing are resolved together.',
       detailListItems: [
         'Layout-led planning for islands, appliances and circulation.',
         'Cabinet, worktop and trim alignment checked as one system.',
@@ -185,17 +190,18 @@ const pages = [
         },
         {
           q: 'What budget range is typical?',
-          a: 'Premium kitchen briefs are commonly in the £12,000 to £30,000+ range depending on cabinetry, surfaces and service complexity.'
+          a: 'Premium kitchen briefs are commonly in the GBP 12,000 to GBP 30,000+ range depending on cabinetry, surfaces and service complexity.'
         }
       ]
     },
     contact: {
       title: 'Discuss kitchens directly with the studio.',
-      lead: 'The same direct phones and studio email from the business card are surfaced here so kitchen enquiries can move straight to the next step.'
+      lead:
+        'The same direct studio numbers and email shown on the business card are surfaced here so kitchen enquiries move through one direct consultation route.'
     },
     consultation: {
       title: 'Start your kitchen brief with a private consultation.',
-      lead: 'Tell us where the project sits, what finish level you want and how soon you want to move.',
+      lead: consultationRouteLead,
       formContext: 'Kitchens',
       locationValue: 'Manchester',
       selectedProjectType: 'kitchen'
@@ -205,7 +211,7 @@ const pages = [
     fileName: 'interior-renovations-manchester.html',
     title: 'Interior Renovations Manchester | Level Lines Studio',
     metaDescription:
-      'Interior renovation, carpentry, tiling and internal wall system upgrades across Manchester and the North West by Level Lines Studio.',
+      'Interior renovations in Manchester by Level Lines Studio, with carpentry, wall systems, large-format tiling and flooring installation coordinated as one joined-up offer.',
     ogImage: 'https://levellines.co.uk/Gallery/premium/exterior-front.jpg',
     bodyClass: 'public-site page-service',
     jsonLd: {
@@ -225,7 +231,7 @@ const pages = [
       eyebrow: 'Interior & Wall Systems',
       title: 'Interior renovations that keep one finish language from room to room.',
       lead:
-        'For selective whole-home upgrades, the studio combines tiling, carpentry and internal wall-system work into one coherent brief.',
+        `Interior and wall-system work sit inside the same ${coreServiceOffer} offer shown on the homepage, giving broader renovation briefs one plan / design / craft structure from room to room.`,
       chips: [
         { label: 'Manchester' },
         { label: shared.region, isBrandRegion: true },
@@ -236,11 +242,11 @@ const pages = [
       eyebrow: 'Service Overview',
       title: 'A joined-up scope for interiors, carpentry and wall systems.',
       lead:
-        'This service extends the studio beyond bathrooms and kitchens into broader interior work where carpentry, tiling and internal wall systems need to read as one package.',
+        'This service carries the joined-up studio offer beyond bathrooms and kitchens, so carpentry, tiling, wall-system build-ups and flooring decisions can read as one coordinated brief.',
       detailListItems: [
         'Joinery, trim and carpentry detail tied into the main design direction.',
-        'Internal wall systems planned for straight lines and dependable performance.',
-        'Exterior wall upgrades discussed where envelope and appearance overlap.',
+        'Internal wall systems and flooring transitions planned for clean lines and dependable performance.',
+        'Large-format tiling and envelope-adjacent upgrades discussed where broader scopes overlap.',
         'Selective multi-room sequencing managed under one premium brief.'
       ]
     },
@@ -291,11 +297,12 @@ const pages = [
     },
     contact: {
       title: 'Discuss interior & wall systems directly with the studio.',
-      lead: 'The same direct phones and studio email from the business card are surfaced here so broader interior enquiries can move without friction.'
+      lead:
+        'The same direct studio numbers and email shown on the business card are surfaced here so broader interior enquiries move through one direct consultation route.'
     },
     consultation: {
       title: 'Start your interior & wall systems brief with a private consultation.',
-      lead: 'Tell us where the project sits, what finish level you want and how soon you want to move.',
+      lead: consultationRouteLead,
       formContext: 'Interior & Wall Systems',
       locationValue: 'Manchester',
       selectedProjectType: 'interior'

@@ -1,6 +1,5 @@
 const shared = require('./publicPages.shared');
-const coreServiceOffer =
-  'full bathroom renovations, kitchen installation and refurbishment, large-format tiling, carpentry, wall systems and flooring installation';
+const coreServiceOffer = shared.coreServiceOffer;
 
 const pages = [
   {
@@ -90,7 +89,7 @@ const pages = [
     metaDescription: `Full bathroom renovations, kitchen installation and refurbishment, large-format tiling, carpentry, wall systems and flooring installation in Stockport by Level Lines Studio.`,
     heroTitle: 'Stockport renovations with stronger carpentry, wall-system and finish discipline.',
     heroLead:
-      `Stockport briefs often need the full ${coreServiceOffer} offer to stay aligned across practical upgrades and premium detailing.`,
+      `Stockport briefs often need the studio's ${coreServiceOffer} offer to keep practical upgrades and premium detailing aligned.`,
     localTitle: 'Stockport projects shaped by detail, not generic packages.',
     localLead:
       `The studio approach suits Stockport properties that need robust sequencing, envelope awareness and a more composed finish language across ${coreServiceOffer}.`,
@@ -168,10 +167,10 @@ const pages = [
     metaDescription: `Full bathroom renovations, kitchen installation and refurbishment, large-format tiling, carpentry, wall systems and flooring installation in Chorlton by Level Lines Studio.`,
     heroTitle: 'Chorlton renovations with graphic materials and disciplined detailing.',
     heroLead:
-      `Chorlton projects suit the full ${coreServiceOffer} offer when the brief calls for a darker, more graphic finish language.`,
+      `Chorlton projects suit the studio's ${coreServiceOffer} offer when the brief calls for a darker, more graphic finish language.`,
     localTitle: 'Chorlton projects shaped by detail, not generic packages.',
     localLead:
-      `Whether the brief starts with bathrooms, kitchens or carpentry, the studio keeps the whole ${coreServiceOffer} package aligned in one controlled line.`,
+      'Whether the brief starts with bathrooms, kitchens or carpentry, the studio keeps the wider offer aligned in one controlled line.',
     pillars: [
       { title: 'Stone and tile', body: 'Graphic surface treatments are handled with clean set-out and disciplined contrast.' },
       { title: 'Joinery detail', body: 'Carpentry and trim choices hold the composition together.' },
