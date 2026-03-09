@@ -17,4 +17,4 @@ Uwaga operacyjna: `dev_plan.md` jest glownym planem i pamiecia projektu. `todos.
 - [x] todos_13: Naprawic detekcje brakujacych tabel w migracji `202603080002-v2-session-device-and-email-hardening.js` i dodac test regresji dla tego przypadku.
 - [x] todos_14: Wdrozyc workflow `dev_plan.md` jako glowna pamiec projektu i dodac note operacyjna do `todos.md`.
 - [x] todos_15: Potwierdzic udany deploy na Ubuntu po hotfixach migracji: `202603080002-v2-session-device-and-email-hardening.js` i `202603090000-performance-search-trgm-indexes.js` przeszly, a aplikacja wystartowala poprawnie.
-- [ ] todos_16: Wypchnac i wdrozyc commit usuwajacy tracked `node_modules`, a potem potwierdzic na Ubuntu, ze `npm ci` nie brudzi juz worktree i nie blokuje `git pull`.
+- [x] todos_16: Wypchnac i wdrozyc commit usuwajacy tracked `node_modules`, a potem potwierdzic na Ubuntu, ze `npm ci` nie brudzi juz worktree i nie blokuje `git pull`.

@@ -30,7 +30,7 @@ Aktualny stan roboczy i ryzyka techniczne:
 - Naprawa kompatybilnosci migracji `quoteTable` zostala przygotowana i przetestowana.
 - Naprawa detekcji brakujacych tabel dla `SessionRefreshTokens` / `DevicePushTokens` zostala przygotowana i przetestowana.
 - Deploy na Ubuntu po hotfixach przeszedl przez migracje `202603080002-v2-session-device-and-email-hardening.js` oraz `202603090000-performance-search-trgm-indexes.js`, a aplikacja wystartowala poprawnie.
-- Naprawa repo-level dla tracked `node_modules` zostala wykonana lokalnie przez usuniecie `node_modules` z indeksu Gita; pozostaje wypchnac te zmiane i wdrozyc ja na Ubuntu.
+- Naprawa repo-level dla tracked `node_modules` zostala zacommitowana jako `724340f`, wdrozona na Ubuntu i potwierdzona komendami `git status` oraz `git ls-files node_modules`.
 
 ## Architektura i glowne obszary
 
@@ -68,7 +68,6 @@ Aktualny stan roboczy i ryzyka techniczne:
 
 ### Priorytet produkcyjny
 
-- Wdrozyc na Ubuntu commit usuwajacy `node_modules` z indeksu Gita, aby kolejne `npm ci` nie brudzily worktree i nie blokowaly `git pull`.
 - Potwierdzic na DigitalOcean, ze po drugim hotfixie migracja `202603080002-v2-session-device-and-email-hardening.js` przechodzi i proces zostaje stabilnie online.
 
 ### Ryzyka techniczne
@@ -138,4 +137,12 @@ Aktualny stan roboczy i ryzyka techniczne:
 - Usunieto `node_modules` z indeksu Gita przy zachowaniu katalogu lokalnie na dysku, zgodnie z istniejacym `.gitignore`.
 - To jest wlasciwa naprawa zrodla problemu, przez ktory `npm ci` na Ubuntu brudzil worktree i blokowal kolejne `git pull`.
 - Po zacommitowaniu i wdrozeniu tego commita serwer nie powinien juz wymagac `git restore node_modules/.package-lock.json node_modules/.bin/mime` przed kazdym deployem.
-- Status: naprawa wykonana lokalnie; oczekuje na commit, push i deploy.
+- Status: naprawa zacommitowana jako `724340f`; deploy na Ubuntu potwierdzil, ze `npm ci` nie brudzi juz worktree.
+
+### 2026-03-09 - Potwierdzenie skutecznosci naprawy tracked `node_modules`
+
+- Na Ubuntu branch `vscode` zostal zaktualizowany do commita `724340f` (`chore: stop tracking node_modules`).
+- Po `npm ci --omit=dev` repo pozostalo czyste (`nothing to commit, working tree clean`).
+- `git ls-files node_modules` zwrocilo `0`, co potwierdza, ze Git nie sledzi juz zadnego pliku z `node_modules`.
+- `pm2 restart building-company` zakonczyl sie sukcesem, a proces pozostaje `online`.
+- Status: glowny problem deployu z tracked `node_modules` zostal zamkniety operacyjnie.
