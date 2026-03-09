@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const test = require('node:test');
 
 const baselineHardening = require('../../migrations/202603080001-production-baseline-hardening.js');
+const sessionDeviceHardening = require('../../migrations/202603080002-v2-session-device-and-email-hardening.js');
 const performanceSearch = require('../../migrations/202603090000-performance-search-trgm-indexes.js');
 
 const createQueryInterfaceStub = (tables) => {
@@ -111,6 +112,71 @@ test('performance search migration works when only queryGenerator.quoteTable exi
   );
   assert.equal(
     queries.some((sql) => sql.includes('"materials_supplier_trgm_idx" ON "Materials" USING gin')),
+    true
+  );
+});
+
+test('session/device hardening migration creates missing tables when Sequelize says no description found', async () => {
+  const queries = [];
+  const createdTables = [];
+  const addedIndexes = [];
+  const tables = {
+    Users: {
+      id: {},
+      email: {}
+    }
+  };
+
+  const queryInterface = {
+    sequelize: {
+      async query(sql) {
+        queries.push(sql);
+      }
+    },
+    async describeTable(tableName) {
+      const table = tables[tableName];
+      if (table) {
+        return table;
+      }
+
+      throw new Error(`No description found for "${tableName}" table. Check the table name and schema; remember, they _are_ case sensitive.`);
+    },
+    async createTable(tableName, columns) {
+      createdTables.push(tableName);
+      tables[tableName] = columns;
+    },
+    async showIndex() {
+      return [];
+    },
+    async addIndex(tableName, fields, options) {
+      addedIndexes.push({ tableName, fields, options });
+    },
+    async dropTable() {}
+  };
+
+  await assert.doesNotReject(() =>
+    sessionDeviceHardening.up(queryInterface, {
+      DataTypes: {
+        UUID: 'UUID',
+        STRING: 'STRING',
+        DATE: 'DATE',
+        NOW: 'NOW',
+        ENUM: (...values) => ({ type: 'ENUM', values })
+      }
+    })
+  );
+
+  assert.deepEqual(createdTables, ['SessionRefreshTokens', 'DevicePushTokens']);
+  assert.equal(
+    addedIndexes.some((item) => item.options.name === 'session_refresh_tokens_user_expires_idx'),
+    true
+  );
+  assert.equal(
+    addedIndexes.some((item) => item.options.name === 'device_push_tokens_user_platform_idx'),
+    true
+  );
+  assert.equal(
+    queries.includes('CREATE UNIQUE INDEX IF NOT EXISTS users_email_lower_unique_idx ON "Users" (LOWER("email"))'),
     true
   );
 });

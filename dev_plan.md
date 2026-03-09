@@ -1,0 +1,125 @@
+# Dev Plan
+
+## Cel i zasady pracy
+
+`dev_plan.md` jest glownym planem developerskim i pamiecia projektu. `todos.md` pozostaje skrocona checklista operacyjna.
+
+Zasady stale:
+
+- Przed zamknieciem kazdego zadania dopisujemy wykonane zmiany do sekcji `Historia wykonanych zmian`.
+- Gdy zmienia sie status checklisty albo pojawia sie nowe ryzyko, rownolegle aktualizujemy `todos.md`.
+- Historia w tym pliku jest append-only: nowe wpisy dopisujemy na koncu.
+- Kazdy wpis historii zawiera date, tytul, zakres zmiany, efekt i status weryfikacji lub deployu, jesli dotyczy.
+- Jesli zmiana nie wymaga nowego todo, i tak dopisujemy ja do historii w `dev_plan.md`.
+
+## Aktualny stan projektu
+
+Projekt jest monolitem Node.js / Express z publicznym frontendem serwowanym statycznie z root repo oraz z rosnacym podzialem na `api/v2`, `apps/web-v2` i `apps/mobile-v1`.
+
+Aktualny stan funkcjonalny:
+
+- Publiczne strony marketingowe sa oparte o generator stron z danymi w `scripts/*.data.js` i rendererem w `scripts/publicPageRenderer.js`.
+- Homepage, strony uslug i strony lokalizacji zostaly jezykowo ujednolicone wokol jednej oferty: bathroom renovations, kitchens, tiling, carpentry, wall systems, flooring.
+- Generator publicznych stron jest objety weryfikacja przez `npm run verify:generated`.
+- Start serwera uruchamia migracje automatycznie przy bootowaniu aplikacji.
+- Srodowisko produkcyjne to serwer Ubuntu na DigitalOcean.
+- Na DigitalOcean deploy z 2026-03-09 przeszedl do aktualnego brancha `vscode`, ale ujawnil dwa kolejne blokery w migracjach produkcyjnych.
+
+Aktualny stan roboczy i ryzyka techniczne:
+
+- Naprawa kompatybilnosci migracji `quoteTable` zostala przygotowana i przetestowana.
+- Naprawa detekcji brakujacych tabel dla `SessionRefreshTokens` / `DevicePushTokens` zostala przygotowana i przetestowana.
+- Glowny otwarty problem deployu pozostaje nierozwiazany: repo ma sledzone pliki z `node_modules`, przez co `npm ci` brudzi worktree i moze blokowac kolejne `git pull` na serwerze.
+
+## Architektura i glowne obszary
+
+### 1. Public website
+
+- Statyczne pliki HTML/CSS/JS w root repo.
+- Dane i generatory stron publicznych w `scripts/`.
+- `brand.js`, `site.js`, `quote.js` obsluguja warstwe brandingu, interakcji i formularza.
+
+### 2. Backend Express
+
+- Gowna aplikacja HTTP jest skladana w `app.js`.
+- Routing dzieli sie na legacy `/api/*` oraz nowe `/api/v2/*`.
+- Aplikacja korzysta z `helmet`, CORS, rate limiting oraz obslugi statycznych plikow i uploadow.
+
+### 3. API v2 / panele
+
+- `api/v2` obejmuje auth, devices, crm, projects, quotes, messages, notifications, inventory i public endpoints.
+- `apps/web-v2` to scaffold panelu React.
+- `apps/mobile-v1` to scaffold aplikacji mobilnej.
+
+### 4. Dane i migracje
+
+- Sequelize + Umzug.
+- Migracje uruchamiaja sie automatycznie przy starcie aplikacji.
+- Modele obejmuja m.in. users, quotes, projects, media, notifications, service offerings, materials, session refresh tokens i device push tokens.
+
+### 5. Testy i weryfikacja
+
+- `npm run verify:generated` pilnuje zgodnosci wygenerowanych stron publicznych.
+- `npm run test:api:v2` obejmuje lekki zestaw testow backendowych.
+- `npm run test:ci` laczy verify generated z testami API v2.
+
+## Otwarte zadania i ryzyka
+
+### Priorytet produkcyjny
+
+- Rozwiazac problem tracked `node_modules`, bo kolejne `npm ci` na serwerze znowu brudzi repo i moze blokowac deploy.
+- Potwierdzic na DigitalOcean, ze po drugim hotfixie migracja `202603080002-v2-session-device-and-email-hardening.js` przechodzi i proces zostaje stabilnie online.
+
+### Ryzyka techniczne
+
+- Automatyczne migracje przy starcie zwiekszaja ryzyko crash loop przy deployu, jesli jedna migracja jest niekompatybilna z wersja Sequelize lub stanem produkcyjnej bazy.
+- Publiczne copy jest juz bardziej spojne, ale homepage nadal pozostaje mieszanka tresci trzymanych bezposrednio w HTML oraz w warstwie brandingu; dalsza centralizacja copy moze byc nadal potrzebna.
+- Na serwerze nie wolno zakladac, ze status `online` w PM2 oznacza zdrowy start aplikacji; trzeba sprawdzac logi po migracjach.
+
+### Zasada operacyjna na deploy
+
+- Po deployu zawsze sprawdzamy `git rev-parse HEAD`, `git status`, `pm2 logs ...` i wynik migracji.
+- Nie uruchamiamy slepo `npm audit fix --force` na produkcji.
+
+## Historia wykonanych zmian
+
+### 2026-03-09 - Ujednolicenie copy stron publicznych
+
+- Zmieniono dane generatorow dla stron uslug i lokalizacji, aby korzystaly z jednego modelu oferty zgodnego z homepage.
+- Skorygowano nienaturalne sklejanie tresci typu `full full ...`, poprawiono CTA oraz sekcje kontaktu.
+- Wygenerowano ponownie publiczne HTML i zweryfikowano je przez `npm run verify:generated`.
+- Status: zweryfikowane lokalnie.
+
+### 2026-03-09 - Incydent deployu na DigitalOcean
+
+- Pierwszy deploy brancha `vscode` nie doszedl do skutku, bo `git pull` blokowaly lokalne zmiany w `package-lock.json` oraz sledzonym `node_modules/.package-lock.json`.
+- Po wymuszeniu synchronizacji branch produkcyjny doszedl do commit `3fddb1d69518fd03a3d83f220a7b528f0bcd13f6`.
+- Incydent ujawnil, ze repo nie powinno sledzic plikow z `node_modules`, bo destabilizuje workflow deployowy.
+- Status: incydent udokumentowany; glowna przyczyna workflow nadal otwarta.
+
+### 2026-03-09 - Hotfix migracji `quoteTable`
+
+- Naprawiono kompatybilnosc migracji `202603080001-production-baseline-hardening.js` i `202603090000-performance-search-trgm-indexes.js` dla Sequelize `6.35.2`.
+- Zamiast zakladac dostepnosc `queryInterface.quoteTable(...)`, dodano fallback do `queryInterface.queryGenerator.quoteTable(...)`.
+- Dodano test regresji dla obu migracji.
+- Status: testy lokalne przeszly; deploy produkcyjny przeszedl dalej niz poprzednio.
+
+### 2026-03-09 - Hotfix migracji brakujacych tabel sesji i push tokenow
+
+- Zdiagnozowano, ze migracja `202603080002-v2-session-device-and-email-hardening.js` nie rozpoznawala komunikatu Sequelize `No description found for "... " table` jako braku tabeli.
+- Rozszerzono detekcje `tableDoesNotExistPattern` i dodano test regresji, ktory symuluje ten przypadek.
+- `npm run test:ci` przeszedl po zmianie.
+- Status: gotowe do kolejnego deployu produkcyjnego.
+
+### 2026-03-09 - Wdrozenie workflow `dev_plan.md`
+
+- Dodano `dev_plan.md` jako glowna pamiec projektu i plan developerski.
+- `todos.md` pozostawiono jako krotsza checkliste, ale z zasada stalego odsylania do `dev_plan.md`.
+- Od tego momentu kazda wykonana zmiana ma byc dopisywana do historii w tym pliku oraz, gdy potrzeba, odnotowywana w `todos.md`.
+- Status: workflow wdrozony w repo.
+
+### 2026-03-09 - Doprecyzowanie srodowiska produkcyjnego
+
+- Doprecyzowano, ze docelowe srodowisko serwerowe projektu to Ubuntu na DigitalOcean, a nie ogolny opis "Linux".
+- To doprecyzowanie ma byc stosowane w dalszych instrukcjach deployowych i diagnostycznych.
+- Status: zapisane jako stala informacja operacyjna.
