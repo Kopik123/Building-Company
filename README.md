@@ -1,4 +1,4 @@
-# Building Company
+﻿# Building Company
 strona firmy budowlanej
 
 ## API v2 / Web v2 / Mobile v1
@@ -11,10 +11,23 @@ strona firmy budowlanej
 ### Test commands
 
 ```bash
+npm run verify:generated
+npm run test:ci
 npm run test:api:v2
 npm run test:e2e:mobile
 npm run test:all
 ```
+
+### Generowane strony publiczne
+
+```bash
+npm run generate:locations
+npm run generate:services
+npm run generate:public-pages
+```
+
+- `npm run verify:generated` sprawdza, czy wygenerowane pliki HTML są zgodne z danymi w `scripts/*.data.js`.
+- `npm run test:ci` uruchamia pełny lekki gate repo: `verify:generated` oraz `test:api:v2`.
 
 ## Uruchomienie lokalnie
 
@@ -37,6 +50,7 @@ npm run test:all
 	npm start
 
 Serwis będzie dostępny pod `http://localhost:3000`.
+
 ## Migracje bazy (Umzug)
 
 Migracje uruchamiają się automatycznie przy starcie aplikacji (dev i production).
@@ -436,5 +450,4 @@ pm2 logs building-company        # live tail
 pm2 monit                         # dashboard CPU/RAM
 tail -f logs/pm2-error.log        # error log
 ```
-
 

@@ -6,14 +6,15 @@
   const fallbackServices = Array.isArray(brand.services) ? brand.services : [];
 
   const sanitize = (value) => String(value || '').trim();
+  const normalize = (value) => sanitize(value).toLowerCase();
 
   const toManagedMap = (services) => {
     const map = new Map();
 
     (Array.isArray(services) ? services : []).forEach((service) => {
-      const category = sanitize(service.category).toLowerCase();
-      const title = sanitize(service.title).toLowerCase();
-      const slug = sanitize(service.slug).toLowerCase();
+      const category = normalize(service.category);
+      const title = normalize(service.title);
+      const slug = normalize(service.slug);
 
       [category, title, slug].filter(Boolean).forEach((key) => {
         if (!map.has(key)) map.set(key, service);
@@ -25,9 +26,10 @@
 
   const findManagedService = (managedMap, service) => {
     const keys = [
-      sanitize(service.category).toLowerCase(),
-      sanitize(service.key).toLowerCase(),
-      sanitize(service.title).toLowerCase()
+      normalize(service.category),
+      normalize(service.key),
+      normalize(service.title),
+      ...(Array.isArray(service.aliases) ? service.aliases.map(normalize) : [])
     ].filter(Boolean);
 
     for (const key of keys) {
@@ -82,9 +84,11 @@
     if (!fallbackServices.length) return;
 
     const managedMap = toManagedMap(managedServices);
-    const services = fallbackServices.map((service) => {
+    const fragment = document.createDocumentFragment();
+
+    fallbackServices.forEach((service, index) => {
       const managed = findManagedService(managedMap, service) || {};
-      return {
+      const mergedService = {
         ...service,
         image: sanitize(managed.heroImageUrl) || service.image,
         description: sanitize(managed.shortDescription) || service.description,
@@ -92,12 +96,11 @@
         href: service.href,
         cta: service.cta
       };
+      fragment.appendChild(makeCard(mergedService, index));
     });
 
     grid.innerHTML = '';
-    services.forEach((service, index) => {
-      grid.appendChild(makeCard(service, index));
-    });
+    grid.appendChild(fragment);
   };
 
   const load = async () => {

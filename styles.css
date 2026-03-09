@@ -2949,6 +2949,13 @@ body.public-site .footer-links {
   gap: 12px;
 }
 
+body.public-site .contact-band-links,
+body.public-site .footer-contact-list,
+body.workspace-site .workspace-contact-list,
+body.workspace-site .footer-contact-list {
+  font-style: normal;
+}
+
 body.public-site .contact-band-link,
 body.public-site .footer-contact-link,
 body.public-site .footer-service-link,

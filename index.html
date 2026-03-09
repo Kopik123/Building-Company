@@ -4,10 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Level Lines Studio | Premium Bathrooms, Kitchens & Interiors</title>
-  <meta name="description" content="Level Lines Studio delivers bathrooms, kitchens, tiling, carpentry and wall systems across the North West with premium detailing and measured execution." />
+  <meta name="description" content="Level Lines Studio delivers bathrooms, kitchens, tiling, carpentry and internal or external wall systems across the North West with measured execution." />
   <meta property="og:type" content="website" />
   <meta property="og:title" content="Level Lines Studio | Premium Bathrooms, Kitchens & Interiors" />
-  <meta property="og:description" content="Level Lines Studio delivers bathrooms, kitchens, tiling, carpentry and wall systems across the North West with premium detailing and measured execution." />
+  <meta property="og:description" content="Level Lines Studio delivers bathrooms, kitchens, tiling, carpentry and internal or external wall systems across the North West with measured execution." />
   <meta property="og:image" content="https://levellines.co.uk/Gallery/premium/brick-dark-main.jpg" />
   <meta property="og:url" content="https://levellines.co.uk/" />
   <meta name="twitter:card" content="summary_large_image" />
@@ -57,7 +57,7 @@
         <div class="hero-content">
           <p class="section-eyebrow">North West Premium Renovation Studio</p>
           <h1>Bathrooms, kitchens and crafted interiors with measured detail.</h1>
-          <p class="section-lead">Level Lines Studio translates the bold black-stone and gold-line language of the brand into premium residential work across Manchester, Stockport, Liverpool and the wider North West.</p>
+          <p class="section-lead" data-brand-copy="copy.home.heroLead">Level Lines Studio brings the black-stone and gold-line identity from the business card into bathrooms, kitchens, tiling, carpentry and wall-system work across the North West.</p>
           <div class="hero-actions">
             <a class="btn btn-gold" href="#consultation">Request Private Consultation</a>
             <a class="btn btn-outline" href="#projects">View Signature Projects</a>
@@ -76,24 +76,10 @@
             <label>Phone<input type="tel" name="phone" autocomplete="tel" /></label>
             <label>Email<input type="email" name="email" autocomplete="email" /></label>
             <label>Project type
-              <select name="projectType" required>
-                <option value="">Select</option>
-                <option value="bathroom" selected>Bathrooms</option>
-<option value="kitchen">Kitchens</option>
-<option value="tiling">Tiling</option>
-<option value="joinery">Carpentry</option>
-<option value="interior">Internal Wall Systems</option>
-<option value="rendering">External Wall Systems</option>
-              </select>
+              <select name="projectType" required data-brand-project-type-select data-default-label="Select" data-selected-value="bathroom"></select>
             </label>
             <label>Budget
-              <select name="budget">
-                <option value="">Select</option>
-                <option>£8,000–£12,000</option>
-                <option>£12,000–£20,000</option>
-                <option>£20,000–£30,000</option>
-                <option>£30,000+</option>
-              </select>
+              <select name="budget" data-brand-budget-select data-default-label="Select"></select>
             </label>
             <label class="span-2">Project brief<textarea name="message" rows="5" required placeholder="Tell us what you want to build, how you want it to feel and when you want to start."></textarea></label>
           </div>
@@ -107,8 +93,8 @@
       <div class="container section-shell">
         <div class="section-heading">
           <p class="section-eyebrow">Signature Services</p>
-          <h2>Six service lines aligned to the studio identity in the design artwork.</h2>
-          <p class="section-lead">Bathrooms, kitchens, tiling, carpentry and internal or external wall systems are presented as one coherent luxury offer instead of disconnected trades.</p>
+          <h2 data-brand-copy="copy.home.servicesTitle">Six service lines carried directly from the studio business card.</h2>
+          <p class="section-lead" data-brand-copy="copy.home.servicesLead">Bathrooms, kitchens, tiling, carpentry and internal or external wall systems are presented as one joined-up premium offer instead of disconnected trades.</p>
         </div>
         <div class="service-grid" data-services-grid></div>
       </div>
@@ -121,7 +107,7 @@
             <p class="section-eyebrow">Plan / Design / Craft</p>
             <h2>The studio structure behind every project.</h2>
           </div>
-          <p class="section-lead">The rebrand from the business cards becomes an operating model on the site: considered planning, design discipline and precise craft execution.</p>
+          <p class="section-lead" data-brand-copy="copy.home.processLead">The business card message is operational on the website too: plan clearly, design with restraint and deliver with craft.</p>
         </div>
         <div class="pillar-grid">
           <article class="surface-card surface-card--dark pillar-card">
@@ -148,7 +134,7 @@
         <div class="area-copy">
           <p class="section-eyebrow">Coverage</p>
           <h2>Service areas lifted directly from the design references.</h2>
-          <p class="section-lead">The design artwork names the studio's footprint clearly. The website now carries that same geographic signal instead of a generic Manchester-only message.</p>
+          <p class="section-lead" data-brand-copy="copy.home.areasLead">The website uses the same coverage list shown on the design artwork, so the geographic offer stays consistent across every touchpoint.</p>
         </div>
         <div class="surface-card surface-card--light area-card">
           <p class="area-card-title">Primary coverage</p>
@@ -196,13 +182,13 @@
       <div class="contact-band-copy">
         <p class="section-eyebrow section-eyebrow--compact">Direct Contact</p>
         <h2>Speak to the studio directly.</h2>
-        <p>The business cards carry two direct lines and one email address. The site now exposes the same details prominently instead of burying them in the footer.</p>
+        <p data-brand-copy="copy.home.contactLead">The same direct studio numbers and email shown on the business card are surfaced prominently on the website.</p>
       </div>
-      <div class="contact-band-links">
+      <address class="contact-band-links" aria-label="Level Lines Studio contact details">
         <a class="contact-band-link" data-brand-phone="0" href="tel:+447942874446">+44 7942 874 446</a>
         <a class="contact-band-link" data-brand-phone="1" href="tel:+447304506391">+44 7304 506 391</a>
         <a class="contact-band-link" data-brand-email href="mailto:LevelLineStudioMCR@gmail.com">LevelLineStudioMCR@gmail.com</a>
-      </div>
+      </address>
     </div>
   </section>
 
@@ -226,7 +212,7 @@
       <div class="consultation-copy">
         <p class="section-eyebrow">Private Consultation</p>
         <h2>Bring your project to the studio shortlist.</h2>
-        <p class="section-lead">Use the same private consultation route whether you are enquiring about bathrooms, kitchens, carpentry or wall systems.</p>
+        <p class="section-lead" data-brand-copy="copy.home.consultationLead">Use one consultation route for bathrooms, kitchens, tiling, carpentry and internal or external wall systems.</p>
         <div class="consultation-points">
           <p><strong data-brand-region>North West - Lancashire</strong></p>
           <p>Two direct studio lines and a short-list project intake.</p>
@@ -239,24 +225,10 @@
           <label>Phone<input type="tel" name="phone" autocomplete="tel" /></label>
           <label>Email<input type="email" name="email" autocomplete="email" /></label>
           <label>Project type
-            <select name="projectType" required>
-              <option value="">Select</option>
-              <option value="bathroom" selected>Bathrooms</option>
-<option value="kitchen">Kitchens</option>
-<option value="tiling">Tiling</option>
-<option value="joinery">Carpentry</option>
-<option value="interior">Internal Wall Systems</option>
-<option value="rendering">External Wall Systems</option>
-            </select>
+            <select name="projectType" required data-brand-project-type-select data-default-label="Select" data-selected-value="bathroom"></select>
           </label>
           <label>Budget
-            <select name="budget">
-              <option value="">Select</option>
-              <option>£8,000–£12,000</option>
-              <option>£12,000–£20,000</option>
-              <option>£20,000–£30,000</option>
-              <option>£30,000+</option>
-            </select>
+            <select name="budget" data-brand-budget-select data-default-label="Select"></select>
           </label>
           <label class="span-2">Project brief<textarea name="message" rows="5" required placeholder="Tell us about your scope, finish expectations and timing."></textarea></label>
         </div>
@@ -272,12 +244,12 @@
       <div class="footer-block footer-block--brand">
         <p class="section-eyebrow section-eyebrow--compact">Level Lines Studio</p>
         <h3 data-brand-name>Level Lines Studio</h3>
-        <p class="footer-copy">Measured renovation delivery across the North West with a dark-stone palette, gold-line detailing and calm project control.</p>
-        <div class="footer-contact-list">
+        <p class="footer-copy" data-brand-footer-copy>Bathrooms, kitchens, tiling, carpentry and internal or external wall systems delivered across the North West with measured project control.</p>
+        <address class="footer-contact-list" aria-label="Level Lines Studio contact details">
           <a class="footer-contact-link" data-brand-phone="0" href="tel:+447942874446">+44 7942 874 446</a>
           <a class="footer-contact-link" data-brand-phone="1" href="tel:+447304506391">+44 7304 506 391</a>
           <a class="footer-contact-link" data-brand-email href="mailto:LevelLineStudioMCR@gmail.com">LevelLineStudioMCR@gmail.com</a>
-        </div>
+        </address>
       </div>
       <div class="footer-block">
         <h3>Services</h3>
@@ -320,3 +292,4 @@
   <script src="/quote.js" defer></script>
 </body>
 </html>
+

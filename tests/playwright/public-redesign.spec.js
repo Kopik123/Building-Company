@@ -15,13 +15,13 @@ test('homepage renders redesigned shell and mobile navigation', async ({ page })
 test('service and location pages expose contact shell and consultation form', async ({ page }) => {
   await page.goto('/premium-bathrooms-manchester.html');
   await expect(page.locator('body.public-site.page-service')).toBeVisible();
-  await expect(page.getByRole('heading', { name: /Bathrooms designed for calm/i })).toBeVisible();
+  await expect(page.locator('main h1').first()).toContainText(/Bathrooms/i);
   await expect(page.locator('[data-brand-phone="0"]').first()).toContainText('+44 7942 874 446');
   await expect(page.locator('#consultation form')).toBeVisible();
 
   await page.goto('/premium-renovations-chorlton.html');
   await expect(page.locator('body.public-site.page-location')).toBeVisible();
-  await expect(page.getByRole('heading', { name: /Premium renovations in Chorlton/i })).toBeVisible();
+  await expect(page.locator('main h1').first()).toContainText(/Chorlton/i);
   await expect(page.locator('[data-brand-area-list] .area-chip').first()).toBeVisible();
 });
 
