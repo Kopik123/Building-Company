@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -7,16 +7,43 @@
   <meta name="description" content="Privacy policy for levels+lines Precision Renovations Manchester." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body class="legal-page">
-  <main class="legal-main">
+  <header class="site-header" id="top">
+    <div class="container header-inner grid-12">
+      <a class="brand" href="/index.html" aria-label="Level Lines Studio home">
+        <img src="/logo4.png" alt="Level Lines Studio logo" class="brand-logo" />
+        <span class="brand-mark">Level Lines Studio</span>
+        <span class="brand-meta">Plan · Design · Craft</span>
+      </a>
+      <div class="menu-wrap" data-menu-wrap>
+        <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation menu">
+          <span class="nav-toggle-line"></span>
+          <span class="nav-toggle-line"></span>
+          <span class="nav-toggle-line"></span>
+        </button>
+        <nav class="site-nav" id="site-nav" data-nav-menu aria-label="Main navigation">
+          <a href="/index.html#services" data-nav-link>Services</a>
+          <a href="/index.html#projects" data-nav-link>Projects</a>
+          <a href="/index.html#gallery" data-nav-link>Gallery</a>
+          <a href="/client-dashboard.html" data-nav-link>Client Portal</a>
+          <a href="/auth.html" data-nav-link>Login / Register</a>
+          <a href="/index.html#consultation" data-nav-link>Contact</a>
+        </nav>
+      </div>
+      <a class="btn btn-gold header-cta" href="/index.html#consultation">Request Private Consultation</a>
+    </div>
+  </header>
+
+  <main class="legal-main section">
     <article class="legal-card">
+      <p class="eyebrow">Legal</p>
       <h1>Privacy Policy</h1>
       <p class="muted">Last updated: March 2026</p>
       <h2>Who we are</h2>
-      <p>levels+lines (Precision Renovations) is a Manchester renovation studio serving clients across Greater Manchester.</p>
+      <p>Level Lines Studio is a Manchester renovation studio serving clients across Greater Manchester.</p>
       <h2>What we collect</h2>
       <p>When you submit forms, we may collect name, phone, email, project type, budget and your message.</p>
       <h2>How we use it</h2>
@@ -28,6 +55,21 @@
       <p><a class="btn btn-outline" href="/index.html">Back to homepage</a></p>
     </article>
   </main>
+
+  <footer class="site-footer">
+    <div class="container footer-bottom">
+      <p>&copy; <span data-current-year></span> Level Lines Studio. All rights reserved.</p>
+      <div class="legal-links">
+        <a href="/cookie-policy.html">Cookie Policy</a>
+        <a href="/terms.html">Terms</a>
+      </div>
+    </div>
+  </footer>
   <script src="/site.js" defer></script>
 </body>
 </html>
+
+
+
+
+
