@@ -9,6 +9,8 @@
 - [ ] Review whether the premium theme overrides now living in `styles/public.css` and `styles/workspace.css` should be split into smaller section-specific files after the visual direction stabilises.
 - [ ] Keep every new feature review aligned with future Android/iOS app readiness, especially API contracts, auth/session handling, messaging and media flows.
 - [ ] Re-check the new homepage header/account hierarchy on live desktop and mobile devices after deployment, because the account entry point moved out of the header and into the hero card.
+- [ ] Implement the planned `client_proposal_quote` structure on the public quote page with phased UX, richer project fields and mobile-safe validation.
+- [ ] Decide whether richer quote intake should be stored as structured quote metadata in phase 1 or temporarily mapped into the existing `description` field.
 
 ## Completed
 
@@ -20,3 +22,4 @@
 - [x] Verified the premium shell regression with API tests, generated-page verification and Playwright coverage.
 - [x] Recorded the standing rule that current web work must stay ready for future Android/iOS app rollout.
 - [x] Moved the homepage account entry and public links from the header utility panel into the dedicated `Account` card.
+- [x] Documented a professional `client_proposal_quote` plan for the quote page, manager triage and future Android/iOS portability.
