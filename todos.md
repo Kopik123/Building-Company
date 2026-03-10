@@ -29,3 +29,5 @@ Uwaga operacyjna: `dev_plan.md` jest glownym planem i pamiecia projektu. `todos.
 - [x] todos_25: Domknac instrukcje z makiety `Client Portal`: podmienic tekst marki na `title.png`, zostawic `logo4.png`, usunac breadcrumbs i wymusic stale `Join Us` jako publiczny link logowania na tej stronie.
 - [x] todos_26: Przebudowac caly front do wspolnego systemu `quiet architectural luxury`: `logo4.png + title.png`, wspolny shell nawigacji `Services / Projects / Gallery / Contact / Join Us`, spokojniejszy homepage dla klienta premium, cichszy shell workspace oraz odswiezony generator stron uslug i lokalizacji.
 - [x] todos_27: Dopasowac SEO do nowego premium pozycjonowania: mocniejsze `title` i `meta description`, bogatsze social metadata, `FAQPage` schema na stronach ofertowych oraz `noindex` dla `auth` i workspace.
+- [x] todos_28: Zastapic duet `logo4.png + title.png` jednym kanonicznym lockupem `readyprint2.png` we wspolnym shellu, generatorach stron publicznych i danych brandowych.
+- [x] todos_29: Zmienic publiczna etykiete wejscia do konta z `Join Us` / `Login / Register` na jednolite `Account` w shellu, generatorach i runtime.

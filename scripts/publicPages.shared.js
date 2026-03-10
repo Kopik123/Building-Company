@@ -4,9 +4,9 @@ module.exports = {
   claim: 'Plan / Design / Craft',
   region: 'North West - Lancashire',
   email: 'LevelLineStudioMCR@gmail.com',
-  logoPath: '/logo4.png',
-  titleImagePath: '/title.png',
-  publicAuthLabel: 'Join Us',
+  logoPath: '/readyprint2.png',
+  titleImagePath: '/readyprint2.png',
+  publicAuthLabel: 'Account',
   consultationCtaLabel: 'Request Private Consultation',
   coreServiceOffer:
     'full bathroom renovations, kitchen installation and refurbishment, large-format tiling, carpentry, wall systems and flooring installation',
@@ -27,7 +27,7 @@ module.exports = {
     { href: '/index.html#projects', label: 'Projects' },
     { href: '/index.html#gallery', label: 'Gallery' },
     { href: '#consultation', label: 'Contact' },
-    { href: '/auth.html', label: 'Join Us', isAuth: true }
+    { href: '/auth.html', label: 'Account', isAuth: true }
   ],
   serviceLinks: [
     { href: '/premium-bathrooms-manchester.html', label: 'Full Bathroom Renovations' },
@@ -42,7 +42,7 @@ module.exports = {
     { href: '/index.html#projects', label: 'Projects' },
     { href: '/index.html#gallery', label: 'Gallery' },
     { href: '#consultation', label: 'Private consultation' },
-    { href: '/auth.html', label: 'Join Us' },
+    { href: '/auth.html', label: 'Account' },
     { href: '/privacy.html', label: 'Privacy' },
     { href: '/cookie-policy.html', label: 'Cookie Policy' },
     { href: '/terms.html', label: 'Terms' }

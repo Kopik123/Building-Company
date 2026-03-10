@@ -2530,7 +2530,7 @@ body.public-site .header-inner.grid-12 {
 body.public-site .brand {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 0;
 }
 
 body.public-site .brand-logo {
@@ -2544,6 +2544,14 @@ body.public-site .brand-title-image {
   display: block;
   width: clamp(200px, 24vw, 340px);
   max-height: 52px;
+  height: auto;
+  object-fit: contain;
+}
+
+body.public-site .brand-lockup-image {
+  display: block;
+  width: clamp(250px, 30vw, 430px);
+  max-height: 72px;
   height: auto;
   object-fit: contain;
 }
@@ -3217,6 +3225,11 @@ body.public-site.nav-open {
   body.public-site .brand-title-image {
     width: min(48vw, 220px);
     max-height: 34px;
+  }
+
+  body.public-site .brand-lockup-image {
+    width: min(64vw, 300px);
+    max-height: 52px;
   }
 
   body.public-site .public-hero {

@@ -220,7 +220,7 @@
   };
 
   const getGuestAuthLabel = (authLink) => {
-    return String(authLink?.getAttribute('data-auth-guest-label') || '').trim() || brand?.publicAuthLabel || 'Join Us';
+    return String(authLink?.getAttribute('data-auth-guest-label') || '').trim() || brand?.publicAuthLabel || 'Account';
   };
 
   const ensureHeaderAccountButton = (loggedIn, href) => {
@@ -247,8 +247,8 @@
     }
 
     accountBtn.href = loggedIn ? href : '/auth.html';
-    accountBtn.textContent = loggedIn ? 'Account' : 'Log In';
-    accountBtn.title = loggedIn ? 'Open account settings' : 'Log in to your account';
+    accountBtn.textContent = 'Account';
+    accountBtn.title = loggedIn ? 'Open account settings' : 'Open account access';
     accountBtn.classList.toggle('is-authenticated', loggedIn);
   };
 

@@ -19,7 +19,7 @@ Projekt jest monolitem Node.js / Express z publicznym frontendem serwowanym stat
 Aktualny stan funkcjonalny:
 
 - Publiczne strony marketingowe sa oparte o generator stron z danymi w `scripts/*.data.js` i rendererem w `scripts/publicPageRenderer.js`.
-- Publiczny shell jest po redesignie oparty o jeden kanoniczny lockup `logo4.png + title.png` oraz jednolita publiczna nawigacje `Services / Projects / Gallery / Contact / Join Us`.
+- Publiczny shell jest po redesignie oparty o jeden kanoniczny lockup `readyprint2.png` oraz jednolita publiczna nawigacje `Services / Projects / Gallery / Contact / Account`.
 - Homepage, strony uslug i strony lokalizacji zostaly jezykowo ujednolicone wokol jednej oferty: bathroom renovations, kitchens, tiling, carpentry, wall systems, flooring.
 - Homepage po przebudowie prowadzi klienta premium przez sekwencje: editorial hero, selected projects, studio method, signature services, gallery / finish proof, FAQ, private consultation i dopiero nizsze supporting details.
 - Auth, client workspace i manager workspace zachowuja ten sam jezyk premium, ale maja cichszy, bardziej operacyjny shell bez marketingowego przeladowania.
@@ -228,3 +228,19 @@ Aktualny stan roboczy i ryzyka techniczne:
 - Dla wszystkich generowanych service / location pages dodano schema `FAQPage`, bo pytania FAQ sa realna czescia tresci i wzmacniaja topical relevance.
 - `auth.html`, `client-dashboard.html` i `manager-dashboard.html` zostaly oznaczone jako `noindex,follow`, zeby wyszukiwarki nie indeksowaly stron operacyjnych jako landing pages oferty.
 - Status: zweryfikowane lokalnie przez `npm.cmd run generate:public-pages`, `npm.cmd run verify:generated`, `node --check scripts/publicPageRenderer.js`, `node --check scripts/generate-service-pages.js`, `node --check scripts/generate-location-pages.js` oraz `npm.cmd run test:ci`.
+
+### 2026-03-10 - Podmiana wspolnego lockupu marki na `readyprint2.png`
+
+- Headery homepage, auth, legal pages, client workspace, manager workspace oraz wszystkie strony generowane przeszly z duetu `logo4.png + title.png` na jeden obraz `readyprint2.png`.
+- `scripts/publicPages.shared.js`, `brand.js` i `scripts/publicPageRenderer.js` zostaly dopasowane do nowego kanonicznego assetu, tak aby manualne shelle i generator stron publicznych korzystaly z tej samej sciezki brandowej.
+- `styles.css` dostal nowy wariant `brand-lockup-image`, zeby pojedynczy lockup mial poprawna geometrie w desktopie i mobile bez pozostalosci po dwoch osobnych obrazach.
+- Recznie utrzymywane JSON-LD na homepage i stronach legalnych zostaly zaktualizowane tak, aby wskazywaly `readyprint2.png` jako glowny obraz marki.
+- Status: zweryfikowane lokalnie przez `npm.cmd run generate:public-pages`, `npm.cmd run verify:generated` i `node --check scripts/publicPageRenderer.js`.
+
+### 2026-03-10 - Ujednolicenie publicznej etykiety konta do `Account`
+
+- Publiczny entry point do logowania i konta zostal zmieniony z `Join Us` oraz starych wariantow `Log In` / `Login / Register` na jedno `Account`.
+- Zmiana objela `scripts/publicPages.shared.js`, `brand.js`, `site.js`, `main.js`, recznie utrzymywane shelle oraz wygenerowane strony uslug i lokalizacji.
+- `auth.html` dostal tez tytul strony `Account | Level Lines Studio` oraz spojne etykiety w hero, stopce i linkach nawigacyjnych.
+- Runtime w `site.js` i legacy runtime w `main.js` nie przywracaja juz starych etykiet, nawet po zaladowaniu sesji albo menu mobilnego.
+- Status: zweryfikowane lokalnie przez `npm.cmd run generate:public-pages`, `npm.cmd run verify:generated`, `node --check site.js` oraz grep po braku `Join Us` i `Login / Register` w aktywnym froncie.

@@ -13,8 +13,7 @@ const renderJsonLdScripts = (jsonLd) => {
 };
 
 const renderBrandLockup = (shared) => `      <a class="brand" href="/index.html" aria-label="${escapeHtml(shared.brandName)} home">
-        <img src="${escapeHtml(shared.logoPath)}" alt="${escapeHtml(shared.brandName)} logo" class="brand-logo" />
-        <img src="${escapeHtml(shared.titleImagePath || '/title.png')}" alt="${escapeHtml(shared.brandName)}" class="brand-title-image" />
+        <img src="${escapeHtml(shared.logoPath || shared.titleImagePath || '/readyprint2.png')}" alt="${escapeHtml(shared.brandName)}" class="brand-lockup-image" />
       </a>`;
 
 const renderNavLinks = (shared, contactHref = '#consultation') =>
