@@ -7,6 +7,9 @@
   const projectPrevButton = document.querySelector('[data-gallery-project-prev]');
   const projectNextButton = document.querySelector('[data-gallery-project-next]');
   const statusNode = document.querySelector('[data-gallery-status]');
+  const imageTitleNode = document.querySelector('[data-gallery-active-image-title]');
+  const projectTitleNode = document.querySelector('[data-gallery-active-project-title]');
+  const projectMetaNode = document.querySelector('[data-gallery-active-project-meta]');
 
   if (!roller || !stage || !projectStrip || !prevButton || !nextButton) return;
   roller.setAttribute('tabindex', '0');
@@ -126,6 +129,45 @@
     chips: []
   };
 
+  const toTitleCase = (value) =>
+    String(value || '')
+      .split(' ')
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ');
+
+  const labelFromImagePath = (src) => {
+    const filename = String(src || '').split('/').pop() || '';
+    const base = filename.replace(/\.[a-z0-9]+$/i, '');
+    return toTitleCase(base.replace(/[-_]+/g, ' ')) || 'Selected image';
+  };
+
+  const normalizeImageItem = (entry) => {
+    if (entry && typeof entry === 'object') {
+      const src = String(entry.src || entry.url || '').trim();
+      if (!src) return null;
+      return {
+        src,
+        label: String(entry.label || '').trim() || labelFromImagePath(src)
+      };
+    }
+
+    const src = String(entry || '').trim();
+    if (!src) return null;
+    return {
+      src,
+      label: labelFromImagePath(src)
+    };
+  };
+
+  const normalizeProjects = (rawProjects) =>
+    (Array.isArray(rawProjects) ? rawProjects : [])
+      .map((project) => ({
+        name: String(project?.name || '').trim() || 'Project',
+        images: (Array.isArray(project?.images) ? project.images : []).map(normalizeImageItem).filter(Boolean)
+      }))
+      .filter((project) => project.images.length);
+
   const normalizeIndex = (value, size) => {
     if (size <= 0) return 0;
     return (value % size + size) % size;
@@ -159,14 +201,7 @@
       if (!response.ok) return;
 
       const payload = await response.json().catch(() => ({}));
-      const managed = Array.isArray(payload.projects)
-        ? payload.projects
-          .map((project) => ({
-            name: String(project.name || '').trim() || 'Project',
-            images: Array.isArray(project.images) ? project.images.filter(Boolean) : []
-          }))
-          .filter((project) => project.images.length)
-        : [];
+      const managed = normalizeProjects(payload.projects);
 
       if (managed.length) {
         projects = managed;
@@ -182,14 +217,7 @@
 
     try {
       const payload = JSON.parse(node.textContent || '[]');
-      const inlineProjects = Array.isArray(payload)
-        ? payload
-          .map((project) => ({
-            name: String(project.name || '').trim() || 'Project',
-            images: Array.isArray(project.images) ? project.images.filter(Boolean) : []
-          }))
-          .filter((project) => project.images.length)
-        : [];
+      const inlineProjects = normalizeProjects(payload);
 
       if (!inlineProjects.length) return false;
 
@@ -201,12 +229,27 @@
   };
 
   const setStatus = () => {
-    if (!statusNode) return;
-
     const project = currentProject();
+    if (!project) return;
     const total = project.images.length;
     const centeredIndex = normalizeIndex(Math.round(state.position), total);
-    statusNode.textContent = `Project ${state.projectIndex + 1} of ${projects.length} - ${project.name}, photo ${centeredIndex + 1} of ${total}`;
+    const imageItem = project.images[centeredIndex];
+
+    if (imageTitleNode) {
+      imageTitleNode.textContent = imageItem?.label || 'Selected image';
+    }
+
+    if (projectTitleNode) {
+      projectTitleNode.textContent = project.name;
+    }
+
+    if (projectMetaNode) {
+      projectMetaNode.textContent = `${total} image sequence | photo ${centeredIndex + 1} of ${total}`;
+    }
+
+    if (statusNode) {
+      statusNode.textContent = `Project ${state.projectIndex + 1} of ${projects.length} | ${project.name} | ${imageItem?.label || `Photo ${centeredIndex + 1}`} | photo ${centeredIndex + 1} of ${total}`;
+    }
   };
 
   const stopAnimation = () => {
@@ -333,19 +376,19 @@
     stage.innerHTML = '';
     state.cards = [];
 
-    project.images.forEach((src, index) => {
+    project.images.forEach((imageItem, index) => {
       const card = document.createElement('article');
       card.className = 'roller-card is-hidden';
       card.dataset.index = String(index);
 
       const image = document.createElement('img');
-      image.src = src;
-      image.alt = `${project.name} photo ${index + 1}`;
+      image.src = imageItem.src;
+      image.alt = `${project.name} - ${imageItem.label}`;
       image.loading = 'lazy';
 
       const caption = document.createElement('p');
       caption.className = 'roller-caption';
-      caption.textContent = project.name;
+      caption.textContent = imageItem.label;
 
       card.appendChild(image);
       card.appendChild(caption);
@@ -373,7 +416,7 @@
       button.setAttribute('aria-pressed', 'false');
 
       const image = document.createElement('img');
-      image.src = project.images[0];
+      image.src = project.images[0].src;
       image.alt = `${project.name} thumbnail`;
       image.loading = 'lazy';
 
@@ -445,6 +488,7 @@
   });
 
   const init = async () => {
+    projects = normalizeProjects(defaultProjects);
     const hasInlineProjects = loadInlineProjects();
 
     if (!hasInlineProjects) {

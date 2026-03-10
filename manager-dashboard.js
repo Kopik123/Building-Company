@@ -63,7 +63,35 @@
     materialsPrev: document.getElementById('materials-prev-btn'),
     materialsNext: document.getElementById('materials-next-btn'),
     materialsPagination: document.getElementById('materials-pagination'),
-    materialsList: document.getElementById('materials-list')
+    materialsList: document.getElementById('materials-list'),
+    clientsFilterQ: document.getElementById('clients-filter-q'),
+    clientsRefresh: document.getElementById('clients-refresh-btn'),
+    clientsList: document.getElementById('clients-list'),
+    staffFilterQ: document.getElementById('staff-filter-q'),
+    staffRefresh: document.getElementById('staff-refresh-btn'),
+    staffCreateForm: document.getElementById('staff-create-form'),
+    staffCreateStatus: document.getElementById('staff-create-status'),
+    staffList: document.getElementById('staff-list'),
+    estimateCreateForm: document.getElementById('estimate-create-form'),
+    estimateCreateStatus: document.getElementById('estimate-create-status'),
+    estimatesList: document.getElementById('estimates-list'),
+    estimateEditorCard: document.getElementById('estimate-editor-card'),
+    estimateEditorTitle: document.getElementById('estimate-editor-title'),
+    estimateEditorTotal: document.getElementById('estimate-editor-total'),
+    estimateUpdateForm: document.getElementById('estimate-update-form'),
+    estimateUpdateStatus: document.getElementById('estimate-update-status'),
+    estimateDelete: document.getElementById('estimate-delete-btn'),
+    estimateLineForm: document.getElementById('estimate-line-form'),
+    estimateLineStatus: document.getElementById('estimate-line-status'),
+    estimateLinesList: document.getElementById('estimate-lines-list'),
+    managerDirectThreadsList: document.getElementById('manager-direct-threads-list'),
+    managerDirectMessagesList: document.getElementById('manager-direct-messages-list'),
+    managerDirectMessageForm: document.getElementById('manager-direct-message-form'),
+    managerDirectMessageStatus: document.getElementById('manager-direct-message-status'),
+    managerGroupThreadsList: document.getElementById('manager-group-threads-list'),
+    managerGroupMessagesList: document.getElementById('manager-group-messages-list'),
+    managerGroupMessageForm: document.getElementById('manager-group-message-form'),
+    managerGroupMessageStatus: document.getElementById('manager-group-message-status')
   };
 
   if (Object.values(el).some((v) => !v)) return;
@@ -77,6 +105,16 @@
     quotes: [],
     services: [],
     materials: [],
+    clients: [],
+    staff: [],
+    estimates: [],
+    selectedEstimateId: '',
+    directThreads: [],
+    selectedDirectThreadId: '',
+    directMessages: [],
+    groupThreads: [],
+    selectedGroupThreadId: '',
+    groupMessages: [],
     projectsQuery: { page: 1, pageSize: DEFAULT_PAGE_SIZE, q: '', status: '', showInGallery: '' },
     projectsPagination: { page: 1, totalPages: 1, total: 0, pageSize: DEFAULT_PAGE_SIZE },
     quotesQuery: { page: 1, pageSize: DEFAULT_PAGE_SIZE, q: '', status: '' },
@@ -84,7 +122,9 @@
     servicesQuery: { page: 1, pageSize: DEFAULT_PAGE_SIZE, q: '', category: '', showOnWebsite: '' },
     servicesPagination: { page: 1, totalPages: 1, total: 0, pageSize: DEFAULT_PAGE_SIZE },
     materialsQuery: { page: 1, pageSize: DEFAULT_PAGE_SIZE, q: '', category: '', lowStock: '' },
-    materialsPagination: { page: 1, totalPages: 1, total: 0, pageSize: DEFAULT_PAGE_SIZE }
+    materialsPagination: { page: 1, totalPages: 1, total: 0, pageSize: DEFAULT_PAGE_SIZE },
+    clientsQuery: { q: '' },
+    staffQuery: { q: '' }
   };
   const USER_SEARCH_CACHE_TTL_MS = 30 * 1000;
   const userSearchCache = new Map();
@@ -229,6 +269,61 @@
     state.projectDetailsById.get(state.selectedProjectId)
     || state.projects.find((p) => p.id === state.selectedProjectId)
     || null;
+
+  const selectedEstimate = () =>
+    state.estimates.find((estimate) => estimate.id === state.selectedEstimateId)
+    || null;
+
+  const getInboxCounterparty = (thread) => {
+    if (!thread) return null;
+    const participantA = thread.participantA || null;
+    const participantB = thread.participantB || null;
+    if (participantA?.id === state.user?.id) return participantB;
+    if (participantB?.id === state.user?.id) return participantA;
+    return participantB || participantA;
+  };
+
+  const setSelectOptions = (select, options, placeholder) => {
+    if (!select) return;
+    const currentValue = String(select.value || '');
+    select.innerHTML = '';
+    const emptyOption = document.createElement('option');
+    emptyOption.value = '';
+    emptyOption.textContent = placeholder;
+    select.appendChild(emptyOption);
+
+    (options || []).forEach((optionData) => {
+      const option = document.createElement('option');
+      option.value = optionData.value;
+      option.textContent = optionData.label;
+      select.appendChild(option);
+    });
+
+    if (currentValue && options.some((optionData) => optionData.value === currentValue)) {
+      select.value = currentValue;
+    }
+  };
+
+  const syncEstimateReferenceOptions = () => {
+    const projectOptions = state.projects.map((project) => ({
+      value: project.id,
+      label: `${project.title}${project.location ? ` | ${project.location}` : ''}`
+    }));
+    const serviceOptions = state.services.map((service) => ({
+      value: service.id,
+      label: service.title
+    }));
+    const materialOptions = state.materials.map((material) => ({
+      value: material.id,
+      label: `${material.name}${material.sku ? ` | ${material.sku}` : ''}`
+    }));
+
+    [el.estimateCreateForm?.elements.projectId, el.estimateUpdateForm?.elements.projectId].forEach((select) => {
+      setSelectOptions(select, projectOptions, 'Select project');
+    });
+    setSelectOptions(el.estimateLineForm?.elements.serviceId, serviceOptions, 'Select service');
+    setSelectOptions(el.estimateLineForm?.elements.materialId, materialOptions, 'Select material');
+  };
 
   const renderSession = () => {
     if (!state.user) {
@@ -576,6 +671,234 @@
     renderPagination(el.materialsPagination, el.materialsPrev, el.materialsNext, state.materialsPagination);
   };
 
+  const renderClients = () => {
+    el.clientsList.innerHTML = '';
+    if (!state.clients.length) {
+      el.clientsList.innerHTML = '<p class="muted">No clients found for the current search.</p>';
+      return;
+    }
+
+    const frag = document.createDocumentFragment();
+    state.clients.forEach((client) => {
+      const card = document.createElement('article');
+      card.className = 'dashboard-item';
+      card.innerHTML = `<h3>${escapeHtml(client.name || client.email || 'Client')}</h3><p class="muted">${escapeHtml(client.email || '-')} ${client.phone ? `| ${escapeHtml(client.phone)}` : ''}</p>`;
+      frag.appendChild(card);
+    });
+    el.clientsList.appendChild(frag);
+  };
+
+  const renderStaff = () => {
+    el.staffList.innerHTML = '';
+    if (!state.staff.length) {
+      el.staffList.innerHTML = '<p class="muted">No staff found for the current search.</p>';
+      return;
+    }
+
+    const frag = document.createDocumentFragment();
+    state.staff.forEach((member) => {
+      const card = document.createElement('article');
+      card.className = 'dashboard-item';
+      card.innerHTML = `<h3>${escapeHtml(member.name || member.email || 'Staff member')}</h3><p class="muted">${escapeHtml(member.email || '-')} | ${escapeHtml(member.role || 'employee')}</p>`;
+      frag.appendChild(card);
+    });
+    el.staffList.appendChild(frag);
+  };
+
+  const renderEstimates = () => {
+    el.estimatesList.innerHTML = '';
+    if (!state.estimates.length) {
+      el.estimatesList.innerHTML = '<p class="muted">No estimates created yet.</p>';
+      el.estimateEditorCard.hidden = true;
+      requestAccordionRefresh();
+      return;
+    }
+
+    const frag = document.createDocumentFragment();
+    state.estimates.forEach((estimate) => {
+      const card = document.createElement('article');
+      card.className = `dashboard-item ${estimate.id === state.selectedEstimateId ? 'is-active' : ''}`;
+      const projectTitle = estimate.project?.title || 'No project';
+      card.innerHTML = `<h3>${escapeHtml(estimate.title)}</h3><p class="muted">${escapeHtml(estimate.status)} | ${escapeHtml(projectTitle)} | total GBP ${escapeHtml(Number(estimate.total || 0).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}</p>`;
+      const row = document.createElement('div');
+      row.className = 'dashboard-actions-row';
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn btn-outline';
+      btn.textContent = 'Select';
+      btn.addEventListener('click', async () => {
+        state.selectedEstimateId = estimate.id;
+        await loadEstimateDetail(estimate.id, true);
+        fillEstimateEditor();
+        renderEstimates();
+      });
+      row.appendChild(btn);
+      card.appendChild(row);
+      frag.appendChild(card);
+    });
+    el.estimatesList.appendChild(frag);
+  };
+
+  const renderEstimateLines = () => {
+    el.estimateLinesList.innerHTML = '';
+    const estimate = selectedEstimate();
+    if (!estimate || !Array.isArray(estimate.lines) || !estimate.lines.length) {
+      el.estimateLinesList.innerHTML = '<p class="muted">No line items yet.</p>';
+      return;
+    }
+
+    const frag = document.createDocumentFragment();
+    estimate.lines.forEach((line) => {
+      const card = document.createElement('article');
+      card.className = 'dashboard-item';
+      card.innerHTML = `<h3>${escapeHtml(line.description)}</h3><p class="muted">${escapeHtml(line.lineType)} | qty ${escapeHtml(line.quantity)} ${escapeHtml(line.unit || '')} | GBP ${escapeHtml(Number(line.lineTotal || 0).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}</p>${line.notes ? `<p>${escapeHtml(line.notes)}</p>` : ''}`;
+      const row = document.createElement('div');
+      row.className = 'dashboard-actions-row';
+      const del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'btn btn-outline';
+      del.textContent = 'Delete line';
+      del.addEventListener('click', async () => {
+        if (!window.confirm(`Delete estimate line "${line.description}"?`)) return;
+        try {
+          await api(`/api/manager/estimates/${estimate.id}/lines/${line.id}`, { method: 'DELETE' });
+          await loadEstimateDetail(estimate.id, true);
+          fillEstimateEditor();
+          renderEstimates();
+          setStatus(el.estimateLineStatus, 'Estimate line deleted.', 'success');
+        } catch (error) {
+          setStatus(el.estimateLineStatus, error.message || 'Failed to delete estimate line.', 'error');
+        }
+      });
+      row.appendChild(del);
+      card.appendChild(row);
+      frag.appendChild(card);
+    });
+    el.estimateLinesList.appendChild(frag);
+  };
+
+  const fillEstimateEditor = () => {
+    const estimate = selectedEstimate();
+    if (!estimate) {
+      el.estimateEditorCard.hidden = true;
+      requestAccordionRefresh();
+      return;
+    }
+
+    syncEstimateReferenceOptions();
+    el.estimateEditorCard.hidden = false;
+    el.estimateEditorTitle.textContent = estimate.title || 'Estimate';
+    el.estimateEditorTotal.textContent = `Total GBP ${Number(estimate.total || 0).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const form = el.estimateUpdateForm.elements;
+    form.id.value = estimate.id;
+    form.title.value = estimate.title || '';
+    form.status.value = estimate.status || 'draft';
+    form.projectId.value = estimate.projectId || '';
+    form.quoteId.value = estimate.quoteId || '';
+    form.notes.value = estimate.notes || '';
+    renderEstimateLines();
+    requestAccordionRefresh();
+  };
+
+  const renderDirectThreads = () => {
+    el.managerDirectThreadsList.innerHTML = '';
+    if (!state.directThreads.length) {
+      el.managerDirectThreadsList.innerHTML = '<p class="muted">No private threads yet.</p>';
+      return;
+    }
+
+    const frag = document.createDocumentFragment();
+    state.directThreads.forEach((thread) => {
+      const counterparty = getInboxCounterparty(thread);
+      const card = document.createElement('article');
+      card.className = `dashboard-item ${thread.id === state.selectedDirectThreadId ? 'is-active' : ''}`;
+      card.innerHTML = `<h3>${escapeHtml(counterparty?.name || counterparty?.email || 'Direct thread')}</h3><p class="muted">${escapeHtml(thread.subject || 'Private inbox')} | Updated: ${escapeHtml(new Date(thread.updatedAt).toLocaleString('en-GB'))}</p>`;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn btn-outline';
+      btn.textContent = 'Open';
+      btn.addEventListener('click', async () => {
+        state.selectedDirectThreadId = thread.id;
+        renderDirectThreads();
+        await loadDirectMessages();
+      });
+      card.appendChild(btn);
+      frag.appendChild(card);
+    });
+    el.managerDirectThreadsList.appendChild(frag);
+  };
+
+  const renderDirectMessages = () => {
+    el.managerDirectMessagesList.innerHTML = '';
+    if (!state.selectedDirectThreadId) {
+      el.managerDirectMessagesList.innerHTML = '<p class="muted">Select a private thread to view messages.</p>';
+      return;
+    }
+    if (!state.directMessages.length) {
+      el.managerDirectMessagesList.innerHTML = '<p class="muted">No private messages in this thread.</p>';
+      return;
+    }
+
+    const frag = document.createDocumentFragment();
+    state.directMessages.forEach((message) => {
+      const card = document.createElement('article');
+      card.className = 'dashboard-item';
+      const sender = message.sender?.name || message.sender?.email || 'Unknown';
+      card.innerHTML = `<p class="muted">${escapeHtml(sender)} | ${escapeHtml(new Date(message.createdAt).toLocaleString('en-GB'))}</p><p>${escapeHtml(message.body || '')}</p>`;
+      frag.appendChild(card);
+    });
+    el.managerDirectMessagesList.appendChild(frag);
+  };
+
+  const renderGroupThreads = () => {
+    el.managerGroupThreadsList.innerHTML = '';
+    if (!state.groupThreads.length) {
+      el.managerGroupThreadsList.innerHTML = '<p class="muted">No project chat threads available.</p>';
+      return;
+    }
+
+    const frag = document.createDocumentFragment();
+    state.groupThreads.forEach((thread) => {
+      const card = document.createElement('article');
+      card.className = `dashboard-item ${thread.id === state.selectedGroupThreadId ? 'is-active' : ''}`;
+      card.innerHTML = `<h3>${escapeHtml(thread.name || thread.subject || 'Project thread')}</h3><p class="muted">Updated: ${escapeHtml(new Date(thread.updatedAt).toLocaleString('en-GB'))}</p>`;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn btn-outline';
+      btn.textContent = 'Open';
+      btn.addEventListener('click', async () => {
+        state.selectedGroupThreadId = thread.id;
+        renderGroupThreads();
+        await loadGroupMessages();
+      });
+      card.appendChild(btn);
+      frag.appendChild(card);
+    });
+    el.managerGroupThreadsList.appendChild(frag);
+  };
+
+  const renderGroupMessages = () => {
+    el.managerGroupMessagesList.innerHTML = '';
+    if (!state.selectedGroupThreadId) {
+      el.managerGroupMessagesList.innerHTML = '<p class="muted">Select a project chat thread to view messages.</p>';
+      return;
+    }
+    if (!state.groupMessages.length) {
+      el.managerGroupMessagesList.innerHTML = '<p class="muted">No project messages in this thread.</p>';
+      return;
+    }
+
+    const frag = document.createDocumentFragment();
+    state.groupMessages.forEach((message) => {
+      const card = document.createElement('article');
+      card.className = 'dashboard-item';
+      const sender = message.sender?.name || message.sender?.email || 'Unknown';
+      card.innerHTML = `<p class="muted">${escapeHtml(sender)} | ${escapeHtml(new Date(message.createdAt).toLocaleString('en-GB'))}</p><p>${escapeHtml(message.body || '')}</p>`;
+      frag.appendChild(card);
+    });
+    el.managerGroupMessagesList.appendChild(frag);
+  };
+
   const loadProjectDetail = async (projectId, force = false) => {
     const id = String(projectId || '').trim();
     if (!id) return null;
@@ -621,6 +944,7 @@
 
     renderProjects();
     fillProjectEditor();
+    syncEstimateReferenceOptions();
   };
 
   const loadQuotes = async () => {
@@ -646,6 +970,7 @@
     state.services = Array.isArray(payload.services) ? payload.services : [];
     state.servicesPagination = payload.pagination || state.servicesPagination;
     renderServices();
+    syncEstimateReferenceOptions();
   };
 
   const loadMaterials = async () => {
@@ -659,6 +984,107 @@
     state.materials = Array.isArray(payload.materials) ? payload.materials : [];
     state.materialsPagination = payload.pagination || state.materialsPagination;
     renderMaterials();
+    syncEstimateReferenceOptions();
+  };
+
+  const loadClients = async () => {
+    const payload = await api(`/api/manager/clients/search?${buildQuery({
+      q: state.clientsQuery.q,
+      pageSize: 25
+    })}`);
+    state.clients = Array.isArray(payload.clients) ? payload.clients : [];
+    renderClients();
+  };
+
+  const loadStaff = async () => {
+    const payload = await api(`/api/manager/staff/search?${buildQuery({
+      q: state.staffQuery.q,
+      pageSize: 25
+    })}`);
+    state.staff = Array.isArray(payload.staff) ? payload.staff : [];
+    renderStaff();
+  };
+
+  const loadEstimates = async (selectedId) => {
+    const payload = await api('/api/manager/estimates?pageSize=100');
+    state.estimates = Array.isArray(payload.estimates) ? payload.estimates : [];
+    if (selectedId) state.selectedEstimateId = selectedId;
+    if (!state.estimates.some((estimate) => estimate.id === state.selectedEstimateId)) {
+      state.selectedEstimateId = state.estimates[0]?.id || '';
+    }
+    if (state.selectedEstimateId) {
+      await loadEstimateDetail(state.selectedEstimateId, true);
+    }
+    fillEstimateEditor();
+    renderEstimates();
+  };
+
+  const loadEstimateDetail = async (estimateId, force = false) => {
+    const id = String(estimateId || '').trim();
+    if (!id) return null;
+    const existing = state.estimates.find((estimate) => estimate.id === id);
+    if (existing && Array.isArray(existing.lines) && !force) {
+      return existing;
+    }
+
+    const payload = await api(`/api/manager/estimates/${id}`);
+    const estimate = payload?.estimate || null;
+    if (!estimate?.id) return null;
+    const index = state.estimates.findIndex((item) => item.id === estimate.id);
+    if (index >= 0) {
+      state.estimates.splice(index, 1, estimate);
+    } else {
+      state.estimates.unshift(estimate);
+    }
+    return estimate;
+  };
+
+  const loadDirectMessages = async () => {
+    if (!state.selectedDirectThreadId) {
+      state.directMessages = [];
+      renderDirectMessages();
+      return;
+    }
+    const payload = await api(`/api/inbox/threads/${state.selectedDirectThreadId}/messages?pageSize=100`);
+    state.directMessages = Array.isArray(payload.messages) ? payload.messages : [];
+    renderDirectMessages();
+  };
+
+  const loadDirectThreads = async (preferredThreadId = '') => {
+    const payload = await api('/api/inbox/threads?pageSize=100');
+    state.directThreads = Array.isArray(payload.threads) ? payload.threads : [];
+    const nextSelectedId = preferredThreadId || state.selectedDirectThreadId;
+    if (!state.directThreads.some((thread) => thread.id === nextSelectedId)) {
+      state.selectedDirectThreadId = state.directThreads[0]?.id || '';
+    } else {
+      state.selectedDirectThreadId = nextSelectedId;
+    }
+    renderDirectThreads();
+    await loadDirectMessages();
+  };
+
+  const loadGroupMessages = async () => {
+    if (!state.selectedGroupThreadId) {
+      state.groupMessages = [];
+      renderGroupMessages();
+      return;
+    }
+    const payload = await api(`/api/group/threads/${state.selectedGroupThreadId}/messages?pageSize=100`);
+    state.groupMessages = Array.isArray(payload.messages) ? payload.messages : [];
+    renderGroupMessages();
+  };
+
+  const loadGroupThreads = async (preferredThreadId = '') => {
+    const payload = await api('/api/group/threads?pageSize=100');
+    state.groupThreads = Array.isArray(payload.threads) ? payload.threads : [];
+    const nextSelectedId = preferredThreadId || state.selectedGroupThreadId;
+    if (!state.groupThreads.some((thread) => thread.id === nextSelectedId)) {
+      state.selectedGroupThreadId = state.groupThreads[0]?.id || '';
+    } else {
+      state.selectedGroupThreadId = nextSelectedId;
+    }
+    renderGroupThreads();
+    await loadGroupMessages();
   };
 
   const searchUsersByEmail = async (type, queryText) => {
@@ -767,6 +1193,14 @@
     state.materialsQuery.page = 1;
   };
 
+  const applyClientsFiltersFromUI = () => {
+    state.clientsQuery.q = String(el.clientsFilterQ.value || '').trim();
+  };
+
+  const applyStaffFiltersFromUI = () => {
+    state.staffQuery.q = String(el.staffFilterQ.value || '').trim();
+  };
+
   const bootstrap = async () => {
     const loginUrl = `/auth.html?next=${encodeURIComponent('/manager-dashboard.html')}`;
     state.token = getToken();
@@ -793,7 +1227,16 @@
         el.seedBtn.disabled = true;
         el.seedBtn.title = 'Only manager/admin can run seed';
       }
-      await Promise.all([loadProjects(), loadServices(), loadMaterials()]);
+      await Promise.all([
+        loadProjects(),
+        loadServices(),
+        loadMaterials(),
+        loadClients(),
+        loadStaff(),
+        loadEstimates(),
+        loadDirectThreads(),
+        loadGroupThreads()
+      ]);
       if (['manager', 'admin'].includes(role)) {
         await loadQuotes();
       } else {
@@ -838,6 +1281,16 @@
     type: 'staff',
     statusNode: el.projectEditManagerLookupStatus
   });
+
+  const syncEstimateLineMode = () => {
+    const form = el.estimateLineForm?.elements;
+    if (!form) return;
+    const lineType = String(form.lineType.value || 'service');
+    form.serviceId.disabled = lineType !== 'service';
+    form.materialId.disabled = lineType !== 'material';
+  };
+  el.estimateLineForm.elements.lineType.addEventListener('change', syncEstimateLineMode);
+  syncEstimateLineMode();
 
   el.projectCreateForm.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -999,6 +1452,182 @@
     }
   });
 
+  el.staffCreateForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    setStatus(el.staffCreateStatus, 'Creating staff member...');
+    const f = el.staffCreateForm.elements;
+    const payload = {
+      name: String(f.name.value || '').trim(),
+      email: normEmail(f.email.value),
+      password: String(f.password.value || ''),
+      role: String(f.role.value || 'employee'),
+      phone: String(f.phone.value || '').trim()
+    };
+    if (!payload.name || !payload.email || !payload.password) {
+      return setStatus(el.staffCreateStatus, 'Name, email and password are required.', 'error');
+    }
+    try {
+      await api('/api/manager/staff', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      setStatus(el.staffCreateStatus, 'Staff member created.', 'success');
+      el.staffCreateForm.reset();
+      f.role.value = 'employee';
+      await loadStaff();
+    } catch (error) {
+      setStatus(el.staffCreateStatus, error.message || 'Failed to create staff member.', 'error');
+    }
+  });
+
+  el.estimateCreateForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    setStatus(el.estimateCreateStatus, 'Creating estimate...');
+    const f = el.estimateCreateForm.elements;
+    const payload = {
+      title: String(f.title.value || '').trim(),
+      projectId: normUuid(f.projectId.value),
+      quoteId: normUuid(f.quoteId.value),
+      status: String(f.status.value || 'draft'),
+      notes: String(f.notes.value || '').trim()
+    };
+    if (!payload.title) return setStatus(el.estimateCreateStatus, 'Estimate title is required.', 'error');
+    try {
+      const result = await api('/api/manager/estimates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      setStatus(el.estimateCreateStatus, 'Estimate created.', 'success');
+      el.estimateCreateForm.reset();
+      f.status.value = 'draft';
+      await loadEstimates(result.estimate?.id);
+    } catch (error) {
+      setStatus(el.estimateCreateStatus, error.message || 'Failed to create estimate.', 'error');
+    }
+  });
+
+  el.estimateUpdateForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const estimateId = String(el.estimateUpdateForm.elements.id.value || '').trim();
+    if (!estimateId) return;
+    setStatus(el.estimateUpdateStatus, 'Saving estimate...');
+    const f = el.estimateUpdateForm.elements;
+    const payload = {
+      title: String(f.title.value || '').trim(),
+      projectId: normUuid(f.projectId.value),
+      quoteId: normUuid(f.quoteId.value),
+      status: String(f.status.value || 'draft'),
+      notes: String(f.notes.value || '').trim()
+    };
+    if (!payload.title) return setStatus(el.estimateUpdateStatus, 'Estimate title is required.', 'error');
+    try {
+      await api(`/api/manager/estimates/${estimateId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      setStatus(el.estimateUpdateStatus, 'Estimate saved.', 'success');
+      await loadEstimates(estimateId);
+    } catch (error) {
+      setStatus(el.estimateUpdateStatus, error.message || 'Failed to save estimate.', 'error');
+    }
+  });
+
+  el.estimateDelete.addEventListener('click', async () => {
+    const estimate = selectedEstimate();
+    if (!estimate) return;
+    if (!window.confirm(`Delete estimate "${estimate.title}"?`)) return;
+    setStatus(el.estimateUpdateStatus, 'Deleting estimate...');
+    try {
+      await api(`/api/manager/estimates/${estimate.id}`, { method: 'DELETE' });
+      setStatus(el.estimateUpdateStatus, 'Estimate deleted.', 'success');
+      await loadEstimates();
+    } catch (error) {
+      setStatus(el.estimateUpdateStatus, error.message || 'Failed to delete estimate.', 'error');
+    }
+  });
+
+  el.estimateLineForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const estimate = selectedEstimate();
+    if (!estimate) return setStatus(el.estimateLineStatus, 'Select an estimate first.', 'error');
+    setStatus(el.estimateLineStatus, 'Adding estimate line...');
+    const f = el.estimateLineForm.elements;
+    const lineType = String(f.lineType.value || 'service');
+    const payload = {
+      lineType,
+      serviceId: lineType === 'service' ? normUuid(f.serviceId.value) : null,
+      materialId: lineType === 'material' ? normUuid(f.materialId.value) : null,
+      description: String(f.description.value || '').trim(),
+      unit: String(f.unit.value || '').trim(),
+      quantity: Number(f.quantity.value || 1),
+      unitCost: f.unitCost.value ? Number(f.unitCost.value) : null,
+      lineTotalOverride: f.lineTotalOverride.value ? Number(f.lineTotalOverride.value) : null,
+      notes: String(f.notes.value || '').trim()
+    };
+    if (lineType === 'service' && !payload.serviceId) return setStatus(el.estimateLineStatus, 'Select a service.', 'error');
+    if (lineType === 'material' && !payload.materialId) return setStatus(el.estimateLineStatus, 'Select a material.', 'error');
+    if (lineType === 'custom' && !payload.description) return setStatus(el.estimateLineStatus, 'Description is required for custom lines.', 'error');
+    try {
+      await api(`/api/manager/estimates/${estimate.id}/lines`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      setStatus(el.estimateLineStatus, 'Estimate line added.', 'success');
+      el.estimateLineForm.reset();
+      f.lineType.value = 'service';
+      f.unit.value = 'pcs';
+      f.quantity.value = '1';
+      syncEstimateLineMode();
+      await loadEstimates(estimate.id);
+    } catch (error) {
+      setStatus(el.estimateLineStatus, error.message || 'Failed to add estimate line.', 'error');
+    }
+  });
+
+  el.managerDirectMessageForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!state.selectedDirectThreadId) return setStatus(el.managerDirectMessageStatus, 'Select a private thread first.', 'error');
+    const body = String(el.managerDirectMessageForm.elements.body.value || '').trim();
+    if (!body) return setStatus(el.managerDirectMessageStatus, 'Message is required.', 'error');
+    setStatus(el.managerDirectMessageStatus, 'Sending...');
+    try {
+      await api(`/api/inbox/threads/${state.selectedDirectThreadId}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ body })
+      });
+      setStatus(el.managerDirectMessageStatus, 'Private message sent.', 'success');
+      el.managerDirectMessageForm.reset();
+      await loadDirectThreads(state.selectedDirectThreadId);
+    } catch (error) {
+      setStatus(el.managerDirectMessageStatus, error.message || 'Failed to send private message.', 'error');
+    }
+  });
+
+  el.managerGroupMessageForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!state.selectedGroupThreadId) return setStatus(el.managerGroupMessageStatus, 'Select a project thread first.', 'error');
+    const body = String(el.managerGroupMessageForm.elements.body.value || '').trim();
+    if (!body) return setStatus(el.managerGroupMessageStatus, 'Message is required.', 'error');
+    setStatus(el.managerGroupMessageStatus, 'Sending...');
+    try {
+      await api(`/api/group/threads/${state.selectedGroupThreadId}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ body })
+      });
+      setStatus(el.managerGroupMessageStatus, 'Project message sent.', 'success');
+      el.managerGroupMessageForm.reset();
+      await loadGroupThreads(state.selectedGroupThreadId);
+    } catch (error) {
+      setStatus(el.managerGroupMessageStatus, error.message || 'Failed to send project message.', 'error');
+    }
+  });
+
   el.seedBtn.addEventListener('click', async () => {
     if (!window.confirm('Run starter seed now?')) return;
     const force = window.confirm('Force-update existing seed records? Click Cancel for safe mode.');
@@ -1028,6 +1657,8 @@
   el.materialsRefresh.addEventListener('click', () => { applyMaterialsFiltersFromUI(); loadMaterials().catch((e) => window.alert(e.message || 'Could not load materials')); });
   el.materialsPrev.addEventListener('click', () => { if (state.materialsQuery.page <= 1) return; state.materialsQuery.page -= 1; loadMaterials().catch((e) => window.alert(e.message || 'Could not load materials')); });
   el.materialsNext.addEventListener('click', () => { if (state.materialsQuery.page >= Number(state.materialsPagination.totalPages || 1)) return; state.materialsQuery.page += 1; loadMaterials().catch((e) => window.alert(e.message || 'Could not load materials')); });
+  el.clientsRefresh.addEventListener('click', () => { applyClientsFiltersFromUI(); loadClients().catch((e) => window.alert(e.message || 'Could not load clients')); });
+  el.staffRefresh.addEventListener('click', () => { applyStaffFiltersFromUI(); loadStaff().catch((e) => window.alert(e.message || 'Could not load staff')); });
   el.logout.addEventListener('click', () => { clearSession(); window.location.href = '/auth.html'; });
 
   bootstrap();

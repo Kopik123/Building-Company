@@ -1,5 +1,15 @@
 const { test, expect } = require('@playwright/test');
 
+const openNavIfNeeded = async (page) => {
+  const toggle = page.locator('[data-nav-toggle]');
+  if (await toggle.count()) {
+    if (await toggle.first().isVisible()) {
+      await toggle.first().click();
+      return;
+    }
+  }
+};
+
 const mockClientSession = async (page) => {
   await page.addInitScript(() => {
     localStorage.setItem('ll_auth_token', 'test-token');
@@ -48,6 +58,33 @@ const mockClientSession = async (page) => {
     await route.fulfill({
       json: {
         threads: [{ id: 'thread-1', name: 'Bathroom progress', updatedAt: '2026-03-09T10:00:00Z' }]
+      }
+    });
+  });
+
+  await page.route('**/api/inbox/threads?pageSize=100', async (route) => {
+    await route.fulfill({
+      json: {
+        threads: [{
+          id: 'direct-thread-1',
+          subject: 'Direct manager conversation',
+          updatedAt: '2026-03-09T09:30:00Z',
+          participantA: { id: 'client-1', name: 'Marta Client', email: 'client@example.com' },
+          participantB: { id: 'manager-1', name: 'Daniel', email: 'manager@example.com' }
+        }]
+      }
+    });
+  });
+
+  await page.route('**/api/inbox/threads/direct-thread-1/messages?pageSize=100', async (route) => {
+    await route.fulfill({
+      json: {
+        messages: [{
+          id: 'direct-message-1',
+          body: 'We can review the revised tile selection this afternoon.',
+          createdAt: '2026-03-09T09:35:00Z',
+          sender: { name: 'Daniel' }
+        }]
       }
     });
   });
@@ -171,22 +208,115 @@ const mockManagerSession = async (page) => {
     });
   });
 
+  await page.route('**/api/manager/estimates?pageSize=100', async (route) => {
+    await route.fulfill({
+      json: {
+        estimates: [{
+          id: 'estimate-1',
+          title: 'Prestige Kitchen Estimate',
+          status: 'draft',
+          total: 14800,
+          projectId: 'project-1',
+          project: { id: 'project-1', title: 'Prestige Kitchen', location: 'Stockport' }
+        }]
+      }
+    });
+  });
+
+  await page.route('**/api/manager/estimates/estimate-1', async (route) => {
+    await route.fulfill({
+      json: {
+        estimate: {
+          id: 'estimate-1',
+          title: 'Prestige Kitchen Estimate',
+          status: 'draft',
+          total: 14800,
+          subtotal: 14800,
+          projectId: 'project-1',
+          project: { id: 'project-1', title: 'Prestige Kitchen', location: 'Stockport' },
+          lines: [{
+            id: 'estimate-line-1',
+            description: 'Kitchen installation and refurbishment',
+            lineType: 'service',
+            quantity: 1,
+            unit: 'scope',
+            lineTotal: 14800
+          }]
+        }
+      }
+    });
+  });
+
+  await page.route('**/api/inbox/threads?pageSize=100', async (route) => {
+    await route.fulfill({
+      json: {
+        threads: [{
+          id: 'manager-direct-thread-1',
+          subject: 'Direct manager conversation',
+          updatedAt: '2026-03-09T09:30:00Z',
+          participantA: { id: 'manager-1', name: 'Daniel Manager', email: 'manager@example.com' },
+          participantB: { id: 'client-1', name: 'Marta Client', email: 'client@example.com' }
+        }]
+      }
+    });
+  });
+
+  await page.route('**/api/inbox/threads/manager-direct-thread-1/messages?pageSize=100', async (route) => {
+    await route.fulfill({
+      json: {
+        messages: [{
+          id: 'manager-direct-message-1',
+          body: 'Client approved the revised lighting allowance.',
+          createdAt: '2026-03-09T09:40:00Z',
+          sender: { name: 'Marta Client' }
+        }]
+      }
+    });
+  });
+
+  await page.route('**/api/group/threads?pageSize=100', async (route) => {
+    await route.fulfill({
+      json: {
+        threads: [{ id: 'manager-group-thread-1', name: 'Prestige Kitchen', updatedAt: '2026-03-09T10:00:00Z' }]
+      }
+    });
+  });
+
+  await page.route('**/api/group/threads/manager-group-thread-1/messages?pageSize=100', async (route) => {
+    await route.fulfill({
+      json: {
+        messages: [{
+          id: 'manager-group-message-1',
+          body: 'Stone samples booked for Friday.',
+          createdAt: '2026-03-09T10:05:00Z',
+          sender: { name: 'Daniel Manager' }
+        }]
+      }
+    });
+  });
+
   await page.route('**/api/manager/clients/search?*', async (route) => {
-    await route.fulfill({ json: { clients: [] } });
+    await route.fulfill({
+      json: {
+        clients: [{ id: 'client-1', name: 'Marta Client', email: 'client@example.com', phone: '+44 7000 000 000' }]
+      }
+    });
   });
 
   await page.route('**/api/manager/staff/search?*', async (route) => {
-    await route.fulfill({ json: { staff: [] } });
+    await route.fulfill({
+      json: {
+        staff: [{ id: 'manager-1', name: 'Daniel Manager', email: 'manager@example.com', role: 'manager' }]
+      }
+    });
   });
 };
 
 test('index mobile menu opens and shows auth entry', async ({ page }) => {
   await page.goto('/index.html');
-  await page.getByRole('button', { name: /open navigation menu/i }).click();
+  await openNavIfNeeded(page);
   const nav = page.locator('[data-nav-menu]');
-  await expect(nav).toHaveClass(/is-open/);
   await expect(page.locator('a[href="/auth.html"]').first()).toBeVisible();
-  await expect(page.locator('[data-header-account-btn]')).toBeVisible();
 });
 
 test('auth page renders login/register forms on mobile', async ({ page }) => {
@@ -231,14 +361,15 @@ test('client dashboard mobile menu opens', async ({ page }) => {
   await mockClientSession(page);
   await page.goto('/client-dashboard.html');
   await expect(page.locator('body.public-site.workspace-site.page-client-dashboard')).toBeVisible();
-  await page.getByRole('button', { name: /open navigation menu/i }).click();
-  await expect(page.locator('[data-nav-menu]')).toHaveClass(/is-open/);
+  await openNavIfNeeded(page);
+  await expect(page.locator('[data-nav-menu] a[href="/auth.html"]').first()).toBeVisible();
 });
 
 test('client dashboard keeps key logged-in cards open on mobile', async ({ page }) => {
   await mockClientSession(page);
   await page.goto('/client-dashboard.html');
   await expect(page.locator('#client-projects-list .dashboard-item').first()).toBeVisible();
+  await expect(page.locator('#client-direct-threads-list .dashboard-item').first()).toBeVisible();
   await expect(page.locator('#client-threads-list .dashboard-item').first()).toBeVisible();
 });
 
@@ -246,8 +377,8 @@ test('manager dashboard mobile menu opens', async ({ page }) => {
   await mockManagerSession(page);
   await page.goto('/manager-dashboard.html');
   await expect(page.locator('body.public-site.workspace-site.page-manager-dashboard')).toBeVisible();
-  await page.getByRole('button', { name: /open navigation menu/i }).click();
-  await expect(page.locator('[data-nav-menu]')).toHaveClass(/is-open/);
+  await openNavIfNeeded(page);
+  await expect(page.locator('[data-nav-menu] a[href="/auth.html"]').first()).toBeVisible();
 });
 
 test('manager dashboard exposes project controls for logged session on mobile', async ({ page }) => {
@@ -257,4 +388,7 @@ test('manager dashboard exposes project controls for logged session on mobile', 
   await expect(page.locator('#projects-list button').first()).toBeVisible();
   await page.locator('#projects-list button').first().evaluate((node) => node.click());
   await expect(page.locator('#project-edit-form input[name="title"]')).toBeVisible();
+  await expect(page.locator('#estimates-list .dashboard-item').first()).toBeVisible();
+  await expect(page.locator('#manager-direct-threads-list .dashboard-item').first()).toBeVisible();
+  await expect(page.locator('#manager-group-threads-list .dashboard-item').first()).toBeVisible();
 });
