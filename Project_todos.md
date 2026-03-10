@@ -8,6 +8,7 @@
 - [ ] Plan a separate migration from `multer 1.x` to `multer 2.x`, because the dependency is still flagged in install warnings.
 - [ ] Review whether the premium theme overrides now living in `styles/public.css` and `styles/workspace.css` should be split into smaller section-specific files after the visual direction stabilises.
 - [ ] Keep every new feature review aligned with future Android/iOS app readiness, especially API contracts, auth/session handling, messaging and media flows.
+- [ ] Re-check the new homepage header/account hierarchy on live desktop and mobile devices after deployment, because the account entry point moved out of the header and into the hero card.
 
 ## Completed
 
@@ -18,3 +19,4 @@
 - [x] Added a consistent dark-gold line and window-frame motif to headers, cards, forms and footers.
 - [x] Verified the premium shell regression with API tests, generated-page verification and Playwright coverage.
 - [x] Recorded the standing rule that current web work must stay ready for future Android/iOS app rollout.
+- [x] Moved the homepage account entry and public links from the header utility panel into the dedicated `Account` card.

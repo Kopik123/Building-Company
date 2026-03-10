@@ -14,3 +14,7 @@
 - Re-ran generated page verification, API tests and mobile Playwright coverage to confirm the theme pass did not break public or workspace behaviour.
 - Updated `AGENTS.md` with a permanent platform-direction rule: build current web features so they stay reusable for the planned future Android/iOS app.
 - Added the matching checklist item in `Project_todos.md` so app-readiness is reviewed continuously, not only at planning time.
+- Reworked the homepage brand hierarchy in `index.html` so the header is cleaner, `title.png` sits in the hero and the `Account` card now owns login plus the public route links.
+- Updated `styles/public.css` to support the new homepage-only shell: hidden desktop title in the header, new hero lockup treatment, and the moved account navigation block.
+- Updated `tests/playwright/mobile-smoke.spec.js` and `tests/playwright/public-redesign.spec.js` so regression coverage follows the new homepage structure instead of the old header utility layout.
+- Re-ran the Playwright mobile/desktop suite after the homepage restructure and restored tracked test artifacts back to the repository state.
