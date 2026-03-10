@@ -1,18 +1,29 @@
 :root {
-  --ll-bg: #070707;
-  --ll-bg-soft: #101010;
-  --ll-surface-dark: #12110f;
-  --ll-surface-ink: #181713;
-  --ll-surface-light: #f1ece4;
-  --ll-surface-marble: linear-gradient(160deg, rgba(255, 255, 255, 0.98), rgba(235, 229, 220, 0.92));
-  --ll-border-gold: rgba(216, 166, 30, 0.92);
-  --ll-border-soft: rgba(216, 166, 30, 0.38);
-  --ll-text-light: #f7f4ef;
-  --ll-text-dark: #181614;
-  --ll-text-muted: rgba(247, 244, 239, 0.72);
-  --ll-text-muted-dark: rgba(24, 22, 20, 0.68);
-  --ll-shadow-premium: 0 30px 80px rgba(0, 0, 0, 0.34);
-  --ll-shadow-line: inset 0 0 0 1px rgba(216, 166, 30, 0.28);
+  --ll-bg: #040404;
+  --ll-bg-soft: #090909;
+  --ll-surface-dark: #11100d;
+  --ll-surface-ink: #1a1713;
+  --ll-surface-light: #f3eee6;
+  --ll-surface-marble:
+    linear-gradient(144deg, rgba(253, 251, 247, 0.99) 0%, rgba(242, 237, 230, 0.97) 38%, rgba(228, 221, 211, 0.95) 72%, rgba(247, 243, 236, 0.98) 100%);
+  --ll-surface-marble-strong:
+    linear-gradient(152deg, rgba(255, 255, 255, 0.99) 0%, rgba(241, 236, 229, 0.98) 34%, rgba(222, 214, 204, 0.94) 64%, rgba(250, 247, 242, 0.98) 100%);
+  --ll-surface-marble-shadow:
+    linear-gradient(120deg, rgba(16, 14, 12, 0.06) 0%, transparent 18%, rgba(147, 136, 121, 0.12) 44%, transparent 58%, rgba(42, 39, 34, 0.08) 100%);
+  --ll-border-gold: rgba(134, 100, 48, 0.94);
+  --ll-border-soft: rgba(134, 100, 48, 0.42);
+  --ll-border-gold-strong: rgba(172, 135, 76, 0.76);
+  --ll-accent-gold: #b18b4e;
+  --ll-accent-gold-soft: #d6bf93;
+  --ll-text-light: #f7f2eb;
+  --ll-text-dark: #181410;
+  --ll-text-muted: rgba(247, 242, 235, 0.72);
+  --ll-text-muted-dark: rgba(24, 20, 16, 0.68);
+  --ll-shadow-premium: 0 26px 76px rgba(0, 0, 0, 0.42);
+  --ll-shadow-line: inset 0 0 0 1px rgba(134, 100, 48, 0.24);
+  --ll-shadow-frame: inset 0 0 0 1px rgba(255, 255, 255, 0.34);
+  --ll-window-line: rgba(134, 100, 48, 0.32);
+  --ll-window-line-soft: rgba(134, 100, 48, 0.16);
   --ll-radius-card: 30px;
   --ll-radius-panel: 20px;
   --ll-space-2xs: 0.35rem;

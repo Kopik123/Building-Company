@@ -13,7 +13,10 @@ test('homepage renders premium shell, new IA and homepage section order', async 
   await page.goto('/index.html');
 
   await expect(page.locator('body.public-site.page-home')).toBeVisible();
-  await expect(page.locator('.home-hero-copy h1')).toContainText(/levels\s+lines\s+symmetry/i);
+  await expect(page.locator('.home-hero-copy h1 span')).toHaveCount(3);
+  await expect(page.locator('.home-hero-copy h1 span').nth(0)).toHaveText(/levels/i);
+  await expect(page.locator('.home-hero-copy h1 span').nth(1)).toHaveText(/lines/i);
+  await expect(page.locator('.home-hero-copy h1 span').nth(2)).toHaveText(/symmetry/i);
   await expect(page.locator('#projects')).toBeVisible();
   await expect(page.locator('#gallery')).toBeVisible();
   await expect(page.locator('#services')).toBeVisible();

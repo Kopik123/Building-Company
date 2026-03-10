@@ -490,3 +490,334 @@ body.public-site::before {
     order: 5;
   }
 }
+
+/* Premium marble / dark gold finish layer */
+body.public-site {
+  background:
+    radial-gradient(circle at top center, rgba(177, 139, 78, 0.14), transparent 24%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.015), transparent 220px),
+    linear-gradient(180deg, #050505 0%, #030303 100%);
+  color: var(--ll-text-light);
+}
+
+body.public-site::before {
+  background:
+    linear-gradient(90deg, transparent 9%, rgba(134, 100, 48, 0.08) 9.08%, transparent 9.18%, transparent 90.82%, rgba(134, 100, 48, 0.08) 90.92%, transparent 91%),
+    repeating-linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.014) 0,
+      rgba(255, 255, 255, 0.014) 1px,
+      transparent 1px,
+      transparent 58px
+    );
+  opacity: 0.7;
+}
+
+.site-header {
+  border-bottom: 1px solid var(--ll-window-line);
+  background:
+    linear-gradient(180deg, rgba(8, 8, 8, 0.97), rgba(3, 3, 3, 0.94));
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.34);
+}
+
+.brand-mark-link,
+.brand-title-link,
+.header-utility-panel,
+.home-hero-card,
+.page-home .studio-gallery-panel,
+.page-home .studio-projects-panel,
+.brand-page-hero,
+.brand-panel--light,
+.gallery-case-card--light,
+.contact-panel--light,
+.quote-panel--light {
+  position: relative;
+  isolation: isolate;
+  background:
+    var(--ll-surface-marble-shadow),
+    var(--ll-surface-marble-strong);
+  border-color: var(--ll-border-gold-strong);
+  box-shadow: var(--ll-shadow-premium), var(--ll-shadow-line), var(--ll-shadow-frame);
+}
+
+.brand-mark-link::before,
+.brand-title-link::before,
+.header-utility-panel::before,
+.home-hero-card::before,
+.page-home .studio-gallery-panel::before,
+.page-home .studio-projects-panel::before,
+.brand-page-hero::before,
+.brand-panel--light::before,
+.gallery-case-card--light::before,
+.contact-panel--light::before,
+.quote-panel--light::before {
+  content: '';
+  position: absolute;
+  inset: 12px;
+  border: 1px solid rgba(24, 20, 16, 0.1);
+  border-radius: calc(var(--ll-radius-card) - 12px);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.header-utility-panel::before {
+  inset: 8px;
+  border-radius: 14px;
+}
+
+.brand-mark-link::before,
+.brand-title-link::before {
+  inset: 6px;
+  border-radius: 10px;
+}
+
+.header-auth-link,
+.site-nav a {
+  color: #181410;
+}
+
+.header-auth-link {
+  border-bottom: 1px solid rgba(24, 20, 16, 0.12);
+}
+
+.header-auth-link:hover,
+.site-nav a:hover {
+  color: #000;
+}
+
+.brand-title-link {
+  justify-items: center;
+}
+
+.home-hero-card,
+.brand-page-hero {
+  overflow: hidden;
+}
+
+.home-hero-card::after,
+.brand-page-hero::after,
+.page-home .studio-projects-panel::after,
+.page-home .studio-gallery-panel::after,
+.page-home .studio-summary-card::after,
+.page-home .studio-quote-card::after,
+.home-contact-band::after,
+.brand-panel--dark::after,
+.gallery-case-card--dark::after,
+.contact-panel--dark::after,
+.quote-panel--dark::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, transparent 18px, var(--ll-window-line) 18px, var(--ll-window-line) 19px, transparent 19px),
+    linear-gradient(180deg, transparent 18px, var(--ll-window-line-soft) 18px, var(--ll-window-line-soft) 19px, transparent 19px);
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.home-hero-copy h1,
+.brand-page-hero h1,
+.studio-panel-head h2,
+.brand-panel h2,
+.gallery-case-card h2,
+.contact-panel h2,
+.quote-panel h2 {
+  color: #120f0b;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+.home-divider-row span,
+.studio-summary-area,
+.studio-summary-link,
+.project-rail-nav,
+.project-chip,
+.home-auth-cta,
+.contact-band-link,
+.footer-area-chip,
+.footer-contact-link,
+.footer-service-link,
+.footer-links a {
+  border-color: rgba(134, 100, 48, 0.38);
+}
+
+.home-auth-cta,
+.btn-gold,
+.quote-form .btn-gold,
+.studio-quote-form .btn-gold {
+  background: linear-gradient(135deg, #c4a46b 0%, #a67d3f 50%, #7b5929 100%);
+  border-color: rgba(88, 61, 22, 0.78);
+  color: #140f08;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.26);
+}
+
+.home-auth-cta:hover,
+.btn-gold:hover,
+.quote-form .btn-gold:hover,
+.studio-quote-form .btn-gold:hover {
+  filter: brightness(1.04);
+}
+
+.page-home .studio-summary-card,
+.page-home .studio-quote-card,
+.home-contact-band,
+.brand-panel--dark,
+.gallery-case-card--dark,
+.contact-panel--dark,
+.quote-panel--dark,
+.contact-band {
+  position: relative;
+  isolation: isolate;
+  background:
+    linear-gradient(180deg, rgba(19, 18, 16, 0.98), rgba(6, 6, 6, 0.985));
+  border-color: rgba(134, 100, 48, 0.54);
+  box-shadow: var(--ll-shadow-premium), var(--ll-shadow-line);
+}
+
+.page-home .studio-summary-block {
+  background:
+    linear-gradient(180deg, rgba(15, 14, 13, 0.92), rgba(8, 8, 8, 0.96));
+  border-color: rgba(134, 100, 48, 0.46);
+}
+
+.home-contact-band {
+  gap: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  border: 1px solid rgba(134, 100, 48, 0.62);
+}
+
+.home-contact-band a,
+.home-secondary-grid .studio-summary-link,
+.home-secondary-grid .studio-summary-contact a,
+.contact-band a,
+.site-footer a {
+  color: var(--ll-accent-gold-soft);
+}
+
+.home-contact-band span {
+  color: rgba(214, 191, 147, 0.56);
+}
+
+.page-home .studio-gallery-panel,
+.page-home .studio-projects-panel {
+  color: #181410;
+}
+
+.studio-gallery-stage,
+.gallery-stage {
+  background:
+    linear-gradient(180deg, rgba(24, 20, 16, 0.06), rgba(255, 255, 255, 0.18)),
+    rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(134, 100, 48, 0.22);
+}
+
+.project-chip,
+.studio-summary-link,
+.studio-summary-area,
+.project-rail-nav {
+  background: rgba(14, 12, 10, 0.04);
+}
+
+.project-chip.is-active,
+.project-rail-nav:hover,
+.studio-summary-link:hover {
+  border-color: rgba(172, 135, 76, 0.62);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.14);
+}
+
+.section-eyebrow,
+.footer-block h3,
+.footer-bottom-note {
+  color: var(--ll-accent-gold-soft);
+}
+
+.section-eyebrow::before,
+.section-eyebrow::after {
+  background: linear-gradient(90deg, transparent, rgba(172, 135, 76, 0.78), transparent);
+}
+
+.page-home .section.section--light,
+.page-about .section.section--light,
+.page-gallery .section.section--light,
+.page-contact .section.section--light,
+.page-quote .section.section--light,
+.page-service .section.section--light,
+.page-location .section.section--light,
+.page-legal .section.section--light {
+  background: transparent;
+  border-top-color: transparent;
+  border-bottom-color: transparent;
+}
+
+.page-home .section.section--dark,
+.page-about .section.section--dark,
+.page-gallery .section.section--dark,
+.page-contact .section.section--dark,
+.page-quote .section.section--dark,
+.page-service .section.section--dark,
+.page-location .section.section--dark,
+.page-legal .section.section--dark {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.012), rgba(255, 255, 255, 0.004)),
+    transparent;
+}
+
+.site-footer {
+  border-top: 1px solid var(--ll-window-line);
+  background:
+    linear-gradient(180deg, rgba(7, 7, 7, 0.96), rgba(3, 3, 3, 1));
+}
+
+.footer-grid {
+  gap: 1.4rem;
+}
+
+.footer-block {
+  position: relative;
+  padding-top: 0.2rem;
+}
+
+.footer-block::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(134, 100, 48, 0.2), rgba(134, 100, 48, 0.58), rgba(134, 100, 48, 0.2));
+}
+
+body.public-site .quote-form input,
+body.public-site .quote-form select,
+body.public-site .quote-form textarea {
+  background: rgba(255, 252, 248, 0.92);
+  border-color: rgba(134, 100, 48, 0.34);
+  color: #181410;
+}
+
+body.public-site .quote-form input:focus,
+body.public-site .quote-form select:focus,
+body.public-site .quote-form textarea:focus {
+  border-color: rgba(172, 135, 76, 0.72);
+  box-shadow: 0 0 0 4px rgba(177, 139, 78, 0.12);
+}
+
+@media (max-width: 640px) {
+  .brand-mark-link::before,
+  .brand-title-link::before,
+  .header-utility-panel::before,
+  .home-hero-card::before,
+  .page-home .studio-gallery-panel::before,
+  .page-home .studio-projects-panel::before,
+  .brand-page-hero::before,
+  .brand-panel--light::before,
+  .gallery-case-card--light::before,
+  .contact-panel--light::before,
+  .quote-panel--light::before {
+    inset: 8px;
+  }
+
+  .home-contact-band {
+    justify-content: center;
+  }
+}
