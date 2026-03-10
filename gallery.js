@@ -142,6 +142,20 @@
     return toTitleCase(base.replace(/[-_]+/g, ' ')) || 'Selected image';
   };
 
+  const levelLabel = (index) => `Level ${String(index + 1).padStart(2, '0')}`;
+
+  const splitProjectName = (value) => {
+    const parts = String(value || '')
+      .split(/\s+-\s+/)
+      .map((part) => part.trim())
+      .filter(Boolean);
+
+    return {
+      title: parts[0] || String(value || 'Project'),
+      subtitle: parts[1] || 'North West project'
+    };
+  };
+
   const normalizeImageItem = (entry) => {
     if (entry && typeof entry === 'object') {
       const src = String(entry.src || entry.url || '').trim();
@@ -244,11 +258,11 @@
     }
 
     if (projectMetaNode) {
-      projectMetaNode.textContent = `${total} image sequence | photo ${centeredIndex + 1} of ${total}`;
+      projectMetaNode.textContent = `${levelLabel(state.projectIndex)} | ${total} image sequence | photo ${centeredIndex + 1} of ${total}`;
     }
 
     if (statusNode) {
-      statusNode.textContent = `Project ${state.projectIndex + 1} of ${projects.length} | ${project.name} | ${imageItem?.label || `Photo ${centeredIndex + 1}`} | photo ${centeredIndex + 1} of ${total}`;
+      statusNode.textContent = `${levelLabel(state.projectIndex)} / ${project.name} / ${imageItem?.label || `Photo ${centeredIndex + 1}`} / photo ${centeredIndex + 1} of ${total}`;
     }
   };
 
@@ -409,6 +423,7 @@
     state.chips = [];
 
     projects.forEach((project, index) => {
+      const projectName = splitProjectName(project.name);
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'project-chip';
@@ -420,11 +435,26 @@
       image.alt = `${project.name} thumbnail`;
       image.loading = 'lazy';
 
-      const label = document.createElement('span');
-      label.textContent = project.name;
+      const copy = document.createElement('div');
+      copy.className = 'project-chip-copy';
+
+      const level = document.createElement('small');
+      level.className = 'project-chip-level';
+      level.textContent = levelLabel(index);
+
+      const title = document.createElement('strong');
+      title.className = 'project-chip-title';
+      title.textContent = projectName.title;
+
+      const subtitle = document.createElement('span');
+      subtitle.className = 'project-chip-subtitle';
+      subtitle.textContent = projectName.subtitle;
 
       button.appendChild(image);
-      button.appendChild(label);
+      copy.appendChild(level);
+      copy.appendChild(title);
+      copy.appendChild(subtitle);
+      button.appendChild(copy);
 
       button.addEventListener('click', () => selectProject(index));
 

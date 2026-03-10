@@ -1,8 +1,9 @@
 module.exports = {
   siteUrl: 'https://levellines.co.uk',
   brandName: 'Level Lines Studio',
-  claim: 'Plan / Design / Craft',
+  claim: 'Plan | Design | Craft',
   region: 'North West - Lancashire',
+  headerIconPath: '/logo.png',
   email: 'LevelLineStudioMCR@gmail.com',
   logoPath: '/title.png',
   titleImagePath: '/title.png',

@@ -81,6 +81,36 @@
     });
   };
 
+  const renderBrandClaimSegments = (node) => {
+    if (!node || !brand?.claim) return;
+
+    const parts = String(brand.claim)
+      .split(/[|/]/)
+      .map((part) => part.trim())
+      .filter(Boolean);
+
+    if (!parts.length) {
+      node.textContent = brand.claim;
+      return;
+    }
+
+    node.innerHTML = '';
+    node.setAttribute('aria-label', brand.claim);
+
+    parts.forEach((part, index) => {
+      const segment = document.createElement('span');
+      segment.textContent = part;
+      node.appendChild(segment);
+
+      if (index < parts.length - 1) {
+        const divider = document.createElement('span');
+        divider.className = 'studio-claim-divider';
+        divider.setAttribute('aria-hidden', 'true');
+        node.appendChild(divider);
+      }
+    });
+  };
+
   const renderBrandSelectOptions = (select) => {
     if (!select) return;
 
@@ -136,6 +166,10 @@
 
     document.querySelectorAll('[data-brand-claim]').forEach((node) => {
       setBrandNodeValue(node, brand.claim);
+    });
+
+    document.querySelectorAll('[data-brand-claim-segmented]').forEach((node) => {
+      renderBrandClaimSegments(node);
     });
 
     document.querySelectorAll('[data-brand-region]').forEach((node) => {
@@ -534,11 +568,54 @@
     });
   };
 
+  const setupHomePageMotion = () => {
+    if (!body?.classList.contains('page-home')) return;
+
+    body.classList.add('has-home-motion');
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const sections = Array.from(document.querySelectorAll('[data-home-section]'));
+
+    if (reduceMotion) {
+      body.classList.add('is-home-ready');
+      sections.forEach((node) => node.classList.add('is-visible'));
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        body.classList.add('is-home-ready');
+      });
+    });
+
+    if (!('IntersectionObserver' in window)) {
+      sections.forEach((node) => node.classList.add('is-visible'));
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          entry.target.classList.add('is-visible');
+          observer.unobserve(entry.target);
+        });
+      },
+      {
+        threshold: 0.18,
+        rootMargin: '0px 0px -10% 0px'
+      }
+    );
+
+    sections.forEach((node) => observer.observe(node));
+  };
+
   applyBrandContent();
   validateSession();
   window.addEventListener('ll:session-changed', validateSession);
 
   setupDashboardAccordions();
+  setupHomePageMotion();
 
   const yearEls = document.querySelectorAll('[data-current-year], [data-year]');
   if (yearEls.length) {

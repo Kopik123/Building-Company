@@ -15,8 +15,11 @@ const renderJsonLdScripts = (jsonLd) => {
     .join('\n');
 };
 
-const renderBrandLockup = (shared) => `      <a class="brand" href="/index.html" aria-label="${escapeHtml(shared.brandName)} home">
-        <img src="${escapeHtml(shared.logoPath || shared.titleImagePath || '/title.png')}" alt="${escapeHtml(shared.brandName)}" class="brand-lockup-image brand-title-image" />
+const renderBrandLockup = (shared) => `      <a class="brand brand-mark-link" href="/index.html" aria-label="${escapeHtml(shared.brandName)} home">
+        <img src="${escapeHtml(shared.headerIconPath || '/logo.png')}" alt="${escapeHtml(shared.brandName)} icon" class="brand-icon-image" />
+      </a>
+      <a class="brand brand-title-link" href="/index.html" aria-label="${escapeHtml(shared.brandName)} home">
+        <img src="${escapeHtml(shared.titleImagePath || shared.logoPath || '/title.png')}" alt="${escapeHtml(shared.brandName)}" class="brand-lockup-image brand-title-image" />
       </a>`;
 
 const renderNavLinks = (shared) =>

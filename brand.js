@@ -1,8 +1,9 @@
 ﻿window.LEVEL_LINES_BRAND = {
   name: 'Level Lines Studio',
   shortName: 'Level Lines',
-  claim: 'Plan / Design / Craft',
+  claim: 'Plan | Design | Craft',
   region: 'North West - Lancashire',
+  headerIconPath: '/logo.png',
   titleImagePath: '/title.png',
   workspaceImagePath: '/logo4.png',
   publicAuthLabel: 'Account',

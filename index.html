@@ -27,9 +27,7 @@
 
   <header class="site-header" id="top">
     <div class="container header-inner grid-12">
-      <a class="brand" href="/index.html" aria-label="Level Lines Studio home">
-        <img src="/title.png" alt="Level Lines Studio" class="brand-lockup-image brand-title-image" />
-      </a>
+      <a class="brand brand-mark-link" href="/index.html" aria-label="Level Lines Studio home">`r`n        <img src="/logo.png" alt="Level Lines Studio icon" class="brand-icon-image" />`r`n      </a>`r`n      <a class="brand brand-title-link" href="/index.html" aria-label="Level Lines Studio home">`r`n        <img src="/title.png" alt="Level Lines Studio" class="brand-lockup-image brand-title-image" />`r`n      </a>
       
       <div class="menu-wrap" data-menu-wrap>
         <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation menu">
@@ -51,20 +49,37 @@
     <section class="section section--dark studio-board-shell" id="projects">
       <div class="container section-shell studio-board">
         <div class="studio-board-top">
-          <div class="studio-board-heading">
+          <div class="studio-board-heading" data-home-reveal style="--home-reveal-delay: 40ms;">
             <p class="section-eyebrow">Quiet Architectural Renovation Studio</p>
-            <h1>Bathrooms | Kitchens | Interiors</h1>
+            <h1 class="studio-title-grid" aria-label="Bathrooms | Kitchens | Interiors">
+              <span class="studio-title-cell">Bathrooms</span>
+              <span class="studio-title-divider" aria-hidden="true"></span>
+              <span class="studio-title-cell">Kitchens</span>
+              <span class="studio-title-divider" aria-hidden="true"></span>
+              <span class="studio-title-cell">Interiors</span>
+            </h1>
             <p class="section-lead" data-brand-copy="copy.home.heroLead">Level Lines Studio delivers selective bathroom, kitchen and interior renovation briefs for homeowners who value finish control, material restraint and a calmer building process.</p>
+            <div class="studio-intent-strip" aria-label="Studio priorities">
+              <span>Aligned layouts</span>
+              <span>Material restraint</span>
+              <span>Finish control</span>
+            </div>
           </div>
-          <div class="studio-board-claim">
+          <div class="studio-board-claim" data-home-reveal style="--home-reveal-delay: 140ms;">
             <p class="section-eyebrow">Studio Method</p>
-            <p class="studio-board-claimline" data-brand-claim>Plan / Design / Craft</p>
+            <p class="studio-board-claimline studio-claim-grid" data-brand-claim-segmented aria-label="Plan | Design | Craft">
+              <span>Plan</span>
+              <span class="studio-claim-divider" aria-hidden="true"></span>
+              <span>Design</span>
+              <span class="studio-claim-divider" aria-hidden="true"></span>
+              <span>Craft</span>
+            </p>
             <p class="studio-board-claimcopy" data-brand-copy="copy.home.processLead">The studio method is simple: define the brief properly, shape a restrained material direction and deliver with clean execution.</p>
           </div>
         </div>
 
         <div class="studio-board-main">
-          <article class="surface-card surface-card--light studio-gallery-panel" id="gallery">
+          <article class="surface-card surface-card--light studio-gallery-panel" id="gallery" data-home-reveal style="--home-reveal-delay: 220ms;">
             <div class="studio-panel-head">
               <div>
                 <p class="section-eyebrow section-eyebrow--compact">Selected Project</p>
@@ -79,7 +94,7 @@
             </div>
           </article>
 
-          <aside class="surface-card surface-card--light studio-projects-panel">
+          <aside class="surface-card surface-card--light studio-projects-panel" data-home-reveal style="--home-reveal-delay: 300ms;">
             <div class="studio-panel-head studio-panel-head--stack">
               <div>
                 <p class="section-eyebrow section-eyebrow--compact">Projects</p>
@@ -95,7 +110,7 @@
         </div>
 
         <div class="studio-board-bottom">
-          <article class="surface-card surface-card--light studio-summary-card" id="services">
+          <article class="surface-card surface-card--light studio-summary-card" id="services" data-home-reveal style="--home-reveal-delay: 380ms;">
             <div class="studio-summary-grid">
               <section class="studio-summary-block studio-summary-block--areas">
                 <div class="studio-summary-heading">
@@ -154,7 +169,7 @@
             </div>
           </article>
 
-          <article class="surface-card surface-card--light studio-quote-card" id="consultation">
+          <article class="surface-card surface-card--light studio-quote-card" id="consultation" data-home-reveal style="--home-reveal-delay: 460ms;">
             <p class="section-eyebrow">Private Consultation</p>
             <h2 data-brand-copy="copy.home.consultationTitle">Send Enquiry</h2>
             <p class="section-lead" data-brand-copy="copy.home.consultationLead">Share the rooms involved, the finish ambition and your timing. The studio replies with a measured next step.</p>
@@ -182,39 +197,39 @@
         {
           "name": "Bathrooms - Didsbury",
           "images": [
-            "/Gallery/premium/bathroom-main.jpg",
-            "/Gallery/premium/bathroom-bathtub.jpg",
-            "/Gallery/premium/bathroom-tiles.jpg"
+            { "src": "/Gallery/premium/bathroom-main.jpg", "label": "Bathroom axis overview" },
+            { "src": "/Gallery/premium/bathroom-bathtub.jpg", "label": "Bath line and brass detail" },
+            { "src": "/Gallery/premium/bathroom-tiles.jpg", "label": "Wet-room tile geometry" }
           ]
         },
         {
           "name": "Kitchens - Altrincham",
           "images": [
-            "/Gallery/premium/kitchen-panorama-main.jpg",
-            "/Gallery/premium/kitchen-panorama-left.jpg",
-            "/Gallery/premium/kitchen-panorama-right.jpg"
+            { "src": "/Gallery/premium/kitchen-panorama-main.jpg", "label": "Kitchen run overview" },
+            { "src": "/Gallery/premium/kitchen-panorama-left.jpg", "label": "Left elevation and storage line" },
+            { "src": "/Gallery/premium/kitchen-panorama-right.jpg", "label": "Right elevation and finish line" }
           ]
         },
         {
           "name": "Exterior Craft - Wilmslow",
           "images": [
-            "/Gallery/premium/exterior-front.jpg",
-            "/Gallery/premium/exterior-chimney.jpg",
-            "/Gallery/premium/exterior-wood-gables.jpg"
+            { "src": "/Gallery/premium/exterior-front.jpg", "label": "Facade alignment overview" },
+            { "src": "/Gallery/premium/exterior-chimney.jpg", "label": "Chimney stack detail" },
+            { "src": "/Gallery/premium/exterior-wood-gables.jpg", "label": "Timber gable rhythm" }
           ]
         },
         {
           "name": "Stone Detail - Chorlton",
           "images": [
-            "/Gallery/premium/brick-dark-main.jpg",
-            "/Gallery/premium/brick-detail-charcoal.jpg",
-            "/Gallery/premium/brick-detail-red.jpg"
+            { "src": "/Gallery/premium/brick-dark-main.jpg", "label": "Stone surface overview" },
+            { "src": "/Gallery/premium/brick-detail-charcoal.jpg", "label": "Charcoal bond detail" },
+            { "src": "/Gallery/premium/brick-detail-red.jpg", "label": "Red bond detail" }
           ]
         }
       ]</script>
     </section>
 
-    <section class="section section--dark" id="process">
+    <section class="section section--dark" id="process" data-home-section>
       <div class="container section-shell">
         <div class="section-heading section-heading--split">
           <div>
@@ -243,7 +258,7 @@
       </div>
     </section>
 
-    <section class="section section--light" id="faq">
+    <section class="section section--light" id="faq" data-home-section>
       <div class="container faq-grid">
         <div>
           <p class="section-eyebrow">FAQ</p>
@@ -305,7 +320,7 @@
     </div>
     <div class="container footer-bottom">
       <p>&copy; <span data-current-year></span> Level Lines Studio. All rights reserved.</p>
-      <p class="footer-bottom-note">Plan / Design / Craft</p>
+      <p class="footer-bottom-note">Plan | Design | Craft</p>
     </div>
   </footer>
   <script src="/brand.js" defer></script>
