@@ -244,3 +244,20 @@ Aktualny stan roboczy i ryzyka techniczne:
 - `auth.html` dostal tez tytul strony `Account | Level Lines Studio` oraz spojne etykiety w hero, stopce i linkach nawigacyjnych.
 - Runtime w `site.js` i legacy runtime w `main.js` nie przywracaja juz starych etykiet, nawet po zaladowaniu sesji albo menu mobilnego.
 - Status: zweryfikowane lokalnie przez `npm.cmd run generate:public-pages`, `npm.cmd run verify:generated`, `node --check site.js` oraz grep po braku `Join Us` i `Login / Register` w aktywnym froncie.
+
+### 2026-03-10 - Homepage przebudowany do jednego `studio board` zgodnie z makieta
+
+- Gorna czesc `index.html` zostala przebudowana z kilku osobnych sekcji w jeden zintegrowany `studio board`, ktory laczy glowne haslo, okno wybranego projektu, selector projektow oraz dolny pas kontaktowo-ofertowy.
+- Lewa kolumna sekcji glownej korzysta dalej z `gallery.js`, ale dostala teraz docelowe sterowanie `photo left / right`, podczas gdy prawa kolumna stala sie pionowym selectorem projektow `project up / down`, zgodnie z kierunkiem z makiety.
+- `gallery.js` zostal rozszerzony o przyciski zmiany projektu, przewijanie aktywnego chipa do widoku oraz bogatszy status `Project X of Y - photo A of B`, bez naruszania istniejacej logiki rotacji zdjec.
+- `styles.css` dostal nowy zestaw klas `studio-board-*`, `studio-project-strip`, `project-rail-nav`, `studio-summary-*` i `studio-quote-*`, tak aby homepage czytal sie jako jeden logiczny premium board zamiast rozlaczonego stosu sekcji.
+- Dolny rzad nowego boardu grupuje `Direct Contact`, `Services`, `Coverage` i `Fast Quote` w jednym miejscu, co porzadkuje pierwsza czesc landing page i skraca droge do lead capture.
+- Status: zweryfikowane lokalnie przez `node --check gallery.js`, `npm.cmd run verify:generated` i `npm.cmd run test:ci`.
+
+### 2026-03-10 - Mobilny hotfix homepage dla Androida i iPhone'a
+
+- `styles.css` dostal osobny zestaw poprawek mobilnych dla publicznego headera: mniejszy lockup `readyprint2.png`, nizszy header, ciaśniejszy przycisk hamburgera oraz bardziej stabilny drawer `site-nav` renderowany jako fixed overlay zamiast rozjezdzajacego sie inline menu.
+- W mobilnym homepage uproszczono pierwszy ekran `studio board`: bardziej kompaktowy spacing, mniejsze typografie, nizsze karty, krotszy gallery stage oraz mniejsze chipy projektow i summary pills.
+- Na mobile przywrocono widoczne strzalki lewo/prawo bezposrednio na galerii, zeby roller projektu byl obslugiwalny dotykowo bez polegania tylko na przewijaniu i statusie tekstowym.
+- Uklad selectora projektow i dolnego pasa `contact/services/coverage + fast quote` zostal odchudzony tak, aby nie wypychal brandingu, nie wcinal sie pod menu i nie tworzyl zbyt wysokiego first screena na telefonach.
+- Status: zweryfikowane lokalnie przez `npm.cmd run verify:generated`; browser screenshot automation nie byla dostepna, bo lokalna instancja Playwright nie miala zainstalowanego Chrome.

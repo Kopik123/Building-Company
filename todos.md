@@ -31,3 +31,5 @@ Uwaga operacyjna: `dev_plan.md` jest glownym planem i pamiecia projektu. `todos.
 - [x] todos_27: Dopasowac SEO do nowego premium pozycjonowania: mocniejsze `title` i `meta description`, bogatsze social metadata, `FAQPage` schema na stronach ofertowych oraz `noindex` dla `auth` i workspace.
 - [x] todos_28: Zastapic duet `logo4.png + title.png` jednym kanonicznym lockupem `readyprint2.png` we wspolnym shellu, generatorach stron publicznych i danych brandowych.
 - [x] todos_29: Zmienic publiczna etykiete wejscia do konta z `Join Us` / `Login / Register` na jednolite `Account` w shellu, generatorach i runtime.
+- [x] todos_30: Przebudowac gorna czesc homepage zgodnie z makieta na jeden `studio board`: pozioma galeria wybranego projektu, pionowy selector projektow oraz dolny pas `contact/services/coverage` + `fast quote`.
+- [x] todos_31: Poprawic wersje mobilna homepage dla Android/iPhone: zmniejszyc header z `readyprint2.png`, ustabilizowac menu mobilne i uproscic pierwszy ekran `studio board` na malych viewportach.
