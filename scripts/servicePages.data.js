@@ -7,15 +7,19 @@ const consultationRouteLead =
 const pages = [
   {
     fileName: 'premium-bathrooms-manchester.html',
-    title: 'Bathrooms Manchester | Level Lines Studio',
+    title: 'Premium Bathroom Renovations Manchester | Level Lines Studio',
     metaDescription:
-      'Full bathroom renovations in Manchester by Level Lines Studio, with large-format tiling, carpentry, wall systems and flooring installation coordinated as one joined-up offer.',
+      'Premium bathroom renovations in Manchester by Level Lines Studio for homeowners who value waterproofing discipline, finish control and a calmer build sequence.',
     ogImage: 'https://levellines.co.uk/Gallery/premium/bathroom-main.jpg',
     bodyClass: 'public-site page-service',
     jsonLd: {
       '@context': 'https://schema.org',
       '@type': 'Service',
-      serviceType: 'Bathrooms',
+      name: 'Premium Bathroom Renovations in Manchester',
+      description:
+        'Premium bathroom renovations in Manchester with measured planning, waterproofing discipline and finish control by Level Lines Studio.',
+      serviceType: 'Premium bathroom renovations',
+      image: 'https://levellines.co.uk/Gallery/premium/bathroom-main.jpg',
       provider: {
         '@type': 'LocalBusiness',
         name: shared.brandName,
@@ -108,15 +112,19 @@ const pages = [
   },
   {
     fileName: 'premium-kitchens-manchester.html',
-    title: 'Kitchens Manchester | Level Lines Studio',
+    title: 'Premium Kitchen Renovations Manchester | Level Lines Studio',
     metaDescription:
-      'Kitchen installation and refurbishment in Manchester by Level Lines Studio, with bathroom renovation, large-format tiling, carpentry, wall systems and flooring installation coordinated as one joined-up offer.',
+      'Premium kitchen renovations in Manchester by Level Lines Studio for homeowners who want layout clarity, joinery precision and tighter finish control.',
     ogImage: 'https://levellines.co.uk/Gallery/premium/kitchen-panorama-main.jpg',
     bodyClass: 'public-site page-service',
     jsonLd: {
       '@context': 'https://schema.org',
       '@type': 'Service',
-      serviceType: 'Kitchens',
+      name: 'Premium Kitchen Renovations in Manchester',
+      description:
+        'Premium kitchen renovations in Manchester with layout-led planning, joinery precision and calm finish control by Level Lines Studio.',
+      serviceType: 'Premium kitchen renovations',
+      image: 'https://levellines.co.uk/Gallery/premium/kitchen-panorama-main.jpg',
       provider: {
         '@type': 'LocalBusiness',
         name: shared.brandName,
@@ -209,15 +217,19 @@ const pages = [
   },
   {
     fileName: 'interior-renovations-manchester.html',
-    title: 'Interior Renovations Manchester | Level Lines Studio',
+    title: 'Premium Interior Renovations Manchester | Level Lines Studio',
     metaDescription:
-      'Interior renovations in Manchester by Level Lines Studio, with carpentry, wall systems, large-format tiling and flooring installation coordinated as one joined-up offer.',
+      'Premium interior renovations in Manchester by Level Lines Studio for homeowners seeking carpentry precision, wall-system discipline and one calm finish language.',
     ogImage: 'https://levellines.co.uk/Gallery/premium/exterior-front.jpg',
     bodyClass: 'public-site page-service',
     jsonLd: {
       '@context': 'https://schema.org',
       '@type': 'Service',
-      serviceType: 'Interior & Wall Systems',
+      name: 'Premium Interior Renovations in Manchester',
+      description:
+        'Premium interior renovations in Manchester with carpentry precision, wall-system discipline and coordinated finish control by Level Lines Studio.',
+      serviceType: 'Premium interior renovations',
+      image: 'https://levellines.co.uk/Gallery/premium/exterior-front.jpg',
       provider: {
         '@type': 'LocalBusiness',
         name: shared.brandName,

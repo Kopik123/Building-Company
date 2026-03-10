@@ -5,6 +5,13 @@ const escapeHtml = (value) =>
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 
+const renderJsonLdScripts = (jsonLd) => {
+  const nodes = Array.isArray(jsonLd) ? jsonLd.filter(Boolean) : [jsonLd].filter(Boolean);
+  return nodes
+    .map((node) => `  <script type="application/ld+json">${JSON.stringify(node)}</script>`)
+    .join('\n');
+};
+
 const renderBrandLockup = (shared) => `      <a class="brand" href="/index.html" aria-label="${escapeHtml(shared.brandName)} home">
         <img src="${escapeHtml(shared.logoPath)}" alt="${escapeHtml(shared.brandName)} logo" class="brand-logo" />
         <img src="${escapeHtml(shared.titleImagePath || '/title.png')}" alt="${escapeHtml(shared.brandName)}" class="brand-title-image" />
@@ -229,6 +236,7 @@ const renderPublicPage = ({
   ogImage,
   bodyClass,
   jsonLd,
+  robotsContent = 'index,follow,max-image-preview:large',
   hero,
   sections,
   contact,
@@ -242,18 +250,23 @@ const renderPublicPage = ({
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>${escapeHtml(title)}</title>
   <meta name="description" content="${escapeHtml(metaDescription)}" />
+  <meta name="robots" content="${escapeHtml(robotsContent)}" />
   <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="${escapeHtml(shared.brandName)}" />
   <meta property="og:title" content="${escapeHtml(title)}" />
   <meta property="og:description" content="${escapeHtml(metaDescription)}" />
   <meta property="og:image" content="${escapeHtml(ogImage)}" />
   <meta property="og:url" content="${escapeHtml(`${shared.siteUrl}/${fileName}`)}" />
   <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="${escapeHtml(title)}" />
+  <meta name="twitter:description" content="${escapeHtml(metaDescription)}" />
+  <meta name="twitter:image" content="${escapeHtml(ogImage)}" />
   <link rel="canonical" href="${escapeHtml(`${shared.siteUrl}/${fileName}`)}" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles.css" />
-  <script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
+${renderJsonLdScripts(jsonLd)}
 </head>
 <body class="${escapeHtml(bodyClass)}">
 

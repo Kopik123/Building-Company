@@ -11,30 +11,50 @@ const {
 
 const projectRoot = path.resolve(__dirname, '..');
 
+const buildFaqJsonLd = (pageUrl, items) => ({
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: items.map((item) => ({
+    '@type': 'Question',
+    name: item.q,
+    acceptedAnswer: {
+      '@type': 'Answer',
+      text: item.a
+    }
+  })),
+  url: pageUrl
+});
+
 const buildLocationPages = () =>
   pages.map((page) => ({
     fileName: page.fileName,
     html: renderPublicPage({
       shared,
       fileName: page.fileName,
-      title: `Premium Renovations ${page.location} | ${shared.brandName}`,
+      title: `Premium Renovations in ${page.location} | ${shared.brandName}`,
       metaDescription: page.metaDescription,
       ogImage: page.ogImage,
       bodyClass: 'public-site page-location',
       generatedBy: 'npm run generate:locations',
-      jsonLd: {
-        '@context': 'https://schema.org',
-        '@type': 'Service',
-        serviceType: `Premium renovation services in ${page.location}`,
-        provider: {
-          '@type': 'LocalBusiness',
-          name: shared.brandName,
-          telephone: shared.phones.map((phone) => phone.display),
-          email: shared.email
+      jsonLd: [
+        {
+          '@context': 'https://schema.org',
+          '@type': 'Service',
+          name: `Premium Renovations in ${page.location}`,
+          description: page.metaDescription,
+          serviceType: 'Premium bathroom, kitchen and interior renovations',
+          image: page.ogImage,
+          provider: {
+            '@type': 'LocalBusiness',
+            name: shared.brandName,
+            telephone: shared.phones.map((phone) => phone.display),
+            email: shared.email
+          },
+          areaServed: [page.location, shared.region],
+          url: `${shared.siteUrl}/${page.fileName}`
         },
-        areaServed: [page.location, shared.region],
-        url: `${shared.siteUrl}/${page.fileName}`
-      },
+        buildFaqJsonLd(`${shared.siteUrl}/${page.fileName}`, page.faq)
+      ],
       hero: {
         image: page.heroImage,
         eyebrow: page.location,

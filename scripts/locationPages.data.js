@@ -1,5 +1,7 @@
 const shared = require('./publicPages.shared');
 const coreServiceOffer = shared.coreServiceOffer;
+const buildLocationMetaDescription = (location) =>
+  `Selective bathroom, kitchen and interior renovation briefs in ${location} by Level Lines Studio for homeowners who value finish control, quieter luxury and a calmer build process.`;
 
 const pages = [
   {
@@ -7,7 +9,7 @@ const pages = [
     location: 'Didsbury',
     heroImage: '/Gallery/premium/bathroom-main.jpg',
     ogImage: 'https://levellines.co.uk/Gallery/premium/bathroom-main.jpg',
-    metaDescription: `Full bathroom renovations, kitchen installation and refurbishment, large-format tiling, carpentry, wall systems and flooring installation in Didsbury by Level Lines Studio.`,
+    metaDescription: buildLocationMetaDescription('Didsbury'),
     heroTitle: 'Didsbury renovations with measured bathroom, kitchen and interior detail.',
     heroLead:
       `Didsbury homes respond well to a quieter ${coreServiceOffer} studio scope, delivered with calmer finishes, exact tile lines and private consultation-led sequencing.`,
@@ -47,7 +49,7 @@ const pages = [
     location: 'Altrincham',
     heroImage: '/Gallery/premium/kitchen-panorama-right.jpg',
     ogImage: 'https://levellines.co.uk/Gallery/premium/kitchen-panorama-right.jpg',
-    metaDescription: `Full bathroom renovations, kitchen installation and refurbishment, large-format tiling, carpentry, wall systems and flooring installation in Altrincham by Level Lines Studio.`,
+    metaDescription: buildLocationMetaDescription('Altrincham'),
     heroTitle: 'Altrincham renovations with kitchen-led planning and measured finish control.',
     heroLead:
       `Altrincham projects often start with kitchens, but the same ${coreServiceOffer} studio scope extends cleanly into the rest of the brief.`,
@@ -86,7 +88,7 @@ const pages = [
     location: 'Stockport',
     heroImage: '/Gallery/premium/exterior-wood-gables.jpg',
     ogImage: 'https://levellines.co.uk/Gallery/premium/exterior-wood-gables.jpg',
-    metaDescription: `Full bathroom renovations, kitchen installation and refurbishment, large-format tiling, carpentry, wall systems and flooring installation in Stockport by Level Lines Studio.`,
+    metaDescription: buildLocationMetaDescription('Stockport'),
     heroTitle: 'Stockport renovations with stronger carpentry, wall-system and finish discipline.',
     heroLead:
       `Stockport briefs often need the studio's ${coreServiceOffer} scope to keep practical upgrades and premium detailing aligned.`,
@@ -125,7 +127,7 @@ const pages = [
     location: 'Sale',
     heroImage: '/Gallery/premium/brick-detail-red.jpg',
     ogImage: 'https://levellines.co.uk/Gallery/premium/brick-detail-red.jpg',
-    metaDescription: `Full bathroom renovations, kitchen installation and refurbishment, large-format tiling, carpentry, wall systems and flooring installation in Sale by Level Lines Studio.`,
+    metaDescription: buildLocationMetaDescription('Sale'),
     heroTitle: 'Sale renovations with calmer palettes and tighter material control.',
     heroLead:
       `Sale projects respond well to a ${coreServiceOffer} studio scope delivered with restrained palettes and tighter detailing.`,
@@ -164,7 +166,7 @@ const pages = [
     location: 'Chorlton',
     heroImage: '/Gallery/premium/brick-dark-main.jpg',
     ogImage: 'https://levellines.co.uk/Gallery/premium/brick-dark-main.jpg',
-    metaDescription: `Full bathroom renovations, kitchen installation and refurbishment, large-format tiling, carpentry, wall systems and flooring installation in Chorlton by Level Lines Studio.`,
+    metaDescription: buildLocationMetaDescription('Chorlton'),
     heroTitle: 'Chorlton renovations with graphic materials and disciplined detailing.',
     heroLead:
       `Chorlton projects suit the studio's ${coreServiceOffer} scope when the brief calls for a darker, more graphic finish language.`,
@@ -204,7 +206,7 @@ const pages = [
     location: 'Wilmslow',
     heroImage: '/Gallery/premium/exterior-front.jpg',
     ogImage: 'https://levellines.co.uk/Gallery/premium/exterior-front.jpg',
-    metaDescription: `Full bathroom renovations, kitchen installation and refurbishment, large-format tiling, carpentry, wall systems and flooring installation in Wilmslow by Level Lines Studio.`,
+    metaDescription: buildLocationMetaDescription('Wilmslow'),
     heroTitle: 'Wilmslow renovations with quieter luxury and stronger finish discipline.',
     heroLead:
       `Wilmslow briefs often call for the same ${coreServiceOffer} scope, delivered through the studio's plan / design / craft structure.`,

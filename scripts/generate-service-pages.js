@@ -12,6 +12,20 @@ const {
 
 const projectRoot = path.resolve(__dirname, '..');
 
+const buildFaqJsonLd = (pageUrl, items) => ({
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: items.map((item) => ({
+    '@type': 'Question',
+    name: item.q,
+    acceptedAnswer: {
+      '@type': 'Answer',
+      text: item.a
+    }
+  })),
+  url: pageUrl
+});
+
 const buildServicePages = () =>
   pages.map((page) => ({
     fileName: page.fileName,
@@ -23,10 +37,13 @@ const buildServicePages = () =>
       ogImage: page.ogImage,
       bodyClass: page.bodyClass,
       generatedBy: 'npm run generate:services',
-      jsonLd: {
-        ...page.jsonLd,
-        url: `${shared.siteUrl}/${page.fileName}`
-      },
+      jsonLd: [
+        {
+          ...page.jsonLd,
+          url: `${shared.siteUrl}/${page.fileName}`
+        },
+        buildFaqJsonLd(`${shared.siteUrl}/${page.fileName}`, page.faq.items)
+      ],
       hero: page.hero,
       sections: [
         renderIntroSection({

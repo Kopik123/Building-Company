@@ -23,6 +23,7 @@ Aktualny stan funkcjonalny:
 - Homepage, strony uslug i strony lokalizacji zostaly jezykowo ujednolicone wokol jednej oferty: bathroom renovations, kitchens, tiling, carpentry, wall systems, flooring.
 - Homepage po przebudowie prowadzi klienta premium przez sekwencje: editorial hero, selected projects, studio method, signature services, gallery / finish proof, FAQ, private consultation i dopiero nizsze supporting details.
 - Auth, client workspace i manager workspace zachowuja ten sam jezyk premium, ale maja cichszy, bardziej operacyjny shell bez marketingowego przeladowania.
+- SEO zostalo dopasowane do nowego pozycjonowania: publiczne strony ofertowe maja bardziej precyzyjne title/meta, schema `Service` + `FAQPage`, a strony operacyjne `auth` / `client workspace` / `manager workspace` sa celowo oznaczone jako `noindex`.
 - Generator publicznych stron jest objety weryfikacja przez `npm run verify:generated`.
 - Start serwera uruchamia migracje automatycznie przy bootowaniu aplikacji.
 - Srodowisko produkcyjne to serwer Ubuntu na DigitalOcean.
@@ -218,3 +219,12 @@ Aktualny stan roboczy i ryzyka techniczne:
 - Auth, client workspace, manager workspace oraz legal pages zostaly wizualnie i jezykowo zrownane z nowym frontem, ale workspace zachowal cichszy, bardziej operacyjny charakter niz marketing homepage.
 - Odswiezono wygenerowane strony uslug i lokalizacji, a stopki dostaly supporting-detail block `Studio Region` zamiast top-levelowego tonu `Coverage`.
 - Status: zweryfikowane lokalnie przez `npm.cmd run generate:public-pages`, `npm.cmd run verify:generated` i `node --check site.js`.
+
+### 2026-03-10 - Dopasowanie SEO do nowego premium pozycjonowania
+
+- Homepage dostal pelniejszy zestaw metadata social (`og:site_name`, `twitter:title`, `twitter:description`, `twitter:image`) oraz rozszerzony schema graph `LocalBusiness + WebSite + FAQPage`.
+- Generator stron uslug i lokalizacji dostal wspolny SEO contract w `scripts/publicPageRenderer.js`: `robots`, bogatsze Open Graph / Twitter metadata oraz obsluge wielu blokow JSON-LD.
+- Strony uslug i lokalizacji dostaly bardziej precyzyjne, mniej katalogowe `title` i `meta description`, zgodne z nowym pozycjonowaniem premium i calm-build process.
+- Dla wszystkich generowanych service / location pages dodano schema `FAQPage`, bo pytania FAQ sa realna czescia tresci i wzmacniaja topical relevance.
+- `auth.html`, `client-dashboard.html` i `manager-dashboard.html` zostaly oznaczone jako `noindex,follow`, zeby wyszukiwarki nie indeksowaly stron operacyjnych jako landing pages oferty.
+- Status: zweryfikowane lokalnie przez `npm.cmd run generate:public-pages`, `npm.cmd run verify:generated`, `node --check scripts/publicPageRenderer.js`, `node --check scripts/generate-service-pages.js`, `node --check scripts/generate-location-pages.js` oraz `npm.cmd run test:ci`.
