@@ -1,5 +1,6 @@
 const path = require('path');
 const express = require('express');
+const compression = require('compression');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
@@ -23,6 +24,29 @@ const createRateLimiter = (windowMs, max) =>
     standardHeaders: true,
     legacyHeaders: false
   });
+
+const setStaticCacheHeaders = (res, filePath) => {
+  const ext = String(path.extname(filePath) || '').toLowerCase();
+
+  if (ext === '.html') {
+    res.setHeader('Cache-Control', 'no-cache');
+    return;
+  }
+
+  if (['.css', '.js'].includes(ext)) {
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    return;
+  }
+
+  if (['.png', '.jpg', '.jpeg', '.webp', '.avif', '.svg', '.woff', '.woff2'].includes(ext)) {
+    res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
+    return;
+  }
+
+  if (['.pdf', '.doc', '.docx'].includes(ext)) {
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+  }
+};
 
 const createApp = () => {
   const app = express();
@@ -67,6 +91,7 @@ const createApp = () => {
     }
   }));
 
+  app.use(compression());
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true }));
   app.use('/api/', globalLimiter);
@@ -89,8 +114,12 @@ const createApp = () => {
   }));
   app.use('/api/contact', contactRoutes());
 
-  app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-  app.use(express.static(path.join(__dirname)));
+  app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+    setHeaders: setStaticCacheHeaders
+  }));
+  app.use(express.static(path.join(__dirname), {
+    setHeaders: setStaticCacheHeaders
+  }));
 
   app.use('/api/*', (req, res) => {
     return res.status(404).json({ error: 'API route not found' });

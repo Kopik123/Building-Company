@@ -1,6 +1,7 @@
 (() => {
-  const TOKEN_KEY = 'll_auth_token';
-  const USER_KEY = 'll_auth_user';
+  const runtime = window.LevelLinesRuntime || {};
+  const TOKEN_KEY = runtime.TOKEN_KEY || 'll_auth_token';
+  const USER_KEY = runtime.USER_KEY || 'll_auth_user';
 
   const el = {
     session: document.getElementById('client-session'),
@@ -34,48 +35,40 @@
     directMessages: [],
     threads: [],
     selectedThreadId: '',
-    messages: []
-  };
-
-  const parseError = (payload) => {
-    if (payload?.error) return payload.error;
-    if (Array.isArray(payload?.errors) && payload.errors.length) {
-      return payload.errors.map((item) => item?.msg).filter(Boolean).join(', ');
+    messages: [],
+    lazyLoaded: {
+      directThreads: false,
+      groupThreads: false
     }
-    return 'Request failed.';
   };
-  const escapeHtml = (value) =>
-    String(value ?? '')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#x27;');
 
-  const setStatus = (node, message, type) => {
+  const escapeHtml = runtime.escapeHtml || ((value) => String(value ?? ''));
+  const setStatus = runtime.setStatus || ((node, message, type) => {
     node.className = 'form-status';
     if (type === 'success') node.classList.add('is-success');
     if (type === 'error') node.classList.add('is-error');
     node.textContent = message || '';
-  };
-  const requestAccordionRefresh = () => {
+  });
+  const requestAccordionRefresh = runtime.requestAccordionRefresh || (() => {
     window.dispatchEvent(new CustomEvent('ll:dashboard-accordions-refresh'));
-  };
+  });
 
   const clearSession = () => {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
+    (runtime.clearSession || (() => {
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
+    }))();
     state.token = '';
     state.user = null;
   };
-  const getStoredUser = () => {
+  const getStoredUser = runtime.getStoredUser || (() => {
     try {
       return JSON.parse(localStorage.getItem(USER_KEY) || 'null');
     } catch {
       return null;
     }
-  };
-  const waitForStoredUser = (timeoutMs = 900) =>
+  });
+  const waitForStoredUser = runtime.waitForStoredUser || ((timeoutMs = 900) =>
     new Promise((resolve) => {
       const startedAt = Date.now();
       const tick = () => {
@@ -93,18 +86,18 @@
         window.setTimeout(tick, 60);
       };
       tick();
-    });
+    }));
 
-  const api = async (url, options = {}) => {
+  const api = (runtime.createApiClient ? runtime.createApiClient(() => state.token) : async (url, options = {}) => {
     const headers = new Headers(options.headers || {});
     if (!headers.has('Authorization') && state.token) {
       headers.set('Authorization', `Bearer ${state.token}`);
     }
     const response = await fetch(url, { ...options, headers });
     const payload = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(parseError(payload));
+    if (!response.ok) throw new Error((runtime.parseError || ((data) => data?.error || 'Request failed.'))(payload));
     return payload;
-  };
+  });
 
   const renderMetrics = (metrics) => {
     el.metrics.innerHTML = '';
@@ -388,6 +381,41 @@
     requestAccordionRefresh();
   };
 
+  const setupLazySections = () => {
+    const directSection = el.directThreadsList.closest('section');
+    const groupSection = el.threadsList.closest('section');
+    const tasks = [];
+
+    if (directSection) {
+      tasks.push({
+        target: directSection,
+        loaded: false,
+        load: async () => {
+          if (state.lazyLoaded.directThreads) return;
+          state.lazyLoaded.directThreads = true;
+          await loadDirectThreads();
+        }
+      });
+    }
+
+    if (groupSection) {
+      tasks.push({
+        target: groupSection,
+        loaded: false,
+        load: async () => {
+          if (state.lazyLoaded.groupThreads) return;
+          state.lazyLoaded.groupThreads = true;
+          await loadThreads();
+        }
+      });
+    }
+
+    (runtime.onceVisible || ((items) => {
+      items.forEach((item) => item.load());
+      return () => {};
+    }))(tasks);
+  };
+
   const bootstrap = async () => {
     const loginUrl = `/auth.html?next=${encodeURIComponent('/client-dashboard.html')}`;
     state.token = localStorage.getItem(TOKEN_KEY) || '';
@@ -413,7 +441,7 @@
 
       el.session.textContent = `Logged as ${state.user.name || state.user.email} (${state.user.role})`;
       await loadOverview();
-      await Promise.all([loadThreads(), loadDirectThreads()]);
+      setupLazySections();
     } catch (error) {
       clearSession();
       el.session.textContent = error.message || 'Session expired. Redirecting to login...';

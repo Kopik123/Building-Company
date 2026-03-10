@@ -1,0 +1,230 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - link "Level Lines Studio home" [ref=e4] [cursor=pointer]:
+        - /url: /index.html
+        - img "Level Lines Studio icon" [ref=e5]
+      - link "Level Lines Studio home" [ref=e6] [cursor=pointer]:
+        - /url: /index.html
+        - img "Level Lines Studio" [ref=e7]
+      - generic [ref=e8]:
+        - link "Login / Register" [ref=e9] [cursor=pointer]:
+          - /url: /auth.html
+        - button "Open navigation menu" [ref=e10]
+  - main [ref=e14]:
+    - generic [ref=e16]:
+      - generic [ref=e17]:
+        - generic [ref=e18]:
+          - paragraph [ref=e19]: Premium Renovation Studio
+          - heading "Levels, lines and symmetry" [level=1] [ref=e20]:
+            - generic [ref=e21]: Levels
+            - generic [ref=e22]: Lines
+            - generic [ref=e23]: Symmetry
+          - paragraph [ref=e24]: Level Lines Studio shapes premium bathroom, kitchen and interior renovation briefs for homeowners who expect strong line quality, quieter luxury and a controlled building process.
+          - generic "Studio priorities" [ref=e25]:
+            - generic [ref=e26]: Black / marble / gold
+            - generic [ref=e27]: Quiet luxury
+            - generic [ref=e28]: Finish control
+        - complementary [ref=e29]:
+          - generic [ref=e30]:
+            - paragraph [ref=e31]: Account
+            - heading "Login, project access and direct studio contact held close to the entry point." [level=2] [ref=e32]
+            - paragraph [ref=e33]: Use the account route for client visibility, operational access and a calmer handoff between public enquiry and project delivery.
+          - link "Login / Register" [ref=e34] [cursor=pointer]:
+            - /url: /auth.html
+      - generic [ref=e35]:
+        - complementary [ref=e36]:
+          - generic [ref=e37]:
+            - generic [ref=e38]:
+              - paragraph [ref=e39]: Projects
+              - heading "Bathrooms - Didsbury" [level=2] [ref=e40]
+            - paragraph [ref=e41]: Level 01 | 3 image sequence | photo 1 of 3
+          - generic "Project selection" [ref=e42]:
+            - button "Show project Bathrooms - Didsbury" [pressed] [ref=e43] [cursor=pointer]:
+              - img "Bathrooms - Didsbury thumbnail" [ref=e44]
+              - generic [ref=e45]:
+                - generic [ref=e46]: Level 01
+                - strong [ref=e47]: Bathrooms
+                - generic [ref=e48]: Didsbury
+            - button "Show project Kitchens - Altrincham" [ref=e49] [cursor=pointer]:
+              - img "Kitchens - Altrincham thumbnail" [ref=e50]
+              - generic [ref=e51]:
+                - generic [ref=e52]: Level 02
+                - strong [ref=e53]: Kitchens
+                - generic [ref=e54]: Altrincham
+            - button "Show project Exterior Craft - Wilmslow" [ref=e55] [cursor=pointer]:
+              - img "Exterior Craft - Wilmslow thumbnail" [ref=e56]
+              - generic [ref=e57]:
+                - generic [ref=e58]: Level 03
+                - strong [ref=e59]: Exterior Craft
+                - generic [ref=e60]: Wilmslow
+            - button "Show project Stone Detail - Chorlton" [ref=e61] [cursor=pointer]:
+              - img "Stone Detail - Chorlton thumbnail" [ref=e62]
+              - generic [ref=e63]:
+                - generic [ref=e64]: Level 04
+                - strong [ref=e65]: Stone Detail
+                - generic [ref=e66]: Chorlton
+          - paragraph [ref=e67]: Level 01 / Bathrooms - Didsbury / Bathroom axis overview / photo 1 of 3
+        - article [ref=e68]:
+          - generic [ref=e69]:
+            - generic [ref=e70]:
+              - paragraph [ref=e71]: Gallery
+              - heading "Bathroom axis overview" [level=2] [ref=e72]
+            - link "Open full gallery ->" [ref=e73] [cursor=pointer]:
+              - /url: /gallery.html
+          - generic [ref=e74]:
+            - button "Previous photo" [ref=e75] [cursor=pointer]: ❮
+            - generic [ref=e76]:
+              - article [ref=e77]:
+                - img "Bathrooms - Didsbury - Bathroom axis overview" [ref=e78]
+                - paragraph [ref=e79]: Bathroom axis overview
+              - article:
+                - img "Bathrooms - Didsbury - Bath line and brass detail"
+                - paragraph: Bath line and brass detail
+              - article:
+                - img "Bathrooms - Didsbury - Wet-room tile geometry"
+                - paragraph: Wet-room tile geometry
+            - button "Next photo" [ref=e80] [cursor=pointer]: ❯
+      - generic [ref=e81]:
+        - article [ref=e82]:
+          - generic [ref=e83]:
+            - paragraph [ref=e84]: Services
+            - heading "A curated renovation scope held in one premium studio structure." [level=2] [ref=e85]
+            - paragraph [ref=e86]: Bathrooms, kitchens, large-format tiling, carpentry, wall systems and flooring are held in one composed scope, so layout logic, detailing and finish control stay aligned.
+          - generic [ref=e87]:
+            - link "Full Bathroom Renovations" [ref=e88] [cursor=pointer]:
+              - /url: /premium-bathrooms-manchester.html
+            - link "Kitchen Installation and Refurbishment" [ref=e89] [cursor=pointer]:
+              - /url: /premium-kitchens-manchester.html
+            - link "Tiling incl. Large Format / Wet Showers" [ref=e90] [cursor=pointer]:
+              - /url: /quote.html
+            - link "Carpentry" [ref=e91] [cursor=pointer]:
+              - /url: /quote.html
+            - link "External Wall Systems" [ref=e92] [cursor=pointer]:
+              - /url: /quote.html
+            - link "Interior Wall Systems" [ref=e93] [cursor=pointer]:
+              - /url: /quote.html
+            - link "Flooring Installation" [ref=e94] [cursor=pointer]:
+              - /url: /quote.html
+        - article [ref=e95]:
+          - paragraph [ref=e96]: Quote
+          - heading "Send Enquiry" [level=2] [ref=e97]
+          - paragraph [ref=e98]: Share the rooms involved, the finish ambition and your timing. The studio replies with a measured next step.
+          - generic [ref=e99]:
+            - generic [ref=e100]:
+              - generic [ref=e101]:
+                - text: Name
+                - textbox "Name" [ref=e102]
+              - generic [ref=e103]:
+                - text: Phone
+                - textbox "Phone" [ref=e104]
+              - generic [ref=e105]:
+                - text: Email
+                - textbox "Email" [ref=e106]
+              - generic [ref=e107]:
+                - text: Project type
+                - combobox "Project type" [ref=e108]:
+                  - option "Select" [selected]
+                  - option "Full Bathroom Renovations"
+                  - option "Kitchen Installation and Refurbishment"
+                  - option "Tiling incl. Large Format / Wet Showers"
+                  - option "Carpentry"
+                  - option "External Wall Systems"
+                  - option "Interior Wall Systems"
+                  - option "Flooring Installation"
+              - generic [ref=e109]:
+                - text: Budget
+                - combobox "Budget" [ref=e110]:
+                  - option "Select" [selected]
+                  - option "£8,000-£12,000"
+                  - option "£12,000-£20,000"
+                  - option "£20,000-£30,000"
+                  - option "£30,000+"
+              - generic [ref=e111]:
+                - text: Project brief
+                - textbox "Project brief" [ref=e112]:
+                  - /placeholder: Tell us about your scope, finish expectations and timing.
+            - button "Send Enquiry" [ref=e113] [cursor=pointer]
+            - paragraph [ref=e114]
+        - generic [ref=e115]:
+          - link "Studio line 1" [ref=e116] [cursor=pointer]:
+            - /url: tel:+447942874446
+            - text: +44 7942 874 446
+          - text: "|"
+          - link "Studio line 2" [ref=e117] [cursor=pointer]:
+            - /url: tel:+447304506391
+            - text: +44 7304 506 391
+          - text: "|"
+          - link "LevelLineStudioMCR@gmail.com" [ref=e118] [cursor=pointer]:
+            - /url: mailto:LevelLineStudioMCR@gmail.com
+  - contentinfo [ref=e119]:
+    - generic [ref=e120]:
+      - generic [ref=e121]:
+        - paragraph [ref=e122]: Level Lines Studio
+        - heading "Level Lines Studio" [level=3] [ref=e123]
+        - paragraph [ref=e124]: A premium renovation studio for bathrooms, kitchens and interiors, shaped with quiet planning, material restraint and finish control across the North West.
+        - generic "Level Lines Studio contact details" [ref=e125]:
+          - link "Studio line 1" [ref=e126] [cursor=pointer]:
+            - /url: tel:+447942874446
+            - text: +44 7942 874 446
+          - link "Studio line 2" [ref=e127] [cursor=pointer]:
+            - /url: tel:+447304506391
+            - text: +44 7304 506 391
+          - link "LevelLineStudioMCR@gmail.com" [ref=e128] [cursor=pointer]:
+            - /url: mailto:LevelLineStudioMCR@gmail.com
+      - generic [ref=e129]:
+        - heading "Services" [level=3] [ref=e130]
+        - generic [ref=e131]:
+          - link "Full Bathroom Renovations" [ref=e132] [cursor=pointer]:
+            - /url: /premium-bathrooms-manchester.html
+          - link "Kitchen Installation and Refurbishment" [ref=e133] [cursor=pointer]:
+            - /url: /premium-kitchens-manchester.html
+          - link "Tiling incl. Large Format / Wet Showers" [ref=e134] [cursor=pointer]:
+            - /url: /quote.html
+          - link "Carpentry" [ref=e135] [cursor=pointer]:
+            - /url: /quote.html
+          - link "External Wall Systems" [ref=e136] [cursor=pointer]:
+            - /url: /quote.html
+          - link "Interior Wall Systems" [ref=e137] [cursor=pointer]:
+            - /url: /quote.html
+          - link "Flooring Installation" [ref=e138] [cursor=pointer]:
+            - /url: /quote.html
+      - generic [ref=e139]:
+        - heading "Studio" [level=3] [ref=e140]
+        - generic [ref=e141]:
+          - link "About Us" [ref=e142] [cursor=pointer]:
+            - /url: /about.html
+          - link "Gallery" [ref=e143] [cursor=pointer]:
+            - /url: /gallery.html
+          - link "Contact" [ref=e144] [cursor=pointer]:
+            - /url: /contact.html
+          - link "Quote" [ref=e145] [cursor=pointer]:
+            - /url: /quote.html
+          - link "Account" [ref=e146] [cursor=pointer]:
+            - /url: /auth.html
+          - link "Privacy" [ref=e147] [cursor=pointer]:
+            - /url: /privacy.html
+          - link "Cookie Policy" [ref=e148] [cursor=pointer]:
+            - /url: /cookie-policy.html
+          - link "Terms" [ref=e149] [cursor=pointer]:
+            - /url: /terms.html
+      - generic [ref=e150]:
+        - heading "Studio Region" [level=3] [ref=e151]
+        - paragraph [ref=e152]: North West - Lancashire
+        - generic [ref=e153]:
+          - generic [ref=e154]: Manchester
+          - generic [ref=e155]: Liverpool
+          - generic [ref=e156]: Preston
+          - generic [ref=e157]: Rochdale
+          - generic [ref=e158]: Oldham
+          - generic [ref=e159]: Macclesfield
+          - generic [ref=e160]: Stockport
+          - generic [ref=e161]: Northwich
+          - generic [ref=e162]: Warrington
+    - generic [ref=e163]:
+      - paragraph [ref=e164]: © 2026 Level Lines Studio. All rights reserved.
+      - paragraph [ref=e165]: Plan | Design | Craft
+```

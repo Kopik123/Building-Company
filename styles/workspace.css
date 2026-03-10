@@ -1,0 +1,42 @@
+body.workspace-site .site-header .header-inner {
+  grid-template-columns: var(--ll-header-logo-width) minmax(0, 1fr) minmax(220px, 320px);
+}
+
+body.workspace-site .header-utility-panel {
+  background: linear-gradient(180deg, rgba(18, 17, 15, 0.96), rgba(8, 8, 8, 0.98));
+}
+
+body.workspace-site .header-auth-link,
+body.workspace-site .site-nav a {
+  color: var(--ll-text-light);
+}
+
+body.workspace-site .header-auth-link {
+  border-bottom-color: rgba(216, 166, 30, 0.24);
+}
+
+body.workspace-site .workspace-hero,
+body.workspace-site .workspace-hero-copy,
+body.workspace-site .workspace-hero-panel {
+  box-shadow: var(--ll-shadow-premium), var(--ll-shadow-line);
+}
+
+body.workspace-site .workspace-main {
+  background:
+    linear-gradient(180deg, rgba(216, 166, 30, 0.1), transparent 220px),
+    #080808;
+}
+
+body.workspace-site .workspace-content-shell .workspace-stack {
+  gap: 1.5rem;
+}
+
+body.workspace-site .card.surface-card--light {
+  border: 1px solid rgba(216, 166, 30, 0.34);
+}
+
+body.workspace-site .dashboard-session,
+body.workspace-site .workspace-hero-panel--dark,
+body.workspace-site .workspace-hero-copy {
+  border: 1px solid rgba(216, 166, 30, 0.42);
+}

@@ -1,6 +1,7 @@
 (() => {
-  const TOKEN_KEY = 'll_auth_token';
-  const USER_KEY = 'll_auth_user';
+  const runtime = window.LevelLinesRuntime || {};
+  const TOKEN_KEY = runtime.TOKEN_KEY || 'll_auth_token';
+  const USER_KEY = runtime.USER_KEY || 'll_auth_user';
   const DEFAULT_PAGE_SIZE = 25;
 
   const el = {
@@ -124,40 +125,38 @@
     materialsQuery: { page: 1, pageSize: DEFAULT_PAGE_SIZE, q: '', category: '', lowStock: '' },
     materialsPagination: { page: 1, totalPages: 1, total: 0, pageSize: DEFAULT_PAGE_SIZE },
     clientsQuery: { q: '' },
-    staffQuery: { q: '' }
+    staffQuery: { q: '' },
+    lazyLoaded: {
+      quotes: false,
+      services: false,
+      materials: false,
+      clients: false,
+      staff: false,
+      estimates: false,
+      directThreads: false,
+      groupThreads: false
+    }
   };
   const USER_SEARCH_CACHE_TTL_MS = 30 * 1000;
   const userSearchCache = new Map();
 
-  const parseError = (payload) => {
-    if (payload?.error) return payload.error;
-    if (Array.isArray(payload?.errors) && payload.errors.length) {
-      return payload.errors.map((item) => item?.msg).filter(Boolean).join(', ');
-    }
-    return 'Request failed.';
-  };
-  const escapeHtml = (value) =>
-    String(value ?? '')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#x27;');
+  const parseError = runtime.parseError || ((payload) => payload?.error || 'Request failed.');
+  const escapeHtml = runtime.escapeHtml || ((value) => String(value ?? ''));
 
-  const setStatus = (node, msg, type) => {
+  const setStatus = runtime.setStatus || ((node, msg, type) => {
     node.className = 'form-status';
     if (type === 'success') node.classList.add('is-success');
     if (type === 'error') node.classList.add('is-error');
     node.textContent = msg || '';
-  };
+  });
 
-  const setSmallStatus = (node, msg, type) => {
+  const setSmallStatus = runtime.setSmallStatus || ((node, msg, type) => {
     node.textContent = msg || '';
     node.className = type === 'error' ? 'muted form-status is-error' : 'muted';
-  };
-  const requestAccordionRefresh = () => {
+  });
+  const requestAccordionRefresh = runtime.requestAccordionRefresh || (() => {
     window.dispatchEvent(new CustomEvent('ll:dashboard-accordions-refresh'));
-  };
+  });
   const createControlField = (labelText, control) => {
     const field = document.createElement('label');
     field.className = 'dashboard-control-field';
@@ -221,14 +220,14 @@
   };
 
   const getToken = () => localStorage.getItem(TOKEN_KEY) || '';
-  const getStoredUser = () => {
+  const getStoredUser = runtime.getStoredUser || (() => {
     try {
       return JSON.parse(localStorage.getItem(USER_KEY) || 'null');
     } catch {
       return null;
     }
-  };
-  const waitForStoredUser = (timeoutMs = 900) =>
+  });
+  const waitForStoredUser = runtime.waitForStoredUser || ((timeoutMs = 900) =>
     new Promise((resolve) => {
       const startedAt = Date.now();
       const tick = () => {
@@ -246,24 +245,26 @@
         window.setTimeout(tick, 60);
       };
       tick();
-    });
+    }));
 
   const clearSession = () => {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
+    (runtime.clearSession || (() => {
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
+    }))();
     state.token = '';
     state.user = null;
     state.projectDetailsById.clear();
   };
 
-  const api = async (url, options = {}) => {
+  const api = (runtime.createApiClient ? runtime.createApiClient(() => state.token) : async (url, options = {}) => {
     const headers = new Headers(options.headers || {});
     if (!headers.has('Authorization') && state.token) headers.set('Authorization', `Bearer ${state.token}`);
     const res = await fetch(url, { ...options, headers });
     const payload = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(parseError(payload));
     return payload;
-  };
+  });
 
   const selectedProject = () =>
     state.projectDetailsById.get(state.selectedProjectId)
@@ -1201,6 +1202,106 @@
     state.staffQuery.q = String(el.staffFilterQ.value || '').trim();
   };
 
+  const setupLazySections = (role) => {
+    const tasks = [
+      {
+        key: 'quotes',
+        target: el.quotesList.closest('section'),
+        load: async () => {
+          if (state.lazyLoaded.quotes) return;
+          state.lazyLoaded.quotes = true;
+          if (['manager', 'admin'].includes(role)) {
+            await loadQuotes();
+            return;
+          }
+          el.quotesFilterQ.disabled = true;
+          el.quotesFilterStatus.disabled = true;
+          el.quotesRefresh.disabled = true;
+          el.quotesPageSize.disabled = true;
+          el.quotesPrev.disabled = true;
+          el.quotesNext.disabled = true;
+          el.quotesList.innerHTML = '<p class="muted">Quote management is available for manager/admin roles.</p>';
+        }
+      },
+      {
+        key: 'services',
+        target: el.servicesList.closest('section'),
+        load: async () => {
+          if (state.lazyLoaded.services) return;
+          state.lazyLoaded.services = true;
+          await loadServices();
+        }
+      },
+      {
+        key: 'materials',
+        target: el.materialsList.closest('section'),
+        load: async () => {
+          if (state.lazyLoaded.materials) return;
+          state.lazyLoaded.materials = true;
+          await loadMaterials();
+        }
+      },
+      {
+        key: 'clients',
+        target: el.clientsList.closest('section'),
+        load: async () => {
+          if (state.lazyLoaded.clients) return;
+          state.lazyLoaded.clients = true;
+          await loadClients();
+        }
+      },
+      {
+        key: 'staff',
+        target: el.staffList.closest('section'),
+        load: async () => {
+          if (state.lazyLoaded.staff) return;
+          state.lazyLoaded.staff = true;
+          await loadStaff();
+        }
+      },
+      {
+        key: 'estimates',
+        target: el.estimatesList.closest('section'),
+        load: async () => {
+          if (state.lazyLoaded.estimates) return;
+          state.lazyLoaded.estimates = true;
+          if (!state.lazyLoaded.services) {
+            state.lazyLoaded.services = true;
+            await loadServices();
+          }
+          if (!state.lazyLoaded.materials) {
+            state.lazyLoaded.materials = true;
+            await loadMaterials();
+          }
+          await loadEstimates();
+        }
+      },
+      {
+        key: 'directThreads',
+        target: el.managerDirectThreadsList.closest('section'),
+        load: async () => {
+          if (state.lazyLoaded.directThreads) return;
+          state.lazyLoaded.directThreads = true;
+          await loadDirectThreads();
+        }
+      },
+      {
+        key: 'groupThreads',
+        target: el.managerGroupThreadsList.closest('section'),
+        load: async () => {
+          if (state.lazyLoaded.groupThreads) return;
+          state.lazyLoaded.groupThreads = true;
+          await loadGroupThreads();
+        }
+      }
+    ].filter((task) => task.target);
+
+    (runtime.onceVisible || ((items) => {
+      items.forEach((item) => item.load());
+      return () => {};
+    }))(tasks);
+  };
+
   const bootstrap = async () => {
     const loginUrl = `/auth.html?next=${encodeURIComponent('/manager-dashboard.html')}`;
     state.token = getToken();
@@ -1227,27 +1328,8 @@
         el.seedBtn.disabled = true;
         el.seedBtn.title = 'Only manager/admin can run seed';
       }
-      await Promise.all([
-        loadProjects(),
-        loadServices(),
-        loadMaterials(),
-        loadClients(),
-        loadStaff(),
-        loadEstimates(),
-        loadDirectThreads(),
-        loadGroupThreads()
-      ]);
-      if (['manager', 'admin'].includes(role)) {
-        await loadQuotes();
-      } else {
-        el.quotesFilterQ.disabled = true;
-        el.quotesFilterStatus.disabled = true;
-        el.quotesRefresh.disabled = true;
-        el.quotesPageSize.disabled = true;
-        el.quotesPrev.disabled = true;
-        el.quotesNext.disabled = true;
-        el.quotesList.innerHTML = '<p class=\"muted\">Quote management is available for manager/admin roles.</p>';
-      }
+      await loadProjects();
+      setupLazySections(role);
     } catch (error) {
       clearSession();
       el.session.textContent = error.message || 'Session expired. Redirecting to login...';

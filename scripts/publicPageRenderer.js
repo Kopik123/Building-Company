@@ -15,19 +15,33 @@ const renderJsonLdScripts = (jsonLd) => {
     .join('\n');
 };
 
+const renderStylesheets = () => `  <link rel="stylesheet" href="/styles/tokens.css" />
+  <link rel="stylesheet" href="/styles/base.css" />
+  <link rel="stylesheet" href="/styles/public.css" />
+  <link rel="stylesheet" href="/styles/workspace.css" />`;
+
 const renderBrandLockup = (shared) => `      <a class="brand brand-mark-link" href="/index.html" aria-label="${escapeHtml(shared.brandName)} home">
-        <img src="${escapeHtml(shared.headerIconPath || '/logo.png')}" alt="${escapeHtml(shared.brandName)} icon" class="brand-icon-image" />
+        <img src="${escapeHtml(shared.headerIconPath || '/logo.png')}" alt="${escapeHtml(shared.brandName)} icon" class="brand-icon-image" width="1093" height="860" decoding="async" />
       </a>
       <a class="brand brand-title-link" href="/index.html" aria-label="${escapeHtml(shared.brandName)} home">
-        <img src="${escapeHtml(shared.titleImagePath || shared.logoPath || '/title.png')}" alt="${escapeHtml(shared.brandName)}" class="brand-lockup-image brand-title-image" />
+        <img src="${escapeHtml(shared.titleImagePath || shared.logoPath || '/title.png')}" alt="${escapeHtml(shared.brandName)}" class="brand-lockup-image brand-title-image" width="3408" height="780" decoding="async" />
       </a>`;
+
+const renderHeaderUtilityPanel = (shared) => `      <div class="header-utility-panel menu-wrap" data-menu-wrap>
+        <a class="header-auth-link" href="/auth.html" data-auth-link data-auth-guest-label="${escapeHtml(shared.publicAuthLabel || 'Login / Register')}">${escapeHtml(shared.publicAuthLabel || 'Login / Register')}</a>
+        <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation menu">
+          <span class="nav-toggle-line"></span>
+          <span class="nav-toggle-line"></span>
+          <span class="nav-toggle-line"></span>
+        </button>
+        <nav class="site-nav" id="site-nav" data-nav-menu aria-label="Main navigation">
+${renderNavLinks(shared)}
+        </nav>
+      </div>`;
 
 const renderNavLinks = (shared) =>
   shared.navLinks
-    .map((link) => {
-      const authAttr = link.isAuth ? ` data-auth-guest-label="${escapeHtml(shared.publicAuthLabel || link.label)}"` : '';
-      return `          <a href="${escapeHtml(link.href)}" data-nav-link${authAttr}>${escapeHtml(link.label)}</a>`;
-    })
+    .map((link) => `          <a href="${escapeHtml(link.href)}" data-nav-link>${escapeHtml(link.label)}</a>`)
     .join('\n');
 
 const renderLinks = (links, className = '') =>
@@ -453,7 +467,7 @@ const renderPublicPage = ({
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/styles.css" />
+${renderStylesheets()}
 ${renderJsonLdScripts(jsonLd)}
 </head>
 <body class="${escapeHtml(bodyClass)}">
@@ -461,17 +475,7 @@ ${renderJsonLdScripts(jsonLd)}
   <header class="site-header" id="top">
     <div class="container header-inner grid-12">
 ${renderBrandLockup(shared)}
-      
-      <div class="menu-wrap" data-menu-wrap>
-        <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation menu">
-          <span class="nav-toggle-line"></span>
-          <span class="nav-toggle-line"></span>
-          <span class="nav-toggle-line"></span>
-        </button>
-        <nav class="site-nav" id="site-nav" data-nav-menu aria-label="Main navigation">
-${renderNavLinks(shared)}
-        </nav>
-      </div>
+${renderHeaderUtilityPanel(shared)}
     </div>
   </header>
   <main>
@@ -500,6 +504,7 @@ ${renderConsultationSection({ ...consultation, shared })}`}
 
 ${renderFooter(shared)}
   <script src="/brand.js" defer></script>
+  <script src="/runtime.js" defer></script>
   <script src="/site.js" defer></script>
   <script src="/gallery.js" defer></script>
   <script src="/quote.js" defer></script>

@@ -1,6 +1,7 @@
 (() => {
-  const TOKEN_KEY = 'll_auth_token';
-  const USER_KEY = 'll_auth_user';
+  const runtime = window.LevelLinesRuntime || {};
+  const TOKEN_KEY = runtime.TOKEN_KEY || 'll_auth_token';
+  const USER_KEY = runtime.USER_KEY || 'll_auth_user';
 
   const loginForm = document.getElementById('login-form');
   const registerForm = document.getElementById('register-form');
@@ -38,21 +39,13 @@
     return;
   }
 
-  const parseError = (payload) => {
-    if (payload?.error) return payload.error;
-    if (Array.isArray(payload?.errors) && payload.errors.length) {
-      return payload.errors.map((item) => item?.msg).filter(Boolean).join(', ');
-    }
-
-    return 'Request failed.';
-  };
-
-  const setStatus = (node, message = '', type = '') => {
+  const parseError = runtime.parseError || ((payload) => payload?.error || 'Request failed.');
+  const setStatus = runtime.setStatus || ((node, message = '', type = '') => {
     node.className = 'form-status';
     if (type === 'success') node.classList.add('is-success');
     if (type === 'error') node.classList.add('is-error');
     node.textContent = message;
-  };
+  });
 
   const dashboardPathForRole = (roleRaw) => {
     const role = String(roleRaw || '').toLowerCase();
@@ -79,25 +72,25 @@
     return 'User';
   };
 
-  const saveSession = (token, user) => {
+  const saveSession = runtime.saveSession || ((token, user) => {
     localStorage.setItem(TOKEN_KEY, token);
     localStorage.setItem(USER_KEY, JSON.stringify(user || {}));
     window.dispatchEvent(new Event('ll:session-changed'));
-  };
+  });
 
-  const clearSession = () => {
+  const clearSession = runtime.clearSession || (() => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
     window.dispatchEvent(new Event('ll:session-changed'));
-  };
+  });
 
-  const getSavedUser = () => {
+  const getSavedUser = runtime.getStoredUser || (() => {
     try {
       return JSON.parse(localStorage.getItem(USER_KEY) || 'null');
     } catch {
       return null;
     }
-  };
+  });
 
   const getToken = () => localStorage.getItem(TOKEN_KEY) || '';
 
