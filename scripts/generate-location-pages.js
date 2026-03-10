@@ -11,30 +11,50 @@ const {
 
 const projectRoot = path.resolve(__dirname, '..');
 
+const buildFaqJsonLd = (pageUrl, items) => ({
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: items.map((item) => ({
+    '@type': 'Question',
+    name: item.q,
+    acceptedAnswer: {
+      '@type': 'Answer',
+      text: item.a
+    }
+  })),
+  url: pageUrl
+});
+
 const buildLocationPages = () =>
   pages.map((page) => ({
     fileName: page.fileName,
     html: renderPublicPage({
       shared,
       fileName: page.fileName,
-      title: `Premium Renovations ${page.location} | ${shared.brandName}`,
+      title: `Premium Renovations in ${page.location} | ${shared.brandName}`,
       metaDescription: page.metaDescription,
       ogImage: page.ogImage,
       bodyClass: 'public-site page-location',
       generatedBy: 'npm run generate:locations',
-      jsonLd: {
-        '@context': 'https://schema.org',
-        '@type': 'Service',
-        serviceType: `Premium renovation services in ${page.location}`,
-        provider: {
-          '@type': 'LocalBusiness',
-          name: shared.brandName,
-          telephone: shared.phones.map((phone) => phone.display),
-          email: shared.email
+      jsonLd: [
+        {
+          '@context': 'https://schema.org',
+          '@type': 'Service',
+          name: `Premium Renovations in ${page.location}`,
+          description: page.metaDescription,
+          serviceType: 'Premium bathroom, kitchen and interior renovations',
+          image: page.ogImage,
+          provider: {
+            '@type': 'LocalBusiness',
+            name: shared.brandName,
+            telephone: shared.phones.map((phone) => phone.display),
+            email: shared.email
+          },
+          areaServed: [page.location, shared.region],
+          url: `${shared.siteUrl}/${page.fileName}`
         },
-        areaServed: [page.location, shared.region],
-        url: `${shared.siteUrl}/${page.fileName}`
-      },
+        buildFaqJsonLd(`${shared.siteUrl}/${page.fileName}`, page.faq)
+      ],
       hero: {
         image: page.heroImage,
         eyebrow: page.location,
@@ -48,18 +68,18 @@ const buildLocationPages = () =>
       },
       sections: [
         renderIntroSection({
-          eyebrow: 'Local Focus',
+          eyebrow: 'Location Focus',
           title: page.localTitle,
           lead: page.localLead,
           useAreaCard: true
         }),
         renderPillarSection({
-          eyebrow: 'Service Mix',
-          title: `How the studio typically works in ${page.location}.`,
+          eyebrow: 'Curated Scope',
+          title: `How the studio tends to shape work in ${page.location}.`,
           pillars: page.pillars
         }),
         renderFeatureSection({
-          eyebrow: 'Case Study Lens',
+          eyebrow: 'Selected Project',
           title: page.caseStudy.title,
           lead: page.caseStudy.lead,
           metrics: page.caseStudy.metrics,
@@ -68,17 +88,17 @@ const buildLocationPages = () =>
         }),
         renderFaqSection({
           eyebrow: 'FAQ',
-          title: `Questions we usually answer before starting in ${page.location}.`,
+          title: `Questions we usually answer before a ${page.location} brief starts.`,
           items: page.faq
         })
       ],
       contact: {
-        title: `Planning your ${page.location} project? Speak to the studio.`,
+        title: `Discuss your ${page.location} renovation directly with the studio.`,
         lead: shared.contactLead
       },
       consultation: {
-        title: `Start your ${page.location} renovation brief.`,
-        lead: `Tell us what you want to change in ${page.location}, which service line matters most and what finish level you expect.`,
+        title: `Bring your ${page.location} brief to a private consultation.`,
+        lead: `Tell us the rooms involved in ${page.location}, the finish ambition and the timing you are working to. The studio replies with a measured next step.`,
         formContext: page.location,
         locationValue: page.location,
         selectedProjectType: 'bathroom'

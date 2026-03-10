@@ -2,20 +2,24 @@ const shared = require('./publicPages.shared');
 
 const coreServiceOffer = shared.coreServiceOffer;
 const consultationRouteLead =
-  'Use the same private consultation route used across the homepage and location pages, then tell us what finish level and timing you want.';
+  'Tell us the rooms involved, the finish ambition and the timing you are aiming for. The studio replies with a measured next step rather than a generic sales response.';
 
 const pages = [
   {
     fileName: 'premium-bathrooms-manchester.html',
-    title: 'Bathrooms Manchester | Level Lines Studio',
+    title: 'Premium Bathroom Renovations Manchester | Level Lines Studio',
     metaDescription:
-      'Full bathroom renovations in Manchester by Level Lines Studio, with large-format tiling, carpentry, wall systems and flooring installation coordinated as one joined-up offer.',
+      'Premium bathroom renovations in Manchester by Level Lines Studio for homeowners who value waterproofing discipline, finish control and a calmer build sequence.',
     ogImage: 'https://levellines.co.uk/Gallery/premium/bathroom-main.jpg',
     bodyClass: 'public-site page-service',
     jsonLd: {
       '@context': 'https://schema.org',
       '@type': 'Service',
-      serviceType: 'Bathrooms',
+      name: 'Premium Bathroom Renovations in Manchester',
+      description:
+        'Premium bathroom renovations in Manchester with measured planning, waterproofing discipline and finish control by Level Lines Studio.',
+      serviceType: 'Premium bathroom renovations',
+      image: 'https://levellines.co.uk/Gallery/premium/bathroom-main.jpg',
       provider: {
         '@type': 'LocalBusiness',
         name: shared.brandName,
@@ -29,7 +33,7 @@ const pages = [
       eyebrow: 'Bathrooms',
       title: 'Bathrooms designed for calm, waterproofed and finished with measured detail.',
       lead:
-        `Bathrooms sit inside the same ${coreServiceOffer} offer shown on the homepage, with planning, waterproofing, tiling, fitting and finish control kept in one sequence.`,
+        `Bathrooms are delivered as part of a quieter ${coreServiceOffer} studio scope, where planning, waterproofing, tiling and finish control stay aligned from the first survey to handover.`,
       chips: [
         { label: 'Manchester' },
         { label: shared.region, isBrandRegion: true },
@@ -37,7 +41,7 @@ const pages = [
       ]
     },
     intro: {
-      eyebrow: 'Service Overview',
+      eyebrow: 'Studio Scope',
       title: 'A bathroom service built around detail control.',
       lead:
         'The bathroom line is delivered as one service inside that joined-up studio offer, so survey planning, waterproofing, tile setting, carpentry support and final detailing stay tightly coordinated.',
@@ -49,7 +53,7 @@ const pages = [
       ]
     },
     priorities: {
-      eyebrow: 'Service Priorities',
+      eyebrow: 'Studio Method',
       title: 'How the studio keeps this scope premium.',
       pillars: [
         { title: 'Layout discipline', body: 'Circulation, shower zones and storage are resolved before wet-zone work starts.' },
@@ -58,7 +62,7 @@ const pages = [
       ]
     },
     feature: {
-      eyebrow: 'Case Study',
+      eyebrow: 'Selected Project',
       title: 'Didsbury ensuite rebuild',
       lead:
         'A compact ensuite upgraded into a darker, richer composition with aligned tile cuts, bespoke joinery and a controlled stone palette.',
@@ -67,8 +71,8 @@ const pages = [
       imageAlt: 'Didsbury ensuite rebuild'
     },
     mediaStrip: {
-      eyebrow: 'Material Language',
-      title: 'Gallery references for this service line.',
+      eyebrow: 'Finish Language',
+      title: 'Material references for this service line.',
       images: [
         { src: '/Gallery/premium/bathroom-main.jpg', alt: 'Bathrooms project detail' },
         { src: '/Gallery/premium/bathroom-tiles.jpg', alt: 'Bathrooms project detail' },
@@ -77,7 +81,7 @@ const pages = [
     },
     faq: {
       eyebrow: 'FAQ',
-      title: 'Common questions before the brief is shaped.',
+      title: 'Questions homeowners ask before the brief is shaped.',
       items: [
         {
           q: 'Do you handle full strip-out bathroom projects?',
@@ -96,7 +100,7 @@ const pages = [
     contact: {
       title: 'Discuss bathrooms directly with the studio.',
       lead:
-        'The same direct studio numbers and email shown on the business card are surfaced here so bathroom enquiries move through one direct consultation route.'
+        'Bathroom enquiries move through the same direct studio contact route, so early decisions stay precise and the brief stays measured from the start.'
     },
     consultation: {
       title: 'Start your bathroom brief with a private consultation.',
@@ -108,15 +112,19 @@ const pages = [
   },
   {
     fileName: 'premium-kitchens-manchester.html',
-    title: 'Kitchens Manchester | Level Lines Studio',
+    title: 'Premium Kitchen Renovations Manchester | Level Lines Studio',
     metaDescription:
-      'Kitchen installation and refurbishment in Manchester by Level Lines Studio, with bathroom renovation, large-format tiling, carpentry, wall systems and flooring installation coordinated as one joined-up offer.',
+      'Premium kitchen renovations in Manchester by Level Lines Studio for homeowners who want layout clarity, joinery precision and tighter finish control.',
     ogImage: 'https://levellines.co.uk/Gallery/premium/kitchen-panorama-main.jpg',
     bodyClass: 'public-site page-service',
     jsonLd: {
       '@context': 'https://schema.org',
       '@type': 'Service',
-      serviceType: 'Kitchens',
+      name: 'Premium Kitchen Renovations in Manchester',
+      description:
+        'Premium kitchen renovations in Manchester with layout-led planning, joinery precision and calm finish control by Level Lines Studio.',
+      serviceType: 'Premium kitchen renovations',
+      image: 'https://levellines.co.uk/Gallery/premium/kitchen-panorama-main.jpg',
       provider: {
         '@type': 'LocalBusiness',
         name: shared.brandName,
@@ -130,7 +138,7 @@ const pages = [
       eyebrow: 'Kitchens',
       title: 'Kitchens planned around layout logic, storage and finish control.',
       lead:
-        `Kitchens sit inside the same ${coreServiceOffer} offer shown on the homepage, with layout planning, service coordination, fitting and finishing kept in one joined-up sequence.`,
+        `Kitchens sit inside the wider ${coreServiceOffer} studio scope, with layout planning, service coordination, fitting and finishing kept in one joined-up sequence.`,
       chips: [
         { label: 'Manchester' },
         { label: shared.region, isBrandRegion: true },
@@ -138,7 +146,7 @@ const pages = [
       ]
     },
     intro: {
-      eyebrow: 'Service Overview',
+      eyebrow: 'Studio Scope',
       title: 'Kitchen work that feels designed, not assembled.',
       lead:
         'The kitchen line is delivered as one service inside that joined-up studio offer, so cabinetry, lighting, worktops, carpentry touchpoints and final finishing are resolved together.',
@@ -150,7 +158,7 @@ const pages = [
       ]
     },
     priorities: {
-      eyebrow: 'Service Priorities',
+      eyebrow: 'Studio Method',
       title: 'How the studio keeps this scope premium.',
       pillars: [
         { title: 'Planning clarity', body: 'Appliance, lighting and work-zone decisions are resolved before fit-out starts.' },
@@ -159,7 +167,7 @@ const pages = [
       ]
     },
     feature: {
-      eyebrow: 'Case Study',
+      eyebrow: 'Selected Project',
       title: 'Altrincham kitchen overhaul',
       lead:
         'A full kitchen reset centred on darker surfaces, warm lighting and tight cabinetry alignment for a quieter luxury read.',
@@ -168,8 +176,8 @@ const pages = [
       imageAlt: 'Altrincham kitchen overhaul'
     },
     mediaStrip: {
-      eyebrow: 'Material Language',
-      title: 'Gallery references for this service line.',
+      eyebrow: 'Finish Language',
+      title: 'Material references for this service line.',
       images: [
         { src: '/Gallery/premium/kitchen-panorama-main.jpg', alt: 'Kitchens project detail' },
         { src: '/Gallery/premium/kitchen-panorama-left.jpg', alt: 'Kitchens project detail' },
@@ -178,7 +186,7 @@ const pages = [
     },
     faq: {
       eyebrow: 'FAQ',
-      title: 'Common questions before the brief is shaped.',
+      title: 'Questions homeowners ask before the brief is shaped.',
       items: [
         {
           q: 'Do you work on complete kitchen transformations?',
@@ -197,7 +205,7 @@ const pages = [
     contact: {
       title: 'Discuss kitchens directly with the studio.',
       lead:
-        'The same direct studio numbers and email shown on the business card are surfaced here so kitchen enquiries move through one direct consultation route.'
+        'Kitchen enquiries move through the same direct studio contact route, so layout decisions and finish expectations are discussed without noise.'
     },
     consultation: {
       title: 'Start your kitchen brief with a private consultation.',
@@ -209,15 +217,19 @@ const pages = [
   },
   {
     fileName: 'interior-renovations-manchester.html',
-    title: 'Interior Renovations Manchester | Level Lines Studio',
+    title: 'Premium Interior Renovations Manchester | Level Lines Studio',
     metaDescription:
-      'Interior renovations in Manchester by Level Lines Studio, with carpentry, wall systems, large-format tiling and flooring installation coordinated as one joined-up offer.',
+      'Premium interior renovations in Manchester by Level Lines Studio for homeowners seeking carpentry precision, wall-system discipline and one calm finish language.',
     ogImage: 'https://levellines.co.uk/Gallery/premium/exterior-front.jpg',
     bodyClass: 'public-site page-service',
     jsonLd: {
       '@context': 'https://schema.org',
       '@type': 'Service',
-      serviceType: 'Interior & Wall Systems',
+      name: 'Premium Interior Renovations in Manchester',
+      description:
+        'Premium interior renovations in Manchester with carpentry precision, wall-system discipline and coordinated finish control by Level Lines Studio.',
+      serviceType: 'Premium interior renovations',
+      image: 'https://levellines.co.uk/Gallery/premium/exterior-front.jpg',
       provider: {
         '@type': 'LocalBusiness',
         name: shared.brandName,
@@ -231,7 +243,7 @@ const pages = [
       eyebrow: 'Interior & Wall Systems',
       title: 'Interior renovations that keep one finish language from room to room.',
       lead:
-        `Interior and wall-system work sit inside the same ${coreServiceOffer} offer shown on the homepage, giving broader renovation briefs one plan / design / craft structure from room to room.`,
+        `Interior and wall-system work extend the same ${coreServiceOffer} studio scope beyond bathrooms and kitchens, giving broader renovation briefs one plan / design / craft structure from room to room.`,
       chips: [
         { label: 'Manchester' },
         { label: shared.region, isBrandRegion: true },
@@ -239,7 +251,7 @@ const pages = [
       ]
     },
     intro: {
-      eyebrow: 'Service Overview',
+      eyebrow: 'Studio Scope',
       title: 'A joined-up scope for interiors, carpentry and wall systems.',
       lead:
         'This service carries the joined-up studio offer beyond bathrooms and kitchens, so carpentry, tiling, wall-system build-ups and flooring decisions can read as one coordinated brief.',
@@ -251,7 +263,7 @@ const pages = [
       ]
     },
     priorities: {
-      eyebrow: 'Service Priorities',
+      eyebrow: 'Studio Method',
       title: 'How the studio keeps this scope premium.',
       pillars: [
         { title: 'Room-to-room continuity', body: 'Finishes and transitions are resolved as one composition rather than isolated upgrades.' },
@@ -260,7 +272,7 @@ const pages = [
       ]
     },
     feature: {
-      eyebrow: 'Case Study',
+      eyebrow: 'Selected Project',
       title: 'North West interior refresh',
       lead:
         'A multi-room brief combining carpentry, internal wall work and surface refinements to create one calmer architectural language throughout the property.',
@@ -269,8 +281,8 @@ const pages = [
       imageAlt: 'North West interior refresh'
     },
     mediaStrip: {
-      eyebrow: 'Material Language',
-      title: 'Gallery references for this service line.',
+      eyebrow: 'Finish Language',
+      title: 'Material references for this service line.',
       images: [
         { src: '/Gallery/premium/brick-detail-charcoal.jpg', alt: 'Interior & Wall Systems project detail' },
         { src: '/Gallery/premium/exterior-wood-gables.jpg', alt: 'Interior & Wall Systems project detail' },
@@ -279,7 +291,7 @@ const pages = [
     },
     faq: {
       eyebrow: 'FAQ',
-      title: 'Common questions before the brief is shaped.',
+      title: 'Questions homeowners ask before the brief is shaped.',
       items: [
         {
           q: 'Do you take on work beyond bathrooms and kitchens?',
@@ -298,7 +310,7 @@ const pages = [
     contact: {
       title: 'Discuss interior & wall systems directly with the studio.',
       lead:
-        'The same direct studio numbers and email shown on the business card are surfaced here so broader interior enquiries move through one direct consultation route.'
+        'Broader interior enquiries move through the same direct studio contact route, so multi-room scope and finish continuity can be shaped early.'
     },
     consultation: {
       title: 'Start your interior & wall systems brief with a private consultation.',

@@ -7,6 +7,8 @@
   const header = document.querySelector('.site-header');
   const navToggle = document.querySelector('[data-nav-toggle]');
   const navMenu = document.querySelector('[data-nav-menu]');
+  const isPublicShell = body?.classList.contains('public-site');
+  const suppressHeaderUtilityActions = isPublicShell;
   const menuWrap =
     document.querySelector('[data-menu-wrap]') ||
     (navMenu ? navMenu.closest('.menu-wrap') : null) ||
@@ -217,9 +219,18 @@
     baseLink.insertAdjacentElement('afterend', newAnchor);
   };
 
+  const getGuestAuthLabel = (authLink) => {
+    return String(authLink?.getAttribute('data-auth-guest-label') || '').trim() || brand?.publicAuthLabel || 'Account';
+  };
+
   const ensureHeaderAccountButton = (loggedIn, href) => {
     const headerInner = document.querySelector('.header-inner');
     if (!headerInner) return;
+
+    if (suppressHeaderUtilityActions) {
+      headerInner.querySelector('[data-header-account-btn]')?.remove();
+      return;
+    }
 
     let accountBtn = headerInner.querySelector('[data-header-account-btn]');
     if (!accountBtn) {
@@ -235,13 +246,19 @@
       }
     }
 
-    const mobile = window.matchMedia('(max-width: 992px)').matches;
     accountBtn.href = loggedIn ? href : '/auth.html';
-    accountBtn.textContent = loggedIn ? 'Account' : (mobile ? 'Login' : 'Login / Register');
+    accountBtn.textContent = 'Account';
+    accountBtn.title = loggedIn ? 'Open account settings' : 'Open account access';
     accountBtn.classList.toggle('is-authenticated', loggedIn);
   };
 
   const ensureDrawerCta = () => {
+    if (suppressHeaderUtilityActions) {
+      navMenu?.querySelector('[data-nav-drawer-cta]')?.remove();
+      navMenu?.querySelector('.nav-drawer-cta-wrap')?.remove();
+      return;
+    }
+
     if (!navMenu || navMenu.querySelector('[data-nav-drawer-cta]')) return;
 
     const cta = document.createElement('a');
@@ -272,7 +289,14 @@
 
     if (!authLink) return;
 
-    authLink.textContent = loggedIn ? 'Account' : 'Login / Register';
+    if (isPublicShell) {
+      authLink.textContent = getGuestAuthLabel(authLink);
+      authLink.setAttribute('href', '/auth.html');
+      authLink.classList.remove('nav-account-link');
+      return;
+    }
+
+    authLink.textContent = loggedIn ? 'Account' : getGuestAuthLabel(authLink);
     authLink.setAttribute('href', loggedIn ? accountHref : '/auth.html');
     authLink.classList.toggle('nav-account-link', loggedIn);
 

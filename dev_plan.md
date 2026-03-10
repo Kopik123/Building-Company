@@ -19,7 +19,11 @@ Projekt jest monolitem Node.js / Express z publicznym frontendem serwowanym stat
 Aktualny stan funkcjonalny:
 
 - Publiczne strony marketingowe sa oparte o generator stron z danymi w `scripts/*.data.js` i rendererem w `scripts/publicPageRenderer.js`.
+- Publiczny shell jest po redesignie oparty o jeden kanoniczny lockup `readyprint2.png` oraz jednolita publiczna nawigacje `Services / Projects / Gallery / Contact / Account`.
 - Homepage, strony uslug i strony lokalizacji zostaly jezykowo ujednolicone wokol jednej oferty: bathroom renovations, kitchens, tiling, carpentry, wall systems, flooring.
+- Homepage po przebudowie prowadzi klienta premium przez sekwencje: editorial hero, selected projects, studio method, signature services, gallery / finish proof, FAQ, private consultation i dopiero nizsze supporting details.
+- Auth, client workspace i manager workspace zachowuja ten sam jezyk premium, ale maja cichszy, bardziej operacyjny shell bez marketingowego przeladowania.
+- SEO zostalo dopasowane do nowego pozycjonowania: publiczne strony ofertowe maja bardziej precyzyjne title/meta, schema `Service` + `FAQPage`, a strony operacyjne `auth` / `client workspace` / `manager workspace` sa celowo oznaczone jako `noindex`.
 - Generator publicznych stron jest objety weryfikacja przez `npm run verify:generated`.
 - Start serwera uruchamia migracje automatycznie przy bootowaniu aplikacji.
 - Srodowisko produkcyjne to serwer Ubuntu na DigitalOcean.
@@ -147,3 +151,96 @@ Aktualny stan roboczy i ryzyka techniczne:
 - `git ls-files node_modules` zwrocilo `0`, co potwierdza, ze Git nie sledzi juz zadnego pliku z `node_modules`.
 - `pm2 restart building-company` zakonczyl sie sukcesem, a proces pozostaje `online`.
 - Status: glowny problem deployu z tracked `node_modules` zostal zamkniety operacyjnie.
+
+### 2026-03-09 - Korekta copy karty kontaktowej na homepage
+
+- Na homepage zmieniono etykiete karty z numerami telefonu z `Studio lines` na `Contact Numbers`.
+- To porzadkuje nazewnictwo sekcji kontaktowej i lepiej komunikuje, ze chodzi o bezposrednie numery telefonu, a nie linie uslugowe.
+- Status: poprawka wykonana lokalnie w `index.html`.
+
+### 2026-03-09 - Ujednolicenie publicznego dostepu do konta
+
+- Publiczne etykiety dostepu do konta zostaly uproszczone do jednego `Log In` zamiast rozdzielania wejscia na `Client Portal` i `Manager Dashboard`.
+- Zmiana objela homepage, auth page, legal pages, runtime w `site.js` oraz generator nawigacji dla stron publicznych, ale nie zmienila samej logiki rolowych przekierowan po zalogowaniu.
+- Status: poprawka wykonana lokalnie; wygenerowane strony publiczne zostaly odswiezone i zweryfikowane.
+
+### 2026-03-09 - Poprawa kontrastu sekcji konsultacji i FAQ
+
+- W `styles.css` przyciemniono teksty w sekcjach `Private Consultation` i `FAQ` na jasnym tle, aby lead, punkty konsultacji i pytania FAQ byly czytelne bez efektu zlewania z tlem.
+- Dodatkowo zwiekszono nieco kontrast samych kart FAQ przez mocniejsze tlo i wyrazniejszy border.
+- Status: poprawka wykonana lokalnie w warstwie CSS.
+
+### 2026-03-09 - Przeniesienie sekcji `Direct Contact` pod `Coverage`
+
+- Na homepage sekcja `Direct Contact` zostala przeniesiona bezposrednio pod `Coverage`, aby numery telefonu i email byly widoczne od razu po obszarach obslugi.
+- Zmiana dotyczy jedynie ukladu sekcji na stronie glownej; tresc kontaktowa i logika formularzy pozostaly bez zmian.
+- Status: poprawka wykonana lokalnie w `index.html`.
+
+### 2026-03-09 - Przebudowa hero homepage i przesuniecie projektow wyzej
+
+- Homepage hero zostal uproszczony do pelnoszerokiego ukladu z copy, CTA i statystykami bez bocznego formularza w sekcji startowej.
+- Sekcja `Projects` zostala przesunieta bezposrednio pod hero, aby galeria case studies byla widoczna natychmiast po glownym komunikacie strony.
+- Formularz kontaktowy pozostaje nizej w dedykowanej sekcji `Private Consultation`, wiec logika lead capture nie zostala usunieta, tylko odsunieta od topu strony.
+- Status: poprawka wykonana lokalnie w `index.html` i `styles.css`.
+
+### 2026-03-09 - Przyciemnienie copy w jasnych sekcjach uslug
+
+- W `styles.css` przyciemniono teksty w blokach `intro-grid`, `feature-split`, `detail-card` i listach punktowanych na jasnym tle, tak aby copy czytalo sie w czerni / odcieniu obsidian zamiast zbyt lekkiego brazu.
+- Zmiana obejmuje m.in. sekcje typu `A bathroom service built around detail control` oraz ich listy kontrolne.
+- Status: poprawka wykonana lokalnie w warstwie CSS.
+
+### 2026-03-09 - Uproszczenie hero `Client Portal`
+
+- Z hero strony klienta usunieto boczny panel `Portal Overview`, aby sekcja otwierajaca nie konkurowala z glownym komunikatem i nie dublowala informacji kontaktowych.
+- `Client Portal` zostal ustawiony jako pelnoszeroki blok, a chipy `Projects / Documents / Messages` pozostaly w jednym poziomym rzedzie.
+- Status: poprawka wykonana lokalnie w `client-dashboard.html` i `styles.css`.
+
+### 2026-03-09 - Uproszczenie headera `Client Portal`
+
+- W headerze `client-dashboard.html` usunieto linki `Coverage` i `Client Portal`, zostawiajac krotszy uklad `Services / Projects / Gallery / Contact / Join Us`.
+- `Contact` zostal ustawiony bezposrednio przed `Join Us`, a publiczne wejscie do logowania na tej stronie dostalo etykiete `Join Us`.
+- Z tej strony usunieto osobny header CTA `Request Private Consultation`, a runtime w `site.js` przestal doklejac dodatkowy przycisk konta i drawer CTA, zeby nie powstawaly zduplikowane akcje w naglowku.
+- Status: poprawka wykonana lokalnie w `client-dashboard.html` i `site.js`.
+
+### 2026-03-10 - Domkniecie makiety headera `Client Portal`
+
+- W headerze `client-dashboard.html` tekstowa nazwa marki zostala zastapiona obrazem `title.png`, przy zachowaniu osobnego znaku `logo4.png`.
+- Z hero strony klienta usunieto breadcrumbs `Home / Client Portal`, zgodnie z adnotacja z makiety.
+- W `site.js` strona `page-client-dashboard` zachowuje teraz stale publiczne wejscie `Join Us` zamiast przepinac etykiete na `Account`, nawet gdy istnieje lokalna sesja w przegladarce.
+- W `styles.css` dodano styl dla `brand-title-image` oraz ukrycie breadcrumbs tylko dla `page-client-dashboard`.
+- Status: poprawka wykonana lokalnie w `client-dashboard.html`, `site.js` i `styles.css`.
+
+### 2026-03-10 - Rebuild frontu w kierunku quiet architectural luxury
+
+- Ujednolicono caly publiczny shell i workspace shells wokol jednego lockupu marki `logo4.png + title.png`, jednej publicznej nawigacji `Services / Projects / Gallery / Contact / Join Us` i jednej taksonomii CTA.
+- Z homepage usunieto konkurujace akcje w naglowku, przestawiono hierarchie pod klienta premium oraz przebudowano sekwencje sekcji tak, aby mocniej eksponowala selected projects, studio method, signature services, finish proof i private consultation.
+- `site.js` zostal przebudowany tak, aby publiczne strony nie przepinaly sie na runtime'owe `Account` ani nie doklejaly automatycznie dodatkowych utility actions do headera; `Join Us` pozostaje stalym publicznym CTA do auth.
+- `brand.js`, `scripts/publicPages.shared.js`, `scripts/publicPageRenderer.js`, `scripts/servicePages.data.js`, `scripts/locationPages.data.js` i `scripts/generate-location-pages.js` zostaly dopasowane do nowego kontraktu copy, shella i premium page-family systemu.
+- Auth, client workspace, manager workspace oraz legal pages zostaly wizualnie i jezykowo zrownane z nowym frontem, ale workspace zachowal cichszy, bardziej operacyjny charakter niz marketing homepage.
+- Odswiezono wygenerowane strony uslug i lokalizacji, a stopki dostaly supporting-detail block `Studio Region` zamiast top-levelowego tonu `Coverage`.
+- Status: zweryfikowane lokalnie przez `npm.cmd run generate:public-pages`, `npm.cmd run verify:generated` i `node --check site.js`.
+
+### 2026-03-10 - Dopasowanie SEO do nowego premium pozycjonowania
+
+- Homepage dostal pelniejszy zestaw metadata social (`og:site_name`, `twitter:title`, `twitter:description`, `twitter:image`) oraz rozszerzony schema graph `LocalBusiness + WebSite + FAQPage`.
+- Generator stron uslug i lokalizacji dostal wspolny SEO contract w `scripts/publicPageRenderer.js`: `robots`, bogatsze Open Graph / Twitter metadata oraz obsluge wielu blokow JSON-LD.
+- Strony uslug i lokalizacji dostaly bardziej precyzyjne, mniej katalogowe `title` i `meta description`, zgodne z nowym pozycjonowaniem premium i calm-build process.
+- Dla wszystkich generowanych service / location pages dodano schema `FAQPage`, bo pytania FAQ sa realna czescia tresci i wzmacniaja topical relevance.
+- `auth.html`, `client-dashboard.html` i `manager-dashboard.html` zostaly oznaczone jako `noindex,follow`, zeby wyszukiwarki nie indeksowaly stron operacyjnych jako landing pages oferty.
+- Status: zweryfikowane lokalnie przez `npm.cmd run generate:public-pages`, `npm.cmd run verify:generated`, `node --check scripts/publicPageRenderer.js`, `node --check scripts/generate-service-pages.js`, `node --check scripts/generate-location-pages.js` oraz `npm.cmd run test:ci`.
+
+### 2026-03-10 - Podmiana wspolnego lockupu marki na `readyprint2.png`
+
+- Headery homepage, auth, legal pages, client workspace, manager workspace oraz wszystkie strony generowane przeszly z duetu `logo4.png + title.png` na jeden obraz `readyprint2.png`.
+- `scripts/publicPages.shared.js`, `brand.js` i `scripts/publicPageRenderer.js` zostaly dopasowane do nowego kanonicznego assetu, tak aby manualne shelle i generator stron publicznych korzystaly z tej samej sciezki brandowej.
+- `styles.css` dostal nowy wariant `brand-lockup-image`, zeby pojedynczy lockup mial poprawna geometrie w desktopie i mobile bez pozostalosci po dwoch osobnych obrazach.
+- Recznie utrzymywane JSON-LD na homepage i stronach legalnych zostaly zaktualizowane tak, aby wskazywaly `readyprint2.png` jako glowny obraz marki.
+- Status: zweryfikowane lokalnie przez `npm.cmd run generate:public-pages`, `npm.cmd run verify:generated` i `node --check scripts/publicPageRenderer.js`.
+
+### 2026-03-10 - Ujednolicenie publicznej etykiety konta do `Account`
+
+- Publiczny entry point do logowania i konta zostal zmieniony z `Join Us` oraz starych wariantow `Log In` / `Login / Register` na jedno `Account`.
+- Zmiana objela `scripts/publicPages.shared.js`, `brand.js`, `site.js`, `main.js`, recznie utrzymywane shelle oraz wygenerowane strony uslug i lokalizacji.
+- `auth.html` dostal tez tytul strony `Account | Level Lines Studio` oraz spojne etykiety w hero, stopce i linkach nawigacyjnych.
+- Runtime w `site.js` i legacy runtime w `main.js` nie przywracaja juz starych etykiet, nawet po zaladowaniu sesji albo menu mobilnego.
+- Status: zweryfikowane lokalnie przez `npm.cmd run generate:public-pages`, `npm.cmd run verify:generated`, `node --check site.js` oraz grep po braku `Join Us` i `Login / Register` w aktywnym froncie.

@@ -5,13 +5,25 @@ const escapeHtml = (value) =>
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 
-const renderNavLinks = () => `          <a href="/index.html#services" data-nav-link>Services</a>
-          <a href="/index.html#areas" data-nav-link>Coverage</a>
-          <a href="/index.html#projects" data-nav-link>Projects</a>
-          <a href="/index.html#gallery" data-nav-link>Gallery</a>
-          <a href="/client-dashboard.html" data-nav-link>Client Portal</a>
-          <a href="/auth.html" data-nav-link>Login / Register</a>
-          <a href="#consultation" data-nav-link>Contact</a>`;
+const renderJsonLdScripts = (jsonLd) => {
+  const nodes = Array.isArray(jsonLd) ? jsonLd.filter(Boolean) : [jsonLd].filter(Boolean);
+  return nodes
+    .map((node) => `  <script type="application/ld+json">${JSON.stringify(node)}</script>`)
+    .join('\n');
+};
+
+const renderBrandLockup = (shared) => `      <a class="brand" href="/index.html" aria-label="${escapeHtml(shared.brandName)} home">
+        <img src="${escapeHtml(shared.logoPath || shared.titleImagePath || '/readyprint2.png')}" alt="${escapeHtml(shared.brandName)}" class="brand-lockup-image" />
+      </a>`;
+
+const renderNavLinks = (shared, contactHref = '#consultation') =>
+  shared.navLinks
+    .map((link) => {
+      const href = link.label === 'Contact' ? contactHref : link.href;
+      const authAttr = link.isAuth ? ` data-auth-guest-label="${escapeHtml(shared.publicAuthLabel || link.label)}"` : '';
+      return `          <a href="${escapeHtml(href)}" data-nav-link${authAttr}>${escapeHtml(link.label)}</a>`;
+    })
+    .join('\n');
 
 const renderLinks = (links, className = '') =>
   links
@@ -136,7 +148,7 @@ ${renderFaq(items)}
 const renderContactSection = ({ title, lead, shared }) => `  <section class="section section--dark contact-band-shell">
     <div class="container contact-band surface-card surface-card--dark">
       <div class="contact-band-copy">
-        <p class="section-eyebrow section-eyebrow--compact">Direct Contact</p>
+        <p class="section-eyebrow section-eyebrow--compact">Studio Contact</p>
         <h2>${escapeHtml(title)}</h2>
         <p>${escapeHtml(lead)}</p>
       </div>
@@ -156,7 +168,7 @@ const renderConsultationSection = ({ title, lead, formContext, locationValue, se
         <p class="section-lead">${escapeHtml(lead)}</p>
         <div class="consultation-points">
           <p><strong data-brand-region>${escapeHtml(shared.region)}</strong></p>
-          <p>Two direct studio lines and a short-list project intake.</p>
+          <p>Selective briefs, direct studio access and a measured intake process.</p>
         </div>
       </div>
       <form class="quote-form surface-card surface-card--light js-quote-form" data-form-context="${escapeHtml(formContext)}" novalidate>
@@ -173,7 +185,7 @@ const renderConsultationSection = ({ title, lead, formContext, locationValue, se
           </label>
           <label class="span-2">Project brief<textarea name="message" rows="5" required placeholder="Tell us about your scope, finish expectations and timing."></textarea></label>
         </div>
-        <button class="btn btn-gold btn-block" type="submit">Request Private Consultation</button>
+        <button class="btn btn-gold btn-block" type="submit">${escapeHtml(shared.consultationCtaLabel || 'Request Private Consultation')}</button>
         <p class="form-status" aria-live="polite"></p>
       </form>
     </div>
@@ -204,7 +216,7 @@ ${renderLinks(shared.studioLinks)}
         </div>
       </div>
       <div class="footer-block">
-        <h3>Coverage</h3>
+        <h3>Studio Region</h3>
         <p class="footer-copy" data-brand-region>${escapeHtml(shared.region)}</p>
         <div class="footer-area-list" data-brand-area-list data-item-class="footer-area-chip"></div>
       </div>
@@ -223,6 +235,7 @@ const renderPublicPage = ({
   ogImage,
   bodyClass,
   jsonLd,
+  robotsContent = 'index,follow,max-image-preview:large',
   hero,
   sections,
   contact,
@@ -236,30 +249,29 @@ const renderPublicPage = ({
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>${escapeHtml(title)}</title>
   <meta name="description" content="${escapeHtml(metaDescription)}" />
+  <meta name="robots" content="${escapeHtml(robotsContent)}" />
   <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="${escapeHtml(shared.brandName)}" />
   <meta property="og:title" content="${escapeHtml(title)}" />
   <meta property="og:description" content="${escapeHtml(metaDescription)}" />
   <meta property="og:image" content="${escapeHtml(ogImage)}" />
   <meta property="og:url" content="${escapeHtml(`${shared.siteUrl}/${fileName}`)}" />
   <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="${escapeHtml(title)}" />
+  <meta name="twitter:description" content="${escapeHtml(metaDescription)}" />
+  <meta name="twitter:image" content="${escapeHtml(ogImage)}" />
   <link rel="canonical" href="${escapeHtml(`${shared.siteUrl}/${fileName}`)}" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles.css" />
-  <script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
+${renderJsonLdScripts(jsonLd)}
 </head>
 <body class="${escapeHtml(bodyClass)}">
 
   <header class="site-header" id="top">
     <div class="container header-inner grid-12">
-      <a class="brand" href="/index.html" aria-label="${escapeHtml(shared.brandName)} home">
-        <img src="${escapeHtml(shared.logoPath)}" alt="${escapeHtml(shared.brandName)} logo" class="brand-logo" />
-        <span class="brand-copy">
-          <span class="brand-name" data-brand-name>${escapeHtml(shared.brandName)}</span>
-          <span class="brand-sub" data-brand-claim>${escapeHtml(shared.claim)}</span>
-        </span>
-      </a>
+${renderBrandLockup(shared)}
       
       <div class="menu-wrap" data-menu-wrap>
         <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation menu">
@@ -268,10 +280,9 @@ const renderPublicPage = ({
           <span class="nav-toggle-line"></span>
         </button>
         <nav class="site-nav" id="site-nav" data-nav-menu aria-label="Main navigation">
-${renderNavLinks()}
+${renderNavLinks(shared)}
         </nav>
       </div>
-      <a class="btn btn-gold header-cta" href="#consultation">Request Private Consultation</a>
     </div>
   </header>
   <main>

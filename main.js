@@ -94,7 +94,7 @@
     }
 
     button.href = loggedIn ? accountHref : '/auth.html';
-    button.textContent = loggedIn ? 'Account' : (isMobile ? 'Login' : 'Login / Register');
+    button.textContent = 'Account';
     button.title = loggedIn ? 'Open account settings' : 'Login or register account';
     button.classList.toggle('is-authenticated', loggedIn);
   };
@@ -112,7 +112,7 @@
         link.setAttribute('href', '/auth.html');
         link.classList.add('nav-account-link');
       } else {
-        link.textContent = 'Login / Register';
+        link.textContent = 'Account';
         link.setAttribute('href', '/auth.html');
         link.classList.remove('nav-account-link');
       }
