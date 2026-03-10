@@ -5483,8 +5483,8 @@ body.workspace-site .brand-mark-link {
   justify-self: start;
   display: inline-flex;
   align-items: center;
-  width: clamp(42px, 5vw, 58px);
-  min-width: clamp(42px, 5vw, 58px);
+  width: clamp(30px, 3.2vw, 40px);
+  min-width: clamp(30px, 3.2vw, 40px);
   z-index: 3;
 }
 
@@ -5497,7 +5497,7 @@ body.workspace-site .brand-title-link {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: min(44vw, 380px);
+  width: min(22vw, 240px);
   z-index: 2;
 }
 
@@ -5506,7 +5506,7 @@ body.workspace-site .brand-icon-image {
   display: block;
   width: 100%;
   height: auto;
-  max-height: 58px;
+  max-height: 40px;
   object-fit: contain;
   filter: drop-shadow(0 0 14px rgba(205, 165, 74, 0.16));
 }
@@ -5515,7 +5515,7 @@ body.public-site .brand-title-link .brand-title-image,
 body.workspace-site .brand-title-link .brand-title-image {
   width: 100%;
   max-width: 100%;
-  max-height: 52px;
+  max-height: 34px;
   object-fit: contain;
 }
 
@@ -5539,39 +5539,39 @@ body.workspace-site .brand-title-link .brand-lockup-image {
 @media (max-width: 992px) {
   body.public-site .brand-title-link,
   body.workspace-site .brand-title-link {
-    width: min(40vw, 260px);
+    width: min(28vw, 200px);
   }
 
   body.public-site .brand-icon-image,
   body.workspace-site .brand-icon-image {
-    max-height: 48px;
+    max-height: 34px;
   }
 
   body.public-site .brand-title-link .brand-title-image,
   body.workspace-site .brand-title-link .brand-title-image {
-    max-height: 42px;
+    max-height: 28px;
   }
 }
 
 @media (max-width: 640px) {
   body.public-site .brand-mark-link,
   body.workspace-site .brand-mark-link {
-    width: 38px;
-    min-width: 38px;
+    width: 28px;
+    min-width: 28px;
   }
 
   body.public-site .brand-title-link,
   body.workspace-site .brand-title-link {
-    width: min(46vw, 180px);
+    width: min(40vw, 146px);
   }
 
   body.public-site .brand-icon-image,
   body.workspace-site .brand-icon-image {
-    max-height: 38px;
+    max-height: 28px;
   }
 
   body.public-site .brand-title-link .brand-title-image,
   body.workspace-site .brand-title-link .brand-title-image {
-    max-height: 30px;
+    max-height: 22px;
   }
 }
