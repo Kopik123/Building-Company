@@ -147,3 +147,53 @@ Aktualny stan roboczy i ryzyka techniczne:
 - `git ls-files node_modules` zwrocilo `0`, co potwierdza, ze Git nie sledzi juz zadnego pliku z `node_modules`.
 - `pm2 restart building-company` zakonczyl sie sukcesem, a proces pozostaje `online`.
 - Status: glowny problem deployu z tracked `node_modules` zostal zamkniety operacyjnie.
+
+### 2026-03-09 - Korekta copy karty kontaktowej na homepage
+
+- Na homepage zmieniono etykiete karty z numerami telefonu z `Studio lines` na `Contact Numbers`.
+- To porzadkuje nazewnictwo sekcji kontaktowej i lepiej komunikuje, ze chodzi o bezposrednie numery telefonu, a nie linie uslugowe.
+- Status: poprawka wykonana lokalnie w `index.html`.
+
+### 2026-03-09 - Ujednolicenie publicznego dostepu do konta
+
+- Publiczne etykiety dostepu do konta zostaly uproszczone do jednego `Log In` zamiast rozdzielania wejscia na `Client Portal` i `Manager Dashboard`.
+- Zmiana objela homepage, auth page, legal pages, runtime w `site.js` oraz generator nawigacji dla stron publicznych, ale nie zmienila samej logiki rolowych przekierowan po zalogowaniu.
+- Status: poprawka wykonana lokalnie; wygenerowane strony publiczne zostaly odswiezone i zweryfikowane.
+
+### 2026-03-09 - Poprawa kontrastu sekcji konsultacji i FAQ
+
+- W `styles.css` przyciemniono teksty w sekcjach `Private Consultation` i `FAQ` na jasnym tle, aby lead, punkty konsultacji i pytania FAQ byly czytelne bez efektu zlewania z tlem.
+- Dodatkowo zwiekszono nieco kontrast samych kart FAQ przez mocniejsze tlo i wyrazniejszy border.
+- Status: poprawka wykonana lokalnie w warstwie CSS.
+
+### 2026-03-09 - Przeniesienie sekcji `Direct Contact` pod `Coverage`
+
+- Na homepage sekcja `Direct Contact` zostala przeniesiona bezposrednio pod `Coverage`, aby numery telefonu i email byly widoczne od razu po obszarach obslugi.
+- Zmiana dotyczy jedynie ukladu sekcji na stronie glownej; tresc kontaktowa i logika formularzy pozostaly bez zmian.
+- Status: poprawka wykonana lokalnie w `index.html`.
+
+### 2026-03-09 - Przebudowa hero homepage i przesuniecie projektow wyzej
+
+- Homepage hero zostal uproszczony do pelnoszerokiego ukladu z copy, CTA i statystykami bez bocznego formularza w sekcji startowej.
+- Sekcja `Projects` zostala przesunieta bezposrednio pod hero, aby galeria case studies byla widoczna natychmiast po glownym komunikacie strony.
+- Formularz kontaktowy pozostaje nizej w dedykowanej sekcji `Private Consultation`, wiec logika lead capture nie zostala usunieta, tylko odsunieta od topu strony.
+- Status: poprawka wykonana lokalnie w `index.html` i `styles.css`.
+
+### 2026-03-09 - Przyciemnienie copy w jasnych sekcjach uslug
+
+- W `styles.css` przyciemniono teksty w blokach `intro-grid`, `feature-split`, `detail-card` i listach punktowanych na jasnym tle, tak aby copy czytalo sie w czerni / odcieniu obsidian zamiast zbyt lekkiego brazu.
+- Zmiana obejmuje m.in. sekcje typu `A bathroom service built around detail control` oraz ich listy kontrolne.
+- Status: poprawka wykonana lokalnie w warstwie CSS.
+
+### 2026-03-09 - Uproszczenie hero `Client Portal`
+
+- Z hero strony klienta usunieto boczny panel `Portal Overview`, aby sekcja otwierajaca nie konkurowala z glownym komunikatem i nie dublowala informacji kontaktowych.
+- `Client Portal` zostal ustawiony jako pelnoszeroki blok, a chipy `Projects / Documents / Messages` pozostaly w jednym poziomym rzedzie.
+- Status: poprawka wykonana lokalnie w `client-dashboard.html` i `styles.css`.
+
+### 2026-03-09 - Uproszczenie headera `Client Portal`
+
+- W headerze `client-dashboard.html` usunieto linki `Coverage` i `Client Portal`, zostawiajac krotszy uklad `Services / Projects / Gallery / Contact / Join Us`.
+- `Contact` zostal ustawiony bezposrednio przed `Join Us`, a publiczne wejscie do logowania na tej stronie dostalo etykiete `Join Us`.
+- Z tej strony usunieto osobny header CTA `Request Private Consultation`, a runtime w `site.js` przestal doklejac dodatkowy przycisk konta i drawer CTA, zeby nie powstawaly zduplikowane akcje w naglowku.
+- Status: poprawka wykonana lokalnie w `client-dashboard.html` i `site.js`.

@@ -2422,6 +2422,37 @@ body.public-site .consultation-points p {
   opacity: 0.84;
 }
 
+body.public-site .section--light .consultation-copy,
+body.public-site .section--light .intro-grid > div,
+body.public-site .section--light .feature-split > div,
+body.public-site .section--light .faq-grid > div,
+body.public-site .section--light .faq-list details {
+  color: #241b12;
+}
+
+body.public-site .section--light .consultation-copy h2,
+body.public-site .section--light .intro-grid h2,
+body.public-site .section--light .feature-split h2,
+body.public-site .section--light .faq-grid h2,
+body.public-site .section--light .faq-list summary {
+  color: #17110b;
+}
+
+body.public-site .section--light .consultation-copy .section-lead,
+body.public-site .section--light .intro-grid .section-lead,
+body.public-site .section--light .feature-split .section-lead,
+body.public-site .section--light .consultation-points p,
+body.public-site .section--light .faq-list details p,
+body.public-site .section--light .detail-list li {
+  color: #2d2319;
+  opacity: 1;
+}
+
+body.public-site .section--light .detail-card,
+body.public-site .section--light .metric-chip {
+  color: #17110b;
+}
+
 body.public-site .surface-card {
   border: 1px solid var(--public-line);
   border-radius: 28px;
@@ -2603,6 +2634,23 @@ body.public-site .hero-layout {
   grid-template-columns: minmax(0, 1.08fr) minmax(350px, 0.92fr);
   gap: 28px;
   align-items: end;
+}
+
+body.public-site.page-home .public-hero {
+  min-height: auto;
+  padding: 132px 0 48px;
+}
+
+body.public-site.page-home .hero-layout {
+  grid-template-columns: 1fr;
+}
+
+body.public-site.page-home .hero-content {
+  width: 100%;
+}
+
+body.public-site.page-home .hero-content h1 {
+  max-width: 13ch;
 }
 
 body.public-site .hero-content {
@@ -2997,8 +3045,8 @@ body.public-site .faq-list {
 body.public-site .faq-list details {
   padding: 18px 20px;
   border-radius: 20px;
-  border: 1px solid rgba(141, 107, 45, 0.2);
-  background: rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(141, 107, 45, 0.28);
+  background: rgba(255, 255, 255, 0.68);
 }
 
 body.public-site .section--dark .faq-list details {
@@ -3233,6 +3281,18 @@ body.workspace-site .workspace-hero {
   grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
   gap: 24px;
   align-items: stretch;
+}
+
+body.workspace-site.page-client-dashboard .workspace-hero {
+  grid-template-columns: 1fr;
+}
+
+body.workspace-site.page-client-dashboard .workspace-hero-copy {
+  min-width: 0;
+}
+
+body.workspace-site.page-client-dashboard .workspace-chip-row {
+  flex-wrap: nowrap;
 }
 
 body.workspace-site .workspace-hero-copy,

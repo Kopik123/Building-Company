@@ -9,8 +9,7 @@ const renderNavLinks = () => `          <a href="/index.html#services" data-nav-
           <a href="/index.html#areas" data-nav-link>Coverage</a>
           <a href="/index.html#projects" data-nav-link>Projects</a>
           <a href="/index.html#gallery" data-nav-link>Gallery</a>
-          <a href="/client-dashboard.html" data-nav-link>Client Portal</a>
-          <a href="/auth.html" data-nav-link>Login / Register</a>
+          <a href="/auth.html" data-nav-link>Log In</a>
           <a href="#consultation" data-nav-link>Contact</a>`;
 
 const renderLinks = (links, className = '') =>

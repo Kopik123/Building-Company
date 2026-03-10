@@ -41,8 +41,7 @@
           <a href="#areas" data-nav-link>Coverage</a>
           <a href="#projects" data-nav-link>Projects</a>
           <a href="#gallery" data-nav-link>Gallery</a>
-          <a href="/client-dashboard.html" data-nav-link>Client Portal</a>
-          <a href="/auth.html" data-nav-link>Login / Register</a>
+          <a href="/auth.html" data-nav-link>Log In</a>
           <a href="#consultation" data-nav-link>Contact</a>
         </nav>
       </div>
@@ -64,28 +63,27 @@
           </div>
           <div class="hero-stat-grid">
             <article class="hero-stat surface-card surface-card--dark"><span>Region</span><strong data-brand-region>North West - Lancashire</strong></article>
-            <article class="hero-stat surface-card surface-card--dark"><span>Studio lines</span><strong>+44 7942 874 446 | +44 7304 506 391</strong></article>
+            <article class="hero-stat surface-card surface-card--dark"><span>Contact Numbers</span><strong>+44 7942 874 446 | +44 7304 506 391</strong></article>
             <article class="hero-stat surface-card surface-card--dark"><span>Delivery axis</span><strong data-brand-claim>Plan / Design / Craft</strong></article>
           </div>
         </div>
-        <form class="quote-form surface-card surface-card--light hero-form js-quote-form" data-form-context="Home Hero" novalidate>
-          <h2>Book a private consultation</h2>
-          <p class="quote-form-intro">Share your project type, budget range and timing. We reply with a straight, practical next step.</p>
-          <div class="form-grid">
-            <label>Name<input type="text" name="name" autocomplete="name" required /></label>
-            <label>Phone<input type="tel" name="phone" autocomplete="tel" /></label>
-            <label>Email<input type="email" name="email" autocomplete="email" /></label>
-            <label>Project type
-              <select name="projectType" required data-brand-project-type-select data-default-label="Select" data-selected-value="bathroom"></select>
-            </label>
-            <label>Budget
-              <select name="budget" data-brand-budget-select data-default-label="Select"></select>
-            </label>
-            <label class="span-2">Project brief<textarea name="message" rows="5" required placeholder="Tell us what you want to build, how you want it to feel and when you want to start."></textarea></label>
-          </div>
-          <button class="btn btn-gold btn-block" type="submit">Request Private Consultation</button>
-          <p class="form-status" aria-live="polite"></p>
-        </form>
+      </div>
+    </section>
+
+    <section class="section section--dark" id="projects">
+      <div class="container section-shell">
+        <div class="section-heading">
+          <p class="section-eyebrow">Projects</p>
+          <h2>Signature locations and case studies.</h2>
+        </div>
+        <div class="project-grid">
+          <a class="project-card surface-card surface-card--dark" href="/premium-renovations-didsbury.html"><img src="/Gallery/premium/bathroom-main.jpg" alt="Didsbury bathroom project" loading="lazy" /><span>Didsbury</span></a>
+          <a class="project-card surface-card surface-card--dark" href="/premium-renovations-altrincham.html"><img src="/Gallery/premium/kitchen-panorama-right.jpg" alt="Altrincham kitchen project" loading="lazy" /><span>Altrincham</span></a>
+          <a class="project-card surface-card surface-card--dark" href="/premium-renovations-stockport.html"><img src="/Gallery/premium/exterior-wood-gables.jpg" alt="Stockport exterior project" loading="lazy" /><span>Stockport</span></a>
+          <a class="project-card surface-card surface-card--dark" href="/premium-renovations-sale.html"><img src="/Gallery/premium/brick-detail-red.jpg" alt="Sale renovation detail" loading="lazy" /><span>Sale</span></a>
+          <a class="project-card surface-card surface-card--dark" href="/premium-renovations-chorlton.html"><img src="/Gallery/premium/brick-dark-main.jpg" alt="Chorlton stone detail" loading="lazy" /><span>Chorlton</span></a>
+          <a class="project-card surface-card surface-card--dark" href="/premium-renovations-wilmslow.html"><img src="/Gallery/premium/exterior-front.jpg" alt="Wilmslow exterior project" loading="lazy" /><span>Wilmslow</span></a>
+        </div>
       </div>
     </section>
 
@@ -143,22 +141,20 @@
       </div>
     </section>
 
-    <section class="section section--dark" id="projects">
-      <div class="container section-shell">
-        <div class="section-heading">
-          <p class="section-eyebrow">Projects</p>
-          <h2>Signature locations and case studies.</h2>
-        </div>
-        <div class="project-grid">
-          <a class="project-card surface-card surface-card--dark" href="/premium-renovations-didsbury.html"><img src="/Gallery/premium/bathroom-main.jpg" alt="Didsbury bathroom project" loading="lazy" /><span>Didsbury</span></a>
-          <a class="project-card surface-card surface-card--dark" href="/premium-renovations-altrincham.html"><img src="/Gallery/premium/kitchen-panorama-right.jpg" alt="Altrincham kitchen project" loading="lazy" /><span>Altrincham</span></a>
-          <a class="project-card surface-card surface-card--dark" href="/premium-renovations-stockport.html"><img src="/Gallery/premium/exterior-wood-gables.jpg" alt="Stockport exterior project" loading="lazy" /><span>Stockport</span></a>
-          <a class="project-card surface-card surface-card--dark" href="/premium-renovations-sale.html"><img src="/Gallery/premium/brick-detail-red.jpg" alt="Sale renovation detail" loading="lazy" /><span>Sale</span></a>
-          <a class="project-card surface-card surface-card--dark" href="/premium-renovations-chorlton.html"><img src="/Gallery/premium/brick-dark-main.jpg" alt="Chorlton stone detail" loading="lazy" /><span>Chorlton</span></a>
-          <a class="project-card surface-card surface-card--dark" href="/premium-renovations-wilmslow.html"><img src="/Gallery/premium/exterior-front.jpg" alt="Wilmslow exterior project" loading="lazy" /><span>Wilmslow</span></a>
-        </div>
+  <section class="section section--dark contact-band-shell">
+    <div class="container contact-band surface-card surface-card--dark">
+      <div class="contact-band-copy">
+        <p class="section-eyebrow section-eyebrow--compact">Direct Contact</p>
+        <h2>Speak to the studio directly.</h2>
+        <p data-brand-copy="copy.home.contactLead">The same direct studio numbers and email shown on the business card are surfaced prominently on the website.</p>
       </div>
-    </section>
+      <address class="contact-band-links" aria-label="Level Lines Studio contact details">
+        <a class="contact-band-link" data-brand-phone="0" href="tel:+447942874446">+44 7942 874 446</a>
+        <a class="contact-band-link" data-brand-phone="1" href="tel:+447304506391">+44 7304 506 391</a>
+        <a class="contact-band-link" data-brand-email href="mailto:LevelLineStudioMCR@gmail.com">LevelLineStudioMCR@gmail.com</a>
+      </address>
+    </div>
+  </section>
 
     <section class="section section--light" id="gallery">
       <div class="container section-shell gallery-shell">
@@ -176,21 +172,6 @@
       </div>
     </section>
 
-
-  <section class="section section--dark contact-band-shell">
-    <div class="container contact-band surface-card surface-card--dark">
-      <div class="contact-band-copy">
-        <p class="section-eyebrow section-eyebrow--compact">Direct Contact</p>
-        <h2>Speak to the studio directly.</h2>
-        <p data-brand-copy="copy.home.contactLead">The same direct studio numbers and email shown on the business card are surfaced prominently on the website.</p>
-      </div>
-      <address class="contact-band-links" aria-label="Level Lines Studio contact details">
-        <a class="contact-band-link" data-brand-phone="0" href="tel:+447942874446">+44 7942 874 446</a>
-        <a class="contact-band-link" data-brand-phone="1" href="tel:+447304506391">+44 7304 506 391</a>
-        <a class="contact-band-link" data-brand-email href="mailto:LevelLineStudioMCR@gmail.com">LevelLineStudioMCR@gmail.com</a>
-      </address>
-    </div>
-  </section>
 
     <section class="section section--light" id="faq">
       <div class="container faq-grid">

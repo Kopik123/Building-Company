@@ -18,3 +18,11 @@ Uwaga operacyjna: `dev_plan.md` jest glownym planem i pamiecia projektu. `todos.
 - [x] todos_14: Wdrozyc workflow `dev_plan.md` jako glowna pamiec projektu i dodac note operacyjna do `todos.md`.
 - [x] todos_15: Potwierdzic udany deploy na Ubuntu po hotfixach migracji: `202603080002-v2-session-device-and-email-hardening.js` i `202603090000-performance-search-trgm-indexes.js` przeszly, a aplikacja wystartowala poprawnie.
 - [x] todos_16: Wypchnac i wdrozyc commit usuwajacy tracked `node_modules`, a potem potwierdzic na Ubuntu, ze `npm ci` nie brudzi juz worktree i nie blokuje `git pull`.
+- [x] todos_17: Skorygowac copy homepage, aby karta z numerami kontaktow uzywala etykiety `Contact Numbers` zamiast `Studio lines`.
+- [x] todos_18: Ujednolicic publiczny entry point dostepu do konta do jednego `Log In` zamiast osobnych etykiet `Client Portal` i `Manager Dashboard`.
+- [x] todos_19: Poprawic kontrast tekstu w sekcjach `Private Consultation` i `FAQ`, aby copy i pytania byly czytelne na jasnym tle.
+- [x] todos_20: Przeniesc sekcje `Direct Contact` na homepage bezposrednio pod `Coverage`, aby numery i email byly widoczne wczesniej w ukladzie strony.
+- [x] todos_21: Przebudowac homepage hero na pelnoszeroki, poziomy uklad i przeniesc sekcje projektow bezposrednio pod hero.
+- [x] todos_22: Przyciemnic copy i listy w sekcjach uslug na jasnym tle, aby bloki typu `A bathroom service built around detail control` byly czytelne w czerni/obsidianie.
+- [x] todos_23: Usunac panel `Portal Overview` z hero `Client Portal` i zostawic pelnoszeroki blok z poziomymi chipami `Projects / Documents / Messages`.
+- [x] todos_24: Uproscic header `Client Portal`: usunac `Coverage` i `Client Portal`, przesunac `Contact` przed `Join Us`, oraz zlikwidowac duplikujace akcje naglowka.
