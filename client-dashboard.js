@@ -9,6 +9,10 @@
     projectsList: document.getElementById('client-projects-list'),
     uploadForm: document.getElementById('client-upload-form'),
     uploadStatus: document.getElementById('client-upload-status'),
+    directThreadsList: document.getElementById('client-direct-threads-list'),
+    directMessagesList: document.getElementById('client-direct-messages-list'),
+    directMessageForm: document.getElementById('client-direct-message-form'),
+    directMessageStatus: document.getElementById('client-direct-message-status'),
     threadsList: document.getElementById('client-threads-list'),
     messagesList: document.getElementById('client-messages-list'),
     messageForm: document.getElementById('client-message-form'),
@@ -25,6 +29,9 @@
     projects: [],
     quotes: [],
     services: [],
+    directThreads: [],
+    selectedDirectThreadId: '',
+    directMessages: [],
     threads: [],
     selectedThreadId: '',
     messages: []
@@ -196,6 +203,24 @@
     el.servicesList.appendChild(frag);
   };
 
+  const getThreadCounterparty = (thread) => {
+    if (!thread) return null;
+    const participantA = thread.participantA || null;
+    const participantB = thread.participantB || null;
+    if (participantA?.id === state.user?.id) return participantB;
+    if (participantB?.id === state.user?.id) return participantA;
+    return participantB || participantA;
+  };
+
+  const getPreferredManager = () => {
+    const projectManager = state.projects.find((project) => project.assignedManager?.id)?.assignedManager;
+    if (projectManager?.id) return projectManager;
+    const quoteManager = state.quotes.find((quote) => quote.assignedManager?.id)?.assignedManager;
+    if (quoteManager?.id) return quoteManager;
+    const threadManager = state.directThreads.map(getThreadCounterparty).find((user) => user?.id);
+    return threadManager || null;
+  };
+
   const renderThreads = () => {
     el.threadsList.innerHTML = '';
     if (!state.threads.length) {
@@ -223,6 +248,37 @@
     el.threadsList.appendChild(frag);
   };
 
+  const renderDirectThreads = () => {
+    el.directThreadsList.innerHTML = '';
+    if (!state.directThreads.length) {
+      const fallbackManager = getPreferredManager();
+      el.directThreadsList.innerHTML = fallbackManager
+        ? `<p class="muted">No private thread yet. Use the message box to start a direct conversation with ${escapeHtml(fallbackManager.name || fallbackManager.email)}.</p>`
+        : '<p class="muted">No manager thread yet. A direct conversation becomes available once a manager is assigned.</p>';
+      return;
+    }
+
+    const frag = document.createDocumentFragment();
+    state.directThreads.forEach((thread) => {
+      const counterparty = getThreadCounterparty(thread);
+      const card = document.createElement('article');
+      card.className = `dashboard-item ${thread.id === state.selectedDirectThreadId ? 'is-active' : ''}`;
+      card.innerHTML = `<h3>${escapeHtml(counterparty?.name || counterparty?.email || thread.subject || 'Direct thread')}</h3><p class="muted">${escapeHtml(thread.subject || 'Direct manager conversation')} | Updated: ${escapeHtml(new Date(thread.updatedAt).toLocaleString('en-GB'))}</p>`;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn btn-outline';
+      btn.textContent = 'Open';
+      btn.addEventListener('click', async () => {
+        state.selectedDirectThreadId = thread.id;
+        renderDirectThreads();
+        await loadDirectMessages();
+      });
+      card.appendChild(btn);
+      frag.appendChild(card);
+    });
+    el.directThreadsList.appendChild(frag);
+  };
+
   const renderMessages = () => {
     el.messagesList.innerHTML = '';
     if (!state.selectedThreadId) {
@@ -245,6 +301,31 @@
     el.messagesList.appendChild(frag);
   };
 
+  const renderDirectMessages = () => {
+    el.directMessagesList.innerHTML = '';
+    if (!state.selectedDirectThreadId) {
+      const fallbackManager = getPreferredManager();
+      el.directMessagesList.innerHTML = fallbackManager
+        ? `<p class="muted">Start a direct thread with ${escapeHtml(fallbackManager.name || fallbackManager.email)}.</p>`
+        : '<p class="muted">A direct manager conversation will appear here once a manager is assigned.</p>';
+      return;
+    }
+    if (!state.directMessages.length) {
+      el.directMessagesList.innerHTML = '<p class="muted">No private messages in this thread.</p>';
+      return;
+    }
+
+    const frag = document.createDocumentFragment();
+    state.directMessages.forEach((message) => {
+      const card = document.createElement('article');
+      card.className = 'dashboard-item';
+      const sender = message.sender?.name || message.sender?.email || 'Unknown';
+      card.innerHTML = `<p class="muted">${escapeHtml(sender)} | ${escapeHtml(new Date(message.createdAt).toLocaleString('en-GB'))}</p><p>${escapeHtml(message.body || '')}</p>`;
+      frag.appendChild(card);
+    });
+    el.directMessagesList.appendChild(frag);
+  };
+
   const loadMessages = async () => {
     if (!state.selectedThreadId) {
       state.messages = [];
@@ -255,6 +336,18 @@
     const payload = await api(`/api/group/threads/${state.selectedThreadId}/messages?pageSize=100`);
     state.messages = Array.isArray(payload.messages) ? payload.messages : [];
     renderMessages();
+  };
+
+  const loadDirectMessages = async () => {
+    if (!state.selectedDirectThreadId) {
+      state.directMessages = [];
+      renderDirectMessages();
+      return;
+    }
+
+    const payload = await api(`/api/inbox/threads/${state.selectedDirectThreadId}/messages?pageSize=100`);
+    state.directMessages = Array.isArray(payload.messages) ? payload.messages : [];
+    renderDirectMessages();
   };
 
   const loadOverview = async () => {
@@ -278,6 +371,20 @@
     }
     renderThreads();
     await loadMessages();
+    requestAccordionRefresh();
+  };
+
+  const loadDirectThreads = async (preferredThreadId = '') => {
+    const payload = await api('/api/inbox/threads?pageSize=100');
+    state.directThreads = Array.isArray(payload.threads) ? payload.threads : [];
+    const nextSelectedId = preferredThreadId || state.selectedDirectThreadId;
+    if (!state.directThreads.some((thread) => thread.id === nextSelectedId)) {
+      state.selectedDirectThreadId = state.directThreads[0]?.id || '';
+    } else {
+      state.selectedDirectThreadId = nextSelectedId;
+    }
+    renderDirectThreads();
+    await loadDirectMessages();
     requestAccordionRefresh();
   };
 
@@ -305,7 +412,8 @@
       }
 
       el.session.textContent = `Logged as ${state.user.name || state.user.email} (${state.user.role})`;
-      await Promise.all([loadOverview(), loadThreads()]);
+      await loadOverview();
+      await Promise.all([loadThreads(), loadDirectThreads()]);
     } catch (error) {
       clearSession();
       el.session.textContent = error.message || 'Session expired. Redirecting to login...';
@@ -355,6 +463,46 @@
       await loadMessages();
     } catch (error) {
       setStatus(el.messageStatus, error.message || 'Send failed.', 'error');
+    }
+  });
+
+  el.directMessageForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const body = String(el.directMessageForm.elements.body.value || '').trim();
+    if (!body) return setStatus(el.directMessageStatus, 'Message is required.', 'error');
+
+    setStatus(el.directMessageStatus, state.selectedDirectThreadId ? 'Sending...' : 'Opening thread...');
+    try {
+      let threadId = state.selectedDirectThreadId;
+      if (!threadId) {
+        const manager = getPreferredManager();
+        if (!manager?.id) {
+          return setStatus(el.directMessageStatus, 'No assigned manager is available for a private thread yet.', 'error');
+        }
+
+        const payload = await api('/api/inbox/threads', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            recipientUserId: manager.id,
+            subject: `Direct manager conversation - ${state.user?.name || state.user?.email || 'Client'}`,
+            body
+          })
+        });
+        threadId = payload.thread?.id || '';
+      } else {
+        await api(`/api/inbox/threads/${threadId}/messages`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ body })
+        });
+      }
+
+      setStatus(el.directMessageStatus, 'Private message sent.', 'success');
+      el.directMessageForm.reset();
+      await loadDirectThreads(threadId);
+    } catch (error) {
+      setStatus(el.directMessageStatus, error.message || 'Private message failed.', 'error');
     }
   });
 

@@ -148,38 +148,37 @@ const buildServiceBoard = (page) => {
     galleryProjects: config.projects,
     summarySections: [
       {
-        type: 'contact',
-        eyebrow: 'Direct Contact',
-        title: page.contact.title,
-        lead: page.contact.lead
+        type: 'areas',
+        eyebrow: 'Coverage',
+        title: 'North West coverage kept close enough for direct studio oversight.',
+        region: shared.region,
+        items: buildAreaItems(page.consultation.locationValue)
       },
       {
         type: 'links',
-        eyebrow: 'Related Deliverables',
+        eyebrow: 'Services',
         title: 'Connected scopes handled inside the same premium studio offer.',
         links: buildLinksByLabel(config.relatedLabels)
       },
       {
-        type: 'areas',
-        eyebrow: 'Areas',
-        title: 'North West coverage kept close enough for direct studio oversight.',
-        region: shared.region,
-        items: buildAreaItems(page.consultation.locationValue)
+        type: 'contact',
+        eyebrow: 'Contact Details',
+        title: 'Direct studio contact'
       }
     ],
     fastQuoteDefaults: {
-      eyebrow: 'Fast Quote',
-      title: page.consultation.title,
-      lead: page.consultation.lead,
+      eyebrow: 'Private Consultation',
+      title: shared.enquiryTitle,
+      lead: shared.enquiryLead,
       formContext: page.consultation.formContext,
       locationValue: page.consultation.locationValue,
       selectedProjectType: page.consultation.selectedProjectType
     },
     galleryEyebrow: 'Selected Project',
-    galleryTitle: 'Image roller for the active project.',
+    galleryTitle: 'Selected image',
     projectsEyebrow: 'Projects',
-    projectsTitle: 'Project selector for this service line.',
-    projectsLead: 'Choose the project on the right, then rotate the selected image sequence on the left.',
+    projectsTitle: config.projects[0]?.name || 'Selected project',
+    projectsLead: '',
     galleryCtaHref: '#consultation',
     galleryCtaLabel: shared.consultationCtaLabel,
     motionProfile: 'subtle'

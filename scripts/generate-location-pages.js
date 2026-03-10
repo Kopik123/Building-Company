@@ -222,38 +222,37 @@ const buildLocationBoard = (page) => {
     galleryProjects: config.projects,
     summarySections: [
       {
-        type: 'contact',
-        eyebrow: 'Direct Contact',
-        title: `Discuss your ${page.location} brief directly with the studio.`,
-        lead: shared.contactLead
+        type: 'areas',
+        eyebrow: 'Coverage',
+        title: 'The local brief sits inside the same direct North West coverage pattern.',
+        region: shared.region,
+        items: buildAreaItems(page.location)
       },
       {
         type: 'links',
-        eyebrow: 'Core Services',
+        eyebrow: 'Services',
         title: 'Bathroom, kitchen and interior scopes stay inside one refined studio offer.',
         links: buildLinksByLabel(CORE_SERVICE_LABELS)
       },
       {
-        type: 'areas',
-        eyebrow: 'Areas',
-        title: 'The local brief sits inside the same direct North West coverage pattern.',
-        region: shared.region,
-        items: buildAreaItems(page.location)
+        type: 'contact',
+        eyebrow: 'Contact Details',
+        title: 'Direct studio contact'
       }
     ],
     fastQuoteDefaults: {
-      eyebrow: 'Fast Quote',
-      title: `Bring your ${page.location} brief to a private consultation.`,
-      lead: `Tell us which rooms are involved in ${page.location}, the finish ambition and the timing you are working to. The studio replies with a measured next step.`,
+      eyebrow: 'Private Consultation',
+      title: shared.enquiryTitle,
+      lead: shared.enquiryLead,
       formContext: page.location,
       locationValue: page.location,
       selectedProjectType: ''
     },
     galleryEyebrow: 'Selected Project',
-    galleryTitle: `Image roller for the active ${page.location} project.`,
+    galleryTitle: 'Selected image',
     projectsEyebrow: 'Projects',
-    projectsTitle: `Project selector for ${page.location}.`,
-    projectsLead: 'Choose the project on the right, then rotate the selected image sequence on the left.',
+    projectsTitle: config.projects[0]?.name || `${page.location} project`,
+    projectsLead: '',
     galleryCtaHref: '#consultation',
     galleryCtaLabel: shared.consultationCtaLabel,
     motionProfile: 'subtle'

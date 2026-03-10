@@ -13,6 +13,8 @@ const Project = require('./Project');
 const ProjectMedia = require('./ProjectMedia');
 const ServiceOffering = require('./ServiceOffering');
 const Material = require('./Material');
+const Estimate = require('./Estimate');
+const EstimateLine = require('./EstimateLine');
 const SessionRefreshToken = require('./SessionRefreshToken');
 const DevicePushToken = require('./DevicePushToken');
 
@@ -58,6 +60,16 @@ Project.belongsTo(User, { foreignKey: 'clientId', as: 'client' });
 User.hasMany(Project, { foreignKey: 'clientId', as: 'projects' });
 Project.belongsTo(User, { foreignKey: 'assignedManagerId', as: 'assignedManager' });
 User.hasMany(Project, { foreignKey: 'assignedManagerId', as: 'managedProjects' });
+Project.hasMany(Estimate, { foreignKey: 'projectId', as: 'estimates' });
+Estimate.belongsTo(Project, { foreignKey: 'projectId', as: 'project' });
+Quote.hasMany(Estimate, { foreignKey: 'quoteId', as: 'estimates' });
+Estimate.belongsTo(Quote, { foreignKey: 'quoteId', as: 'quote' });
+User.hasMany(Estimate, { foreignKey: 'createdById', as: 'createdEstimates' });
+Estimate.belongsTo(User, { foreignKey: 'createdById', as: 'creator' });
+Estimate.hasMany(EstimateLine, { foreignKey: 'estimateId', as: 'lines', onDelete: 'CASCADE', hooks: true });
+EstimateLine.belongsTo(Estimate, { foreignKey: 'estimateId', as: 'estimate' });
+EstimateLine.belongsTo(ServiceOffering, { foreignKey: 'serviceId', as: 'service' });
+EstimateLine.belongsTo(Material, { foreignKey: 'materialId', as: 'material' });
 User.hasMany(SessionRefreshToken, { foreignKey: 'userId', as: 'refreshTokens' });
 SessionRefreshToken.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 User.hasMany(DevicePushToken, { foreignKey: 'userId', as: 'devicePushTokens' });
@@ -140,6 +152,12 @@ const ensureIndexes = async () => {
     { table: ServiceOffering.getTableName(), name: 'service_offerings_category_active_idx', fields: ['category', 'isActive'] },
     { table: Material.getTableName(), name: 'materials_category_active_idx', fields: ['category', 'isActive'] },
     { table: Material.getTableName(), name: 'materials_stock_min_idx', fields: ['stockQty', 'minStockQty'] },
+    { table: Estimate.getTableName(), name: 'estimates_project_status_idx', fields: ['projectId', 'status'] },
+    { table: Estimate.getTableName(), name: 'estimates_quote_status_idx', fields: ['quoteId', 'status'] },
+    { table: Estimate.getTableName(), name: 'estimates_creator_created_idx', fields: ['createdById', 'createdAt'] },
+    { table: EstimateLine.getTableName(), name: 'estimate_lines_estimate_order_idx', fields: ['estimateId', 'sortOrder'] },
+    { table: EstimateLine.getTableName(), name: 'estimate_lines_service_idx', fields: ['serviceId'] },
+    { table: EstimateLine.getTableName(), name: 'estimate_lines_material_idx', fields: ['materialId'] },
     { table: SessionRefreshToken.getTableName(), name: 'session_refresh_tokens_user_expires_idx', fields: ['userId', 'expiresAt'] },
     { table: SessionRefreshToken.getTableName(), name: 'session_refresh_tokens_revoked_idx', fields: ['revokedAt'] },
     { table: DevicePushToken.getTableName(), name: 'device_push_tokens_user_platform_idx', fields: ['userId', 'platform'] }
@@ -166,6 +184,8 @@ module.exports = {
   ProjectMedia,
   ServiceOffering,
   Material,
+  Estimate,
+  EstimateLine,
   SessionRefreshToken,
   DevicePushToken,
   ensureIndexes

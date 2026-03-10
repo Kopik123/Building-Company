@@ -16,7 +16,7 @@
   <header class="site-header" id="top">
     <div class="container header-inner grid-12">
       <a class="brand" href="/index.html" aria-label="Level Lines Studio home">
-        <img src="/readyprint2.png" alt="Level Lines Studio" class="brand-lockup-image" />
+        <img src="/logo4.png" alt="Level Lines Studio" class="brand-lockup-image" />
       </a>
       <div class="menu-wrap" data-menu-wrap>
         <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation menu">
@@ -28,7 +28,6 @@
           <a href="/index.html#services" data-nav-link>Services</a>
           <a href="/index.html#projects" data-nav-link>Projects</a>
           <a href="/index.html#gallery" data-nav-link>Gallery</a>
-          <a href="/index.html#consultation" data-nav-link>Contact</a>
           <a href="/auth.html" data-nav-link data-auth-guest-label="Account">Account</a>
         </nav>
       </div>
@@ -93,7 +92,30 @@
         </section>
 
         <section class="card surface-card surface-card--light" data-dashboard-mobile-open="true">
-          <h2>Communication</h2>
+          <h2>Direct Manager</h2>
+          <div class="dashboard-grid dashboard-communication-grid">
+            <div>
+              <h3>Private Threads</h3>
+              <div id="client-direct-threads-list" class="dashboard-list"></div>
+            </div>
+            <div>
+              <h3>Private Messages</h3>
+              <div id="client-direct-messages-list" class="dashboard-list"></div>
+              <form id="client-direct-message-form" novalidate>
+                <div class="form-grid">
+                  <label class="span-2">Message
+                    <textarea name="body" rows="3" required></textarea>
+                  </label>
+                </div>
+                <button type="submit" class="btn btn-gold">Send private message</button>
+                <p class="form-status" id="client-direct-message-status" aria-live="polite"></p>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <section class="card surface-card surface-card--light" data-dashboard-mobile-open="true">
+          <h2>Project Chat</h2>
           <div class="dashboard-grid dashboard-communication-grid">
             <div>
               <h3>Threads</h3>
@@ -179,3 +201,4 @@
   <script src="/client-dashboard.js" defer></script>
 </body>
 </html>
+

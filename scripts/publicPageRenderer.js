@@ -16,15 +16,14 @@ const renderJsonLdScripts = (jsonLd) => {
 };
 
 const renderBrandLockup = (shared) => `      <a class="brand" href="/index.html" aria-label="${escapeHtml(shared.brandName)} home">
-        <img src="${escapeHtml(shared.logoPath || shared.titleImagePath || '/readyprint2.png')}" alt="${escapeHtml(shared.brandName)}" class="brand-lockup-image" />
+        <img src="${escapeHtml(shared.logoPath || shared.titleImagePath || '/title.png')}" alt="${escapeHtml(shared.brandName)}" class="brand-lockup-image brand-title-image" />
       </a>`;
 
-const renderNavLinks = (shared, contactHref = '#consultation') =>
+const renderNavLinks = (shared) =>
   shared.navLinks
     .map((link) => {
-      const href = link.label === 'Contact' ? contactHref : link.href;
       const authAttr = link.isAuth ? ` data-auth-guest-label="${escapeHtml(shared.publicAuthLabel || link.label)}"` : '';
-      return `          <a href="${escapeHtml(href)}" data-nav-link${authAttr}>${escapeHtml(link.label)}</a>`;
+      return `          <a href="${escapeHtml(link.href)}" data-nav-link${authAttr}>${escapeHtml(link.label)}</a>`;
     })
     .join('\n');
 
@@ -48,6 +47,34 @@ const renderSummaryAreas = (items = []) =>
   items
     .map((item) => `              <span class="studio-summary-area">${escapeHtml(item)}</span>`)
     .join('\n');
+
+const renderSummaryIcon = (type) => {
+  if (type === 'areas') {
+    return `<span class="studio-summary-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" focusable="false">
+                    <path d="M12 21s6-4.35 6-10a6 6 0 1 0-12 0c0 5.65 6 10 6 10Z" />
+                    <circle cx="12" cy="11" r="2.5" />
+                  </svg>
+                </span>`;
+  }
+
+  if (type === 'links') {
+    return `<span class="studio-summary-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" focusable="false">
+                    <rect x="3.5" y="3.5" width="7" height="7" rx="1.5" />
+                    <rect x="13.5" y="3.5" width="7" height="7" rx="1.5" />
+                    <rect x="3.5" y="13.5" width="7" height="7" rx="1.5" />
+                    <rect x="13.5" y="13.5" width="7" height="7" rx="1.5" />
+                  </svg>
+                </span>`;
+  }
+
+  return `<span class="studio-summary-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false">
+                  <path d="M6.5 5.5h11a2 2 0 0 1 2 2v9l-3-2.5H6.5a2 2 0 0 1-2-2v-4.5a2 2 0 0 1 2-2Z" />
+                </svg>
+              </span>`;
+};
 
 const renderHeroChips = (chips) =>
   chips
@@ -165,22 +192,31 @@ const renderStudioSummarySection = (section, shared) => {
   if (!section) return '';
 
   if (section.type === 'contact') {
-    return `              <section class="studio-summary-block">
-                <p class="section-eyebrow section-eyebrow--compact">${escapeHtml(section.eyebrow || 'Direct Contact')}</p>
-                <h2>${escapeHtml(section.title)}</h2>
-                <p>${escapeHtml(section.lead || shared.contactLead || '')}</p>
+    return `              <section class="studio-summary-block studio-summary-block--contact">
+                <div class="studio-summary-heading">
+${renderSummaryIcon('contact')}
+                  <div>
+                    <p class="section-eyebrow section-eyebrow--compact">${escapeHtml(section.eyebrow || 'Contact Details')}</p>
+                    ${section.title ? `<h3>${escapeHtml(section.title)}</h3>` : ''}
+                  </div>
+                </div>
                 <address class="studio-summary-contact" aria-label="${escapeHtml(shared.brandName)} contact details">
-                  <a class="studio-summary-link studio-summary-link--contact" data-brand-phone="0" href="${escapeHtml(shared.phones[0].href)}">${escapeHtml(shared.phones[0].display)}</a>
-                  <a class="studio-summary-link studio-summary-link--contact" data-brand-phone="1" href="${escapeHtml(shared.phones[1].href)}">${escapeHtml(shared.phones[1].display)}</a>
-                  <a class="studio-summary-link studio-summary-link--contact" data-brand-email href="mailto:${escapeHtml(shared.email)}">${escapeHtml(shared.email)}</a>
+                  <a class="studio-summary-link studio-summary-link--contact" data-brand-phone="0" href="${escapeHtml(shared.phones[0].href)}"><span class="studio-summary-link-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M7.5 4.5h3l1.2 3.6-1.8 1.8a14.2 14.2 0 0 0 4.2 4.2l1.8-1.8 3.6 1.2v3a1.5 1.5 0 0 1-1.5 1.5A13.5 13.5 0 0 1 6 6a1.5 1.5 0 0 1 1.5-1.5Z" /></svg></span>${escapeHtml(shared.phones[0].display)}</a>
+                  <a class="studio-summary-link studio-summary-link--contact" data-brand-phone="1" href="${escapeHtml(shared.phones[1].href)}"><span class="studio-summary-link-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M7.5 4.5h3l1.2 3.6-1.8 1.8a14.2 14.2 0 0 0 4.2 4.2l1.8-1.8 3.6 1.2v3a1.5 1.5 0 0 1-1.5 1.5A13.5 13.5 0 0 1 6 6a1.5 1.5 0 0 1 1.5-1.5Z" /></svg></span>${escapeHtml(shared.phones[1].display)}</a>
+                  <a class="studio-summary-link studio-summary-link--contact" data-brand-email href="mailto:${escapeHtml(shared.email)}"><span class="studio-summary-link-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M4.5 6.5h15a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-15a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1Z" /><path d="m5 8 7 5 7-5" /></svg></span>${escapeHtml(shared.email)}</a>
                 </address>
               </section>`;
   }
 
   if (section.type === 'links') {
-    return `              <section class="studio-summary-block">
-                <p class="section-eyebrow section-eyebrow--compact">${escapeHtml(section.eyebrow || 'Services')}</p>
-                ${section.title ? `<h3>${escapeHtml(section.title)}</h3>` : ''}
+    return `              <section class="studio-summary-block studio-summary-block--links">
+                <div class="studio-summary-heading">
+${renderSummaryIcon('links')}
+                  <div>
+                    <p class="section-eyebrow section-eyebrow--compact">${escapeHtml(section.eyebrow || 'Services')}</p>
+                    ${section.title ? `<h3>${escapeHtml(section.title)}</h3>` : ''}
+                  </div>
+                </div>
                 <div class="studio-summary-links">
 ${renderSummaryLinks(section.links)}
                 </div>
@@ -188,9 +224,14 @@ ${renderSummaryLinks(section.links)}
   }
 
   if (section.type === 'areas') {
-    return `              <section class="studio-summary-block">
-                <p class="section-eyebrow section-eyebrow--compact">${escapeHtml(section.eyebrow || 'Areas')}</p>
-                ${section.title ? `<h3>${escapeHtml(section.title)}</h3>` : ''}
+    return `              <section class="studio-summary-block studio-summary-block--areas">
+                <div class="studio-summary-heading">
+${renderSummaryIcon('areas')}
+                  <div>
+                    <p class="section-eyebrow section-eyebrow--compact">${escapeHtml(section.eyebrow || 'Coverage')}</p>
+                    ${section.title ? `<h3>${escapeHtml(section.title)}</h3>` : ''}
+                  </div>
+                </div>
                 <p class="studio-summary-region">${escapeHtml(section.region || shared.region)}</p>
                 <div class="studio-summary-areas">
 ${renderSummaryAreas(section.items || [])}
@@ -228,7 +269,7 @@ const renderStudioBoard = ({ shared, board }) => {
             <div class="studio-panel-head">
               <div>
                 <p class="section-eyebrow section-eyebrow--compact">${escapeHtml(board.galleryEyebrow || 'Selected Project')}</p>
-                <h2>${escapeHtml(board.galleryTitle || 'Image roller for the active project.')}</h2>
+                <h2 data-gallery-active-image-title>${escapeHtml(board.galleryTitle || 'Active image')}</h2>
               </div>
               <a class="text-link" href="${escapeHtml(board.galleryCtaHref || '#consultation')}">${escapeHtml(board.galleryCtaLabel || shared.consultationCtaLabel || 'Request Private Consultation')}</a>
             </div>
@@ -243,9 +284,9 @@ const renderStudioBoard = ({ shared, board }) => {
             <div class="studio-panel-head studio-panel-head--stack">
               <div>
                 <p class="section-eyebrow section-eyebrow--compact">${escapeHtml(board.projectsEyebrow || 'Projects')}</p>
-                <h2>${escapeHtml(board.projectsTitle || 'Project selector for the gallery.')}</h2>
+                <h2 data-gallery-active-project-title>${escapeHtml(board.projectsTitle || 'Active project')}</h2>
               </div>
-              <p class="studio-panel-copy">${escapeHtml(board.projectsLead || 'Choose the project on the right, then rotate the selected image sequence on the left.')}</p>
+              <p class="studio-panel-copy" data-gallery-active-project-meta>${escapeHtml(board.projectsLead || '')}</p>
             </div>
             <button class="project-rail-nav project-rail-nav--up" type="button" data-gallery-project-prev aria-label="Previous project">&#8593;</button>
             <div class="gallery-project-strip studio-project-strip" data-gallery-projects aria-label="Project selection"></div>
@@ -262,9 +303,9 @@ ${summarySections.map((section) => renderStudioSummarySection(section, shared)).
           </article>
 
           <article class="surface-card surface-card--light studio-quote-card" id="consultation">
-            <p class="section-eyebrow">${escapeHtml(fastQuote.eyebrow || 'Fast Quote')}</p>
-            <h2>${escapeHtml(fastQuote.title || 'Quick contact form for a measured first response.')}</h2>
-            <p class="section-lead">${escapeHtml(fastQuote.lead || '')}</p>
+            <p class="section-eyebrow">${escapeHtml(fastQuote.eyebrow || 'Private Consultation')}</p>
+            <h2>${escapeHtml(fastQuote.title || shared.enquiryTitle || 'Send Enquiry')}</h2>
+            <p class="section-lead">${escapeHtml(fastQuote.lead || shared.enquiryLead || '')}</p>
             <form class="quote-form studio-quote-form js-quote-form" data-form-context="${escapeHtml(fastQuote.formContext || 'Public Page Fast Quote')}" novalidate>
               <input type="hidden" name="location" value="${escapeHtml(fastQuote.locationValue || shared.region)}" />
               <div class="form-grid">
@@ -308,8 +349,8 @@ const renderConsultationSection = ({ title, lead, formContext, locationValue, se
     <div class="container consultation-shell">
       <div class="consultation-copy">
         <p class="section-eyebrow">Private Consultation</p>
-        <h2>${escapeHtml(title)}</h2>
-        <p class="section-lead">${escapeHtml(lead)}</p>
+        <h2>${escapeHtml(title || shared.enquiryTitle || 'Send Enquiry')}</h2>
+        <p class="section-lead">${escapeHtml(lead || shared.enquiryLead || '')}</p>
         <div class="consultation-points">
           <p><strong data-brand-region>${escapeHtml(shared.region)}</strong></p>
           <p>Selective briefs, direct studio access and a measured intake process.</p>

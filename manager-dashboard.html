@@ -16,7 +16,7 @@
   <header class="site-header" id="top">
     <div class="container header-inner grid-12">
       <a class="brand" href="/index.html" aria-label="Level Lines Studio home">
-        <img src="/readyprint2.png" alt="Level Lines Studio" class="brand-lockup-image" />
+        <img src="/logo4.png" alt="Level Lines Studio" class="brand-lockup-image" />
       </a>
       <div class="menu-wrap" data-menu-wrap>
         <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation menu">
@@ -28,7 +28,6 @@
           <a href="/index.html#services" data-nav-link>Services</a>
           <a href="/index.html#projects" data-nav-link>Projects</a>
           <a href="/index.html#gallery" data-nav-link>Gallery</a>
-          <a href="/index.html#consultation" data-nav-link>Contact</a>
           <a href="/auth.html" data-nav-link data-auth-guest-label="Account">Account</a>
         </nav>
       </div>
@@ -49,7 +48,7 @@
               <span class="stat-chip">Inventory</span>
             </div>
           </div>
-          <aside class="workspace-hero-panel surface-card surface-card--light">
+          <aside class="workspace-hero-panel workspace-hero-panel--dark surface-card surface-card--dark">
             <p class="workspace-panel-title">Operational scope</p>
             <address class="workspace-contact-list" aria-label="Level Lines Studio contact details">
               <a class="workspace-contact-link" data-brand-phone="0" href="tel:+447942874446">+44 7942 874 446</a>
@@ -57,8 +56,8 @@
             </address>
             <ul class="workspace-points">
               <li>Create and maintain projects with client and staff assignments.</li>
-              <li>Control public services, gallery visibility and uploaded media.</li>
-              <li>Manage quotes, materials and operational decisions without leaving the dashboard.</li>
+              <li>Control public services, gallery visibility, uploaded media and material stock.</li>
+              <li>Build estimates from project services and materials, then keep private and project chat separate.</li>
             </ul>
           </aside>
         </div>
@@ -442,6 +441,221 @@
             <button type="button" class="btn btn-outline" id="materials-next-btn">Next</button>
           </div>
         </section>
+
+        <div class="dashboard-grid dashboard-manager-top-grid">
+          <section class="card surface-card surface-card--light" data-dashboard-mobile-open="true">
+            <h2>Clients</h2>
+            <div class="dashboard-filters dashboard-filters--compact">
+              <input type="search" id="clients-filter-q" placeholder="Search client name or email..." />
+              <button type="button" class="btn btn-outline" id="clients-refresh-btn">Apply</button>
+            </div>
+            <div id="clients-list" class="dashboard-list"></div>
+          </section>
+
+          <section class="card surface-card surface-card--light" data-dashboard-mobile-open="true">
+            <h2>Staff</h2>
+            <div class="dashboard-filters dashboard-filters--compact">
+              <input type="search" id="staff-filter-q" placeholder="Search staff name or email..." />
+              <button type="button" class="btn btn-outline" id="staff-refresh-btn">Apply</button>
+            </div>
+            <form id="staff-create-form" novalidate>
+              <div class="form-grid">
+                <label>Name
+                  <input type="text" name="name" required />
+                </label>
+                <label>Email
+                  <input type="email" name="email" required />
+                </label>
+                <label>Password
+                  <input type="password" name="password" minlength="8" required />
+                </label>
+                <label>Role
+                  <select name="role">
+                    <option value="employee">Employee</option>
+                    <option value="manager">Manager</option>
+                  </select>
+                </label>
+                <label class="span-2">Phone
+                  <input type="tel" name="phone" />
+                </label>
+              </div>
+              <button type="submit" class="btn btn-gold">Create staff member</button>
+              <p class="form-status" id="staff-create-status" aria-live="polite"></p>
+            </form>
+            <div id="staff-list" class="dashboard-list"></div>
+          </section>
+        </div>
+
+        <section class="card surface-card surface-card--light" data-dashboard-mobile-open="true">
+          <h2>Estimate Builder</h2>
+          <form id="estimate-create-form" novalidate>
+            <div class="form-grid">
+              <label>Title
+                <input type="text" name="title" required />
+              </label>
+              <label>Project
+                <select name="projectId">
+                  <option value="">Select project</option>
+                </select>
+              </label>
+              <label>Quote ID
+                <input type="text" name="quoteId" placeholder="UUID (optional)" />
+              </label>
+              <label>Status
+                <select name="status">
+                  <option value="draft">Draft</option>
+                  <option value="sent">Sent</option>
+                  <option value="approved">Approved</option>
+                  <option value="archived">Archived</option>
+                </select>
+              </label>
+              <label class="span-2">Notes
+                <textarea name="notes" rows="3"></textarea>
+              </label>
+            </div>
+            <button type="submit" class="btn btn-gold">Create estimate</button>
+            <p class="form-status" id="estimate-create-status" aria-live="polite"></p>
+          </form>
+
+          <div id="estimates-list" class="dashboard-list"></div>
+        </section>
+
+        <section class="card surface-card surface-card--light" id="estimate-editor-card" data-dashboard-mobile-open="true" hidden>
+          <div class="auth-account-head">
+            <div>
+              <p class="workspace-card-label">Estimate Editor</p>
+              <h2 id="estimate-editor-title">Estimate</h2>
+            </div>
+            <p class="muted" id="estimate-editor-total"></p>
+          </div>
+          <form id="estimate-update-form" novalidate>
+            <input type="hidden" name="id" />
+            <div class="form-grid">
+              <label>Title
+                <input type="text" name="title" required />
+              </label>
+              <label>Status
+                <select name="status">
+                  <option value="draft">Draft</option>
+                  <option value="sent">Sent</option>
+                  <option value="approved">Approved</option>
+                  <option value="archived">Archived</option>
+                </select>
+              </label>
+              <label>Project
+                <select name="projectId">
+                  <option value="">Select project</option>
+                </select>
+              </label>
+              <label>Quote ID
+                <input type="text" name="quoteId" placeholder="UUID (optional)" />
+              </label>
+              <label class="span-2">Notes
+                <textarea name="notes" rows="3"></textarea>
+              </label>
+            </div>
+            <div class="dashboard-actions-row">
+              <button type="submit" class="btn btn-gold">Save estimate</button>
+              <button type="button" class="btn btn-outline" id="estimate-delete-btn">Delete estimate</button>
+            </div>
+            <p class="form-status" id="estimate-update-status" aria-live="polite"></p>
+          </form>
+
+          <hr class="dashboard-divider" />
+
+          <h3>Add Estimate Line</h3>
+          <form id="estimate-line-form" novalidate>
+            <div class="form-grid">
+              <label>Line type
+                <select name="lineType">
+                  <option value="service">Service</option>
+                  <option value="material">Material</option>
+                  <option value="custom">Custom</option>
+                </select>
+              </label>
+              <label>Service
+                <select name="serviceId">
+                  <option value="">Select service</option>
+                </select>
+              </label>
+              <label>Material
+                <select name="materialId">
+                  <option value="">Select material</option>
+                </select>
+              </label>
+              <label>Description
+                <input type="text" name="description" />
+              </label>
+              <label>Unit
+                <input type="text" name="unit" value="pcs" />
+              </label>
+              <label>Quantity
+                <input type="number" name="quantity" step="0.01" value="1" required />
+              </label>
+              <label>Unit cost
+                <input type="number" name="unitCost" step="0.01" />
+              </label>
+              <label>Line total override
+                <input type="number" name="lineTotalOverride" step="0.01" />
+              </label>
+              <label class="span-2">Notes
+                <input type="text" name="notes" />
+              </label>
+            </div>
+            <button type="submit" class="btn btn-gold">Add line</button>
+            <p class="form-status" id="estimate-line-status" aria-live="polite"></p>
+          </form>
+
+          <div id="estimate-lines-list" class="dashboard-list"></div>
+        </section>
+
+        <div class="dashboard-grid dashboard-manager-top-grid">
+          <section class="card surface-card surface-card--light" data-dashboard-mobile-open="true">
+            <h2>Private Inbox</h2>
+            <div class="dashboard-grid dashboard-communication-grid">
+              <div>
+                <h3>Threads</h3>
+                <div id="manager-direct-threads-list" class="dashboard-list"></div>
+              </div>
+              <div>
+                <h3>Messages</h3>
+                <div id="manager-direct-messages-list" class="dashboard-list"></div>
+                <form id="manager-direct-message-form" novalidate>
+                  <div class="form-grid">
+                    <label class="span-2">Message
+                      <textarea name="body" rows="3" required></textarea>
+                    </label>
+                  </div>
+                  <button type="submit" class="btn btn-gold">Send private message</button>
+                  <p class="form-status" id="manager-direct-message-status" aria-live="polite"></p>
+                </form>
+              </div>
+            </div>
+          </section>
+
+          <section class="card surface-card surface-card--light" data-dashboard-mobile-open="true">
+            <h2>Project Chat</h2>
+            <div class="dashboard-grid dashboard-communication-grid">
+              <div>
+                <h3>Threads</h3>
+                <div id="manager-group-threads-list" class="dashboard-list"></div>
+              </div>
+              <div>
+                <h3>Messages</h3>
+                <div id="manager-group-messages-list" class="dashboard-list"></div>
+                <form id="manager-group-message-form" novalidate>
+                  <div class="form-grid">
+                    <label class="span-2">Message
+                      <textarea name="body" rows="3" required></textarea>
+                    </label>
+                  </div>
+                  <button type="submit" class="btn btn-gold">Send project message</button>
+                  <p class="form-status" id="manager-group-message-status" aria-live="polite"></p>
+                </form>
+              </div>
+            </div>
+          </section>
+        </div>
       </div>
     </section>
   </main>
@@ -497,3 +711,4 @@
   <script src="/manager-dashboard.js" defer></script>
 </body>
 </html>
+

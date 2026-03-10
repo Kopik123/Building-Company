@@ -3,7 +3,8 @@
   shortName: 'Level Lines',
   claim: 'Plan / Design / Craft',
   region: 'North West - Lancashire',
-  titleImagePath: '/readyprint2.png',
+  titleImagePath: '/title.png',
+  workspaceImagePath: '/logo4.png',
   publicAuthLabel: 'Account',
   consultationCtaLabel: 'Request Private Consultation',
   footerCopy: 'Selective bathroom, kitchen and interior renovation briefs delivered across the North West with measured planning, quiet material confidence and finish control.',
@@ -29,7 +30,9 @@
       processLead: 'The studio method is simple: define the brief properly, shape a restrained material direction and deliver with clean execution.',
       areasLead: 'Coverage sits in the North West so projects stay close enough for direct studio oversight, tighter sequencing and calmer communication.',
       contactLead: 'Direct studio numbers and email stay visible because early conversations should feel precise, quiet and uncomplicated.',
-      consultationLead: 'Use one private consultation route for bathroom, kitchen and interior renovation briefs, then tell us the rooms, finish ambition and timing.'
+      consultationTitle: 'Send Enquiry',
+      consultationLead:
+        'Share the rooms involved, the finish ambition and your timing. The studio replies with a measured next step.'
     }
   },
   serviceAreas: [

@@ -4,18 +4,20 @@ module.exports = {
   claim: 'Plan / Design / Craft',
   region: 'North West - Lancashire',
   email: 'LevelLineStudioMCR@gmail.com',
-  logoPath: '/readyprint2.png',
-  titleImagePath: '/readyprint2.png',
+  logoPath: '/title.png',
+  titleImagePath: '/title.png',
+  workspaceLogoPath: '/logo4.png',
   publicAuthLabel: 'Account',
   consultationCtaLabel: 'Request Private Consultation',
+  enquiryTitle: 'Send Enquiry',
+  enquiryLead:
+    'Share the rooms involved, the finish ambition and your timing. The studio replies with a measured next step.',
   coreServiceOffer:
     'full bathroom renovations, kitchen installation and refurbishment, large-format tiling, carpentry, wall systems and flooring installation',
   joinedUpOfferLead:
     'Bathrooms, kitchens and interior upgrades are handled as one refined studio scope, with planning, detailing and finish control staying aligned from the first survey.',
   serviceLineLabel: 'Curated premium scope',
   privateConsultationLabel: 'Private consultation',
-  contactLead:
-    'Direct studio lines and email are surfaced clearly so premium briefs move through one calm, selective point of contact.',
   footerCopy:
     'Selective bathroom, kitchen and interior renovation briefs delivered across the North West with measured planning, quiet material confidence and finish control.',
   phones: [
@@ -37,7 +39,6 @@ module.exports = {
     { href: '/index.html#services', label: 'Services' },
     { href: '/index.html#projects', label: 'Projects' },
     { href: '/index.html#gallery', label: 'Gallery' },
-    { href: '#consultation', label: 'Contact' },
     { href: '/auth.html', label: 'Account', isAuth: true }
   ],
   serviceLinks: [
