@@ -4,10 +4,13 @@
   const projectStrip = document.querySelector('[data-gallery-projects]');
   const prevButton = document.querySelector('[data-gallery-prev]');
   const nextButton = document.querySelector('[data-gallery-next]');
+  const projectPrevButton = document.querySelector('[data-gallery-project-prev]');
+  const projectNextButton = document.querySelector('[data-gallery-project-next]');
   const statusNode = document.querySelector('[data-gallery-status]');
 
   if (!roller || !stage || !projectStrip || !prevButton || !nextButton) return;
   roller.setAttribute('tabindex', '0');
+  projectStrip.setAttribute('tabindex', '0');
 
   const defaultProjects = [
     {
@@ -173,13 +176,37 @@
     }
   };
 
+  const loadInlineProjects = () => {
+    const node = document.querySelector('[data-gallery-projects-json]');
+    if (!node) return false;
+
+    try {
+      const payload = JSON.parse(node.textContent || '[]');
+      const inlineProjects = Array.isArray(payload)
+        ? payload
+          .map((project) => ({
+            name: String(project.name || '').trim() || 'Project',
+            images: Array.isArray(project.images) ? project.images.filter(Boolean) : []
+          }))
+          .filter((project) => project.images.length)
+        : [];
+
+      if (!inlineProjects.length) return false;
+
+      projects = inlineProjects;
+      return true;
+    } catch (error) {
+      return false;
+    }
+  };
+
   const setStatus = () => {
     if (!statusNode) return;
 
     const project = currentProject();
     const total = project.images.length;
     const centeredIndex = normalizeIndex(Math.round(state.position), total);
-    statusNode.textContent = `${project.name} - photo ${centeredIndex + 1} of ${total}`;
+    statusNode.textContent = `Project ${state.projectIndex + 1} of ${projects.length} - ${project.name}, photo ${centeredIndex + 1} of ${total}`;
   };
 
   const stopAnimation = () => {
@@ -196,7 +223,35 @@
       const isActive = index === state.projectIndex;
       chip.classList.toggle('is-active', isActive);
       chip.setAttribute('aria-pressed', String(isActive));
+
+      if (isActive) {
+        chip.scrollIntoView({
+          block: 'nearest',
+          inline: 'nearest',
+          behavior: 'smooth'
+        });
+      }
     });
+  };
+
+  const selectProject = (index) => {
+    const nextIndex = normalizeIndex(index, projects.length);
+    if (state.projectIndex === nextIndex && state.cards.length) return;
+
+    state.projectIndex = nextIndex;
+    state.target = 0;
+    state.position = 0;
+    state.velocity = 0;
+    state.inputStreak = 0;
+    state.inputEnergy = 0;
+
+    updateProjectStripState();
+    buildRoller();
+  };
+
+  const shiftProject = (step) => {
+    if (projects.length <= 1) return;
+    selectProject(state.projectIndex + step);
   };
 
   const applyTransforms = () => {
@@ -315,6 +370,7 @@
       button.type = 'button';
       button.className = 'project-chip';
       button.setAttribute('aria-label', `Show project ${project.name}`);
+      button.setAttribute('aria-pressed', 'false');
 
       const image = document.createElement('img');
       image.src = project.images[0];
@@ -327,19 +383,7 @@
       button.appendChild(image);
       button.appendChild(label);
 
-      button.addEventListener('click', () => {
-        if (state.projectIndex === index) return;
-
-        state.projectIndex = index;
-        state.target = 0;
-        state.position = 0;
-        state.velocity = 0;
-        state.inputStreak = 0;
-        state.inputEnergy = 0;
-
-        updateProjectStripState();
-        buildRoller();
-      });
+      button.addEventListener('click', () => selectProject(index));
 
       projectStrip.appendChild(button);
       state.chips.push(button);
@@ -373,6 +417,8 @@
 
   prevButton.addEventListener('click', () => roll(-1));
   nextButton.addEventListener('click', () => roll(1));
+  projectPrevButton?.addEventListener('click', () => shiftProject(-1));
+  projectNextButton?.addEventListener('click', () => shiftProject(1));
 
   roller.addEventListener('keydown', (event) => {
     if (event.key === 'ArrowLeft') {
@@ -386,19 +432,42 @@
     }
   });
 
+  projectStrip.addEventListener('keydown', (event) => {
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      shiftProject(-1);
+    }
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      shiftProject(1);
+    }
+  });
+
   const init = async () => {
-    await loadManagedProjects();
+    const hasInlineProjects = loadInlineProjects();
+
+    if (!hasInlineProjects) {
+      await loadManagedProjects();
+    }
 
     if (!projects.length) {
       if (statusNode) statusNode.textContent = 'No gallery photos available yet.';
       prevButton.disabled = true;
       nextButton.disabled = true;
+      if (projectPrevButton) projectPrevButton.disabled = true;
+      if (projectNextButton) projectNextButton.disabled = true;
       return;
     }
 
     state.projectIndex = normalizeIndex(state.projectIndex, projects.length);
     buildProjectStrip();
     buildRoller();
+
+    if (projects.length <= 1) {
+      if (projectPrevButton) projectPrevButton.disabled = true;
+      if (projectNextButton) projectNextButton.disabled = true;
+    }
   };
 
   init();
