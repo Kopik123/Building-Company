@@ -22,6 +22,17 @@ module.exports = {
     { href: 'tel:+447942874446', display: '+44 7942 874 446', label: 'Studio line 1' },
     { href: 'tel:+447304506391', display: '+44 7304 506 391', label: 'Studio line 2' }
   ],
+  serviceAreas: [
+    'Manchester',
+    'Liverpool',
+    'Preston',
+    'Rochdale',
+    'Oldham',
+    'Macclesfield',
+    'Stockport',
+    'Northwich',
+    'Warrington'
+  ],
   navLinks: [
     { href: '/index.html#services', label: 'Services' },
     { href: '/index.html#projects', label: 'Projects' },

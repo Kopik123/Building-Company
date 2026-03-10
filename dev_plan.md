@@ -261,3 +261,13 @@ Aktualny stan roboczy i ryzyka techniczne:
 - Na mobile przywrocono widoczne strzalki lewo/prawo bezposrednio na galerii, zeby roller projektu byl obslugiwalny dotykowo bez polegania tylko na przewijaniu i statusie tekstowym.
 - Uklad selectora projektow i dolnego pasa `contact/services/coverage + fast quote` zostal odchudzony tak, aby nie wypychal brandingu, nie wcinal sie pod menu i nie tworzyl zbyt wysokiego first screena na telefonach.
 - Status: zweryfikowane lokalnie przez `npm.cmd run verify:generated`; browser screenshot automation nie byla dostepna, bo lokalna instancja Playwright nie miala zainstalowanego Chrome.
+
+### 2026-03-10 - Wspolny `studio board` dla wszystkich public pages
+
+- `scripts/publicPageRenderer.js` dostal kanoniczny renderer `studio board`, ktory sklada publiczny top strony z trzech warstw: `board top`, `board main` i `board bottom`, zamiast starego modelu `hero + contact band + consultation`.
+- `scripts/generate-service-pages.js` i `scripts/generate-location-pages.js` buduja teraz jawne obiekty `board` z headingiem, claimem `Plan / Design / Craft`, zestawem projektow galerii, dolnym panelem `contact / services-or-areas` oraz `Fast Quote`.
+- `gallery.js` obsluguje teraz inline payload `data-gallery-projects-json`, wiec homepage i strony generowane moga dostarczac wlasne zestawy projektow bez zaleznosci od jednego globalnego fallbacku API.
+- `styles.css` przestal ograniczac `studio board` tylko do `page-home`; ten sam system layoutu, galerii, pionowego selectora projektow i dolnego summary pasa dziala teraz na wszystkich `body.public-site`.
+- `index.html` dostal tez inline dane galerii, tak aby homepage i strony generowane korzystaly z tego samego kontraktu `studio board` end-to-end.
+- Odswiezono wszystkie generowane strony uslug i lokalizacji, wiec public pages czytaja sie teraz w jednej logice: header, board, process/content sections, FAQ, footer.
+- Status: zweryfikowane lokalnie przez `node --check gallery.js`, `node --check scripts/publicPageRenderer.js`, `node --check scripts/generate-service-pages.js`, `node --check scripts/generate-location-pages.js`, `npm.cmd run generate:public-pages`, `npm.cmd run verify:generated` i `npm.cmd run test:ci`.

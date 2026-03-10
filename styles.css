@@ -2999,12 +2999,12 @@ body.public-site .gallery-status {
   font-weight: 600;
 }
 
-body.public-site.page-home .studio-board-shell {
+body.public-site .studio-board-shell {
   padding-top: 42px;
   padding-bottom: 24px;
 }
 
-body.public-site.page-home .studio-board {
+body.public-site .studio-board {
   display: grid;
   gap: 24px;
   padding: 30px;
@@ -3017,21 +3017,21 @@ body.public-site.page-home .studio-board {
   box-shadow: 0 28px 70px rgba(0, 0, 0, 0.34);
 }
 
-body.public-site.page-home .studio-board-top {
+body.public-site .studio-board-top {
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
   gap: 24px;
   align-items: end;
 }
 
-body.public-site.page-home .studio-board-heading,
-body.public-site.page-home .studio-board-claim {
+body.public-site .studio-board-heading,
+body.public-site .studio-board-claim {
   display: grid;
   gap: 10px;
 }
 
-body.public-site.page-home .studio-board-heading h1,
-body.public-site.page-home .studio-board-claimline {
+body.public-site .studio-board-heading h1,
+body.public-site .studio-board-claimline {
   margin: 0;
   font-family: 'Montserrat', sans-serif;
   font-size: clamp(2.45rem, 4.3vw, 4.55rem);
@@ -3042,79 +3042,79 @@ body.public-site.page-home .studio-board-claimline {
   color: var(--public-gold);
 }
 
-body.public-site.page-home .studio-board-heading h1 {
+body.public-site .studio-board-heading h1 {
   max-width: 13ch;
 }
 
-body.public-site.page-home .studio-board-claim {
+body.public-site .studio-board-claim {
   justify-items: end;
   text-align: right;
 }
 
-body.public-site.page-home .studio-board-claimcopy {
+body.public-site .studio-board-claimcopy {
   max-width: 34ch;
   margin: 0;
   color: rgba(246, 241, 231, 0.76);
 }
 
-body.public-site.page-home .studio-board-main {
+body.public-site .studio-board-main {
   display: grid;
   grid-template-columns: minmax(0, 1.58fr) minmax(300px, 0.82fr);
   gap: 24px;
   align-items: stretch;
 }
 
-body.public-site.page-home .studio-gallery-panel,
-body.public-site.page-home .studio-projects-panel,
-body.public-site.page-home .studio-summary-card,
-body.public-site.page-home .studio-quote-card {
+body.public-site .studio-gallery-panel,
+body.public-site .studio-projects-panel,
+body.public-site .studio-summary-card,
+body.public-site .studio-quote-card {
   padding: 28px;
 }
 
-body.public-site.page-home .studio-gallery-panel {
+body.public-site .studio-gallery-panel {
   display: grid;
   gap: 18px;
   min-height: 640px;
 }
 
-body.public-site.page-home .studio-panel-head {
+body.public-site .studio-panel-head {
   display: flex;
   align-items: end;
   justify-content: space-between;
   gap: 18px;
 }
 
-body.public-site.page-home .studio-panel-head h2,
-body.public-site.page-home .studio-summary-card h2,
-body.public-site.page-home .studio-quote-card h2 {
+body.public-site .studio-panel-head h2,
+body.public-site .studio-summary-card h2,
+body.public-site .studio-quote-card h2 {
   color: var(--public-stone-text);
 }
 
-body.public-site.page-home .studio-panel-head--stack {
+body.public-site .studio-panel-head--stack {
   display: grid;
   gap: 10px;
 }
 
-body.public-site.page-home .studio-panel-copy {
+body.public-site .studio-panel-copy {
   margin: 0;
   color: #62513b;
 }
 
-body.public-site.page-home .studio-gallery-roller {
+body.public-site .studio-gallery-roller {
   grid-template-columns: 58px minmax(0, 1fr) 58px;
   gap: 18px;
   align-items: stretch;
   min-height: 0;
 }
 
-body.public-site.page-home .studio-gallery-arrow {
+body.public-site .studio-gallery-arrow {
   align-self: center;
   width: 58px;
   height: 58px;
   background: rgba(255, 255, 255, 0.66);
 }
 
-body.public-site.page-home .studio-gallery-stage {
+body.public-site .studio-gallery-stage {
   min-height: 560px;
   padding: 20px 0;
   border-radius: 28px;
@@ -3123,12 +3123,12 @@ body.public-site.page-home .studio-gallery-stage {
     radial-gradient(circle at 50% 46%, rgba(205, 165, 74, 0.2), transparent 54%);
 }
 
-body.public-site.page-home .studio-gallery-stage::after {
+body.public-site .studio-gallery-stage::after {
   height: 30%;
   background: linear-gradient(180deg, transparent 0, rgba(17, 13, 9, 0.06) 44%, rgba(17, 13, 9, 0.2) 100%);
 }
 
-body.public-site.page-home .studio-gallery-stage .roller-card {
+body.public-site .studio-gallery-stage .roller-card {
   top: 50%;
   left: 50%;
   width: min(84%, 760px);
@@ -3138,14 +3138,14 @@ body.public-site.page-home .studio-gallery-stage .roller-card {
   border-color: rgba(141, 107, 45, 0.24);
 }
 
-body.public-site.page-home .studio-projects-panel {
+body.public-site .studio-projects-panel {
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr) auto;
   gap: 14px;
   min-height: 640px;
 }
 
-body.public-site.page-home .project-rail-nav {
+body.public-site .project-rail-nav {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -3160,17 +3160,17 @@ body.public-site.page-home .project-rail-nav {
   transition: border-color 0.18s ease, background 0.18s ease, color 0.18s ease;
 }
 
-body.public-site.page-home .project-rail-nav:hover {
+body.public-site .project-rail-nav:hover {
   border-color: rgba(141, 107, 45, 0.54);
   background: rgba(205, 165, 74, 0.2);
 }
 
-body.public-site.page-home .project-rail-nav:disabled {
+body.public-site .project-rail-nav:disabled {
   cursor: default;
   opacity: 0.5;
 }
 
-body.public-site.page-home .studio-project-strip {
+body.public-site .studio-project-strip {
   display: grid;
   align-content: start;
   gap: 12px;
@@ -3180,7 +3180,7 @@ body.public-site.page-home .studio-project-strip {
   min-height: 0;
 }
 
-body.public-site.page-home .studio-project-strip .project-chip {
+body.public-site .studio-project-strip .project-chip {
   min-width: 0;
   width: 100%;
   grid-template-columns: 96px minmax(0, 1fr);
@@ -3190,18 +3190,18 @@ body.public-site.page-home .studio-project-strip .project-chip {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.38);
 }
 
-body.public-site.page-home .studio-project-strip .project-chip img {
+body.public-site .studio-project-strip .project-chip img {
   border-radius: 14px;
   aspect-ratio: 1 / 1;
 }
 
-body.public-site.page-home .studio-project-strip .project-chip span {
+body.public-site .studio-project-strip .project-chip span {
   font-size: 0.74rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
-body.public-site.page-home .studio-project-strip .project-chip.is-active {
+body.public-site .studio-project-strip .project-chip.is-active {
   background:
     linear-gradient(180deg, rgba(248, 240, 228, 0.94), rgba(235, 223, 205, 0.96)),
     linear-gradient(120deg, rgba(205, 165, 74, 0.22), transparent 38%);
@@ -3209,42 +3209,48 @@ body.public-site.page-home .studio-project-strip .project-chip.is-active {
   box-shadow: 0 18px 36px rgba(205, 165, 74, 0.18);
 }
 
-body.public-site.page-home .studio-gallery-status {
+body.public-site .studio-gallery-status {
   margin: 0;
 }
 
-body.public-site.page-home .studio-board-bottom {
+body.public-site .studio-board-bottom {
   display: grid;
   grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.88fr);
   gap: 24px;
   align-items: start;
 }
 
-body.public-site.page-home .studio-summary-grid {
+body.public-site .studio-summary-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.16fr) minmax(0, 1fr) minmax(0, 1fr);
   gap: 24px;
 }
 
-body.public-site.page-home .studio-summary-block {
+body.public-site .studio-summary-block {
   display: grid;
   align-content: start;
   gap: 12px;
 }
 
-body.public-site.page-home .studio-summary-card h2 {
+body.public-site .studio-summary-card h2 {
   max-width: 13ch;
 }
 
-body.public-site.page-home .studio-summary-contact,
-body.public-site.page-home .studio-summary-links {
+body.public-site .studio-summary-block h3 {
+  margin: 0;
+  color: var(--public-stone-text);
+  font-size: 1.08rem;
+}
+
+body.public-site .studio-summary-contact,
+body.public-site .studio-summary-links {
   display: grid;
   gap: 10px;
   font-style: normal;
 }
 
-body.public-site.page-home .studio-summary-link,
-body.public-site.page-home .studio-summary-area {
+body.public-site .studio-summary-link,
+body.public-site .studio-summary-area {
   display: inline-flex;
   align-items: center;
   min-height: 42px;
@@ -3259,7 +3265,7 @@ body.public-site.page-home .studio-summary-area {
   text-transform: uppercase;
 }
 
-body.public-site.page-home .studio-summary-link--contact {
+body.public-site .studio-summary-link--contact {
   justify-content: flex-start;
   font-size: 0.94rem;
   font-weight: 600;
@@ -3267,7 +3273,7 @@ body.public-site.page-home .studio-summary-link--contact {
   text-transform: none;
 }
 
-body.public-site.page-home .studio-summary-region {
+body.public-site .studio-summary-region {
   margin: 0;
   font-family: 'Cormorant Garamond', serif;
   font-size: 1.72rem;
@@ -3275,26 +3281,26 @@ body.public-site.page-home .studio-summary-region {
   color: var(--public-stone-text);
 }
 
-body.public-site.page-home .studio-summary-areas {
+body.public-site .studio-summary-areas {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
 }
 
-body.public-site.page-home .studio-quote-card {
+body.public-site .studio-quote-card {
   display: grid;
   align-content: start;
 }
 
-body.public-site.page-home .studio-quote-form {
+body.public-site .studio-quote-form {
   padding: 0;
 }
 
-body.public-site.page-home .studio-quote-form .form-grid {
+body.public-site .studio-quote-form .form-grid {
   margin-top: 18px;
 }
 
-body.public-site.page-home .studio-quote-form .btn-block {
+body.public-site .studio-quote-form .btn-block {
   margin-top: 8px;
 }
 
@@ -3419,26 +3425,26 @@ body.public-site.nav-open {
 }
 
 @media (max-width: 1100px) {
-  body.public-site.page-home .studio-board-top,
-  body.public-site.page-home .studio-board-main,
-  body.public-site.page-home .studio-board-bottom {
+  body.public-site .studio-board-top,
+  body.public-site .studio-board-main,
+  body.public-site .studio-board-bottom {
     grid-template-columns: 1fr;
   }
 
-  body.public-site.page-home .studio-board-claim {
+  body.public-site .studio-board-claim {
     justify-items: start;
     text-align: left;
   }
 
-  body.public-site.page-home .studio-board-claimcopy {
+  body.public-site .studio-board-claimcopy {
     margin-left: 0;
   }
 
-  body.public-site.page-home .studio-summary-grid {
+  body.public-site .studio-summary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  body.public-site.page-home .studio-summary-card h2 {
+  body.public-site .studio-summary-card h2 {
     max-width: none;
   }
 
@@ -3468,40 +3474,40 @@ body.public-site.nav-open {
     top: 0;
   }
 
-  body.public-site.page-home .studio-board {
+  body.public-site .studio-board {
     padding: 24px;
   }
 
-  body.public-site.page-home .studio-gallery-panel,
-  body.public-site.page-home .studio-projects-panel,
-  body.public-site.page-home .studio-summary-card,
-  body.public-site.page-home .studio-quote-card {
+  body.public-site .studio-gallery-panel,
+  body.public-site .studio-projects-panel,
+  body.public-site .studio-summary-card,
+  body.public-site .studio-quote-card {
     padding: 22px;
   }
 
-  body.public-site.page-home .studio-gallery-panel,
-  body.public-site.page-home .studio-projects-panel {
+  body.public-site .studio-gallery-panel,
+  body.public-site .studio-projects-panel {
     min-height: auto;
   }
 
-  body.public-site.page-home .studio-panel-head {
+  body.public-site .studio-panel-head {
     flex-direction: column;
     align-items: start;
   }
 
-  body.public-site.page-home .studio-gallery-stage {
+  body.public-site .studio-gallery-stage {
     min-height: 460px;
   }
 
-  body.public-site.page-home .studio-gallery-stage .roller-card {
+  body.public-site .studio-gallery-stage .roller-card {
     width: min(88%, 640px);
   }
 
-  body.public-site.page-home .project-rail-nav {
+  body.public-site .project-rail-nav {
     display: none;
   }
 
-  body.public-site.page-home .studio-project-strip {
+  body.public-site .studio-project-strip {
     display: flex;
     overflow-x: auto;
     overflow-y: hidden;
@@ -3509,12 +3515,12 @@ body.public-site.nav-open {
     padding-bottom: 6px;
   }
 
-  body.public-site.page-home .studio-project-strip .project-chip {
+  body.public-site .studio-project-strip .project-chip {
     flex: 0 0 min(280px, 76vw);
   }
 
-  body.public-site.page-home .studio-summary-grid,
-  body.public-site.page-home .studio-quote-form .form-grid {
+  body.public-site .studio-summary-grid,
+  body.public-site .studio-quote-form .form-grid {
     grid-template-columns: 1fr;
   }
 
@@ -3605,11 +3611,11 @@ body.public-site.nav-open {
     display: none;
   }
 
-  body.public-site.page-home .studio-gallery-roller {
+  body.public-site .studio-gallery-roller {
     position: relative;
   }
 
-  body.public-site.page-home .studio-gallery-arrow {
+  body.public-site .studio-gallery-arrow {
     display: inline-flex;
     position: absolute;
     top: 50%;
@@ -3622,11 +3628,11 @@ body.public-site.nav-open {
     color: var(--public-ivory);
   }
 
-  body.public-site.page-home [data-gallery-prev].studio-gallery-arrow {
+  body.public-site [data-gallery-prev].studio-gallery-arrow {
     left: 10px;
   }
 
-  body.public-site.page-home [data-gallery-next].studio-gallery-arrow {
+  body.public-site [data-gallery-next].studio-gallery-arrow {
     right: 10px;
   }
 
@@ -3640,92 +3646,92 @@ body.public-site.nav-open {
 }
 
 @media (max-width: 640px) {
-  body.public-site.page-home .studio-board-shell {
+  body.public-site .studio-board-shell {
     padding-top: 16px;
     padding-bottom: 14px;
   }
 
-  body.public-site.page-home .studio-board {
+  body.public-site .studio-board {
     padding: 14px;
     gap: 14px;
     border-radius: 20px;
   }
 
-  body.public-site.page-home .studio-board-heading h1,
-  body.public-site.page-home .studio-board-claimline {
+  body.public-site .studio-board-heading h1,
+  body.public-site .studio-board-claimline {
     font-size: clamp(1.65rem, 8.4vw, 2.35rem);
     line-height: 1.02;
   }
 
-  body.public-site.page-home .studio-board-top {
+  body.public-site .studio-board-top {
     gap: 14px;
   }
 
-  body.public-site.page-home .studio-board-heading,
-  body.public-site.page-home .studio-board-claim {
+  body.public-site .studio-board-heading,
+  body.public-site .studio-board-claim {
     gap: 8px;
   }
 
-  body.public-site.page-home .studio-gallery-panel,
-  body.public-site.page-home .studio-projects-panel,
-  body.public-site.page-home .studio-summary-card,
-  body.public-site.page-home .studio-quote-card {
+  body.public-site .studio-gallery-panel,
+  body.public-site .studio-projects-panel,
+  body.public-site .studio-summary-card,
+  body.public-site .studio-quote-card {
     padding: 14px;
     border-radius: 18px;
   }
 
-  body.public-site.page-home .studio-panel-head,
-  body.public-site.page-home .studio-panel-head--stack {
+  body.public-site .studio-panel-head,
+  body.public-site .studio-panel-head--stack {
     gap: 8px;
   }
 
-  body.public-site.page-home .studio-gallery-stage {
+  body.public-site .studio-gallery-stage {
     min-height: 250px;
     padding: 10px 0;
   }
 
-  body.public-site.page-home .studio-gallery-stage .roller-card {
+  body.public-site .studio-gallery-stage .roller-card {
     width: calc(100% - 18px);
     max-width: none;
     border-radius: 16px;
   }
 
-  body.public-site.page-home .studio-projects-panel {
+  body.public-site .studio-projects-panel {
     gap: 10px;
   }
 
-  body.public-site.page-home .studio-project-strip {
+  body.public-site .studio-project-strip {
     gap: 8px;
   }
 
-  body.public-site.page-home .studio-summary-grid {
+  body.public-site .studio-summary-grid {
     grid-template-columns: 1fr;
     gap: 16px;
   }
 
-  body.public-site.page-home .studio-summary-card h2,
-  body.public-site.page-home .studio-quote-card h2 {
+  body.public-site .studio-summary-card h2,
+  body.public-site .studio-quote-card h2 {
     font-size: 1.45rem;
     line-height: 1.08;
   }
 
-  body.public-site.page-home .studio-summary-link,
-  body.public-site.page-home .studio-summary-area {
+  body.public-site .studio-summary-link,
+  body.public-site .studio-summary-area {
     min-height: 38px;
     padding: 0 12px;
     font-size: 0.7rem;
     letter-spacing: 0.08em;
   }
 
-  body.public-site.page-home .studio-summary-link--contact {
+  body.public-site .studio-summary-link--contact {
     font-size: 0.88rem;
   }
 
-  body.public-site.page-home .studio-summary-region {
+  body.public-site .studio-summary-region {
     font-size: 1.42rem;
   }
 
-  body.public-site.page-home .studio-project-strip .project-chip {
+  body.public-site .studio-project-strip .project-chip {
     flex-basis: min(224px, 76vw);
     grid-template-columns: 76px minmax(0, 1fr);
     padding: 8px;

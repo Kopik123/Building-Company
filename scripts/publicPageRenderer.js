@@ -5,6 +5,9 @@ const escapeHtml = (value) =>
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 
+const escapeScriptJson = (value) =>
+  JSON.stringify(value).replace(/</g, '\\u003c').replace(/-->/g, '--\\>');
+
 const renderJsonLdScripts = (jsonLd) => {
   const nodes = Array.isArray(jsonLd) ? jsonLd.filter(Boolean) : [jsonLd].filter(Boolean);
   return nodes
@@ -31,6 +34,19 @@ const renderLinks = (links, className = '') =>
       const classAttr = className ? ` class="${className}"` : '';
       return `          <a${classAttr} href="${escapeHtml(link.href)}">${escapeHtml(link.label)}</a>`;
     })
+    .join('\n');
+
+const renderSummaryLinks = (links = []) =>
+  links
+    .map(
+      (link) =>
+        `              <a class="studio-summary-link" href="${escapeHtml(link.href)}">${escapeHtml(link.label)}</a>`
+    )
+    .join('\n');
+
+const renderSummaryAreas = (items = []) =>
+  items
+    .map((item) => `              <span class="studio-summary-area">${escapeHtml(item)}</span>`)
     .join('\n');
 
 const renderHeroChips = (chips) =>
@@ -145,6 +161,134 @@ ${renderFaq(items)}
       </div>
     </section>`;
 
+const renderStudioSummarySection = (section, shared) => {
+  if (!section) return '';
+
+  if (section.type === 'contact') {
+    return `              <section class="studio-summary-block">
+                <p class="section-eyebrow section-eyebrow--compact">${escapeHtml(section.eyebrow || 'Direct Contact')}</p>
+                <h2>${escapeHtml(section.title)}</h2>
+                <p>${escapeHtml(section.lead || shared.contactLead || '')}</p>
+                <address class="studio-summary-contact" aria-label="${escapeHtml(shared.brandName)} contact details">
+                  <a class="studio-summary-link studio-summary-link--contact" data-brand-phone="0" href="${escapeHtml(shared.phones[0].href)}">${escapeHtml(shared.phones[0].display)}</a>
+                  <a class="studio-summary-link studio-summary-link--contact" data-brand-phone="1" href="${escapeHtml(shared.phones[1].href)}">${escapeHtml(shared.phones[1].display)}</a>
+                  <a class="studio-summary-link studio-summary-link--contact" data-brand-email href="mailto:${escapeHtml(shared.email)}">${escapeHtml(shared.email)}</a>
+                </address>
+              </section>`;
+  }
+
+  if (section.type === 'links') {
+    return `              <section class="studio-summary-block">
+                <p class="section-eyebrow section-eyebrow--compact">${escapeHtml(section.eyebrow || 'Services')}</p>
+                ${section.title ? `<h3>${escapeHtml(section.title)}</h3>` : ''}
+                <div class="studio-summary-links">
+${renderSummaryLinks(section.links)}
+                </div>
+              </section>`;
+  }
+
+  if (section.type === 'areas') {
+    return `              <section class="studio-summary-block">
+                <p class="section-eyebrow section-eyebrow--compact">${escapeHtml(section.eyebrow || 'Areas')}</p>
+                ${section.title ? `<h3>${escapeHtml(section.title)}</h3>` : ''}
+                <p class="studio-summary-region">${escapeHtml(section.region || shared.region)}</p>
+                <div class="studio-summary-areas">
+${renderSummaryAreas(section.items || [])}
+                </div>
+              </section>`;
+  }
+
+  return '';
+};
+
+const renderStudioBoard = ({ shared, board }) => {
+  const heading = board.boardHeading || board.heading || {};
+  const claim = board.boardClaim || board.claim || {};
+  const fastQuote = board.fastQuoteDefaults || board.fastQuote || {};
+  const galleryProjects = Array.isArray(board.galleryProjects) ? board.galleryProjects : [];
+  const summarySections = Array.isArray(board.summarySections) ? board.summarySections : [];
+
+  return `    <section class="section section--dark studio-board-shell" id="projects">
+      <div class="container section-shell studio-board">
+        <div class="studio-board-top">
+          <div class="studio-board-heading">
+            <p class="section-eyebrow">${escapeHtml(heading.eyebrow || '')}</p>
+            <h1>${escapeHtml(heading.title || '')}</h1>
+            <p class="section-lead">${escapeHtml(heading.lead || '')}</p>
+          </div>
+          <div class="studio-board-claim">
+            <p class="section-eyebrow">${escapeHtml(claim.eyebrow || 'Studio Method')}</p>
+            <p class="studio-board-claimline">${escapeHtml(claim.title || shared.claim)}</p>
+            <p class="studio-board-claimcopy">${escapeHtml(claim.lead || '')}</p>
+          </div>
+        </div>
+
+        <div class="studio-board-main">
+          <article class="surface-card surface-card--light studio-gallery-panel" id="gallery">
+            <div class="studio-panel-head">
+              <div>
+                <p class="section-eyebrow section-eyebrow--compact">${escapeHtml(board.galleryEyebrow || 'Selected Project')}</p>
+                <h2>${escapeHtml(board.galleryTitle || 'Image roller for the active project.')}</h2>
+              </div>
+              <a class="text-link" href="${escapeHtml(board.galleryCtaHref || '#consultation')}">${escapeHtml(board.galleryCtaLabel || shared.consultationCtaLabel || 'Request Private Consultation')}</a>
+            </div>
+            <div class="gallery-roller studio-gallery-roller" data-gallery-roller data-motion-profile="${escapeHtml(board.motionProfile || 'subtle')}">
+              <button class="gallery-arrow studio-gallery-arrow" type="button" data-gallery-prev aria-label="Previous photo">&#10094;</button>
+              <div class="gallery-stage studio-gallery-stage" data-gallery-stage aria-live="polite"></div>
+              <button class="gallery-arrow studio-gallery-arrow" type="button" data-gallery-next aria-label="Next photo">&#10095;</button>
+            </div>
+          </article>
+
+          <aside class="surface-card surface-card--light studio-projects-panel">
+            <div class="studio-panel-head studio-panel-head--stack">
+              <div>
+                <p class="section-eyebrow section-eyebrow--compact">${escapeHtml(board.projectsEyebrow || 'Projects')}</p>
+                <h2>${escapeHtml(board.projectsTitle || 'Project selector for the gallery.')}</h2>
+              </div>
+              <p class="studio-panel-copy">${escapeHtml(board.projectsLead || 'Choose the project on the right, then rotate the selected image sequence on the left.')}</p>
+            </div>
+            <button class="project-rail-nav project-rail-nav--up" type="button" data-gallery-project-prev aria-label="Previous project">&#8593;</button>
+            <div class="gallery-project-strip studio-project-strip" data-gallery-projects aria-label="Project selection"></div>
+            <button class="project-rail-nav project-rail-nav--down" type="button" data-gallery-project-next aria-label="Next project">&#8595;</button>
+            <p class="gallery-status studio-gallery-status" data-gallery-status aria-live="polite"></p>
+          </aside>
+        </div>
+
+        <div class="studio-board-bottom">
+          <article class="surface-card surface-card--light studio-summary-card" id="services">
+            <div class="studio-summary-grid">
+${summarySections.map((section) => renderStudioSummarySection(section, shared)).join('\n')}
+            </div>
+          </article>
+
+          <article class="surface-card surface-card--light studio-quote-card" id="consultation">
+            <p class="section-eyebrow">${escapeHtml(fastQuote.eyebrow || 'Fast Quote')}</p>
+            <h2>${escapeHtml(fastQuote.title || 'Quick contact form for a measured first response.')}</h2>
+            <p class="section-lead">${escapeHtml(fastQuote.lead || '')}</p>
+            <form class="quote-form studio-quote-form js-quote-form" data-form-context="${escapeHtml(fastQuote.formContext || 'Public Page Fast Quote')}" novalidate>
+              <input type="hidden" name="location" value="${escapeHtml(fastQuote.locationValue || shared.region)}" />
+              <div class="form-grid">
+                <label>Name<input type="text" name="name" autocomplete="name" required /></label>
+                <label>Phone<input type="tel" name="phone" autocomplete="tel" /></label>
+                <label>Email<input type="email" name="email" autocomplete="email" /></label>
+                <label>Project type
+                  <select name="projectType" required data-brand-project-type-select data-default-label="Select" data-selected-value="${escapeHtml(fastQuote.selectedProjectType || '')}"></select>
+                </label>
+                <label>Budget
+                  <select name="budget" data-brand-budget-select data-default-label="Select"></select>
+                </label>
+                <label class="span-2">Project brief<textarea name="message" rows="5" required placeholder="Tell us about your scope, finish expectations and timing."></textarea></label>
+              </div>
+              <button class="btn btn-gold btn-block" type="submit">${escapeHtml(shared.consultationCtaLabel || 'Request Private Consultation')}</button>
+              <p class="form-status" aria-live="polite"></p>
+            </form>
+          </article>
+        </div>
+      </div>
+      <script type="application/json" data-gallery-projects-json>${escapeScriptJson(galleryProjects)}</script>
+    </section>`;
+};
+
 const renderContactSection = ({ title, lead, shared }) => `  <section class="section section--dark contact-band-shell">
     <div class="container contact-band surface-card surface-card--dark">
       <div class="contact-band-copy">
@@ -237,6 +381,7 @@ const renderPublicPage = ({
   jsonLd,
   robotsContent = 'index,follow,max-image-preview:large',
   hero,
+  board,
   sections,
   contact,
   consultation,
@@ -287,7 +432,9 @@ ${renderNavLinks(shared)}
   </header>
   <main>
 
-    <section class="public-hero public-hero--inner" style="--hero-image: url('${escapeHtml(hero.image)}');">
+${board
+    ? renderStudioBoard({ shared, board })
+    : `    <section class="public-hero public-hero--inner" style="--hero-image: url('${escapeHtml(hero.image)}');">
       <div class="hero-backdrop"></div>
       <div class="container inner-hero-shell">
         <p class="section-eyebrow">${escapeHtml(hero.eyebrow)}</p>
@@ -297,20 +444,20 @@ ${renderNavLinks(shared)}
 ${renderHeroChips(hero.chips)}
         </div>
       </div>
-    </section>
+    </section>`}
 
 ${sections.join('\n\n')}
 
+${board ? '' : `${renderContactSection({ ...contact, shared })}
 
-${renderContactSection({ ...contact, shared })}
 
-
-${renderConsultationSection({ ...consultation, shared })}
+${renderConsultationSection({ ...consultation, shared })}`}
   </main>
 
 ${renderFooter(shared)}
   <script src="/brand.js" defer></script>
   <script src="/site.js" defer></script>
+  <script src="/gallery.js" defer></script>
   <script src="/quote.js" defer></script>
 </body>
 </html>
@@ -322,5 +469,6 @@ module.exports = {
   renderPillarSection,
   renderFeatureSection,
   renderMediaStripSection,
-  renderFaqSection
+  renderFaqSection,
+  renderStudioBoard
 };

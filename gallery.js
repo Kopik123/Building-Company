@@ -176,6 +176,30 @@
     }
   };
 
+  const loadInlineProjects = () => {
+    const node = document.querySelector('[data-gallery-projects-json]');
+    if (!node) return false;
+
+    try {
+      const payload = JSON.parse(node.textContent || '[]');
+      const inlineProjects = Array.isArray(payload)
+        ? payload
+          .map((project) => ({
+            name: String(project.name || '').trim() || 'Project',
+            images: Array.isArray(project.images) ? project.images.filter(Boolean) : []
+          }))
+          .filter((project) => project.images.length)
+        : [];
+
+      if (!inlineProjects.length) return false;
+
+      projects = inlineProjects;
+      return true;
+    } catch (error) {
+      return false;
+    }
+  };
+
   const setStatus = () => {
     if (!statusNode) return;
 
@@ -421,7 +445,11 @@
   });
 
   const init = async () => {
-    await loadManagedProjects();
+    const hasInlineProjects = loadInlineProjects();
+
+    if (!hasInlineProjects) {
+      await loadManagedProjects();
+    }
 
     if (!projects.length) {
       if (statusNode) statusNode.textContent = 'No gallery photos available yet.';

@@ -33,3 +33,4 @@ Uwaga operacyjna: `dev_plan.md` jest glownym planem i pamiecia projektu. `todos.
 - [x] todos_29: Zmienic publiczna etykiete wejscia do konta z `Join Us` / `Login / Register` na jednolite `Account` w shellu, generatorach i runtime.
 - [x] todos_30: Przebudowac gorna czesc homepage zgodnie z makieta na jeden `studio board`: pozioma galeria wybranego projektu, pionowy selector projektow oraz dolny pas `contact/services/coverage` + `fast quote`.
 - [x] todos_31: Poprawic wersje mobilna homepage dla Android/iPhone: zmniejszyc header z `readyprint2.png`, ustabilizowac menu mobilne i uproscic pierwszy ekran `studio board` na malych viewportach.
+- [x] todos_32: Rozszerzyc `studio board` z homepage na wszystkie public pages: wspolny renderer dla service/location pages, inline dane galerii, dolny pas `contact/services-or-areas + fast quote` i wspolne style desktop/mobile.
