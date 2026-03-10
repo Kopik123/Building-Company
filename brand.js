@@ -3,7 +3,10 @@
   shortName: 'Level Lines',
   claim: 'Plan / Design / Craft',
   region: 'North West - Lancashire',
-  footerCopy: 'Full bathroom renovations, kitchen installation and refurbishment, large-format tiling, carpentry, wall systems and flooring installation delivered across the North West with measured project control.',
+  titleImagePath: '/title.png',
+  publicAuthLabel: 'Join Us',
+  consultationCtaLabel: 'Request Private Consultation',
+  footerCopy: 'Selective bathroom, kitchen and interior renovation briefs delivered across the North West with measured planning, quiet material confidence and finish control.',
   email: 'LevelLineStudioMCR@gmail.com',
   phones: [
     {
@@ -20,13 +23,13 @@
   budgetRanges: ['£8,000-£12,000', '£12,000-£20,000', '£20,000-£30,000', '£30,000+'],
   copy: {
     home: {
-      heroLead: 'Level Lines Studio brings the black-stone and gold-line identity from the business card into bathrooms, kitchens, large-format tiling, carpentry, wall systems and flooring work across the North West.',
-      servicesTitle: 'Seven service lines carried directly from the studio business card.',
-      servicesLead: 'Full bathroom renovations, kitchen installation and refurbishment, tiling for large-format surfaces and wet showers, carpentry, wall systems and flooring installation are presented as one joined-up offer.',
-      processLead: 'The business card message is operational on the website too: plan clearly, design with restraint and deliver with craft.',
-      areasLead: 'The website uses the same coverage list shown on the design artwork, so the geographic offer stays consistent across every touchpoint.',
-      contactLead: 'The same direct studio numbers and email shown on the business card are surfaced prominently on the website.',
-      consultationLead: 'Use one consultation route for bathroom renovations, kitchens, tiling, carpentry, wall systems and flooring installation.'
+      heroLead: 'Level Lines Studio delivers selective bathroom, kitchen and interior renovation briefs for homeowners who value finish control, material restraint and a calmer building process.',
+      servicesTitle: 'A curated renovation scope shaped around precision, not trade-by-trade fragmentation.',
+      servicesLead: 'Bathrooms, kitchens, large-format tiling, carpentry, wall systems and flooring are structured as one premium studio scope, so layout logic, detailing and finish control stay aligned.',
+      processLead: 'The studio method is simple: define the brief properly, shape a restrained material direction and deliver with clean execution.',
+      areasLead: 'Coverage sits in the North West so projects stay close enough for direct studio oversight, tighter sequencing and calmer communication.',
+      contactLead: 'Direct studio numbers and email stay visible because early conversations should feel precise, quiet and uncomplicated.',
+      consultationLead: 'Use one private consultation route for bathroom, kitchen and interior renovation briefs, then tell us the rooms, finish ambition and timing.'
     }
   },
   serviceAreas: [

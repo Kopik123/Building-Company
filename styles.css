@@ -2265,19 +2265,19 @@ summary,
 /* ========================================================================== */
 
 body.public-site {
-  --public-bg: #070707;
-  --public-bg-soft: #111111;
-  --public-panel: rgba(16, 16, 16, 0.92);
-  --public-panel-strong: rgba(8, 8, 8, 0.96);
-  --public-stone: #f2ece1;
-  --public-stone-deep: #e1d6c3;
-  --public-stone-text: #1b1712;
-  --public-ivory: #f6f1e7;
-  --public-muted: #b8ad99;
-  --public-gold: #cda54a;
-  --public-gold-soft: #ecd391;
-  --public-line: rgba(205, 165, 74, 0.34);
-  --public-shadow: 0 24px 56px rgba(0, 0, 0, 0.35);
+  --public-bg: #060606;
+  --public-bg-soft: #0d0c0a;
+  --public-panel: rgba(14, 13, 12, 0.92);
+  --public-panel-strong: rgba(8, 7, 6, 0.96);
+  --public-stone: #f3ece0;
+  --public-stone-deep: #dfd1bc;
+  --public-stone-text: #17120d;
+  --public-ivory: #f6f0e6;
+  --public-muted: #a99b87;
+  --public-gold: #c49a57;
+  --public-gold-soft: #e1c98f;
+  --public-line: rgba(196, 154, 87, 0.24);
+  --public-shadow: 0 18px 44px rgba(0, 0, 0, 0.28);
   background: var(--public-bg);
   color: var(--public-ivory);
   font-family: 'Montserrat', sans-serif;
@@ -2336,7 +2336,7 @@ body.public-site p {
 
 body.public-site .section {
   position: relative;
-  padding: clamp(72px, 8vw, 112px) 0;
+  padding: clamp(76px, 7.4vw, 116px) 0;
 }
 
 body.public-site .section--light {
@@ -2378,6 +2378,7 @@ body.public-site .section-heading {
   display: grid;
   gap: 16px;
   margin-bottom: 32px;
+  max-width: 880px;
 }
 
 body.public-site .section-heading--split {
@@ -2455,15 +2456,15 @@ body.public-site .section--light .metric-chip {
 
 body.public-site .surface-card {
   border: 1px solid var(--public-line);
-  border-radius: 28px;
+  border-radius: 30px;
   box-shadow: var(--public-shadow);
   overflow: hidden;
 }
 
 body.public-site .surface-card--dark {
   background:
-    linear-gradient(180deg, rgba(20, 20, 20, 0.92), rgba(10, 10, 10, 0.98)),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.06), transparent 26%);
+    linear-gradient(180deg, rgba(19, 18, 16, 0.92), rgba(8, 8, 8, 0.98)),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.04), transparent 24%);
 }
 
 body.public-site .surface-card--light {
@@ -2475,11 +2476,11 @@ body.public-site .surface-card--light {
 }
 
 body.public-site .btn {
-  min-height: 46px;
-  padding: 0 22px;
+  min-height: 48px;
+  padding: 0 24px;
   border-radius: 999px;
-  font-size: 0.8rem;
-  letter-spacing: 0.12em;
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   font-weight: 700;
 }
@@ -2488,7 +2489,7 @@ body.public-site .btn-gold {
   color: #120e08;
   background: linear-gradient(135deg, var(--public-gold-soft), var(--public-gold));
   border: 1px solid rgba(126, 88, 22, 0.56);
-  box-shadow: 0 14px 30px rgba(205, 165, 74, 0.2);
+  box-shadow: 0 10px 24px rgba(196, 154, 87, 0.16);
 }
 
 body.public-site .btn-outline {
@@ -2521,15 +2522,15 @@ body.public-site .header-inner,
 body.public-site .header-inner.grid-12 {
   min-height: 88px;
   display: grid;
-  grid-template-columns: minmax(260px, 1fr) auto auto;
-  gap: 20px;
+  grid-template-columns: minmax(260px, 1fr) auto;
+  gap: 18px;
   align-items: center;
 }
 
 body.public-site .brand {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
 }
 
 body.public-site .brand-logo {
@@ -2537,6 +2538,14 @@ body.public-site .brand-logo {
   height: 58px;
   object-fit: contain;
   filter: drop-shadow(0 0 12px rgba(205, 165, 74, 0.16));
+}
+
+body.public-site .brand-title-image {
+  display: block;
+  width: clamp(200px, 24vw, 340px);
+  max-height: 52px;
+  height: auto;
+  object-fit: contain;
 }
 
 body.public-site .brand-copy {
@@ -2557,15 +2566,17 @@ body.public-site .brand-sub {
 body.public-site .site-nav {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 body.public-site .site-nav a,
 body.public-site .nav-account-sub {
-  padding: 10px 14px;
+  padding: 10px 12px;
   border-radius: 999px;
   color: rgba(246, 241, 231, 0.92);
-  font-size: 0.84rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 body.public-site .site-nav a:hover,
@@ -2597,10 +2608,10 @@ body.public-site .header-account-btn {
 
 body.public-site .public-hero {
   position: relative;
-  min-height: min(980px, calc(100vh - 32px));
+  min-height: min(920px, calc(100vh - 40px));
   display: grid;
   align-items: end;
-  padding: 124px 0 72px;
+  padding: 128px 0 68px;
   overflow: hidden;
 }
 
@@ -2638,7 +2649,7 @@ body.public-site .hero-layout {
 
 body.public-site.page-home .public-hero {
   min-height: auto;
-  padding: 132px 0 48px;
+  padding: 136px 0 56px;
 }
 
 body.public-site.page-home .hero-layout {
@@ -2654,19 +2665,19 @@ body.public-site.page-home .hero-content h1 {
 }
 
 body.public-site .hero-content {
-  padding: 36px;
-  border-radius: 32px;
-  background: linear-gradient(180deg, rgba(12, 12, 12, 0.8), rgba(12, 12, 12, 0.58));
-  border: 1px solid rgba(205, 165, 74, 0.24);
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+  padding: 40px;
+  border-radius: 34px;
+  background: linear-gradient(180deg, rgba(11, 10, 9, 0.84), rgba(10, 10, 10, 0.62));
+  border: 1px solid rgba(196, 154, 87, 0.18);
+  box-shadow: 0 26px 70px rgba(0, 0, 0, 0.32);
 }
 
 body.public-site .hero-content h1,
 body.public-site .inner-hero-shell h1 {
-  font-size: clamp(3rem, 7vw, 5.7rem);
-  line-height: 0.94;
+  font-size: clamp(3rem, 6.5vw, 5.35rem);
+  line-height: 0.92;
   margin-bottom: 18px;
-  max-width: 11ch;
+  max-width: 10.5ch;
 }
 
 body.public-site .hero-content .section-lead,
@@ -3124,7 +3135,7 @@ body.public-site.nav-open {
 @media (max-width: 992px) {
   body.public-site .header-inner,
   body.public-site .header-inner.grid-12 {
-    grid-template-columns: 1fr auto auto;
+    grid-template-columns: 1fr auto;
     gap: 12px;
   }
 
@@ -3201,6 +3212,11 @@ body.public-site.nav-open {
 @media (max-width: 640px) {
   body.public-site .container {
     width: min(100%, calc(100% - 24px));
+  }
+
+  body.public-site .brand-title-image {
+    width: min(48vw, 220px);
+    max-height: 34px;
   }
 
   body.public-site .public-hero {
@@ -3295,6 +3311,10 @@ body.workspace-site.page-client-dashboard .workspace-chip-row {
   flex-wrap: nowrap;
 }
 
+body.workspace-site.page-client-dashboard .workspace-breadcrumbs {
+  display: none;
+}
+
 body.workspace-site .workspace-hero-copy,
 body.workspace-site .workspace-hero-panel {
   padding: 28px;
@@ -3363,12 +3383,16 @@ body.workspace-site .workspace-points {
 }
 
 body.workspace-site .workspace-breadcrumbs {
-  margin-bottom: 16px;
+  display: none;
 }
 
 body.workspace-site .workspace-breadcrumbs,
 body.workspace-site .workspace-breadcrumbs a {
   color: var(--public-gold-soft);
+}
+
+body.workspace-site.page-auth .workspace-hero {
+  grid-template-columns: 1fr;
 }
 
 body.workspace-site .auth-shell,

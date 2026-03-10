@@ -26,3 +26,5 @@ Uwaga operacyjna: `dev_plan.md` jest glownym planem i pamiecia projektu. `todos.
 - [x] todos_22: Przyciemnic copy i listy w sekcjach uslug na jasnym tle, aby bloki typu `A bathroom service built around detail control` byly czytelne w czerni/obsidianie.
 - [x] todos_23: Usunac panel `Portal Overview` z hero `Client Portal` i zostawic pelnoszeroki blok z poziomymi chipami `Projects / Documents / Messages`.
 - [x] todos_24: Uproscic header `Client Portal`: usunac `Coverage` i `Client Portal`, przesunac `Contact` przed `Join Us`, oraz zlikwidowac duplikujace akcje naglowka.
+- [x] todos_25: Domknac instrukcje z makiety `Client Portal`: podmienic tekst marki na `title.png`, zostawic `logo4.png`, usunac breadcrumbs i wymusic stale `Join Us` jako publiczny link logowania na tej stronie.
+- [x] todos_26: Przebudowac caly front do wspolnego systemu `quiet architectural luxury`: `logo4.png + title.png`, wspolny shell nawigacji `Services / Projects / Gallery / Contact / Join Us`, spokojniejszy homepage dla klienta premium, cichszy shell workspace oraz odswiezony generator stron uslug i lokalizacji.

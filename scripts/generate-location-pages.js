@@ -48,18 +48,18 @@ const buildLocationPages = () =>
       },
       sections: [
         renderIntroSection({
-          eyebrow: 'Local Focus',
+          eyebrow: 'Location Focus',
           title: page.localTitle,
           lead: page.localLead,
           useAreaCard: true
         }),
         renderPillarSection({
-          eyebrow: 'Service Mix',
-          title: `How the studio typically works in ${page.location}.`,
+          eyebrow: 'Curated Scope',
+          title: `How the studio tends to shape work in ${page.location}.`,
           pillars: page.pillars
         }),
         renderFeatureSection({
-          eyebrow: 'Case Study Lens',
+          eyebrow: 'Selected Project',
           title: page.caseStudy.title,
           lead: page.caseStudy.lead,
           metrics: page.caseStudy.metrics,
@@ -68,17 +68,17 @@ const buildLocationPages = () =>
         }),
         renderFaqSection({
           eyebrow: 'FAQ',
-          title: `Questions we usually answer before starting in ${page.location}.`,
+          title: `Questions we usually answer before a ${page.location} brief starts.`,
           items: page.faq
         })
       ],
       contact: {
-        title: `Planning your ${page.location} project? Speak to the studio.`,
+        title: `Discuss your ${page.location} renovation directly with the studio.`,
         lead: shared.contactLead
       },
       consultation: {
-        title: `Start your ${page.location} renovation brief.`,
-        lead: `Tell us what you want to change in ${page.location}, which service line matters most and what finish level you expect.`,
+        title: `Bring your ${page.location} brief to a private consultation.`,
+        lead: `Tell us the rooms involved in ${page.location}, the finish ambition and the timing you are working to. The studio replies with a measured next step.`,
         formContext: page.location,
         locationValue: page.location,
         selectedProjectType: 'bathroom'

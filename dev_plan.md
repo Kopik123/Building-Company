@@ -19,7 +19,10 @@ Projekt jest monolitem Node.js / Express z publicznym frontendem serwowanym stat
 Aktualny stan funkcjonalny:
 
 - Publiczne strony marketingowe sa oparte o generator stron z danymi w `scripts/*.data.js` i rendererem w `scripts/publicPageRenderer.js`.
+- Publiczny shell jest po redesignie oparty o jeden kanoniczny lockup `logo4.png + title.png` oraz jednolita publiczna nawigacje `Services / Projects / Gallery / Contact / Join Us`.
 - Homepage, strony uslug i strony lokalizacji zostaly jezykowo ujednolicone wokol jednej oferty: bathroom renovations, kitchens, tiling, carpentry, wall systems, flooring.
+- Homepage po przebudowie prowadzi klienta premium przez sekwencje: editorial hero, selected projects, studio method, signature services, gallery / finish proof, FAQ, private consultation i dopiero nizsze supporting details.
+- Auth, client workspace i manager workspace zachowuja ten sam jezyk premium, ale maja cichszy, bardziej operacyjny shell bez marketingowego przeladowania.
 - Generator publicznych stron jest objety weryfikacja przez `npm run verify:generated`.
 - Start serwera uruchamia migracje automatycznie przy bootowaniu aplikacji.
 - Srodowisko produkcyjne to serwer Ubuntu na DigitalOcean.
@@ -197,3 +200,21 @@ Aktualny stan roboczy i ryzyka techniczne:
 - `Contact` zostal ustawiony bezposrednio przed `Join Us`, a publiczne wejscie do logowania na tej stronie dostalo etykiete `Join Us`.
 - Z tej strony usunieto osobny header CTA `Request Private Consultation`, a runtime w `site.js` przestal doklejac dodatkowy przycisk konta i drawer CTA, zeby nie powstawaly zduplikowane akcje w naglowku.
 - Status: poprawka wykonana lokalnie w `client-dashboard.html` i `site.js`.
+
+### 2026-03-10 - Domkniecie makiety headera `Client Portal`
+
+- W headerze `client-dashboard.html` tekstowa nazwa marki zostala zastapiona obrazem `title.png`, przy zachowaniu osobnego znaku `logo4.png`.
+- Z hero strony klienta usunieto breadcrumbs `Home / Client Portal`, zgodnie z adnotacja z makiety.
+- W `site.js` strona `page-client-dashboard` zachowuje teraz stale publiczne wejscie `Join Us` zamiast przepinac etykiete na `Account`, nawet gdy istnieje lokalna sesja w przegladarce.
+- W `styles.css` dodano styl dla `brand-title-image` oraz ukrycie breadcrumbs tylko dla `page-client-dashboard`.
+- Status: poprawka wykonana lokalnie w `client-dashboard.html`, `site.js` i `styles.css`.
+
+### 2026-03-10 - Rebuild frontu w kierunku quiet architectural luxury
+
+- Ujednolicono caly publiczny shell i workspace shells wokol jednego lockupu marki `logo4.png + title.png`, jednej publicznej nawigacji `Services / Projects / Gallery / Contact / Join Us` i jednej taksonomii CTA.
+- Z homepage usunieto konkurujace akcje w naglowku, przestawiono hierarchie pod klienta premium oraz przebudowano sekwencje sekcji tak, aby mocniej eksponowala selected projects, studio method, signature services, finish proof i private consultation.
+- `site.js` zostal przebudowany tak, aby publiczne strony nie przepinaly sie na runtime'owe `Account` ani nie doklejaly automatycznie dodatkowych utility actions do headera; `Join Us` pozostaje stalym publicznym CTA do auth.
+- `brand.js`, `scripts/publicPages.shared.js`, `scripts/publicPageRenderer.js`, `scripts/servicePages.data.js`, `scripts/locationPages.data.js` i `scripts/generate-location-pages.js` zostaly dopasowane do nowego kontraktu copy, shella i premium page-family systemu.
+- Auth, client workspace, manager workspace oraz legal pages zostaly wizualnie i jezykowo zrownane z nowym frontem, ale workspace zachowal cichszy, bardziej operacyjny charakter niz marketing homepage.
+- Odswiezono wygenerowane strony uslug i lokalizacji, a stopki dostaly supporting-detail block `Studio Region` zamiast top-levelowego tonu `Coverage`.
+- Status: zweryfikowane lokalnie przez `npm.cmd run generate:public-pages`, `npm.cmd run verify:generated` i `node --check site.js`.

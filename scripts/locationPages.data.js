@@ -10,10 +10,10 @@ const pages = [
     metaDescription: `Full bathroom renovations, kitchen installation and refurbishment, large-format tiling, carpentry, wall systems and flooring installation in Didsbury by Level Lines Studio.`,
     heroTitle: 'Didsbury renovations with measured bathroom, kitchen and interior detail.',
     heroLead:
-      `Didsbury homes suit the same ${coreServiceOffer} offer shown on the homepage, delivered with calmer finishes, exact tile lines and private consultation-led sequencing.`,
+      `Didsbury homes respond well to a quieter ${coreServiceOffer} studio scope, delivered with calmer finishes, exact tile lines and private consultation-led sequencing.`,
     localTitle: 'Didsbury projects shaped by detail, not generic packages.',
     localLead:
-      `Character properties and design-conscious refurbishments in Didsbury benefit from the same joined-up ${coreServiceOffer} offer, shaped into one coherent finish language.`,
+      `Character properties and design-conscious refurbishments in Didsbury benefit from a joined-up ${coreServiceOffer} brief shaped into one coherent finish language.`,
     pillars: [
       { title: 'Bathrooms', body: 'Stone-led bathroom upgrades with clean tile setting and storage integration.' },
       { title: 'Kitchens', body: 'Measured kitchen reworking with calm proportions and precise fitting.' },
@@ -50,10 +50,10 @@ const pages = [
     metaDescription: `Full bathroom renovations, kitchen installation and refurbishment, large-format tiling, carpentry, wall systems and flooring installation in Altrincham by Level Lines Studio.`,
     heroTitle: 'Altrincham renovations with kitchen-led planning and measured finish control.',
     heroLead:
-      `Altrincham projects often start with kitchens, but the same ${coreServiceOffer} offer extends cleanly into the rest of the brief.`,
+      `Altrincham projects often start with kitchens, but the same ${coreServiceOffer} studio scope extends cleanly into the rest of the brief.`,
     localTitle: 'Altrincham projects shaped by detail, not generic packages.',
     localLead:
-      `The strongest Altrincham briefs treat ${coreServiceOffer} as one coordinated package instead of a disconnected set of trades.`,
+      `The strongest Altrincham briefs treat ${coreServiceOffer} as one coordinated premium scope instead of a disconnected set of trades.`,
     pillars: [
       { title: 'Kitchen focus', body: 'Cabinet lines, worktops and lighting planned as one architectural layer.' },
       { title: 'Bathroom detail', body: 'Wet-zone planning and tile setting delivered without rushed finishing.' },
@@ -89,7 +89,7 @@ const pages = [
     metaDescription: `Full bathroom renovations, kitchen installation and refurbishment, large-format tiling, carpentry, wall systems and flooring installation in Stockport by Level Lines Studio.`,
     heroTitle: 'Stockport renovations with stronger carpentry, wall-system and finish discipline.',
     heroLead:
-      `Stockport briefs often need the studio's ${coreServiceOffer} offer to keep practical upgrades and premium detailing aligned.`,
+      `Stockport briefs often need the studio's ${coreServiceOffer} scope to keep practical upgrades and premium detailing aligned.`,
     localTitle: 'Stockport projects shaped by detail, not generic packages.',
     localLead:
       `The studio approach suits Stockport properties that need robust sequencing, envelope awareness and a more composed finish language across ${coreServiceOffer}.`,
@@ -128,7 +128,7 @@ const pages = [
     metaDescription: `Full bathroom renovations, kitchen installation and refurbishment, large-format tiling, carpentry, wall systems and flooring installation in Sale by Level Lines Studio.`,
     heroTitle: 'Sale renovations with calmer palettes and tighter material control.',
     heroLead:
-      `Sale projects respond well to the same ${coreServiceOffer} offer shown on the homepage, delivered with restrained palettes and tighter detailing.`,
+      `Sale projects respond well to a ${coreServiceOffer} studio scope delivered with restrained palettes and tighter detailing.`,
     localTitle: 'Sale projects shaped by detail, not generic packages.',
     localLead:
       `For Sale properties, the strongest results come from shaping ${coreServiceOffer} into one quieter, more deliberate finish language.`,
@@ -167,7 +167,7 @@ const pages = [
     metaDescription: `Full bathroom renovations, kitchen installation and refurbishment, large-format tiling, carpentry, wall systems and flooring installation in Chorlton by Level Lines Studio.`,
     heroTitle: 'Chorlton renovations with graphic materials and disciplined detailing.',
     heroLead:
-      `Chorlton projects suit the studio's ${coreServiceOffer} offer when the brief calls for a darker, more graphic finish language.`,
+      `Chorlton projects suit the studio's ${coreServiceOffer} scope when the brief calls for a darker, more graphic finish language.`,
     localTitle: 'Chorlton projects shaped by detail, not generic packages.',
     localLead:
       'Whether the brief starts with bathrooms, kitchens or carpentry, the studio keeps the wider offer aligned in one controlled line.',
@@ -207,7 +207,7 @@ const pages = [
     metaDescription: `Full bathroom renovations, kitchen installation and refurbishment, large-format tiling, carpentry, wall systems and flooring installation in Wilmslow by Level Lines Studio.`,
     heroTitle: 'Wilmslow renovations with quieter luxury and stronger finish discipline.',
     heroLead:
-      `Wilmslow briefs often call for the same ${coreServiceOffer} offer, delivered through the studio's plan/design/craft structure.`,
+      `Wilmslow briefs often call for the same ${coreServiceOffer} scope, delivered through the studio's plan / design / craft structure.`,
     localTitle: 'Wilmslow projects shaped by detail, not generic packages.',
     localLead:
       `The studio approach fits Wilmslow particularly well when ${coreServiceOffer} needs to read as one premium scope without visual excess.`,

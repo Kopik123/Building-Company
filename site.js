@@ -7,7 +7,8 @@
   const header = document.querySelector('.site-header');
   const navToggle = document.querySelector('[data-nav-toggle]');
   const navMenu = document.querySelector('[data-nav-menu]');
-  const suppressHeaderUtilityActions = body?.classList.contains('page-client-dashboard');
+  const isPublicShell = body?.classList.contains('public-site');
+  const suppressHeaderUtilityActions = isPublicShell;
   const menuWrap =
     document.querySelector('[data-menu-wrap]') ||
     (navMenu ? navMenu.closest('.menu-wrap') : null) ||
@@ -219,7 +220,7 @@
   };
 
   const getGuestAuthLabel = (authLink) => {
-    return String(authLink?.getAttribute('data-auth-guest-label') || '').trim() || 'Log In';
+    return String(authLink?.getAttribute('data-auth-guest-label') || '').trim() || brand?.publicAuthLabel || 'Join Us';
   };
 
   const ensureHeaderAccountButton = (loggedIn, href) => {
@@ -287,6 +288,13 @@
     clearInjectedAccountItems();
 
     if (!authLink) return;
+
+    if (isPublicShell) {
+      authLink.textContent = getGuestAuthLabel(authLink);
+      authLink.setAttribute('href', '/auth.html');
+      authLink.classList.remove('nav-account-link');
+      return;
+    }
 
     authLink.textContent = loggedIn ? 'Account' : getGuestAuthLabel(authLink);
     authLink.setAttribute('href', loggedIn ? accountHref : '/auth.html');
