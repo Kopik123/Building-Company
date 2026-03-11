@@ -317,7 +317,9 @@ CONTACT_FROM=no-reply@levellines.co.uk
 3. Zrestartuj aplikację:
 
 ```bash
-pm2 restart building-company
+pm2 restart ecosystem.config.js --only building-company --env production --update-env
+sleep 2
+curl -sS http://127.0.0.1:3000/healthz
 ```
 
 Uwaga: DigitalOcean często blokuje bezpośrednie wysyłanie na port 25 do internetu dla nowych kont. W praktyce Postfix zwykle powinien działać jako lokalny relay przez zewnętrzny SMTP smart host (Mailgun/Brevo/SES).
@@ -373,7 +375,9 @@ Należy uzupełnić ręcznie (formularz kontaktowy):
 7. Zrestartuj aplikację:
 
 ```bash
-pm2 restart building-company
+pm2 restart ecosystem.config.js --only building-company --env production --update-env
+sleep 2
+curl -sS http://127.0.0.1:3000/healthz
 ```
 
 8. Włącz SSL (Let's Encrypt):
@@ -434,9 +438,13 @@ sudo rkhunter --check --skip-keypress --report-warnings-only
 
 ```bash
 cd /var/www/building-company
-git pull
+git fetch origin
+git checkout vscode
+git pull --ff-only origin vscode
 npm ci --omit=dev
-pm2 restart building-company
+pm2 restart ecosystem.config.js --only building-company --env production --update-env
+sleep 2
+curl -sS http://127.0.0.1:3000/healthz
 ```
 
 ### Ustawienie domeny produkcyjnej (DigitalOcean)

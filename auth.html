@@ -19,10 +19,18 @@
     <header class="site-header" id="top">
     <div class="container header-inner grid-12">
       <a class="brand brand-mark-link" href="/index.html" aria-label="Level Lines Studio home">
-        <img src="/logo.png" alt="Level Lines Studio icon" class="brand-icon-image" width="1093" height="860" decoding="async" />
+        <picture class="brand-picture brand-picture--icon">
+          <source type="image/avif" srcset="/assets/optimized/brand/logo.avif" />
+          <source type="image/webp" srcset="/assets/optimized/brand/logo.webp" />
+          <img src="/assets/optimized/brand/logo.png" alt="Level Lines Studio icon" class="brand-icon-image" width="420" height="330" decoding="async" />
+        </picture>
       </a>
       <a class="brand brand-title-link" href="/index.html" aria-label="Level Lines Studio home">
-        <img src="/title.png" alt="Level Lines Studio" class="brand-lockup-image brand-title-image" width="3408" height="780" decoding="async" />
+        <picture class="brand-picture brand-picture--title">
+          <source type="image/avif" srcset="/assets/optimized/brand/title.avif" />
+          <source type="image/webp" srcset="/assets/optimized/brand/title.webp" />
+          <img src="/assets/optimized/brand/title.png" alt="Level Lines Studio" class="brand-lockup-image brand-title-image" width="1800" height="412" decoding="async" />
+        </picture>
       </a>
       <div class="header-utility-panel menu-wrap" data-menu-wrap>
         <a class="header-auth-link" href="/auth.html" data-auth-link data-auth-guest-label="Account">Account</a>
@@ -225,11 +233,14 @@
     </div>
   </footer>
 
+  <script src="/asset-manifest.js" defer></script>
   <script src="/brand.js" defer></script>
   <script src="/runtime.js" defer></script>
   <script src="/site.js" defer></script>
   <script src="/auth.js" defer></script>
 </body>
 </html>
+
+
 
 

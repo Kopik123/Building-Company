@@ -1,3 +1,8 @@
+const assetManifest = require('../asset-manifest');
+
+const brandAssets = assetManifest.brand || {};
+const galleryAssets = assetManifest.gallery || {};
+
 const escapeHtml = (value) =>
   String(value)
     .replace(/&/g, '&amp;')
@@ -20,12 +25,65 @@ const renderStylesheets = () => `  <link rel="stylesheet" href="/styles/tokens.c
   <link rel="stylesheet" href="/styles/public.css" />
   <link rel="stylesheet" href="/styles/workspace.css" />`;
 
-const renderBrandLockup = (shared) => `      <a class="brand brand-mark-link" href="/index.html" aria-label="${escapeHtml(shared.brandName)} home">
-        <img src="${escapeHtml(shared.headerIconPath || '/logo.png')}" alt="${escapeHtml(shared.brandName)} icon" class="brand-icon-image" width="1093" height="860" decoding="async" />
+const getResponsiveAsset = (src, options = {}) => {
+  const asset = src ? galleryAssets[src] : null;
+  return {
+    fallback: asset?.fallback || src || '',
+    fallbackSet: asset?.fallbackSet || '',
+    webp: asset?.webp || '',
+    webpSet: asset?.webpSet || '',
+    avif: asset?.avif || '',
+    avifSet: asset?.avifSet || '',
+    width: Number(asset?.width) || Number(options.width) || 0,
+    height: Number(asset?.height) || Number(options.height) || 0,
+    sizes: options.sizes || asset?.sizes || '',
+    thumbnailSizes: options.thumbnailSizes || asset?.thumbnailSizes || options.sizes || asset?.sizes || ''
+  };
+};
+
+const renderResponsivePicture = ({ asset, alt, className = '', imgClassName = '', loading = 'lazy', sizes = '', decoding = 'async' }) => {
+  const resolvedSizes = sizes || asset?.sizes || '';
+  const classAttr = className ? ` class="${escapeHtml(className)}"` : '';
+  const imgClassAttr = imgClassName ? ` class="${escapeHtml(imgClassName)}"` : '';
+  const avifSource = asset?.avif || asset?.avifSet
+    ? `\n          <source type="image/avif" srcset="${escapeHtml(asset.avifSet || asset.avif)}"${resolvedSizes ? ` sizes="${escapeHtml(resolvedSizes)}"` : ''} />`
+    : '';
+  const webpSource = asset?.webp || asset?.webpSet
+    ? `\n          <source type="image/webp" srcset="${escapeHtml(asset.webpSet || asset.webp)}"${resolvedSizes ? ` sizes="${escapeHtml(resolvedSizes)}"` : ''} />`
+    : '';
+  const fallbackSet = asset?.fallbackSet ? ` srcset="${escapeHtml(asset.fallbackSet)}"` : '';
+  const sizeAttr = resolvedSizes ? ` sizes="${escapeHtml(resolvedSizes)}"` : '';
+  const widthAttr = asset?.width ? ` width="${asset.width}"` : '';
+  const heightAttr = asset?.height ? ` height="${asset.height}"` : '';
+
+  return `<picture${classAttr}>${avifSource}${webpSource}
+          <img src="${escapeHtml(asset?.fallback || '')}"${fallbackSet}${sizeAttr} alt="${escapeHtml(alt)}"${imgClassAttr}${widthAttr}${heightAttr} loading="${escapeHtml(loading)}" decoding="${escapeHtml(decoding)}" />
+        </picture>`;
+};
+
+const renderBrandLockup = (shared) => {
+  const icon = {
+    fallback: brandAssets.headerIcon?.fallback || shared.headerIconPath || '/logo.png',
+    webp: brandAssets.headerIcon?.webp || '',
+    avif: brandAssets.headerIcon?.avif || '',
+    width: Number(brandAssets.headerIcon?.width) || 1093,
+    height: Number(brandAssets.headerIcon?.height) || 860
+  };
+  const title = {
+    fallback: brandAssets.title?.fallback || shared.titleImagePath || shared.logoPath || '/title.png',
+    webp: brandAssets.title?.webp || '',
+    avif: brandAssets.title?.avif || '',
+    width: Number(brandAssets.title?.width) || 3408,
+    height: Number(brandAssets.title?.height) || 780
+  };
+
+  return `      <a class="brand brand-mark-link" href="/index.html" aria-label="${escapeHtml(shared.brandName)} home">
+${renderResponsivePicture({ asset: icon, alt: `${shared.brandName} icon`, imgClassName: 'brand-icon-image', className: 'brand-picture brand-picture--icon', loading: 'eager' })}
       </a>
       <a class="brand brand-title-link" href="/index.html" aria-label="${escapeHtml(shared.brandName)} home">
-        <img src="${escapeHtml(shared.titleImagePath || shared.logoPath || '/title.png')}" alt="${escapeHtml(shared.brandName)}" class="brand-lockup-image brand-title-image" width="3408" height="780" decoding="async" />
+${renderResponsivePicture({ asset: title, alt: shared.brandName, imgClassName: 'brand-lockup-image brand-title-image', className: 'brand-picture brand-picture--title', loading: 'eager' })}
       </a>`;
+};
 
 const renderHeaderUtilityPanel = (shared) => `      <div class="header-utility-panel menu-wrap" data-menu-wrap>
         <a class="header-auth-link" href="/auth.html" data-auth-link data-auth-guest-label="${escapeHtml(shared.publicAuthLabel || 'Account')}">${escapeHtml(shared.publicAuthLabel || 'Account')}</a>
@@ -126,8 +184,15 @@ const renderFaq = (items) =>
 const renderMediaStrip = (images) =>
   images
     .map(
-      (image) =>
-        `          <img src="${escapeHtml(image.src)}" alt="${escapeHtml(image.alt)}" loading="lazy" />`
+      (image) => {
+        const asset = getResponsiveAsset(image.src);
+        return `          ${renderResponsivePicture({
+          asset,
+          alt: image.alt,
+          className: 'media-picture',
+          loading: 'lazy'
+        })}`;
+      }
     )
     .join('');
 
@@ -167,7 +232,9 @@ ${renderPillars(pillars)}
       </div>
     </section>`;
 
-const renderFeatureSection = ({ eyebrow, title, lead, metrics, image, imageAlt }) => `    <section class="section section--light">
+const renderFeatureSection = ({ eyebrow, title, lead, metrics, image, imageAlt }) => {
+  const asset = getResponsiveAsset(image);
+  return `    <section class="section section--light">
       <div class="container feature-split">
         <div>
           <p class="section-eyebrow">${escapeHtml(eyebrow)}</p>
@@ -177,9 +244,16 @@ const renderFeatureSection = ({ eyebrow, title, lead, metrics, image, imageAlt }
 ${renderMetrics(metrics)}
           </div>
         </div>
-        <img class="feature-image" src="${escapeHtml(image)}" alt="${escapeHtml(imageAlt)}" loading="lazy" />
+        ${renderResponsivePicture({
+          asset,
+          alt: imageAlt,
+          className: 'feature-image-frame',
+          imgClassName: 'feature-image',
+          loading: 'lazy'
+        })}
       </div>
     </section>`;
+};
 
 const renderMediaStripSection = ({ eyebrow, title, images }) => `    <section class="section section--dark">
       <div class="container section-shell">
@@ -503,6 +577,7 @@ ${renderConsultationSection({ ...consultation, shared })}`}
   </main>
 
 ${renderFooter(shared)}
+  <script src="/asset-manifest.js" defer></script>
   <script src="/brand.js" defer></script>
   <script src="/runtime.js" defer></script>
   <script src="/site.js" defer></script>

@@ -22,6 +22,7 @@ git pull --ff-only
 npm ci --omit=dev
 npm run migrate
 pm2 restart "$PM2_NAME" --update-env
+sleep 2
 pm2 save
 
 curl -sS "https://$DOMAIN/healthz"; echo
@@ -61,6 +62,7 @@ git pull --ff-only
 npm ci --omit=dev
 npm run migrate
 pm2 restart "$PM2_NAME" --update-env
+sleep 2
 pm2 save
 
 curl -sS "https://$DOMAIN/healthz"; echo
@@ -98,6 +100,7 @@ git fetch --all --prune
 git checkout "$PREV_SHA"
 npm ci --omit=dev
 pm2 restart "$PM2_NAME" --update-env
+sleep 2
 pm2 save
 ```
 

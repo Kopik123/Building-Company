@@ -40,3 +40,24 @@
 - Re-ran `cmd /c npm run test:ci` and `cmd /c npm run test:e2e:mobile` after the manager dashboard overview refactor and kept both gates green.
 - Diagnosed the droplet deploy logs and confirmed the process now binds to `127.0.0.1:3000`, while the remaining failed `curl` is consistent with an immediate post-restart timing race rather than a broken listener.
 - Recorded that local live QA through MCP Playwright is currently blocked on the workstation because the expected Chrome executable is missing, so browser-based live inspection needs a local Playwright browser install first.
+- Saved `Plans/Full Stabilization, Mobile Sizing, Performance And Growth Plan For The Site.md` and registered the plan in `Plans/Plan History.md` so the next stabilization/performance work has a single tracked reference.
+- Added semantic contrast tokens in `styles/tokens.css` (`text-on-light`, `text-on-dark` and muted variants) to enforce the rule that light surfaces keep dark text and dark surfaces keep gold text.
+- Tightened public mobile sizing in `styles/public.css`: smaller header logo/title proportions, denser `390px`/`640px` card spacing and less dominant first-fold hero content on phones.
+- Applied the same contrast and mobile-sizing cleanup in `styles/workspace.css`, including smaller client/manager board spacing and more controlled heading sizes on narrow screens.
+- Rebuilt `client-dashboard.html` around the shared workspace operations board, replacing the older hero/session top with `Project Status`, `Mail Box` and `Available Options`.
+- Extended `client-dashboard.js` with lightweight project/mailbox overview rendering and thread-summary loaders so the client top board stays informative without forcing full message-history fetches at bootstrap.
+- Updated `tests/playwright/mobile-smoke.spec.js` so mobile regression coverage checks the new client workspace top board and mailbox counters.
+- Switched `tests/playwright/playwright.config.js` to Playwright-managed desktop Chromium instead of relying on a local Chrome channel, which is the better technology choice for reliable repeatable UI checks in this repo.
+- Updated README and the cutover checklist so droplet deploy instructions restart through `ecosystem.config.js --update-env`, wait briefly after PM2 restart and validate via `/healthz`.
+- Re-ran the available local validation entry points and confirmed the current blocker is environmental: both `npm run test:ci` and `npm run test:e2e:mobile` still fail locally with `spawn EPERM`, so the repo config is improved but the workstation runner still needs fixing.
+- Adjusted the shared dark-surface text tokens in `styles/tokens.css` from pale gold toward a deeper dark-gold range so headings, nav and workspace text on black surfaces now match the premium direction more closely.
+- Saved `Plans/Live QA, Asset Optimization And Richer Gold Tuning.md` and registered it in `Plans/Plan History.md` to track the runtime asset and live-QA pass explicitly.
+- Added `scripts/asset-optimization.config.js` and `scripts/optimize-assets.js`, using `sharp` to generate repeatable AVIF/WebP/fallback variants for brand assets and the runtime `Gallery/premium` set.
+- Updated `package.json` so `npm run optimize:assets` is a first-class task and `generate:public-pages` now rebuilds optimized runtime media before regenerating public HTML.
+- Generated a tracked `asset-manifest.js` plus optimized brand assets under `assets/optimized/brand/` and runtime gallery assets under `Gallery/premium/` to replace missing/heavy runtime sources.
+- Extended `runtime.js`, `brand.js`, `scripts/publicPages.shared.js`, `scripts/publicPageRenderer.js` and `gallery.js` so public/runtime media can resolve optimized variants and render through `<picture>` instead of a single heavy source.
+- Updated the manual shell pages and generated-page renderer to load `asset-manifest.js`, use optimized brand images with intrinsic dimensions and point JSON-LD brand images at the optimized title asset.
+- Updated `styles/base.css` and `styles/tokens.css` so picture-based media keeps existing layout geometry, dark surfaces use a richer premium gold, and the new asset sizes reduce first-fold pressure on mobile.
+- Added AVIF to the tracked Nginx static asset regex so the deploy config can cache the new optimized image format directly when the site config is refreshed.
+- Extended Playwright smoke/regression coverage to assert optimized brand pictures are present and that homepage/auth/dashboard shells keep zero horizontal scroll on mobile.
+- Added `deploy/LIVE_QA_CHECKLIST_PC_MOBILE.md` as the repeatable desktop/phone verification checklist for post-deploy evidence capture.

@@ -1,6 +1,7 @@
 (() => {
   const TOKEN_KEY = 'll_auth_token';
   const USER_KEY = 'll_auth_user';
+  const assetManifest = window.LEVEL_LINES_ASSETS || { brand: {}, gallery: {} };
 
   const parseError = (payload) => {
     if (payload?.error) return payload.error;
@@ -134,9 +135,81 @@
     return () => observer.disconnect();
   };
 
+  const getBrandAsset = (key, fallbackPath = '', fallbackDimensions = {}) => {
+    const asset = assetManifest?.brand?.[key];
+    return {
+      fallback: asset?.fallback || fallbackPath,
+      webp: asset?.webp || '',
+      avif: asset?.avif || '',
+      width: Number(asset?.width) || Number(fallbackDimensions.width) || 0,
+      height: Number(asset?.height) || Number(fallbackDimensions.height) || 0
+    };
+  };
+
+  const getOptimizedMedia = (src, options = {}) => {
+    const asset = assetManifest?.gallery?.[src];
+    const sizes = options.sizes || asset?.sizes || '';
+    return {
+      fallback: asset?.fallback || src,
+      fallbackSet: asset?.fallbackSet || '',
+      webp: asset?.webp || '',
+      webpSet: asset?.webpSet || '',
+      avif: asset?.avif || '',
+      avifSet: asset?.avifSet || '',
+      width: Number(asset?.width) || Number(options.width) || 0,
+      height: Number(asset?.height) || Number(options.height) || 0,
+      sizes,
+      thumbnailSizes: options.thumbnailSizes || asset?.thumbnailSizes || sizes
+    };
+  };
+
+  const createResponsivePicture = (media, options = {}) => {
+    const resolved = {
+      ...(media || {}),
+      fallback: media?.fallback || media?.src || options.src || '',
+      sizes: options.sizes || media?.sizes || ''
+    };
+    const picture = document.createElement('picture');
+
+    if (options.className) {
+      picture.className = options.className;
+    }
+
+    if (resolved.avif || resolved.avifSet) {
+      const avif = document.createElement('source');
+      avif.type = 'image/avif';
+      avif.srcset = resolved.avifSet || resolved.avif;
+      if (resolved.sizes) avif.sizes = resolved.sizes;
+      picture.appendChild(avif);
+    }
+
+    if (resolved.webp || resolved.webpSet) {
+      const webp = document.createElement('source');
+      webp.type = 'image/webp';
+      webp.srcset = resolved.webpSet || resolved.webp;
+      if (resolved.sizes) webp.sizes = resolved.sizes;
+      picture.appendChild(webp);
+    }
+
+    const image = document.createElement('img');
+    image.src = resolved.fallback;
+    if (resolved.fallbackSet) image.srcset = resolved.fallbackSet;
+    if (resolved.sizes) image.sizes = resolved.sizes;
+    image.alt = options.alt || '';
+    image.loading = options.loading || 'lazy';
+    image.decoding = options.decoding || 'async';
+    if (options.imgClassName) image.className = options.imgClassName;
+    if (resolved.width) image.width = resolved.width;
+    if (resolved.height) image.height = resolved.height;
+    picture.appendChild(image);
+
+    return picture;
+  };
+
   window.LevelLinesRuntime = {
     TOKEN_KEY,
     USER_KEY,
+    assetManifest,
     parseError,
     escapeHtml,
     setStatus,
@@ -149,6 +222,9 @@
     debounce,
     createApiClient,
     requestAccordionRefresh,
-    onceVisible
+    onceVisible,
+    getBrandAsset,
+    getOptimizedMedia,
+    createResponsivePicture
   };
 })();

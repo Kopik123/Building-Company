@@ -10,6 +10,11 @@ const openNavIfNeeded = async (page) => {
   }
 };
 
+const expectNoHorizontalScroll = async (page) => {
+  const hasOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 2);
+  expect(hasOverflow).toBeFalsy();
+};
+
 const mockClientSession = async (page) => {
   await page.addInitScript(() => {
     localStorage.setItem('ll_auth_token', 'test-token');
@@ -343,11 +348,13 @@ const mockManagerSession = async (page) => {
 test('homepage mobile menu opens and keeps the shared account shell', async ({ page }) => {
   await page.goto('/index.html');
   await openNavIfNeeded(page);
+  await expect(page.locator('.brand-title-link picture source[type="image/avif"]')).toHaveCount(1);
   await expect(page.locator('[data-nav-menu] a[href="/about.html"]')).toBeVisible();
   await expect(page.locator('[data-nav-menu] a[href="/gallery.html"]')).toBeVisible();
   await expect(page.locator('[data-nav-menu] a[href="/contact.html"]')).toBeVisible();
   await expect(page.locator('[data-nav-menu] a[href="/quote.html"]')).toBeVisible();
   await expect(page.locator('[data-auth-link]').first()).toContainText(/^account$/i);
+  await expectNoHorizontalScroll(page);
 });
 
 test('auth page renders login/register forms on mobile', async ({ page }) => {
@@ -355,6 +362,7 @@ test('auth page renders login/register forms on mobile', async ({ page }) => {
   await expect(page.locator('body.public-site.workspace-site.page-auth')).toBeVisible();
   await expect(page.locator('#login-form')).toBeVisible();
   await expect(page.locator('#register-form')).toBeVisible();
+  await expectNoHorizontalScroll(page);
 });
 
 test('auth page shows account panel for logged session', async ({ page }) => {
@@ -394,6 +402,7 @@ test('client dashboard mobile menu opens', async ({ page }) => {
   await expect(page.locator('body.public-site.workspace-site.page-client-dashboard')).toBeVisible();
   await openNavIfNeeded(page);
   await expect(page.locator('[data-auth-link]').first()).toContainText(/account/i);
+  await expectNoHorizontalScroll(page);
 });
 
 test('client dashboard keeps key logged-in cards open on mobile', async ({ page }) => {
@@ -418,6 +427,7 @@ test('manager dashboard mobile menu opens', async ({ page }) => {
   await expect(page.locator('body.public-site.workspace-site.page-manager-dashboard')).toBeVisible();
   await openNavIfNeeded(page);
   await expect(page.locator('[data-auth-link]').first()).toContainText(/account/i);
+  await expectNoHorizontalScroll(page);
 });
 
 test('manager dashboard exposes project controls for logged session on mobile', async ({ page }) => {

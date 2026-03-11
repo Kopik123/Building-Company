@@ -33,10 +33,18 @@
   <header class="site-header" id="top">
     <div class="container header-inner grid-12">
       <a class="brand brand-mark-link" href="/index.html" aria-label="Level Lines Studio home">
-        <img src="/logo.png" alt="Level Lines Studio icon" class="brand-icon-image" width="1093" height="860" decoding="async" />
+<picture class="brand-picture brand-picture--icon">
+          <source type="image/avif" srcset="/assets/optimized/brand/logo.avif" />
+          <source type="image/webp" srcset="/assets/optimized/brand/logo.webp" />
+          <img src="/assets/optimized/brand/logo.png" alt="Level Lines Studio icon" class="brand-icon-image" width="420" height="330" loading="eager" decoding="async" />
+        </picture>
       </a>
       <a class="brand brand-title-link" href="/index.html" aria-label="Level Lines Studio home">
-        <img src="/title.png" alt="Level Lines Studio" class="brand-lockup-image brand-title-image" width="3408" height="780" decoding="async" />
+<picture class="brand-picture brand-picture--title">
+          <source type="image/avif" srcset="/assets/optimized/brand/title.avif" />
+          <source type="image/webp" srcset="/assets/optimized/brand/title.webp" />
+          <img src="/assets/optimized/brand/title.png" alt="Level Lines Studio" class="brand-lockup-image brand-title-image" width="1800" height="412" loading="eager" decoding="async" />
+        </picture>
       </a>
       <div class="header-utility-panel menu-wrap" data-menu-wrap>
         <a class="header-auth-link" href="/auth.html" data-auth-link data-auth-guest-label="Account">Account</a>
@@ -250,7 +258,11 @@
             <span class="metric-chip">Contemporary family home</span>            <span class="metric-chip">Kitchen-led scope</span>            <span class="metric-chip">Lighting and stone coordination</span>
           </div>
         </div>
-        <img class="feature-image" src="/Gallery/premium/kitchen-panorama-main.jpg" alt="Contemporary kitchen overhaul" loading="lazy" />
+        <picture class="feature-image-frame">
+          <source type="image/avif" srcset="/Gallery/premium/kitchen-panorama-main-960.avif 960w, /Gallery/premium/kitchen-panorama-main-1600.avif 1600w, /Gallery/premium/kitchen-panorama-main.avif 6824w" sizes="(max-width: 640px) 88vw, (max-width: 992px) 92vw, 66vw" />
+          <source type="image/webp" srcset="/Gallery/premium/kitchen-panorama-main-960.webp 960w, /Gallery/premium/kitchen-panorama-main-1600.webp 1600w, /Gallery/premium/kitchen-panorama-main.webp 6824w" sizes="(max-width: 640px) 88vw, (max-width: 992px) 92vw, 66vw" />
+          <img src="/Gallery/premium/kitchen-panorama-main.jpg" srcset="/Gallery/premium/kitchen-panorama-main-960.jpg 960w, /Gallery/premium/kitchen-panorama-main-1600.jpg 1600w, /Gallery/premium/kitchen-panorama-main.jpg 6824w" sizes="(max-width: 640px) 88vw, (max-width: 992px) 92vw, 66vw" alt="Contemporary kitchen overhaul" class="feature-image" width="6824" height="2160" loading="lazy" decoding="async" />
+        </picture>
       </div>
     </section>
 
@@ -317,6 +329,7 @@
       <p class="footer-bottom-note">Plan | Design | Craft</p>
     </div>
   </footer>
+  <script src="/asset-manifest.js" defer></script>
   <script src="/brand.js" defer></script>
   <script src="/runtime.js" defer></script>
   <script src="/site.js" defer></script>
