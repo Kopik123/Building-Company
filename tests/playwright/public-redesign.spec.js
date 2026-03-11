@@ -13,18 +13,19 @@ test('homepage renders premium shell, new IA and homepage section order', async 
   await page.goto('/index.html');
 
   await expect(page.locator('body.public-site.page-home')).toBeVisible();
-  await expect(page.locator('.home-brand-lockup .home-title-image')).toBeVisible();
+  await expect(page.locator('.site-header .brand-title-link .brand-title-image')).toBeVisible();
   await expect(page.locator('.home-hero-copy h1')).toContainText(/premium bathroom, kitchen and interior renovation studio/i);
   await expect(page.locator('#projects')).toBeVisible();
   await expect(page.locator('#gallery')).toBeVisible();
   await expect(page.locator('#services')).toBeVisible();
   await expect(page.locator('#contact')).toBeVisible();
   await expect(page.locator('#quote')).toBeVisible();
-  await expect(page.locator('.home-account-links a[href="/about.html"]')).toBeVisible();
-  await expect(page.locator('.home-account-links a[href="/gallery.html"]')).toBeVisible();
-  await expect(page.locator('.home-account-links a[href="/contact.html"]')).toBeVisible();
-  await expect(page.locator('.home-account-links a[href="/quote.html"]')).toBeVisible();
-  await expect(page.locator('[data-auth-link]').first()).toContainText(/login \/ register/i);
+  await openNavIfNeeded(page);
+  await expect(page.locator('[data-nav-menu] a[href="/about.html"]')).toBeVisible();
+  await expect(page.locator('[data-nav-menu] a[href="/gallery.html"]')).toBeVisible();
+  await expect(page.locator('[data-nav-menu] a[href="/contact.html"]')).toBeVisible();
+  await expect(page.locator('[data-nav-menu] a[href="/quote.html"]')).toBeVisible();
+  await expect(page.locator('[data-auth-link]').first()).toContainText(/^account$/i);
 });
 
 test('brand pages render about, gallery, contact and quote routes', async ({ page }) => {

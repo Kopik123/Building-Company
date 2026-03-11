@@ -8,7 +8,7 @@ module.exports = {
   logoPath: '/title.png',
   titleImagePath: '/title.png',
   workspaceLogoPath: '/logo4.png',
-  publicAuthLabel: 'Login / Register',
+  publicAuthLabel: 'Account',
   consultationCtaLabel: 'Send Enquiry',
   enquiryTitle: 'Send Enquiry',
   enquiryLead:

@@ -28,7 +28,7 @@ const renderBrandLockup = (shared) => `      <a class="brand brand-mark-link" hr
       </a>`;
 
 const renderHeaderUtilityPanel = (shared) => `      <div class="header-utility-panel menu-wrap" data-menu-wrap>
-        <a class="header-auth-link" href="/auth.html" data-auth-link data-auth-guest-label="${escapeHtml(shared.publicAuthLabel || 'Login / Register')}">${escapeHtml(shared.publicAuthLabel || 'Login / Register')}</a>
+        <a class="header-auth-link" href="/auth.html" data-auth-link data-auth-guest-label="${escapeHtml(shared.publicAuthLabel || 'Account')}">${escapeHtml(shared.publicAuthLabel || 'Account')}</a>
         <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation menu">
           <span class="nav-toggle-line"></span>
           <span class="nav-toggle-line"></span>

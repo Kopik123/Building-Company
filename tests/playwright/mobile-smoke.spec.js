@@ -340,13 +340,14 @@ const mockManagerSession = async (page) => {
   });
 };
 
-test('homepage exposes account links and auth entry in the account panel', async ({ page }) => {
+test('homepage mobile menu opens and keeps the shared account shell', async ({ page }) => {
   await page.goto('/index.html');
-  await expect(page.locator('.home-account-links a[href="/about.html"]')).toBeVisible();
-  await expect(page.locator('.home-account-links a[href="/gallery.html"]')).toBeVisible();
-  await expect(page.locator('.home-account-links a[href="/contact.html"]')).toBeVisible();
-  await expect(page.locator('.home-account-links a[href="/quote.html"]')).toBeVisible();
-  await expect(page.locator('[data-auth-link]').first()).toContainText(/login \/ register/i);
+  await openNavIfNeeded(page);
+  await expect(page.locator('[data-nav-menu] a[href="/about.html"]')).toBeVisible();
+  await expect(page.locator('[data-nav-menu] a[href="/gallery.html"]')).toBeVisible();
+  await expect(page.locator('[data-nav-menu] a[href="/contact.html"]')).toBeVisible();
+  await expect(page.locator('[data-nav-menu] a[href="/quote.html"]')).toBeVisible();
+  await expect(page.locator('[data-auth-link]').first()).toContainText(/^account$/i);
 });
 
 test('auth page renders login/register forms on mobile', async ({ page }) => {

@@ -23,3 +23,6 @@
 - Added explicit `HOST` handling in `server.js` so deploys no longer rely on implicit bind behaviour for `app.listen`.
 - Set `HOST=127.0.0.1` in `ecosystem.config.js` for PM2 and `HOST=0.0.0.0` in Docker compose files so both droplet and container flows stay predictable.
 - Updated `README.md` and the follow-up checklist with the new host-binding rule and the need for `pm2 restart --update-env` after deployment.
+- Reworked the shared site shell so public pages, legal pages and workspace pages all use the same `logo | title | account/nav` header structure instead of the earlier homepage-specific exception.
+- Updated `brand.js`, `scripts/publicPages.shared.js`, `scripts/publicPageRenderer.js` and the manual HTML files so the guest-facing auth label is consistently `Account`.
+- Regenerated the public service/location pages and re-ran the API + Playwright suites after the shell change to verify desktop and mobile behaviour.

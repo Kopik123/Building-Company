@@ -27,14 +27,28 @@
   <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"LocalBusiness","@id":"https://levellines.co.uk/#business","name":"Level Lines Studio","url":"https://levellines.co.uk/","image":["https://levellines.co.uk/title.png","https://levellines.co.uk/Gallery/premium/brick-dark-main.jpg"],"telephone":["+44 7942 874 446","+44 7304 506 391"],"email":"LevelLineStudioMCR@gmail.com","areaServed":["North West - Lancashire","Manchester","Liverpool","Preston","Rochdale","Oldham","Macclesfield","Stockport","Northwich","Warrington"],"address":{"@type":"PostalAddress","addressRegion":"North West - Lancashire","addressCountry":"GB"}},{"@type":"WebSite","@id":"https://levellines.co.uk/#website","url":"https://levellines.co.uk/","name":"Level Lines Studio","publisher":{"@id":"https://levellines.co.uk/#business"}}]}</script>
 </head>
 <body class="public-site page-home">
-  <header class="site-header site-header--home" id="top">
+  <header class="site-header" id="top">
     <div class="container header-inner grid-12">
       <a class="brand brand-mark-link" href="/index.html" aria-label="Level Lines Studio home">
         <img src="/logo.png" alt="Level Lines Studio icon" class="brand-icon-image" width="1093" height="860" decoding="async" />
       </a>
-      <a class="brand brand-title-link brand-title-link--home-header" href="/index.html" aria-label="Level Lines Studio home">
+      <a class="brand brand-title-link" href="/index.html" aria-label="Level Lines Studio home">
         <img src="/title.png" alt="Level Lines Studio" class="brand-lockup-image brand-title-image" width="3408" height="780" decoding="async" />
       </a>
+      <div class="header-utility-panel menu-wrap" data-menu-wrap>
+        <a class="header-auth-link" href="/auth.html" data-auth-link data-auth-guest-label="Account">Account</a>
+        <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation menu">
+          <span class="nav-toggle-line"></span>
+          <span class="nav-toggle-line"></span>
+          <span class="nav-toggle-line"></span>
+        </button>
+        <nav class="site-nav" id="site-nav" data-nav-menu aria-label="Main navigation">
+          <a href="/about.html" data-nav-link>About Us</a>
+          <a href="/gallery.html" data-nav-link>Gallery</a>
+          <a href="/contact.html" data-nav-link>Contact</a>
+          <a href="/quote.html" data-nav-link>Quote</a>
+        </nav>
+      </div>
     </div>
   </header>
 
@@ -44,9 +58,6 @@
         <section class="home-hero-card" data-home-section>
           <div class="home-hero-copy">
             <p class="section-eyebrow">Premium Renovation Studio</p>
-            <div class="home-brand-lockup" aria-hidden="true">
-              <img src="/title.png" alt="" class="home-title-image" width="3408" height="780" decoding="async" />
-            </div>
             <h1>Premium bathroom, kitchen and interior renovation studio.</h1>
             <p data-brand-copy="copy.home.heroLead">Level Lines Studio shapes premium bathroom, kitchen and interior renovation briefs for homeowners who expect strong line quality, quieter luxury and a controlled building process.</p>
             <div class="home-divider-row" aria-label="Studio priorities">
@@ -56,23 +67,12 @@
             </div>
           </div>
           <aside class="home-hero-about">
-            <div class="home-account-top">
-              <p class="section-eyebrow section-eyebrow--compact">Account</p>
-              <a class="home-account-mark" href="/index.html" aria-label="Level Lines Studio home">
-                <img src="/logo.png" alt="Level Lines Studio icon" width="1093" height="860" decoding="async" />
-              </a>
-            </div>
+            <p class="section-eyebrow section-eyebrow--compact">Private Entry</p>
             <div>
-              <h2>Login, register and move directly into the studio route.</h2>
-              <p>Account access now sits at the entry point together with About, Gallery, Contact and Quote, so the public route and the private project route stay held in one place.</p>
+              <h2>Account, quote and project access held in one aligned route.</h2>
+              <p>Use the account route when the public enquiry should move into client visibility, operational handoff and direct project communication.</p>
             </div>
-            <div class="home-account-links" aria-label="Homepage studio links">
-              <a class="home-account-link" href="/about.html">About Us</a>
-              <a class="home-account-link" href="/gallery.html">Gallery</a>
-              <a class="home-account-link" href="/contact.html">Contact</a>
-              <a class="home-account-link" href="/quote.html">Quote</a>
-            </div>
-            <a class="home-auth-cta" href="/auth.html" data-auth-link data-auth-guest-label="Login / Register">Login / Register</a>
+            <a class="home-auth-cta" href="/auth.html" data-auth-link data-auth-guest-label="Account">Account</a>
           </aside>
         </section>
 

@@ -6,7 +6,7 @@
   headerIconPath: '/logo.png',
   titleImagePath: '/title.png',
   workspaceImagePath: '/logo4.png',
-  publicAuthLabel: 'Login / Register',
+  publicAuthLabel: 'Account',
   consultationCtaLabel: 'Send Enquiry',
   footerCopy: 'A premium renovation studio for bathrooms, kitchens and interiors, shaped with quiet planning, material restraint and finish control across the North West.',
   email: 'LevelLineStudioMCR@gmail.com',

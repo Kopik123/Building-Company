@@ -34,16 +34,16 @@
   --ll-space-xl: 3rem;
   --ll-space-2xl: 4.75rem;
   --ll-max-width: 1500px;
-  --ll-header-logo-width: clamp(102px, 8vw, 142px);
-  --ll-header-title-width: min(100%, 660px);
-  --ll-header-row-height: 132px;
+  --ll-header-logo-width: clamp(112px, 9vw, 168px);
+  --ll-header-title-width: min(100%, 980px);
+  --ll-header-row-height: 138px;
   --ll-line-thickness: 1px;
 }
 
 @media (max-width: 992px) {
   :root {
-    --ll-header-logo-width: clamp(76px, 12vw, 108px);
-    --ll-header-title-width: min(100%, 420px);
+    --ll-header-logo-width: clamp(78px, 12vw, 116px);
+    --ll-header-title-width: min(100%, 520px);
     --ll-header-row-height: auto;
     --ll-space-xl: 2.4rem;
     --ll-space-2xl: 3.25rem;
@@ -52,8 +52,8 @@
 
 @media (max-width: 640px) {
   :root {
-    --ll-header-logo-width: clamp(62px, 18vw, 86px);
-    --ll-header-title-width: min(100%, 280px);
+    --ll-header-logo-width: clamp(66px, 18vw, 92px);
+    --ll-header-title-width: min(100%, 340px);
     --ll-space-lg: 1.35rem;
     --ll-space-xl: 2rem;
     --ll-space-2xl: 2.4rem;
