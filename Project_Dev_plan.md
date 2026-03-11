@@ -61,3 +61,4 @@
 - Added AVIF to the tracked Nginx static asset regex so the deploy config can cache the new optimized image format directly when the site config is refreshed.
 - Extended Playwright smoke/regression coverage to assert optimized brand pictures are present and that homepage/auth/dashboard shells keep zero horizontal scroll on mobile.
 - Added `deploy/LIVE_QA_CHECKLIST_PC_MOBILE.md` as the repeatable desktop/phone verification checklist for post-deploy evidence capture.
+- Removed the obsolete `RELEASE_NOTES_design-lock-v1.md` document and replaced it with `Project_Web_Design_Plan.md` so the repo now has a stable three-file loop: target design state, open issues and completed work.

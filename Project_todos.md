@@ -22,6 +22,7 @@
 - [ ] Move more responsive layout ownership out of `styles/base.css` into `styles/public.css` and `styles/workspace.css` after the current contrast/mobile pass is validated live.
 - [ ] Run the new live QA checklist on desktop and a phone-sized viewport after the next droplet deploy, then capture screenshots for homepage, gallery interaction, dashboards and the quote/contact form.
 - [ ] Revisit whether a CDN/media platform is worth introducing later if the runtime gallery set grows beyond the current `sharp` pipeline.
+- [ ] Keep `Project_Web_Design_Plan.md` aligned with the real current design system whenever header structure, color logic, IA or responsive rules change.
 
 ## Completed
 
@@ -54,3 +55,4 @@
 - [x] Updated gallery and generated public sections to read optimized media variants instead of a single heavy JPG/PNG path.
 - [x] Tuned shared dark-surface gold tokens from bronze-leaning values toward a richer premium gold and aligned borders/accents with the new hue.
 - [x] Added a dedicated live QA checklist for desktop and phone verification after deploy, including screenshot evidence requirements.
+- [x] Replaced the obsolete `RELEASE_NOTES_design-lock-v1.md` with `Project_Web_Design_Plan.md` as the active design source-of-truth document working alongside `Project_todos.md` and `Project_Dev_plan.md`.
