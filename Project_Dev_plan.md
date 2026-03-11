@@ -28,3 +28,15 @@
 - Regenerated the public service/location pages and re-ran the API + Playwright suites after the shell change to verify desktop and mobile behaviour.
 - Added `/healthz` in `app.js` as a simple process-level health endpoint with `no-store` caching, alongside the existing `/api/v2/health`.
 - Extended the legacy app tests and deploy documentation so droplet checks can use `/healthz` directly, while leaving the Nginx upstream on `127.0.0.1:3000` because that is the listener confirmed by `ss`.
+
+## 2026-03-11
+
+- Replaced the old manager workspace hero/session block with a new operational overview board in `manager-dashboard.html` made of `Company Events`, `Mail Box` and `Available Options`.
+- Added anchor targets for the main manager sections so the new overview cards can jump directly into projects, quotes, services, materials, clients, staff, estimates and both chat modes.
+- Extended `manager-dashboard.js` with overview rendering helpers for company activity, mailbox previews and role-aware available options, using real loaded data rather than static placeholder text.
+- Kept the new mailbox top card light on bootstrap by loading only thread summaries first, then leaving full message history to the existing lower lazy-loaded inbox/chat sections.
+- Added manager-specific workspace styling in `styles/workspace.css` so the new overview board uses the same dark-gold operational shell and responsive stacking on desktop and mobile.
+- Updated `tests/playwright/mobile-smoke.spec.js` so the manager dashboard regression suite checks the new overview structure and summary counters.
+- Re-ran `cmd /c npm run test:ci` and `cmd /c npm run test:e2e:mobile` after the manager dashboard overview refactor and kept both gates green.
+- Diagnosed the droplet deploy logs and confirmed the process now binds to `127.0.0.1:3000`, while the remaining failed `curl` is consistent with an immediate post-restart timing race rather than a broken listener.
+- Recorded that local live QA through MCP Playwright is currently blocked on the workstation because the expected Chrome executable is missing, so browser-based live inspection needs a local Playwright browser install first.

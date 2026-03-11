@@ -9,6 +9,12 @@
     logout: document.getElementById('dashboard-logout'),
     seedBtn: document.getElementById('dashboard-seed-btn'),
     seedStatus: document.getElementById('dashboard-seed-status'),
+    managerCompanyEventsList: document.getElementById('manager-company-events-list'),
+    managerMailboxPrivateCount: document.getElementById('manager-mailbox-private-count'),
+    managerMailboxProjectCount: document.getElementById('manager-mailbox-project-count'),
+    managerMailboxPrivatePreview: document.getElementById('manager-mailbox-private-preview'),
+    managerMailboxProjectPreview: document.getElementById('manager-mailbox-project-preview'),
+    managerAvailableOptions: document.getElementById('manager-available-options'),
     projectCreateForm: document.getElementById('project-create-form'),
     projectCreateStatus: document.getElementById('project-create-status'),
     projectCreateClientSuggestions: document.getElementById('project-create-client-suggestions'),
@@ -133,6 +139,10 @@
       clients: false,
       staff: false,
       estimates: false,
+      directThreads: false,
+      groupThreads: false
+    },
+    overviewLoaded: {
       directThreads: false,
       groupThreads: false
     }
@@ -329,9 +339,304 @@
   const renderSession = () => {
     if (!state.user) {
       el.session.textContent = 'No active session. Log in as employee/manager/admin.';
+      renderAvailableOptions();
       return;
     }
     el.session.textContent = `Logged as ${state.user.name || state.user.email} (${state.user.role})`;
+    renderAvailableOptions();
+  };
+
+  const titleCase = (value) => String(value || '')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+
+  const formatDateTime = (value) => {
+    if (!value) return '';
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return '';
+    return parsed.toLocaleString('en-GB');
+  };
+
+  const createOverviewEntry = ({ title, detail, meta }) => {
+    const item = document.createElement('article');
+    item.className = 'workspace-overview-entry';
+
+    const heading = document.createElement('h3');
+    heading.textContent = title;
+    item.appendChild(heading);
+
+    if (detail) {
+      const text = document.createElement('p');
+      text.textContent = detail;
+      item.appendChild(text);
+    }
+
+    if (meta) {
+      const metaLine = document.createElement('p');
+      metaLine.className = 'muted';
+      metaLine.textContent = meta;
+      item.appendChild(metaLine);
+    }
+
+    return item;
+  };
+
+  const renderMailboxPreviewList = (node, items, { loaded, loadingText, emptyText, mapItem }) => {
+    node.innerHTML = '';
+
+    if (!loaded) {
+      const text = document.createElement('p');
+      text.className = 'muted';
+      text.textContent = loadingText;
+      node.appendChild(text);
+      return;
+    }
+
+    if (!items.length) {
+      const text = document.createElement('p');
+      text.className = 'muted';
+      text.textContent = emptyText;
+      node.appendChild(text);
+      return;
+    }
+
+    const frag = document.createDocumentFragment();
+    items.slice(0, 2).forEach((item) => frag.appendChild(createOverviewEntry(mapItem(item))));
+    node.appendChild(frag);
+  };
+
+  const renderCompanyEvents = () => {
+    el.managerCompanyEventsList.innerHTML = '';
+
+    const items = [];
+    const recentProjects = [...state.projects]
+      .sort((left, right) => {
+        const leftDate = Date.parse(left.updatedAt || left.endDate || left.startDate || 0) || 0;
+        const rightDate = Date.parse(right.updatedAt || right.endDate || right.startDate || 0) || 0;
+        return rightDate - leftDate;
+      })
+      .slice(0, 3);
+
+    recentProjects.forEach((project) => {
+      const metaParts = [];
+      if (project.location) metaParts.push(project.location);
+      if (project.client?.email) metaParts.push(`Client ${project.client.email}`);
+      if (project.assignedManager?.email) metaParts.push(`Staff ${project.assignedManager.email}`);
+      const mediaSummary = [];
+      if (Number.isFinite(Number(project.imageCount))) mediaSummary.push(`${project.imageCount} images`);
+      if (Number.isFinite(Number(project.documentCount))) mediaSummary.push(`${project.documentCount} docs`);
+      if (mediaSummary.length) metaParts.push(mediaSummary.join(' / '));
+
+      items.push({
+        title: project.title || 'Project',
+        detail: `${titleCase(project.status || 'planning')} project${project.showInGallery ? ' | visible in gallery' : ''}`,
+        meta: metaParts.join(' | ')
+      });
+    });
+
+    if (state.lazyLoaded.quotes || state.quotes.length) {
+      const pendingQuotes = state.quotes.filter((quote) => String(quote.status || '').toLowerCase() === 'pending').length;
+      if (pendingQuotes) {
+        items.push({
+          title: `${pendingQuotes} quote${pendingQuotes === 1 ? '' : 's'} waiting`,
+          detail: 'Pending response and priority review.',
+          meta: 'Quotes become visible here once the quote section has been loaded.'
+        });
+      }
+    }
+
+    if (state.lazyLoaded.estimates || state.estimates.length) {
+      const draftEstimates = state.estimates.filter((estimate) => String(estimate.status || '').toLowerCase() === 'draft').length;
+      if (draftEstimates) {
+        items.push({
+          title: `${draftEstimates} estimate draft${draftEstimates === 1 ? '' : 's'} open`,
+          detail: 'Pricing is still being shaped before client issue.',
+          meta: 'Estimate Builder'
+        });
+      }
+    }
+
+    if (state.lazyLoaded.materials || state.materials.length) {
+      const lowStock = state.materials.filter((material) => Number(material.stockQty || 0) <= Number(material.minStockQty || 0)).length;
+      if (lowStock) {
+        items.push({
+          title: `${lowStock} material line${lowStock === 1 ? '' : 's'} flagged`,
+          detail: 'Low-stock inventory needs review before the next ordering pass.',
+          meta: 'Materials Inventory'
+        });
+      }
+    }
+
+    if (!items.length) {
+      const text = document.createElement('p');
+      text.className = 'muted';
+      text.textContent = 'Projects, quotes and estimate movement will appear here as the dashboard loads.';
+      el.managerCompanyEventsList.appendChild(text);
+      return;
+    }
+
+    const frag = document.createDocumentFragment();
+    items.slice(0, 4).forEach((item) => frag.appendChild(createOverviewEntry(item)));
+    el.managerCompanyEventsList.appendChild(frag);
+  };
+
+  const renderMailboxOverview = () => {
+    el.managerMailboxPrivateCount.textContent = String(state.directThreads.length);
+    el.managerMailboxProjectCount.textContent = String(state.groupThreads.length);
+
+    renderMailboxPreviewList(el.managerMailboxPrivatePreview, state.directThreads, {
+      loaded: state.overviewLoaded.directThreads,
+      loadingText: 'Loading private threads...',
+      emptyText: 'No private client threads yet.',
+      mapItem: (thread) => {
+        const counterparty = getInboxCounterparty(thread);
+        return {
+          title: counterparty?.name || counterparty?.email || 'Direct thread',
+          detail: thread.subject || 'Private inbox route',
+          meta: formatDateTime(thread.updatedAt) ? `Updated ${formatDateTime(thread.updatedAt)}` : ''
+        };
+      }
+    });
+
+    renderMailboxPreviewList(el.managerMailboxProjectPreview, state.groupThreads, {
+      loaded: state.overviewLoaded.groupThreads,
+      loadingText: 'Loading project threads...',
+      emptyText: 'No project threads yet.',
+      mapItem: (thread) => ({
+        title: thread.name || thread.subject || 'Project thread',
+        detail: 'Project communication route',
+        meta: formatDateTime(thread.updatedAt) ? `Updated ${formatDateTime(thread.updatedAt)}` : ''
+      })
+    });
+  };
+
+  const renderAvailableOptions = () => {
+    el.managerAvailableOptions.innerHTML = '';
+
+    if (!state.user) {
+      const text = document.createElement('p');
+      text.className = 'muted';
+      text.textContent = 'Management routes will appear after the session is confirmed.';
+      el.managerAvailableOptions.appendChild(text);
+      return;
+    }
+
+    const role = String(state.user.role || '').toLowerCase();
+    const isManagerLevel = ['manager', 'admin'].includes(role);
+
+    const options = [
+      {
+        label: 'Create Project',
+        detail: 'Start a new project brief with client and staff assignment.',
+        href: '#manager-project-create',
+        roles: ['employee', 'manager', 'admin'],
+        meta: 'Create'
+      },
+      {
+        label: 'Projects',
+        detail: 'Control status, media, gallery visibility and project documents.',
+        href: '#manager-projects-section',
+        roles: ['employee', 'manager', 'admin'],
+        meta: `${state.projectsPagination.total || state.projects.length || 0} loaded`
+      },
+      {
+        label: 'Quotes',
+        detail: 'Review new enquiries, priorities and acceptance routes.',
+        href: '#manager-quotes-section',
+        roles: ['manager', 'admin'],
+        meta: state.lazyLoaded.quotes || state.quotes.length ? `${state.quotesPagination.total || state.quotes.length || 0} loaded` : 'Open section'
+      },
+      {
+        label: 'Services',
+        detail: 'Manage the website offer, ordering and visibility.',
+        href: '#manager-services-section',
+        roles: ['manager', 'admin'],
+        meta: state.lazyLoaded.services || state.services.length ? `${state.servicesPagination.total || state.services.length || 0} loaded` : 'Open section'
+      },
+      {
+        label: 'Materials',
+        detail: 'Track stock, supplier notes and low-stock lines.',
+        href: '#manager-materials-section',
+        roles: ['manager', 'admin'],
+        meta: state.lazyLoaded.materials || state.materials.length ? `${state.materialsPagination.total || state.materials.length || 0} loaded` : 'Open section'
+      },
+      {
+        label: 'Clients',
+        detail: 'Search client records and contact context for active jobs.',
+        href: '#manager-clients-section',
+        roles: ['manager', 'admin'],
+        meta: state.lazyLoaded.clients || state.clients.length ? `${state.clients.length} loaded` : 'Open section'
+      },
+      {
+        label: 'Staff',
+        detail: 'Review staff access and create new operational users.',
+        href: '#manager-staff-section',
+        roles: ['manager', 'admin'],
+        meta: state.lazyLoaded.staff || state.staff.length ? `${state.staff.length} loaded` : 'Open section'
+      },
+      {
+        label: 'Estimate Builder',
+        detail: 'Build project pricing from service and material lines.',
+        href: '#manager-estimates-section',
+        roles: ['manager', 'admin'],
+        meta: state.lazyLoaded.estimates || state.estimates.length ? `${state.estimates.length} loaded` : 'Open section'
+      },
+      {
+        label: 'Private Inbox',
+        detail: 'Keep one-to-one client conversation separate from project chat.',
+        href: '#manager-private-inbox',
+        roles: ['employee', 'manager', 'admin'],
+        meta: state.overviewLoaded.directThreads ? `${state.directThreads.length} threads` : 'Loading summary'
+      },
+      {
+        label: 'Project Chat',
+        detail: 'Open project-specific thread history and team conversation.',
+        href: '#manager-project-chat',
+        roles: ['employee', 'manager', 'admin'],
+        meta: state.overviewLoaded.groupThreads ? `${state.groupThreads.length} threads` : 'Loading summary'
+      }
+    ].filter((option) => option.roles.includes(role));
+
+    if (!isManagerLevel) {
+      options.unshift({
+        label: 'Role',
+        detail: 'Employee access keeps the operational shell visible while manager-only actions stay limited.',
+        href: '#manager-projects-section',
+        meta: titleCase(role)
+      });
+    }
+
+    const frag = document.createDocumentFragment();
+    options.forEach((option) => {
+      const link = document.createElement('a');
+      link.className = 'workspace-option-link';
+      link.href = option.href;
+
+      const heading = document.createElement('strong');
+      heading.textContent = option.label;
+      link.appendChild(heading);
+
+      const detail = document.createElement('span');
+      detail.textContent = option.detail;
+      link.appendChild(detail);
+
+      const meta = document.createElement('small');
+      meta.className = 'workspace-option-meta';
+      meta.textContent = option.meta;
+      link.appendChild(meta);
+
+      frag.appendChild(link);
+    });
+
+    el.managerAvailableOptions.appendChild(frag);
+  };
+
+  const renderOperationsShell = () => {
+    renderCompanyEvents();
+    renderMailboxOverview();
+    renderAvailableOptions();
   };
 
   const renderProjects = () => {
@@ -339,6 +644,7 @@
     if (!state.projects.length) {
       el.projectsList.innerHTML = '<p class=\"muted\">No projects found for current filters.</p>';
       el.projectEditorCard.hidden = true;
+      renderOperationsShell();
       return;
     }
     const frag = document.createDocumentFragment();
@@ -370,6 +676,7 @@
     });
     el.projectsList.appendChild(frag);
     renderPagination(el.projectsPagination, el.projectsPrev, el.projectsNext, state.projectsPagination);
+    renderOperationsShell();
   };
 
   const renderMedia = () => {
@@ -450,6 +757,7 @@
     if (!state.quotes.length) {
       el.quotesList.innerHTML = '<p class=\"muted\">No quotes found for current filters.</p>';
       renderPagination(el.quotesPagination, el.quotesPrev, el.quotesNext, state.quotesPagination);
+      renderOperationsShell();
       return;
     }
 
@@ -518,6 +826,7 @@
     });
     el.quotesList.appendChild(frag);
     renderPagination(el.quotesPagination, el.quotesPrev, el.quotesNext, state.quotesPagination);
+    renderOperationsShell();
   };
 
   const renderServices = () => {
@@ -525,6 +834,7 @@
     if (!state.services.length) {
       el.servicesList.innerHTML = '<p class=\"muted\">No services found for current filters.</p>';
       renderPagination(el.servicesPagination, el.servicesPrev, el.servicesNext, state.servicesPagination);
+      renderOperationsShell();
       return;
     }
     const frag = document.createDocumentFragment();
@@ -591,6 +901,7 @@
     });
     el.servicesList.appendChild(frag);
     renderPagination(el.servicesPagination, el.servicesPrev, el.servicesNext, state.servicesPagination);
+    renderOperationsShell();
   };
 
   const renderMaterials = () => {
@@ -598,6 +909,7 @@
     if (!state.materials.length) {
       el.materialsList.innerHTML = '<p class=\"muted\">No materials found for current filters.</p>';
       renderPagination(el.materialsPagination, el.materialsPrev, el.materialsNext, state.materialsPagination);
+      renderOperationsShell();
       return;
     }
     const frag = document.createDocumentFragment();
@@ -670,12 +982,14 @@
     });
     el.materialsList.appendChild(frag);
     renderPagination(el.materialsPagination, el.materialsPrev, el.materialsNext, state.materialsPagination);
+    renderOperationsShell();
   };
 
   const renderClients = () => {
     el.clientsList.innerHTML = '';
     if (!state.clients.length) {
       el.clientsList.innerHTML = '<p class="muted">No clients found for the current search.</p>';
+      renderOperationsShell();
       return;
     }
 
@@ -687,12 +1001,14 @@
       frag.appendChild(card);
     });
     el.clientsList.appendChild(frag);
+    renderOperationsShell();
   };
 
   const renderStaff = () => {
     el.staffList.innerHTML = '';
     if (!state.staff.length) {
       el.staffList.innerHTML = '<p class="muted">No staff found for the current search.</p>';
+      renderOperationsShell();
       return;
     }
 
@@ -704,6 +1020,7 @@
       frag.appendChild(card);
     });
     el.staffList.appendChild(frag);
+    renderOperationsShell();
   };
 
   const renderEstimates = () => {
@@ -712,6 +1029,7 @@
       el.estimatesList.innerHTML = '<p class="muted">No estimates created yet.</p>';
       el.estimateEditorCard.hidden = true;
       requestAccordionRefresh();
+      renderOperationsShell();
       return;
     }
 
@@ -738,6 +1056,7 @@
       frag.appendChild(card);
     });
     el.estimatesList.appendChild(frag);
+    renderOperationsShell();
   };
 
   const renderEstimateLines = () => {
@@ -805,6 +1124,7 @@
     el.managerDirectThreadsList.innerHTML = '';
     if (!state.directThreads.length) {
       el.managerDirectThreadsList.innerHTML = '<p class="muted">No private threads yet.</p>';
+      renderOperationsShell();
       return;
     }
 
@@ -827,6 +1147,7 @@
       frag.appendChild(card);
     });
     el.managerDirectThreadsList.appendChild(frag);
+    renderOperationsShell();
   };
 
   const renderDirectMessages = () => {
@@ -855,6 +1176,7 @@
     el.managerGroupThreadsList.innerHTML = '';
     if (!state.groupThreads.length) {
       el.managerGroupThreadsList.innerHTML = '<p class="muted">No project chat threads available.</p>';
+      renderOperationsShell();
       return;
     }
 
@@ -876,6 +1198,7 @@
       frag.appendChild(card);
     });
     el.managerGroupThreadsList.appendChild(frag);
+    renderOperationsShell();
   };
 
   const renderGroupMessages = () => {
@@ -1051,9 +1374,11 @@
     renderDirectMessages();
   };
 
-  const loadDirectThreads = async (preferredThreadId = '') => {
-    const payload = await api('/api/inbox/threads?pageSize=100');
+  const loadDirectThreads = async (preferredThreadId = '', options = {}) => {
+    const { loadMessages = true, pageSize = 100 } = options;
+    const payload = await api(`/api/inbox/threads?${buildQuery({ pageSize })}`);
     state.directThreads = Array.isArray(payload.threads) ? payload.threads : [];
+    state.overviewLoaded.directThreads = true;
     const nextSelectedId = preferredThreadId || state.selectedDirectThreadId;
     if (!state.directThreads.some((thread) => thread.id === nextSelectedId)) {
       state.selectedDirectThreadId = state.directThreads[0]?.id || '';
@@ -1061,7 +1386,9 @@
       state.selectedDirectThreadId = nextSelectedId;
     }
     renderDirectThreads();
-    await loadDirectMessages();
+    if (loadMessages) {
+      await loadDirectMessages();
+    }
   };
 
   const loadGroupMessages = async () => {
@@ -1075,9 +1402,11 @@
     renderGroupMessages();
   };
 
-  const loadGroupThreads = async (preferredThreadId = '') => {
-    const payload = await api('/api/group/threads?pageSize=100');
+  const loadGroupThreads = async (preferredThreadId = '', options = {}) => {
+    const { loadMessages = true, pageSize = 100 } = options;
+    const payload = await api(`/api/group/threads?${buildQuery({ pageSize })}`);
     state.groupThreads = Array.isArray(payload.threads) ? payload.threads : [];
+    state.overviewLoaded.groupThreads = true;
     const nextSelectedId = preferredThreadId || state.selectedGroupThreadId;
     if (!state.groupThreads.some((thread) => thread.id === nextSelectedId)) {
       state.selectedGroupThreadId = state.groupThreads[0]?.id || '';
@@ -1085,7 +1414,9 @@
       state.selectedGroupThreadId = nextSelectedId;
     }
     renderGroupThreads();
-    await loadGroupMessages();
+    if (loadMessages) {
+      await loadGroupMessages();
+    }
   };
 
   const searchUsersByEmail = async (type, queryText) => {
@@ -1329,6 +1660,19 @@
         el.seedBtn.title = 'Only manager/admin can run seed';
       }
       await loadProjects();
+      const mailboxResults = await Promise.allSettled([
+        loadDirectThreads('', { loadMessages: false, pageSize: 4 }),
+        loadGroupThreads('', { loadMessages: false, pageSize: 4 })
+      ]);
+      if (mailboxResults[0]?.status === 'rejected') {
+        state.overviewLoaded.directThreads = true;
+        state.directThreads = [];
+      }
+      if (mailboxResults[1]?.status === 'rejected') {
+        state.overviewLoaded.groupThreads = true;
+        state.groupThreads = [];
+      }
+      renderOperationsShell();
       setupLazySections(role);
     } catch (error) {
       clearSession();

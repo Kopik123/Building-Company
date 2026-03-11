@@ -44,50 +44,85 @@
   <main class="workspace-main dashboard-shell workspace-shell">
     <section class="section workspace-hero-shell">
       <div class="container">
-        <div class="workspace-hero">
-          <div class="workspace-hero-copy surface-card surface-card--dark">
+        <div class="workspace-operations-board">
+          <div class="workspace-operations-heading">
             <p class="section-eyebrow">Operations</p>
-            <h1>Project control, quote workflow and studio operations in one shell.</h1>
-            <p class="section-lead">This view keeps projects, media, quotes, services and materials in one quieter operational surface. The shell stays aligned with the public site, but the emphasis shifts from marketing to disciplined control.</p>
-            <div class="workspace-chip-row">
-              <span class="stat-chip">Projects</span>
-              <span class="stat-chip">Quotes</span>
-              <span class="stat-chip">Inventory</span>
-            </div>
+            <h1>Project control, recent movement and studio communication in one shell.</h1>
+            <p class="section-lead">Keep current project movement, private conversation routes and management actions aligned without leaving the dashboard.</p>
           </div>
-          <aside class="workspace-hero-panel workspace-hero-panel--dark surface-card surface-card--dark">
-            <p class="workspace-panel-title">Operational scope</p>
-            <address class="workspace-contact-list" aria-label="Level Lines Studio contact details">
-              <a class="workspace-contact-link" data-brand-phone="0" href="tel:+447942874446">+44 7942 874 446</a>
-              <a class="workspace-contact-link" data-brand-email href="mailto:LevelLineStudioMCR@gmail.com">LevelLineStudioMCR@gmail.com</a>
-            </address>
-            <ul class="workspace-points">
-              <li>Create and maintain projects with client and staff assignments.</li>
-              <li>Control public services, gallery visibility, uploaded media and material stock.</li>
-              <li>Build estimates from project services and materials, then keep private and project chat separate.</li>
-            </ul>
-          </aside>
+
+          <div class="workspace-operations-grid">
+            <section class="workspace-operations-card surface-card surface-card--dark" aria-labelledby="manager-company-events-heading">
+              <div class="workspace-operations-card-top">
+                <p class="workspace-card-label">Operational feed</p>
+                <h2 id="manager-company-events-heading">Company Events</h2>
+              </div>
+              <p class="workspace-operations-copy">Current project, quote and estimate movement across the studio.</p>
+              <div id="manager-company-events-list" class="workspace-operations-list" aria-live="polite">
+                <p class="muted">Loading current activity...</p>
+              </div>
+            </section>
+
+            <section class="workspace-operations-card surface-card surface-card--dark" aria-labelledby="manager-mailbox-heading">
+              <div class="workspace-operations-card-top">
+                <p class="workspace-card-label">Communication</p>
+                <h2 id="manager-mailbox-heading">Mail Box</h2>
+              </div>
+              <p class="workspace-operations-copy">Private client threads and project chat stay separated, but the latest routes stay visible here.</p>
+              <div class="workspace-mailbox-metrics" aria-label="Mailbox summary counts">
+                <article class="workspace-mailbox-stat">
+                  <span class="workspace-mailbox-stat-label">Private</span>
+                  <strong id="manager-mailbox-private-count">0</strong>
+                </article>
+                <article class="workspace-mailbox-stat">
+                  <span class="workspace-mailbox-stat-label">Project</span>
+                  <strong id="manager-mailbox-project-count">0</strong>
+                </article>
+              </div>
+              <div class="workspace-mailbox-grid">
+                <div class="workspace-mailbox-column">
+                  <p class="workspace-card-label">Private Inbox</p>
+                  <div id="manager-mailbox-private-preview" class="workspace-mailbox-preview" aria-live="polite">
+                    <p class="muted">Loading private threads...</p>
+                  </div>
+                  <a class="btn btn-outline btn-block" href="#manager-private-inbox">Open private inbox</a>
+                </div>
+                <div class="workspace-mailbox-column">
+                  <p class="workspace-card-label">Project Chat</p>
+                  <div id="manager-mailbox-project-preview" class="workspace-mailbox-preview" aria-live="polite">
+                    <p class="muted">Loading project threads...</p>
+                  </div>
+                  <a class="btn btn-outline btn-block" href="#manager-project-chat">Open project chat</a>
+                </div>
+              </div>
+            </section>
+
+            <section class="workspace-operations-card workspace-operations-card--wide surface-card surface-card--dark" aria-labelledby="manager-options-heading">
+              <div class="workspace-operations-card-top">
+                <div>
+                  <p class="workspace-card-label">Workspace access</p>
+                  <h2 id="manager-options-heading">Available Options</h2>
+                </div>
+                <p id="dashboard-session" class="workspace-session-inline">Checking session...</p>
+              </div>
+              <p class="workspace-operations-copy">Use the management routes below to move between project delivery, pricing, catalogue control and communication without losing the current shell.</p>
+              <div id="manager-available-options" class="workspace-operations-options" aria-live="polite"></div>
+              <div class="dashboard-session-actions workspace-session-actions">
+                <button type="button" class="btn btn-outline" id="dashboard-seed-btn">Run starter seed</button>
+                <a class="btn btn-outline" href="/auth.html">Auth Page</a>
+                <button type="button" class="btn btn-outline" id="dashboard-logout">Logout</button>
+              </div>
+              <p class="form-status" id="dashboard-seed-status" aria-live="polite"></p>
+            </section>
+          </div>
         </div>
       </div>
     </section>
 
     <section class="section section--light workspace-content-shell">
       <div class="container workspace-stack">
-        <section class="card dashboard-session surface-card surface-card--dark">
-          <div>
-            <p class="workspace-card-label">Session</p>
-            <p id="dashboard-session">Checking session...</p>
-          </div>
-          <div class="dashboard-session-actions">
-            <button type="button" class="btn btn-outline" id="dashboard-seed-btn">Run starter seed</button>
-            <a class="btn btn-outline" href="/auth.html">Auth Page</a>
-            <button type="button" class="btn btn-outline" id="dashboard-logout">Logout</button>
-          </div>
-        </section>
-        <p class="form-status" id="dashboard-seed-status" aria-live="polite"></p>
-
         <div class="dashboard-grid dashboard-manager-top-grid">
-          <section class="card surface-card surface-card--light" data-dashboard-mobile-open="true">
+          <section class="card surface-card surface-card--light" id="manager-project-create" data-dashboard-mobile-open="true">
             <h2>Create Project</h2>
             <form id="project-create-form" novalidate>
               <div class="form-grid">
@@ -138,7 +173,7 @@
             </form>
           </section>
 
-          <section class="card surface-card surface-card--light" data-dashboard-mobile-open="true">
+          <section class="card surface-card surface-card--light" id="manager-projects-section" data-dashboard-mobile-open="true">
             <h2>Projects</h2>
             <div class="dashboard-filters">
               <input type="search" id="projects-filter-q" placeholder="Search title/location/client email..." />
@@ -275,7 +310,7 @@
           <div id="media-list" class="dashboard-media-list"></div>
         </section>
 
-        <section class="card surface-card surface-card--light">
+        <section class="card surface-card surface-card--light" id="manager-quotes-section">
           <h2>Quotes / Wyceny</h2>
           <div class="dashboard-filters">
             <input type="search" id="quotes-filter-q" placeholder="Search email/name/location..." />
@@ -301,7 +336,7 @@
           </div>
         </section>
 
-        <section class="card surface-card surface-card--light">
+        <section class="card surface-card surface-card--light" id="manager-services-section">
           <h2>Services (Website Offer)</h2>
           <div class="dashboard-filters">
             <input type="search" id="services-filter-q" placeholder="Search title/slug..." />
@@ -374,7 +409,7 @@
           </div>
         </section>
 
-        <section class="card surface-card surface-card--light">
+        <section class="card surface-card surface-card--light" id="manager-materials-section">
           <h2>Materials Inventory</h2>
           <div class="dashboard-filters">
             <input type="search" id="materials-filter-q" placeholder="Search name/SKU/supplier..." />
@@ -450,7 +485,7 @@
         </section>
 
         <div class="dashboard-grid dashboard-manager-top-grid">
-          <section class="card surface-card surface-card--light" data-dashboard-mobile-open="true">
+          <section class="card surface-card surface-card--light" id="manager-clients-section" data-dashboard-mobile-open="true">
             <h2>Clients</h2>
             <div class="dashboard-filters dashboard-filters--compact">
               <input type="search" id="clients-filter-q" placeholder="Search client name or email..." />
@@ -459,7 +494,7 @@
             <div id="clients-list" class="dashboard-list"></div>
           </section>
 
-          <section class="card surface-card surface-card--light" data-dashboard-mobile-open="true">
+          <section class="card surface-card surface-card--light" id="manager-staff-section" data-dashboard-mobile-open="true">
             <h2>Staff</h2>
             <div class="dashboard-filters dashboard-filters--compact">
               <input type="search" id="staff-filter-q" placeholder="Search staff name or email..." />
@@ -493,7 +528,7 @@
           </section>
         </div>
 
-        <section class="card surface-card surface-card--light" data-dashboard-mobile-open="true">
+        <section class="card surface-card surface-card--light" id="manager-estimates-section" data-dashboard-mobile-open="true">
           <h2>Estimate Builder</h2>
           <form id="estimate-create-form" novalidate>
             <div class="form-grid">
@@ -617,7 +652,7 @@
         </section>
 
         <div class="dashboard-grid dashboard-manager-top-grid">
-          <section class="card surface-card surface-card--light" data-dashboard-mobile-open="true">
+          <section class="card surface-card surface-card--light" id="manager-private-inbox" data-dashboard-mobile-open="true">
             <h2>Private Inbox</h2>
             <div class="dashboard-grid dashboard-communication-grid">
               <div>
@@ -640,7 +675,7 @@
             </div>
           </section>
 
-          <section class="card surface-card surface-card--light" data-dashboard-mobile-open="true">
+          <section class="card surface-card surface-card--light" id="manager-project-chat" data-dashboard-mobile-open="true">
             <h2>Project Chat</h2>
             <div class="dashboard-grid dashboard-communication-grid">
               <div>
