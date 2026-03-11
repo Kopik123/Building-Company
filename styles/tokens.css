@@ -19,6 +19,11 @@
   --ll-text-dark: #181410;
   --ll-text-muted: rgba(247, 242, 235, 0.72);
   --ll-text-muted-dark: rgba(24, 20, 16, 0.68);
+  --ll-text-on-light: #181410;
+  --ll-text-on-light-muted: rgba(24, 20, 16, 0.68);
+  --ll-text-on-dark: #d6bf93;
+  --ll-text-on-dark-strong: #f3e3b5;
+  --ll-text-on-dark-muted: rgba(214, 191, 147, 0.78);
   --ll-shadow-premium: 0 26px 76px rgba(0, 0, 0, 0.42);
   --ll-shadow-line: inset 0 0 0 1px rgba(134, 100, 48, 0.24);
   --ll-shadow-frame: inset 0 0 0 1px rgba(255, 255, 255, 0.34);
@@ -59,5 +64,18 @@
     --ll-space-2xl: 2.4rem;
     --ll-radius-card: 24px;
     --ll-radius-panel: 18px;
+  }
+}
+
+@media (max-width: 390px) {
+  :root {
+    --ll-header-logo-width: clamp(58px, 19vw, 82px);
+    --ll-header-title-width: min(100%, 280px);
+    --ll-space-md: 1rem;
+    --ll-space-lg: 1.1rem;
+    --ll-space-xl: 1.55rem;
+    --ll-space-2xl: 1.9rem;
+    --ll-radius-card: 22px;
+    --ll-radius-panel: 16px;
   }
 }

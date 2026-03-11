@@ -1,5 +1,7 @@
 const { defineConfig, devices } = require('@playwright/test');
 
+const desktopChromium = { ...devices['Desktop Chrome'], channel: undefined };
+
 module.exports = defineConfig({
   testDir: '.',
   timeout: 45_000,
@@ -19,7 +21,7 @@ module.exports = defineConfig({
     {
       name: 'desktop-chromium',
       use: {
-        ...devices['Desktop Chrome']
+        ...desktopChromium
       }
     },
     {

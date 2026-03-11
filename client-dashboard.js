@@ -6,6 +6,12 @@
   const el = {
     session: document.getElementById('client-session'),
     logout: document.getElementById('client-logout'),
+    projectStatusList: document.getElementById('client-project-status-list'),
+    mailboxDirectCount: document.getElementById('client-mailbox-direct-count'),
+    mailboxProjectCount: document.getElementById('client-mailbox-project-count'),
+    mailboxDirectPreview: document.getElementById('client-mailbox-direct-preview'),
+    mailboxProjectPreview: document.getElementById('client-mailbox-project-preview'),
+    availableOptions: document.getElementById('client-available-options'),
     metrics: document.getElementById('client-metrics'),
     projectsList: document.getElementById('client-projects-list'),
     uploadForm: document.getElementById('client-upload-form'),
@@ -36,6 +42,10 @@
     threads: [],
     selectedThreadId: '',
     messages: [],
+    overviewLoaded: {
+      directThreads: false,
+      groupThreads: false
+    },
     lazyLoaded: {
       directThreads: false,
       groupThreads: false
@@ -196,6 +206,198 @@
     el.servicesList.appendChild(frag);
   };
 
+  const titleCase = (value) => String(value || '')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+
+  const formatDateTime = (value) => {
+    if (!value) return '';
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return '';
+    return parsed.toLocaleString('en-GB');
+  };
+
+  const createOverviewEntry = ({ title, detail, meta }) => {
+    const item = document.createElement('article');
+    item.className = 'workspace-overview-entry';
+
+    const heading = document.createElement('h3');
+    heading.textContent = title;
+    item.appendChild(heading);
+
+    if (detail) {
+      const text = document.createElement('p');
+      text.textContent = detail;
+      item.appendChild(text);
+    }
+
+    if (meta) {
+      const metaLine = document.createElement('p');
+      metaLine.className = 'muted';
+      metaLine.textContent = meta;
+      item.appendChild(metaLine);
+    }
+
+    return item;
+  };
+
+  const renderMailboxPreviewList = (node, items, { loaded, loadingText, emptyText, mapItem }) => {
+    node.innerHTML = '';
+
+    if (!loaded) {
+      node.innerHTML = `<p class="muted">${escapeHtml(loadingText)}</p>`;
+      return;
+    }
+
+    if (!items.length) {
+      node.innerHTML = `<p class="muted">${escapeHtml(emptyText)}</p>`;
+      return;
+    }
+
+    const frag = document.createDocumentFragment();
+    items.slice(0, 2).forEach((item) => frag.appendChild(createOverviewEntry(mapItem(item))));
+    node.appendChild(frag);
+  };
+
+  const renderProjectStatusOverview = () => {
+    el.projectStatusList.innerHTML = '';
+
+    const items = [];
+    const sortedProjects = [...state.projects].sort((left, right) => {
+      const leftDate = Date.parse(left.updatedAt || left.endDate || left.startDate || 0) || 0;
+      const rightDate = Date.parse(right.updatedAt || right.endDate || right.startDate || 0) || 0;
+      return rightDate - leftDate;
+    });
+
+    sortedProjects.slice(0, 2).forEach((project) => {
+      const docsCount = Array.isArray(project.documents) ? project.documents.length : 0;
+      const manager = project.assignedManager?.name || project.assignedManager?.email || 'Manager pending';
+      items.push({
+        title: project.title || 'Project',
+        detail: `${titleCase(project.status || 'planning')} | ${project.location || 'Location pending'}`,
+        meta: `Docs ${docsCount} | ${manager}`
+      });
+    });
+
+    const activeQuote = state.quotes.find((quote) => String(quote.status || '').toLowerCase() !== 'accepted') || state.quotes[0];
+    if (activeQuote) {
+      items.push({
+        title: activeQuote.projectType || 'Quote',
+        detail: `${titleCase(activeQuote.status || 'pending')} | Priority ${titleCase(activeQuote.priority || 'normal')}`,
+        meta: activeQuote.location || 'Quote route'
+      });
+    }
+
+    if (!items.length) {
+      el.projectStatusList.innerHTML = '<p class="muted">Projects, quotes and document routes will appear here once your workspace is linked.</p>';
+      return;
+    }
+
+    const frag = document.createDocumentFragment();
+    items.slice(0, 3).forEach((item) => frag.appendChild(createOverviewEntry(item)));
+    el.projectStatusList.appendChild(frag);
+  };
+
+  const renderMailboxOverview = () => {
+    el.mailboxDirectCount.textContent = String(state.directThreads.length);
+    el.mailboxProjectCount.textContent = String(state.threads.length);
+
+    renderMailboxPreviewList(el.mailboxDirectPreview, state.directThreads, {
+      loaded: state.overviewLoaded.directThreads,
+      loadingText: 'Loading direct threads...',
+      emptyText: 'No direct manager thread yet.',
+      mapItem: (thread) => {
+        const counterparty = getThreadCounterparty(thread);
+        return {
+          title: counterparty?.name || counterparty?.email || 'Direct manager',
+          detail: thread.subject || 'Private conversation route',
+          meta: formatDateTime(thread.updatedAt) ? `Updated ${formatDateTime(thread.updatedAt)}` : ''
+        };
+      }
+    });
+
+    renderMailboxPreviewList(el.mailboxProjectPreview, state.threads, {
+      loaded: state.overviewLoaded.groupThreads,
+      loadingText: 'Loading project threads...',
+      emptyText: 'No project thread yet.',
+      mapItem: (thread) => ({
+        title: thread.name || thread.subject || 'Project chat',
+        detail: 'Project communication route',
+        meta: formatDateTime(thread.updatedAt) ? `Updated ${formatDateTime(thread.updatedAt)}` : ''
+      })
+    });
+  };
+
+  const renderAvailableOptions = () => {
+    el.availableOptions.innerHTML = '';
+
+    if (!state.user) {
+      el.availableOptions.innerHTML = '<p class="muted">Workspace routes will appear after the session is confirmed.</p>';
+      return;
+    }
+
+    const options = [
+      {
+        label: 'Projects',
+        detail: 'Review active jobs, locations and assigned manager context.',
+        href: '#client-projects-section',
+        meta: `${state.projects.length} loaded`
+      },
+      {
+        label: 'Documents Upload',
+        detail: 'Upload room documents, notes and reference files against a project.',
+        href: '#client-documents-section',
+        meta: state.projects.length ? 'Upload ready' : 'Needs project'
+      },
+      {
+        label: 'Direct Manager',
+        detail: 'Use the private route for one-to-one communication with your manager.',
+        href: '#client-direct-manager',
+        meta: state.overviewLoaded.directThreads ? `${state.directThreads.length} threads` : 'Loading summary'
+      },
+      {
+        label: 'Project Chat',
+        detail: 'Keep project-specific messages separate from private manager contact.',
+        href: '#client-project-chat',
+        meta: state.overviewLoaded.groupThreads ? `${state.threads.length} threads` : 'Loading summary'
+      },
+      {
+        label: 'Quotes',
+        detail: 'Track the current quote route, status and response timing.',
+        href: '#client-quotes-section',
+        meta: `${state.quotes.length} loaded`
+      },
+      {
+        label: 'Services',
+        detail: 'Review recommended services and the current fit for your brief.',
+        href: '#client-services-section',
+        meta: `${state.services.length} loaded`
+      }
+    ];
+
+    const frag = document.createDocumentFragment();
+    options.forEach((option) => {
+      const link = document.createElement('a');
+      link.className = 'workspace-option-link';
+      link.href = option.href;
+      link.innerHTML = `
+        <strong>${escapeHtml(option.label)}</strong>
+        <span>${escapeHtml(option.detail)}</span>
+        <small class="workspace-option-meta">${escapeHtml(option.meta)}</small>
+      `;
+      frag.appendChild(link);
+    });
+    el.availableOptions.appendChild(frag);
+  };
+
+  const renderOperationsShell = () => {
+    renderProjectStatusOverview();
+    renderMailboxOverview();
+    renderAvailableOptions();
+  };
+
   const getThreadCounterparty = (thread) => {
     if (!thread) return null;
     const participantA = thread.participantA || null;
@@ -343,6 +545,34 @@
     renderDirectMessages();
   };
 
+  const ensureThreadSummaries = async () => {
+    if (state.overviewLoaded.groupThreads) return;
+    const payload = await api('/api/group/threads?pageSize=100');
+    state.threads = Array.isArray(payload.threads) ? payload.threads : [];
+    if (!state.threads.some((thread) => thread.id === state.selectedThreadId)) {
+      state.selectedThreadId = state.threads[0]?.id || '';
+    }
+    state.overviewLoaded.groupThreads = true;
+    renderOperationsShell();
+  };
+
+  const ensureDirectThreadSummaries = async (preferredThreadId = '') => {
+    const shouldKeepSelection = preferredThreadId || state.selectedDirectThreadId;
+    if (!state.overviewLoaded.directThreads) {
+      const payload = await api('/api/inbox/threads?pageSize=100');
+      state.directThreads = Array.isArray(payload.threads) ? payload.threads : [];
+      state.overviewLoaded.directThreads = true;
+    }
+
+    if (!state.directThreads.some((thread) => thread.id === shouldKeepSelection)) {
+      state.selectedDirectThreadId = state.directThreads[0]?.id || '';
+    } else {
+      state.selectedDirectThreadId = shouldKeepSelection;
+    }
+
+    renderOperationsShell();
+  };
+
   const loadOverview = async () => {
     const payload = await api('/api/client/overview?includeThreads=false');
     state.user = payload.user || null;
@@ -353,29 +583,21 @@
     renderProjects();
     renderQuotes();
     renderServices();
+    renderOperationsShell();
     requestAccordionRefresh();
   };
 
   const loadThreads = async () => {
-    const payload = await api('/api/group/threads?pageSize=100');
-    state.threads = Array.isArray(payload.threads) ? payload.threads : [];
-    if (!state.threads.some((thread) => thread.id === state.selectedThreadId)) {
-      state.selectedThreadId = state.threads[0]?.id || '';
-    }
+    await ensureThreadSummaries();
+    state.lazyLoaded.groupThreads = true;
     renderThreads();
     await loadMessages();
     requestAccordionRefresh();
   };
 
   const loadDirectThreads = async (preferredThreadId = '') => {
-    const payload = await api('/api/inbox/threads?pageSize=100');
-    state.directThreads = Array.isArray(payload.threads) ? payload.threads : [];
-    const nextSelectedId = preferredThreadId || state.selectedDirectThreadId;
-    if (!state.directThreads.some((thread) => thread.id === nextSelectedId)) {
-      state.selectedDirectThreadId = state.directThreads[0]?.id || '';
-    } else {
-      state.selectedDirectThreadId = nextSelectedId;
-    }
+    await ensureDirectThreadSummaries(preferredThreadId);
+    state.lazyLoaded.directThreads = true;
     renderDirectThreads();
     await loadDirectMessages();
     requestAccordionRefresh();
@@ -418,6 +640,7 @@
 
   const bootstrap = async () => {
     const loginUrl = `/auth.html?next=${encodeURIComponent('/client-dashboard.html')}`;
+    renderOperationsShell();
     state.token = localStorage.getItem(TOKEN_KEY) || '';
     if (!state.token) {
       el.session.textContent = 'No active session. Redirecting to login...';
@@ -441,7 +664,12 @@
 
       el.session.textContent = `Logged as ${state.user.name || state.user.email} (${state.user.role})`;
       await loadOverview();
+      await Promise.allSettled([
+        ensureDirectThreadSummaries(),
+        ensureThreadSummaries()
+      ]);
       setupLazySections();
+      requestAccordionRefresh();
     } catch (error) {
       clearSession();
       el.session.textContent = error.message || 'Session expired. Redirecting to login...';
