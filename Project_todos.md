@@ -15,6 +15,8 @@
 - [ ] Re-check the new global `logo | title | account/nav` header proportions on live desktop and mobile, especially the title image width versus the account box width.
 - [ ] Update the live Nginx site file only if it still points to `localhost` or `::1`; keep `127.0.0.1:3000` if the current upstream already matches the real listener.
 - [ ] If exact chronology becomes important, replace the new derived `Company Events` overview in `manager-dashboard` with a persisted audit/event timeline instead of summarising current operational data.
+- [ ] Install a local Playwright browser or point MCP Playwright to a working Chrome/Chromium build; current live-browser checks are blocked because `chrome.exe` is missing on the local machine.
+- [ ] Update the droplet deploy habit to use `/healthz` with a short retry or `sleep 2` after PM2 restart, because immediate `curl http://127.0.0.1:3000/` can race the process start even when PM2 already shows `online`.
 
 ## Completed
 

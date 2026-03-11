@@ -38,3 +38,5 @@
 - Added manager-specific workspace styling in `styles/workspace.css` so the new overview board uses the same dark-gold operational shell and responsive stacking on desktop and mobile.
 - Updated `tests/playwright/mobile-smoke.spec.js` so the manager dashboard regression suite checks the new overview structure and summary counters.
 - Re-ran `cmd /c npm run test:ci` and `cmd /c npm run test:e2e:mobile` after the manager dashboard overview refactor and kept both gates green.
+- Diagnosed the droplet deploy logs and confirmed the process now binds to `127.0.0.1:3000`, while the remaining failed `curl` is consistent with an immediate post-restart timing race rather than a broken listener.
+- Recorded that local live QA through MCP Playwright is currently blocked on the workstation because the expected Chrome executable is missing, so browser-based live inspection needs a local Playwright browser install first.
