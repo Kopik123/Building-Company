@@ -44,12 +44,15 @@ npm run generate:public-pages
 	- `DATABASE_URL`
 	- `JWT_SECRET`
 	- `BOOTSTRAP_ADMIN_KEY`
+	- opcjonalnie `HOST`:
+	  - lokalnie / PM2 na serwerze: `127.0.0.1`
+	  - Docker / kontenery: `0.0.0.0`
 
 4. Uruchom serwer:
 
 	npm start
 
-Serwis będzie dostępny pod `http://localhost:3000`.
+Serwis będzie dostępny pod `http://127.0.0.1:3000` gdy `HOST=127.0.0.1`.
 
 ## Migracje bazy (Umzug)
 

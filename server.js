@@ -12,13 +12,14 @@ if (missingEnvVars.length) {
 }
 
 const PORT = Number(process.env.PORT) || 3000;
+const HOST = String(process.env.HOST || '').trim() || '127.0.0.1';
 const app = createApp();
 
 const startServer = async () => {
   try {
     await runMigrations();
-    app.listen(PORT, () => {
-      console.log(`Server running at http://localhost:${PORT}`);
+    app.listen(PORT, HOST, () => {
+      console.log(`Server running at http://${HOST}:${PORT}`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);

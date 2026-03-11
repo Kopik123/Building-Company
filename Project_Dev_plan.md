@@ -20,3 +20,6 @@
 - Re-ran the Playwright mobile/desktop suite after the homepage restructure and restored tracked test artifacts back to the repository state.
 - Saved `Plans/Professional Client Proposal Quote Form Plan.md` to define the professional quote intake model, phased form UX and portable `client_proposal_quote` data contract.
 - Registered the quote form plan in `Plans/Plan History.md` and linked the next implementation tasks into `Project_todos.md`.
+- Added explicit `HOST` handling in `server.js` so deploys no longer rely on implicit bind behaviour for `app.listen`.
+- Set `HOST=127.0.0.1` in `ecosystem.config.js` for PM2 and `HOST=0.0.0.0` in Docker compose files so both droplet and container flows stay predictable.
+- Updated `README.md` and the follow-up checklist with the new host-binding rule and the need for `pm2 restart --update-env` after deployment.

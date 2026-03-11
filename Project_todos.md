@@ -11,6 +11,7 @@
 - [ ] Re-check the new homepage header/account hierarchy on live desktop and mobile devices after deployment, because the account entry point moved out of the header and into the hero card.
 - [ ] Implement the planned `client_proposal_quote` structure on the public quote page with phased UX, richer project fields and mobile-safe validation.
 - [ ] Decide whether richer quote intake should be stored as structured quote metadata in phase 1 or temporarily mapped into the existing `description` field.
+- [ ] After deploy, restart PM2 with `--update-env` once so the new explicit `HOST` binding is applied on the droplet.
 
 ## Completed
 
@@ -23,3 +24,4 @@
 - [x] Recorded the standing rule that current web work must stay ready for future Android/iOS app rollout.
 - [x] Moved the homepage account entry and public links from the header utility panel into the dedicated `Account` card.
 - [x] Documented a professional `client_proposal_quote` plan for the quote page, manager triage and future Android/iOS portability.
+- [x] Added explicit `HOST` binding so PM2 on Ubuntu and Docker environments use predictable listen addresses.
