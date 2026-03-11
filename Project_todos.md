@@ -46,3 +46,4 @@
 - [x] Kept the client top board lightweight by loading direct/project thread summaries before full thread message histories.
 - [x] Switched Playwright desktop coverage to managed Chromium instead of relying on a locally installed Chrome channel.
 - [x] Updated deploy and cutover documentation to use `ecosystem.config.js --update-env`, `/healthz` and a short post-restart delay.
+- [x] Shifted dark-surface typography tokens to a deeper dark-gold range so text on black surfaces reads as darker premium gold instead of pale gold.
