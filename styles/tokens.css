@@ -1,0 +1,63 @@
+:root {
+  --ll-bg: #040404;
+  --ll-bg-soft: #090909;
+  --ll-surface-dark: #11100d;
+  --ll-surface-ink: #1a1713;
+  --ll-surface-light: #f3eee6;
+  --ll-surface-marble:
+    linear-gradient(144deg, rgba(253, 251, 247, 0.99) 0%, rgba(242, 237, 230, 0.97) 38%, rgba(228, 221, 211, 0.95) 72%, rgba(247, 243, 236, 0.98) 100%);
+  --ll-surface-marble-strong:
+    linear-gradient(152deg, rgba(255, 255, 255, 0.99) 0%, rgba(241, 236, 229, 0.98) 34%, rgba(222, 214, 204, 0.94) 64%, rgba(250, 247, 242, 0.98) 100%);
+  --ll-surface-marble-shadow:
+    linear-gradient(120deg, rgba(16, 14, 12, 0.06) 0%, transparent 18%, rgba(147, 136, 121, 0.12) 44%, transparent 58%, rgba(42, 39, 34, 0.08) 100%);
+  --ll-border-gold: rgba(134, 100, 48, 0.94);
+  --ll-border-soft: rgba(134, 100, 48, 0.42);
+  --ll-border-gold-strong: rgba(172, 135, 76, 0.76);
+  --ll-accent-gold: #b18b4e;
+  --ll-accent-gold-soft: #d6bf93;
+  --ll-text-light: #f7f2eb;
+  --ll-text-dark: #181410;
+  --ll-text-muted: rgba(247, 242, 235, 0.72);
+  --ll-text-muted-dark: rgba(24, 20, 16, 0.68);
+  --ll-shadow-premium: 0 26px 76px rgba(0, 0, 0, 0.42);
+  --ll-shadow-line: inset 0 0 0 1px rgba(134, 100, 48, 0.24);
+  --ll-shadow-frame: inset 0 0 0 1px rgba(255, 255, 255, 0.34);
+  --ll-window-line: rgba(134, 100, 48, 0.32);
+  --ll-window-line-soft: rgba(134, 100, 48, 0.16);
+  --ll-radius-card: 30px;
+  --ll-radius-panel: 20px;
+  --ll-space-2xs: 0.35rem;
+  --ll-space-xs: 0.6rem;
+  --ll-space-sm: 0.95rem;
+  --ll-space-md: 1.35rem;
+  --ll-space-lg: 2rem;
+  --ll-space-xl: 3rem;
+  --ll-space-2xl: 4.75rem;
+  --ll-max-width: 1500px;
+  --ll-header-logo-width: clamp(112px, 9vw, 168px);
+  --ll-header-title-width: min(100%, 980px);
+  --ll-header-row-height: 138px;
+  --ll-line-thickness: 1px;
+}
+
+@media (max-width: 992px) {
+  :root {
+    --ll-header-logo-width: clamp(78px, 12vw, 116px);
+    --ll-header-title-width: min(100%, 520px);
+    --ll-header-row-height: auto;
+    --ll-space-xl: 2.4rem;
+    --ll-space-2xl: 3.25rem;
+  }
+}
+
+@media (max-width: 640px) {
+  :root {
+    --ll-header-logo-width: clamp(66px, 18vw, 92px);
+    --ll-header-title-width: min(100%, 340px);
+    --ll-space-lg: 1.35rem;
+    --ll-space-xl: 2rem;
+    --ll-space-2xl: 2.4rem;
+    --ll-radius-card: 24px;
+    --ll-radius-panel: 18px;
+  }
+}

@@ -10,25 +10,32 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/styles/tokens.css" />
+  <link rel="stylesheet" href="/styles/base.css" />
+  <link rel="stylesheet" href="/styles/public.css" />
+  <link rel="stylesheet" href="/styles/workspace.css" />
 </head>
 <body class="public-site workspace-site page-manager-dashboard">
-  <header class="site-header" id="top">
+    <header class="site-header" id="top">
     <div class="container header-inner grid-12">
-      <a class="brand" href="/index.html" aria-label="Level Lines Studio home">
-        <img src="/logo4.png" alt="Level Lines Studio" class="brand-lockup-image" />
+      <a class="brand brand-mark-link" href="/index.html" aria-label="Level Lines Studio home">
+        <img src="/logo.png" alt="Level Lines Studio icon" class="brand-icon-image" width="1093" height="860" decoding="async" />
       </a>
-      <div class="menu-wrap" data-menu-wrap>
+      <a class="brand brand-title-link" href="/index.html" aria-label="Level Lines Studio home">
+        <img src="/title.png" alt="Level Lines Studio" class="brand-lockup-image brand-title-image" width="3408" height="780" decoding="async" />
+      </a>
+      <div class="header-utility-panel menu-wrap" data-menu-wrap>
+        <a class="header-auth-link" href="/auth.html" data-auth-link data-auth-guest-label="Account">Account</a>
         <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation menu">
           <span class="nav-toggle-line"></span>
           <span class="nav-toggle-line"></span>
           <span class="nav-toggle-line"></span>
         </button>
         <nav class="site-nav" id="site-nav" data-nav-menu aria-label="Main navigation">
-          <a href="/index.html#services" data-nav-link>Services</a>
-          <a href="/index.html#projects" data-nav-link>Projects</a>
-          <a href="/index.html#gallery" data-nav-link>Gallery</a>
-          <a href="/auth.html" data-nav-link data-auth-guest-label="Account">Account</a>
+          <a href="/about.html" data-nav-link>About Us</a>
+          <a href="/gallery.html" data-nav-link>Gallery</a>
+          <a href="/contact.html" data-nav-link>Contact</a>
+          <a href="/quote.html" data-nav-link>Quote</a>
         </nav>
       </div>
     </div>
@@ -677,11 +684,11 @@
         <div class="footer-links" data-brand-service-links data-link-class="footer-service-link">
           <a class="footer-service-link" href="/premium-bathrooms-manchester.html">Full Bathroom Renovations</a>
           <a class="footer-service-link" href="/premium-kitchens-manchester.html">Kitchen Installation and Refurbishment</a>
-          <a class="footer-service-link" href="/index.html#consultation">Tiling incl. Large Format / Wet Showers</a>
-          <a class="footer-service-link" href="/index.html#consultation">Carpentry</a>
-          <a class="footer-service-link" href="/index.html#consultation">External Wall Systems</a>
-          <a class="footer-service-link" href="/index.html#consultation">Interior Wall Systems</a>
-          <a class="footer-service-link" href="/index.html#consultation">Flooring Installation</a>
+          <a class="footer-service-link" href="/quote.html">Tiling incl. Large Format / Wet Showers</a>
+          <a class="footer-service-link" href="/quote.html">Carpentry</a>
+          <a class="footer-service-link" href="/quote.html">External Wall Systems</a>
+          <a class="footer-service-link" href="/quote.html">Interior Wall Systems</a>
+          <a class="footer-service-link" href="/quote.html">Flooring Installation</a>
         </div>
       </div>
       <div class="footer-block">
@@ -689,7 +696,7 @@
         <div class="footer-links">
           <a href="/client-dashboard.html">Client Workspace</a>
           <a href="/auth.html">Account</a>
-          <a href="/index.html#consultation">Private consultation</a>
+          <a href="/quote.html">Quote</a>
           <a href="/privacy.html">Privacy</a>
           <a href="/terms.html">Terms</a>
         </div>
@@ -702,13 +709,15 @@
     </div>
     <div class="container footer-bottom">
       <p>&copy; <span data-current-year></span> Level Lines Studio. All rights reserved.</p>
-      <p class="footer-bottom-note">Plan / Design / Craft</p>
+      <p class="footer-bottom-note">Plan | Design | Craft</p>
     </div>
   </footer>
 
   <script src="/brand.js" defer></script>
+  <script src="/runtime.js" defer></script>
   <script src="/site.js" defer></script>
   <script src="/manager-dashboard.js" defer></script>
 </body>
 </html>
+
 

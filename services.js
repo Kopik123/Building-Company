@@ -67,7 +67,7 @@
 
     const link = document.createElement('a');
     link.className = 'text-link';
-    link.href = sanitize(service.href) || '/index.html#consultation';
+    link.href = sanitize(service.href) || '/quote.html';
     link.textContent = sanitize(service.cta) || 'Request consultation';
 
     body.appendChild(indexNode);

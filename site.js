@@ -1,14 +1,14 @@
 (() => {
-  const TOKEN_KEY = 'll_auth_token';
-  const USER_KEY = 'll_auth_user';
+  const runtime = window.LevelLinesRuntime || {};
+  const TOKEN_KEY = runtime.TOKEN_KEY || 'll_auth_token';
+  const USER_KEY = runtime.USER_KEY || 'll_auth_user';
   const brand = window.LEVEL_LINES_BRAND || null;
 
   const body = document.body;
   const header = document.querySelector('.site-header');
   const navToggle = document.querySelector('[data-nav-toggle]');
   const navMenu = document.querySelector('[data-nav-menu]');
-  const isPublicShell = body?.classList.contains('public-site');
-  const suppressHeaderUtilityActions = isPublicShell;
+  const authLinks = Array.from(document.querySelectorAll('[data-auth-link]'));
   const menuWrap =
     document.querySelector('[data-menu-wrap]') ||
     (navMenu ? navMenu.closest('.menu-wrap') : null) ||
@@ -16,18 +16,18 @@
 
   let menuPreviouslyFocused = null;
 
-  const clearSession = () => {
+  const clearSession = runtime.clearSession || (() => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
-  };
+  });
 
-  const getSavedUser = () => {
+  const getSavedUser = runtime.getStoredUser || (() => {
     try {
       return JSON.parse(localStorage.getItem(USER_KEY) || 'null');
     } catch {
       return null;
     }
-  };
+  });
 
   const setBrandNodeValue = (node, value, href) => {
     if (!node || value == null) return;
@@ -74,10 +74,40 @@
 
     brand.services.forEach((service) => {
       const link = document.createElement('a');
-      link.href = service.href || '/index.html#consultation';
+      link.href = service.href || '/quote.html';
       link.textContent = service.title || 'Service';
       if (linkClass) link.className = linkClass;
       container.appendChild(link);
+    });
+  };
+
+  const renderBrandClaimSegments = (node) => {
+    if (!node || !brand?.claim) return;
+
+    const parts = String(brand.claim)
+      .split(/[|/]/)
+      .map((part) => part.trim())
+      .filter(Boolean);
+
+    if (!parts.length) {
+      node.textContent = brand.claim;
+      return;
+    }
+
+    node.innerHTML = '';
+    node.setAttribute('aria-label', brand.claim);
+
+    parts.forEach((part, index) => {
+      const segment = document.createElement('span');
+      segment.textContent = part;
+      node.appendChild(segment);
+
+      if (index < parts.length - 1) {
+        const divider = document.createElement('span');
+        divider.className = 'studio-claim-divider';
+        divider.setAttribute('aria-hidden', 'true');
+        node.appendChild(divider);
+      }
     });
   };
 
@@ -138,6 +168,10 @@
       setBrandNodeValue(node, brand.claim);
     });
 
+    document.querySelectorAll('[data-brand-claim-segmented]').forEach((node) => {
+      renderBrandClaimSegments(node);
+    });
+
     document.querySelectorAll('[data-brand-region]').forEach((node) => {
       setBrandNodeValue(node, brand.region);
     });
@@ -174,142 +208,19 @@
     return '/auth.html';
   };
 
-  const isAuthLink = (link) => {
-    const href = String(link.getAttribute('href') || '').toLowerCase();
-    return href.includes('auth.html') || /login\s*\/\s*register/i.test(link.textContent || '');
-  };
-
-  const getNavLinks = () => {
-    if (!navMenu) return [];
-    return Array.from(navMenu.querySelectorAll('[data-nav-link]'));
-  };
-
-  const clearInjectedAccountItems = () => {
-    if (!navMenu) return;
-    navMenu.querySelectorAll('[data-nav-injected="account"]').forEach((node) => node.remove());
-  };
-
-  const createNavAnchor = (href, label) => {
-    const anchor = document.createElement('a');
-    anchor.href = href;
-    anchor.textContent = label;
-    anchor.dataset.navLink = '';
-    anchor.classList.add('nav-account-sub');
-    return anchor;
-  };
-
-  const insertNavItemAfter = (baseLink, newAnchor) => {
-    if (!baseLink || !newAnchor) return;
-
-    if (navMenu && navMenu.tagName === 'UL') {
-      const li = document.createElement('li');
-      li.dataset.navInjected = 'account';
-      li.appendChild(newAnchor);
-
-      const baseLi = baseLink.closest('li');
-      if (baseLi && baseLi.parentElement === navMenu) {
-        baseLi.insertAdjacentElement('afterend', li);
-      } else {
-        navMenu.appendChild(li);
-      }
-      return;
-    }
-
-    newAnchor.dataset.navInjected = 'account';
-    baseLink.insertAdjacentElement('afterend', newAnchor);
-  };
-
   const getGuestAuthLabel = (authLink) => {
     return String(authLink?.getAttribute('data-auth-guest-label') || '').trim() || brand?.publicAuthLabel || 'Account';
-  };
-
-  const ensureHeaderAccountButton = (loggedIn, href) => {
-    const headerInner = document.querySelector('.header-inner');
-    if (!headerInner) return;
-
-    if (suppressHeaderUtilityActions) {
-      headerInner.querySelector('[data-header-account-btn]')?.remove();
-      return;
-    }
-
-    let accountBtn = headerInner.querySelector('[data-header-account-btn]');
-    if (!accountBtn) {
-      accountBtn = document.createElement('a');
-      accountBtn.dataset.headerAccountBtn = '1';
-      accountBtn.className = 'btn btn-outline header-account-btn';
-
-      const cta = headerInner.querySelector('.header-cta');
-      if (cta) {
-        cta.insertAdjacentElement('beforebegin', accountBtn);
-      } else {
-        headerInner.appendChild(accountBtn);
-      }
-    }
-
-    accountBtn.href = loggedIn ? href : '/auth.html';
-    accountBtn.textContent = 'Account';
-    accountBtn.title = loggedIn ? 'Open account settings' : 'Open account access';
-    accountBtn.classList.toggle('is-authenticated', loggedIn);
-  };
-
-  const ensureDrawerCta = () => {
-    if (suppressHeaderUtilityActions) {
-      navMenu?.querySelector('[data-nav-drawer-cta]')?.remove();
-      navMenu?.querySelector('.nav-drawer-cta-wrap')?.remove();
-      return;
-    }
-
-    if (!navMenu || navMenu.querySelector('[data-nav-drawer-cta]')) return;
-
-    const cta = document.createElement('a');
-    cta.href = '/index.html#consultation';
-    cta.className = 'btn btn-gold nav-drawer-cta';
-    cta.dataset.navDrawerCta = '1';
-    cta.textContent = 'Request Private Consultation';
-
-    if (navMenu.tagName === 'UL') {
-      const li = document.createElement('li');
-      li.className = 'nav-drawer-cta-wrap';
-      li.appendChild(cta);
-      navMenu.appendChild(li);
-      return;
-    }
-
-    navMenu.appendChild(cta);
   };
 
   const updateNavigationForSession = (user) => {
     const loggedIn = Boolean(user && localStorage.getItem(TOKEN_KEY));
     const accountHref = accountPathForRole(user?.role);
-    const navLinks = getNavLinks();
-    const authLink = navLinks.find(isAuthLink);
-
-    ensureHeaderAccountButton(loggedIn, accountHref);
-    clearInjectedAccountItems();
-
-    if (!authLink) return;
-
-    if (isPublicShell) {
-      authLink.textContent = getGuestAuthLabel(authLink);
-      authLink.setAttribute('href', '/auth.html');
-      authLink.classList.remove('nav-account-link');
-      return;
-    }
-
-    authLink.textContent = loggedIn ? 'Account' : getGuestAuthLabel(authLink);
-    authLink.setAttribute('href', loggedIn ? accountHref : '/auth.html');
-    authLink.classList.toggle('nav-account-link', loggedIn);
-
-    if (!loggedIn) return;
-
-    const settings = createNavAnchor('/auth.html', 'Account Settings');
-    const workspace = createNavAnchor(accountHref, user?.role === 'client' ? 'Client Workspace' : 'Staff Workspace');
-    const logout = createNavAnchor('#logout', 'Logout');
-    logout.dataset.navLogout = '1';
-
-    insertNavItemAfter(authLink, settings);
-    insertNavItemAfter(settings, workspace);
-    insertNavItemAfter(workspace, logout);
+    if (!authLinks.length) return;
+    authLinks.forEach((link) => {
+      link.textContent = loggedIn ? 'Account' : getGuestAuthLabel(link);
+      link.setAttribute('href', loggedIn ? accountHref : '/auth.html');
+      link.classList.toggle('is-authenticated', loggedIn);
+    });
   };
 
   const validateSession = async () => {
@@ -385,8 +296,6 @@
   }
 
   if (navMenu && navToggle) {
-    ensureDrawerCta();
-
     navToggle.addEventListener('click', () => {
       const willOpen = !navMenu.classList.contains('is-open');
       setMenuState(willOpen);
@@ -395,15 +304,6 @@
     navMenu.addEventListener('click', (event) => {
       const link = event.target.closest('a');
       if (!link) return;
-
-      if (link.dataset.navLogout === '1') {
-        event.preventDefault();
-        clearSession();
-        updateNavigationForSession(null);
-        closeMenu();
-        window.location.assign('/auth.html');
-        return;
-      }
 
       if (link.hasAttribute('data-nav-link')) {
         closeMenu();
@@ -447,7 +347,6 @@
       if (!isMobileMenuMode() && navMenu.classList.contains('is-open')) {
         closeMenu();
       }
-      ensureHeaderAccountButton(Boolean(localStorage.getItem(TOKEN_KEY)), accountPathForRole(getSavedUser()?.role));
     });
   }
 
@@ -534,11 +433,54 @@
     });
   };
 
+  const setupHomePageMotion = () => {
+    if (!body?.classList.contains('page-home')) return;
+
+    body.classList.add('has-home-motion');
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const sections = Array.from(document.querySelectorAll('[data-home-section]'));
+
+    if (reduceMotion) {
+      body.classList.add('is-home-ready');
+      sections.forEach((node) => node.classList.add('is-visible'));
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        body.classList.add('is-home-ready');
+      });
+    });
+
+    if (!('IntersectionObserver' in window)) {
+      sections.forEach((node) => node.classList.add('is-visible'));
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          entry.target.classList.add('is-visible');
+          observer.unobserve(entry.target);
+        });
+      },
+      {
+        threshold: 0.18,
+        rootMargin: '0px 0px -10% 0px'
+      }
+    );
+
+    sections.forEach((node) => observer.observe(node));
+  };
+
   applyBrandContent();
   validateSession();
   window.addEventListener('ll:session-changed', validateSession);
 
   setupDashboardAccordions();
+  setupHomePageMotion();
 
   const yearEls = document.querySelectorAll('[data-current-year], [data-year]');
   if (yearEls.length) {

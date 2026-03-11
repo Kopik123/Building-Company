@@ -21,6 +21,20 @@ const mockClientSession = async (page) => {
     }));
   });
 
+  await page.route('**/api/auth/me', async (route) => {
+    await route.fulfill({
+      json: {
+        user: {
+          id: 'client-1',
+          name: 'Marta Client',
+          email: 'client@example.com',
+          role: 'client',
+          phone: '+44 7942 874 446'
+        }
+      }
+    });
+  });
+
   await page.route('**/api/client/overview?includeThreads=false', async (route) => {
     await route.fulfill({
       json: {
@@ -112,6 +126,20 @@ const mockManagerSession = async (page) => {
       email: 'manager@example.com',
       role: 'manager'
     }));
+  });
+
+  await page.route('**/api/auth/me', async (route) => {
+    await route.fulfill({
+      json: {
+        user: {
+          id: 'manager-1',
+          name: 'Daniel Manager',
+          email: 'manager@example.com',
+          role: 'manager',
+          phone: '+44 7942 874 446'
+        }
+      }
+    });
   });
 
   await page.route('**/api/manager/projects?*', async (route) => {
@@ -312,11 +340,14 @@ const mockManagerSession = async (page) => {
   });
 };
 
-test('index mobile menu opens and shows auth entry', async ({ page }) => {
+test('homepage mobile menu opens and keeps the shared account shell', async ({ page }) => {
   await page.goto('/index.html');
   await openNavIfNeeded(page);
-  const nav = page.locator('[data-nav-menu]');
-  await expect(page.locator('a[href="/auth.html"]').first()).toBeVisible();
+  await expect(page.locator('[data-nav-menu] a[href="/about.html"]')).toBeVisible();
+  await expect(page.locator('[data-nav-menu] a[href="/gallery.html"]')).toBeVisible();
+  await expect(page.locator('[data-nav-menu] a[href="/contact.html"]')).toBeVisible();
+  await expect(page.locator('[data-nav-menu] a[href="/quote.html"]')).toBeVisible();
+  await expect(page.locator('[data-auth-link]').first()).toContainText(/^account$/i);
 });
 
 test('auth page renders login/register forms on mobile', async ({ page }) => {
@@ -362,14 +393,16 @@ test('client dashboard mobile menu opens', async ({ page }) => {
   await page.goto('/client-dashboard.html');
   await expect(page.locator('body.public-site.workspace-site.page-client-dashboard')).toBeVisible();
   await openNavIfNeeded(page);
-  await expect(page.locator('[data-nav-menu] a[href="/auth.html"]').first()).toBeVisible();
+  await expect(page.locator('[data-auth-link]').first()).toContainText(/account/i);
 });
 
 test('client dashboard keeps key logged-in cards open on mobile', async ({ page }) => {
   await mockClientSession(page);
   await page.goto('/client-dashboard.html');
   await expect(page.locator('#client-projects-list .dashboard-item').first()).toBeVisible();
+  await page.locator('#client-direct-threads-list').scrollIntoViewIfNeeded();
   await expect(page.locator('#client-direct-threads-list .dashboard-item').first()).toBeVisible();
+  await page.locator('#client-threads-list').scrollIntoViewIfNeeded();
   await expect(page.locator('#client-threads-list .dashboard-item').first()).toBeVisible();
 });
 
@@ -378,7 +411,7 @@ test('manager dashboard mobile menu opens', async ({ page }) => {
   await page.goto('/manager-dashboard.html');
   await expect(page.locator('body.public-site.workspace-site.page-manager-dashboard')).toBeVisible();
   await openNavIfNeeded(page);
-  await expect(page.locator('[data-nav-menu] a[href="/auth.html"]').first()).toBeVisible();
+  await expect(page.locator('[data-auth-link]').first()).toContainText(/account/i);
 });
 
 test('manager dashboard exposes project controls for logged session on mobile', async ({ page }) => {
@@ -388,7 +421,10 @@ test('manager dashboard exposes project controls for logged session on mobile', 
   await expect(page.locator('#projects-list button').first()).toBeVisible();
   await page.locator('#projects-list button').first().evaluate((node) => node.click());
   await expect(page.locator('#project-edit-form input[name="title"]')).toBeVisible();
+  await page.locator('#estimates-list').scrollIntoViewIfNeeded();
   await expect(page.locator('#estimates-list .dashboard-item').first()).toBeVisible();
+  await page.locator('#manager-direct-threads-list').scrollIntoViewIfNeeded();
   await expect(page.locator('#manager-direct-threads-list .dashboard-item').first()).toBeVisible();
+  await page.locator('#manager-group-threads-list').scrollIntoViewIfNeeded();
   await expect(page.locator('#manager-group-threads-list .dashboard-item').first()).toBeVisible();
 });

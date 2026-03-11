@@ -44,12 +44,21 @@ npm run generate:public-pages
 	- `DATABASE_URL`
 	- `JWT_SECRET`
 	- `BOOTSTRAP_ADMIN_KEY`
+	- opcjonalnie `HOST`:
+	  - lokalnie / PM2 na serwerze: `127.0.0.1`
+	  - Docker / kontenery: `0.0.0.0`
 
 4. Uruchom serwer:
 
 	npm start
 
-Serwis będzie dostępny pod `http://localhost:3000`.
+Serwis będzie dostępny pod `http://127.0.0.1:3000` gdy `HOST=127.0.0.1`.
+
+Szybki health check procesu HTTP:
+
+```bash
+curl -sS http://127.0.0.1:3000/healthz
+```
 
 ## Migracje bazy (Umzug)
 
@@ -69,6 +78,13 @@ npm run migrate:status
 - `GET /api/gallery` zwraca listę zdjęć z folderu `Gallery` (sortowanie po dacie z nazwy pliku).
 
 ## API testy (curl)
+
+### 0) Health checks
+
+```bash
+curl -sS http://127.0.0.1:3000/healthz
+curl -sS http://127.0.0.1:3000/api/v2/health
+```
 
 ### 1) Guest quote bez logowania
 

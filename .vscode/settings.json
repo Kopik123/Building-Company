@@ -1,12 +1,53 @@
 {
-    "chat.tools.terminal.autoApprove": {
-        "/^pwd && git rev-parse --is-inside-work-tree && git ls-files \\| head -n 200$/": {
-            "approve": true,
-            "matchCommandLine": true
-        }
-    },
-    "sonarlint.connectedMode.project": {
-        "connectionId": "kopik123",
-        "projectKey": "Kopik123_Building-Company"
+  "chat.tools.terminal.autoApprove": {
+    "/^pwd && git rev-parse --is-inside-work-tree && git ls-files \\| head -n 200$/": {
+      "approve": true,
+      "matchCommandLine": true
     }
+  },
+  "sonarlint.connectedMode.project": {
+    "connectionId": "kopik123",
+    "projectKey": "Kopik123_Building-Company"
+  },
+  "editor.inlayHints.enabled": true,
+  "editor.inlayHints.fontFamily": "JetBrains Mono",
+  "editor.inlayHints.fontSize": 12,
+  "accessibility.signals.lineHasError": {
+    "sound": "on"
+  },
+  "accessibility.signals.lineHasWarning": {
+    "sound": "on",
+    "announcement": "auto"
+  },
+  "accessibility.signals.lineHasInlineSuggestion": {
+    "sound": "on"
+  },
+  "workbench.statusBar.visible": true,
+  "editor.bracketPairColorization.enabled": true,
+  "editor.bracketPairColorization.independentColorPoolPerBracketType": true,
+  "editor.guides.bracketPairs": true,
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "editor.linkedEditing": true,
+  "editor.minimap.enabled": false,
+  "editor.renderWhitespace": "selection",
+  "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 800,
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "search.useIgnoreFiles": true,
+  "emmet.includeLanguages": {
+    "javascript": "html"
+  },
+  "css.validate": true,
+  "javascript.validate.enable": true,
+  "html.format.wrapLineLength": 120,
+  "prettier.printWidth": 120,
+  "prettier.singleQuote": true,
+  "prettier.semi": true,
+  "workbench.editor.enablePreview": false,
+  "explorer.confirmDelete": false,
+  "terminal.integrated.defaultProfile.windows": "PowerShell"
 }

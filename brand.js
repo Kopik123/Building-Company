@@ -1,13 +1,14 @@
 ﻿window.LEVEL_LINES_BRAND = {
   name: 'Level Lines Studio',
   shortName: 'Level Lines',
-  claim: 'Plan / Design / Craft',
+  claim: 'Plan | Design | Craft',
   region: 'North West - Lancashire',
+  headerIconPath: '/logo.png',
   titleImagePath: '/title.png',
   workspaceImagePath: '/logo4.png',
   publicAuthLabel: 'Account',
-  consultationCtaLabel: 'Request Private Consultation',
-  footerCopy: 'Selective bathroom, kitchen and interior renovation briefs delivered across the North West with measured planning, quiet material confidence and finish control.',
+  consultationCtaLabel: 'Send Enquiry',
+  footerCopy: 'A premium renovation studio for bathrooms, kitchens and interiors, shaped with quiet planning, material restraint and finish control across the North West.',
   email: 'LevelLineStudioMCR@gmail.com',
   phones: [
     {
@@ -24,15 +25,24 @@
   budgetRanges: ['£8,000-£12,000', '£12,000-£20,000', '£20,000-£30,000', '£30,000+'],
   copy: {
     home: {
-      heroLead: 'Level Lines Studio delivers selective bathroom, kitchen and interior renovation briefs for homeowners who value finish control, material restraint and a calmer building process.',
-      servicesTitle: 'A curated renovation scope shaped around precision, not trade-by-trade fragmentation.',
-      servicesLead: 'Bathrooms, kitchens, large-format tiling, carpentry, wall systems and flooring are structured as one premium studio scope, so layout logic, detailing and finish control stay aligned.',
-      processLead: 'The studio method is simple: define the brief properly, shape a restrained material direction and deliver with clean execution.',
-      areasLead: 'Coverage sits in the North West so projects stay close enough for direct studio oversight, tighter sequencing and calmer communication.',
-      contactLead: 'Direct studio numbers and email stay visible because early conversations should feel precise, quiet and uncomplicated.',
+      heroLead: 'Level Lines Studio shapes premium bathroom, kitchen and interior renovation briefs for homeowners who expect strong line quality, quieter luxury and a controlled building process.',
+      servicesTitle: 'A curated renovation scope held in one premium studio structure.',
+      servicesLead: 'Bathrooms, kitchens, large-format tiling, carpentry, wall systems and flooring are held in one composed scope, so layout logic, detailing and finish control stay aligned.',
+      processLead: 'Plan, design and craft are treated as one disciplined sequence: define the brief properly, shape the material language and execute without noise.',
+      areasLead: 'The studio keeps its footprint close enough for direct oversight, tighter sequencing and more controlled communication.',
+      contactLead: 'Direct studio numbers and email remain visible because first conversations should feel precise, calm and uncomplicated.',
       consultationTitle: 'Send Enquiry',
       consultationLead:
         'Share the rooms involved, the finish ambition and your timing. The studio replies with a measured next step.'
+    },
+    about: {
+      heroLead: 'A premium renovation studio shaped around line quality, restrained materials and execution that feels deliberate rather than improvised.'
+    },
+    contact: {
+      heroLead: 'Contact the studio directly when the brief calls for premium finish control, cleaner planning and a quieter route from enquiry to site.'
+    },
+    quote: {
+      heroLead: 'Use one private enquiry route for bathroom, kitchen and interior briefs, then describe the rooms, timing and finish ambition.'
     }
   },
   serviceAreas: [
@@ -74,7 +84,7 @@
       category: 'tiling',
       aliases: ['tiling', 'tiles', 'tile setting', 'tile installation', 'large format tiling', 'wet showers'],
       image: '/Gallery/premium/bathroom-tiles.jpg',
-      href: '/index.html#consultation',
+      href: '/quote.html',
       cta: 'Request consultation',
       description: 'Tiling for large-format surfaces and wet showers delivered with straight setting-out, aligned cuts and disciplined trims.'
     },
@@ -84,7 +94,7 @@
       category: 'joinery',
       aliases: ['carpentry', 'joinery', 'bespoke joinery', 'trim work'],
       image: '/Gallery/premium/exterior-wood-gables.jpg',
-      href: '/index.html#consultation',
+      href: '/quote.html',
       cta: 'Discuss carpentry',
       description: 'Carpentry and joinery delivered with clean reveals, storage detailing, trim precision and a finish standard that matches the wider brief.'
     },
@@ -94,7 +104,7 @@
       category: 'rendering',
       aliases: ['rendering', 'outdoor', 'external wall systems', 'external wall system', 'external walls', 'facade enhancement'],
       image: '/Gallery/premium/exterior-front.jpg',
-      href: '/index.html#consultation',
+      href: '/quote.html',
       cta: 'Discuss exterior scope',
       description: 'External wall systems delivered with envelope awareness, finish consistency and disciplined site sequencing.'
     },
@@ -104,7 +114,7 @@
       category: 'interior',
       aliases: ['interior', 'interior wall systems', 'interior wall system', 'internal wall systems', 'internal wall system', 'internal walls', 'full interior refurbishment', 'full-interior-refurbishment'],
       image: '/Gallery/premium/brick-detail-charcoal.jpg',
-      href: '/index.html#consultation',
+      href: '/quote.html',
       cta: 'Discuss wall systems',
       description: 'Interior wall systems planned for clean lines, correct build-ups, service coordination and durable performance.'
     },
@@ -114,7 +124,7 @@
       category: 'other',
       aliases: ['flooring', 'flooring installation', 'floor installation', 'floor fit-out'],
       image: '/Gallery/premium/brick-dark-main.jpg',
-      href: '/index.html#consultation',
+      href: '/quote.html',
       cta: 'Discuss flooring',
       description: 'Flooring installation delivered with level preparation, careful setting-out and a finish standard that matches the wider brief.'
     }
