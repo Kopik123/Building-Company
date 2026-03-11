@@ -94,6 +94,16 @@ const createApp = () => {
   app.use(compression());
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true }));
+
+  app.get('/healthz', (_req, res) => {
+    res.setHeader('Cache-Control', 'no-store');
+    return res.json({
+      status: 'ok',
+      service: 'building-company',
+      uptimeSeconds: Math.round(process.uptime())
+    });
+  });
+
   app.use('/api/', globalLimiter);
   app.use('/api/auth', authLimiter);
   app.use('/api/v2/auth', authLimiter);

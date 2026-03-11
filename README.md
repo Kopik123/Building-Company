@@ -54,6 +54,12 @@ npm run generate:public-pages
 
 Serwis będzie dostępny pod `http://127.0.0.1:3000` gdy `HOST=127.0.0.1`.
 
+Szybki health check procesu HTTP:
+
+```bash
+curl -sS http://127.0.0.1:3000/healthz
+```
+
 ## Migracje bazy (Umzug)
 
 Migracje uruchamiają się automatycznie przy starcie aplikacji (dev i production).
@@ -72,6 +78,13 @@ npm run migrate:status
 - `GET /api/gallery` zwraca listę zdjęć z folderu `Gallery` (sortowanie po dacie z nazwy pliku).
 
 ## API testy (curl)
+
+### 0) Health checks
+
+```bash
+curl -sS http://127.0.0.1:3000/healthz
+curl -sS http://127.0.0.1:3000/api/v2/health
+```
 
 ### 1) Guest quote bez logowania
 

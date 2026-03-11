@@ -26,3 +26,5 @@
 - Reworked the shared site shell so public pages, legal pages and workspace pages all use the same `logo | title | account/nav` header structure instead of the earlier homepage-specific exception.
 - Updated `brand.js`, `scripts/publicPages.shared.js`, `scripts/publicPageRenderer.js` and the manual HTML files so the guest-facing auth label is consistently `Account`.
 - Regenerated the public service/location pages and re-ran the API + Playwright suites after the shell change to verify desktop and mobile behaviour.
+- Added `/healthz` in `app.js` as a simple process-level health endpoint with `no-store` caching, alongside the existing `/api/v2/health`.
+- Extended the legacy app tests and deploy documentation so droplet checks can use `/healthz` directly, while leaving the Nginx upstream on `127.0.0.1:3000` because that is the listener confirmed by `ss`.

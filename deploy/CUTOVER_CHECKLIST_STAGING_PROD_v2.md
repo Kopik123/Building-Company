@@ -24,6 +24,7 @@ npm run migrate
 pm2 restart "$PM2_NAME" --update-env
 pm2 save
 
+curl -sS "https://$DOMAIN/healthz"; echo
 curl -sS "https://$DOMAIN/api/v2/health"; echo
 curl -sS "https://$DOMAIN/api/v2/services" | head -c 400; echo
 ```
@@ -62,6 +63,7 @@ npm run migrate
 pm2 restart "$PM2_NAME" --update-env
 pm2 save
 
+curl -sS "https://$DOMAIN/healthz"; echo
 curl -sS "https://$DOMAIN/api/v2/health"; echo
 curl -I "https://$DOMAIN/auth.html" | head -n 1
 curl -I "https://$DOMAIN/client-dashboard.html" | head -n 1

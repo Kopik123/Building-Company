@@ -103,3 +103,19 @@ test('createApp keeps legacy contact validation and api 404 responses', async ()
 
   assert.equal(missingRoute.body?.error, 'API route not found');
 });
+
+test('createApp exposes a simple healthz endpoint for process checks', async () => {
+  mockModels(createModelsStub());
+
+  const { createApp } = loadRoute('app.js');
+  const app = createApp();
+
+  const response = await request(app)
+    .get('/healthz')
+    .expect(200);
+
+  assert.equal(response.headers['cache-control'], 'no-store');
+  assert.equal(response.body?.status, 'ok');
+  assert.equal(response.body?.service, 'building-company');
+  assert.equal(typeof response.body?.uptimeSeconds, 'number');
+});
