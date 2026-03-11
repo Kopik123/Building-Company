@@ -1,13 +1,16 @@
+const assetManifest = require('../asset-manifest');
+const brandAssets = assetManifest.brand || {};
+
 module.exports = {
   siteUrl: 'https://levellines.co.uk',
   brandName: 'Level Lines Studio',
   claim: 'Plan | Design | Craft',
   region: 'North West - Lancashire',
-  headerIconPath: '/logo.png',
+  headerIconPath: brandAssets.headerIcon?.fallback || '/logo.png',
   email: 'LevelLineStudioMCR@gmail.com',
-  logoPath: '/title.png',
-  titleImagePath: '/title.png',
-  workspaceLogoPath: '/logo4.png',
+  logoPath: brandAssets.title?.fallback || '/title.png',
+  titleImagePath: brandAssets.title?.fallback || '/title.png',
+  workspaceLogoPath: brandAssets.workspace?.fallback || '/logo4.png',
   publicAuthLabel: 'Account',
   consultationCtaLabel: 'Send Enquiry',
   enquiryTitle: 'Send Enquiry',
@@ -62,3 +65,4 @@ module.exports = {
     { href: '/terms.html', label: 'Terms' }
   ]
 };
+

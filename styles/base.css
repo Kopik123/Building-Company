@@ -647,6 +647,19 @@ p { margin: 0 0 var(--space-2); }
   will-change: filter;
 }
 
+.roller-card picture,
+.project-chip picture {
+  display: block;
+  width: 100%;
+}
+
+.roller-card picture img,
+.project-chip picture img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
 .roller-card::after {
   content: '';
   position: absolute;
@@ -709,6 +722,12 @@ p { margin: 0 0 var(--space-2); }
 }
 
 .project-chip img {
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+}
+
+.project-chip picture img,
+.project-chip-image {
   aspect-ratio: 16 / 10;
   object-fit: cover;
 }
@@ -2799,7 +2818,9 @@ body.public-site .service-card {
 body.public-site .service-card-media img,
 body.public-site .project-card img,
 body.public-site .feature-image,
-body.public-site .media-strip img {
+body.public-site .feature-image-frame img,
+body.public-site .media-strip img,
+body.public-site .media-picture img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -2953,7 +2974,9 @@ body.public-site .roller-card {
 }
 
 body.public-site .roller-card img,
-body.public-site .project-chip img {
+body.public-site .roller-card picture img,
+body.public-site .project-chip img,
+body.public-site .project-chip picture img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -2983,7 +3006,8 @@ body.public-site .project-chip span {
   font-weight: 600;
 }
 
-body.public-site .project-chip img {
+body.public-site .project-chip img,
+body.public-site .project-chip picture img {
   border-radius: 12px;
   aspect-ratio: 1 / 1;
 }
@@ -3190,7 +3214,8 @@ body.public-site .studio-project-strip .project-chip {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.38);
 }
 
-body.public-site .studio-project-strip .project-chip img {
+body.public-site .studio-project-strip .project-chip img,
+body.public-site .studio-project-strip .project-chip picture img {
   border-radius: 14px;
   aspect-ratio: 1 / 1;
 }
@@ -3354,8 +3379,16 @@ body.public-site .media-strip {
   gap: 14px;
 }
 
+body.public-site .feature-image-frame,
+body.public-site .media-picture {
+  display: block;
+  width: 100%;
+}
+
 body.public-site .media-strip img,
-body.public-site .feature-image {
+body.public-site .media-picture img,
+body.public-site .feature-image,
+body.public-site .feature-image-frame img {
   border-radius: 24px;
   aspect-ratio: 4 / 3;
   box-shadow: var(--public-shadow);
@@ -5499,6 +5532,14 @@ body.workspace-site .brand-title-link {
   justify-content: center;
   width: min(22vw, 240px);
   z-index: 2;
+}
+
+body.public-site .brand-mark-link picture,
+body.public-site .brand-title-link picture,
+body.workspace-site .brand-mark-link picture,
+body.workspace-site .brand-title-link picture {
+  display: block;
+  width: 100%;
 }
 
 body.public-site .brand-icon-image,

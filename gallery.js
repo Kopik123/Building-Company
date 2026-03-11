@@ -1,4 +1,18 @@
 (() => {
+  const runtime = window.LevelLinesRuntime || {};
+  const getOptimizedMedia = runtime.getOptimizedMedia || ((src) => ({ fallback: src }));
+  const createResponsivePicture = runtime.createResponsivePicture || ((media, options = {}) => {
+    const image = document.createElement('img');
+    image.src = media?.fallback || media?.src || '';
+    image.alt = options.alt || '';
+    image.loading = options.loading || 'lazy';
+    image.decoding = options.decoding || 'async';
+    if (options.imgClassName) image.className = options.imgClassName;
+    if (media?.width) image.width = media.width;
+    if (media?.height) image.height = media.height;
+    return image;
+  });
+
   const roller = document.querySelector('[data-gallery-roller]');
   const stage = document.querySelector('[data-gallery-stage]');
   const projectStrip = document.querySelector('[data-gallery-projects]');
@@ -162,7 +176,11 @@
       if (!src) return null;
       return {
         src,
-        label: String(entry.label || '').trim() || labelFromImagePath(src)
+        label: String(entry.label || '').trim() || labelFromImagePath(src),
+        media: getOptimizedMedia(src, {
+          sizes: entry.sizes,
+          thumbnailSizes: entry.thumbnailSizes
+        })
       };
     }
 
@@ -170,7 +188,8 @@
     if (!src) return null;
     return {
       src,
-      label: labelFromImagePath(src)
+      label: labelFromImagePath(src),
+      media: getOptimizedMedia(src)
     };
   };
 
@@ -395,10 +414,13 @@
       card.className = 'roller-card is-hidden';
       card.dataset.index = String(index);
 
-      const image = document.createElement('img');
-      image.src = imageItem.src;
-      image.alt = `${project.name} - ${imageItem.label}`;
-      image.loading = 'lazy';
+      const image = createResponsivePicture(imageItem.media, {
+        alt: `${project.name} - ${imageItem.label}`,
+        className: 'roller-picture',
+        imgClassName: 'roller-image',
+        loading: 'lazy',
+        sizes: imageItem.media?.sizes
+      });
 
       const caption = document.createElement('p');
       caption.className = 'roller-caption';
@@ -430,10 +452,13 @@
       button.setAttribute('aria-label', `Show project ${project.name}`);
       button.setAttribute('aria-pressed', 'false');
 
-      const image = document.createElement('img');
-      image.src = project.images[0].src;
-      image.alt = `${project.name} thumbnail`;
-      image.loading = 'lazy';
+      const image = createResponsivePicture(project.images[0].media, {
+        alt: `${project.name} thumbnail`,
+        className: 'project-chip-picture',
+        imgClassName: 'project-chip-image',
+        loading: 'lazy',
+        sizes: project.images[0].media?.thumbnailSizes || project.images[0].media?.sizes
+      });
 
       const copy = document.createElement('div');
       copy.className = 'project-chip-copy';

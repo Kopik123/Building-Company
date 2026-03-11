@@ -9,23 +9,32 @@ const openNavIfNeeded = async (page) => {
   }
 };
 
+const expectNoHorizontalScroll = async (page) => {
+  const hasOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 2);
+  expect(hasOverflow).toBeFalsy();
+};
+
 test('homepage renders premium shell, new IA and homepage section order', async ({ page }) => {
   await page.goto('/index.html');
 
   await expect(page.locator('body.public-site.page-home')).toBeVisible();
   await expect(page.locator('.site-header .brand-title-link .brand-title-image')).toBeVisible();
+  await expect(page.locator('.brand-mark-link picture source[type="image/avif"]')).toHaveCount(1);
+  await expect(page.locator('.brand-title-link picture source[type="image/webp"]')).toHaveCount(1);
   await expect(page.locator('.home-hero-copy h1')).toContainText(/premium bathroom, kitchen and interior renovation studio/i);
   await expect(page.locator('#projects')).toBeVisible();
   await expect(page.locator('#gallery')).toBeVisible();
   await expect(page.locator('#services')).toBeVisible();
   await expect(page.locator('#contact')).toBeVisible();
   await expect(page.locator('#quote')).toBeVisible();
+  await expect(page.locator('.gallery-stage picture img').first()).toBeVisible();
   await openNavIfNeeded(page);
   await expect(page.locator('[data-nav-menu] a[href="/about.html"]')).toBeVisible();
   await expect(page.locator('[data-nav-menu] a[href="/gallery.html"]')).toBeVisible();
   await expect(page.locator('[data-nav-menu] a[href="/contact.html"]')).toBeVisible();
   await expect(page.locator('[data-nav-menu] a[href="/quote.html"]')).toBeVisible();
   await expect(page.locator('[data-auth-link]').first()).toContainText(/^account$/i);
+  await expectNoHorizontalScroll(page);
 });
 
 test('brand pages render about, gallery, contact and quote routes', async ({ page }) => {

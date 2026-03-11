@@ -1,11 +1,14 @@
-ï»¿window.LEVEL_LINES_BRAND = {
+const assetManifest = window.LEVEL_LINES_ASSETS || {};
+const brandAssets = assetManifest.brand || {};
+
+window.LEVEL_LINES_BRAND = {
   name: 'Level Lines Studio',
   shortName: 'Level Lines',
   claim: 'Plan | Design | Craft',
   region: 'North West - Lancashire',
-  headerIconPath: '/logo.png',
-  titleImagePath: '/title.png',
-  workspaceImagePath: '/logo4.png',
+  headerIconPath: brandAssets.headerIcon?.fallback || '/logo.png',
+  titleImagePath: brandAssets.title?.fallback || '/title.png',
+  workspaceImagePath: brandAssets.workspace?.fallback || '/logo4.png',
   publicAuthLabel: 'Account',
   consultationCtaLabel: 'Send Enquiry',
   footerCopy: 'A premium renovation studio for bathrooms, kitchens and interiors, shaped with quiet planning, material restraint and finish control across the North West.',
@@ -22,7 +25,7 @@
       href: 'tel:+447304506391'
     }
   ],
-  budgetRanges: ['Â£8,000-Â£12,000', 'Â£12,000-Â£20,000', 'Â£20,000-Â£30,000', 'Â£30,000+'],
+  budgetRanges: ['£8,000-£12,000', '£12,000-£20,000', '£20,000-£30,000', '£30,000+'],
   copy: {
     home: {
       heroLead: 'Level Lines Studio shapes premium bathroom, kitchen and interior renovation briefs for homeowners who expect strong line quality, quieter luxury and a controlled building process.',
@@ -130,5 +133,6 @@
     }
   ]
 };
+
 
 

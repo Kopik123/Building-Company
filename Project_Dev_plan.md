@@ -51,3 +51,13 @@
 - Updated README and the cutover checklist so droplet deploy instructions restart through `ecosystem.config.js --update-env`, wait briefly after PM2 restart and validate via `/healthz`.
 - Re-ran the available local validation entry points and confirmed the current blocker is environmental: both `npm run test:ci` and `npm run test:e2e:mobile` still fail locally with `spawn EPERM`, so the repo config is improved but the workstation runner still needs fixing.
 - Adjusted the shared dark-surface text tokens in `styles/tokens.css` from pale gold toward a deeper dark-gold range so headings, nav and workspace text on black surfaces now match the premium direction more closely.
+- Saved `Plans/Live QA, Asset Optimization And Richer Gold Tuning.md` and registered it in `Plans/Plan History.md` to track the runtime asset and live-QA pass explicitly.
+- Added `scripts/asset-optimization.config.js` and `scripts/optimize-assets.js`, using `sharp` to generate repeatable AVIF/WebP/fallback variants for brand assets and the runtime `Gallery/premium` set.
+- Updated `package.json` so `npm run optimize:assets` is a first-class task and `generate:public-pages` now rebuilds optimized runtime media before regenerating public HTML.
+- Generated a tracked `asset-manifest.js` plus optimized brand assets under `assets/optimized/brand/` and runtime gallery assets under `Gallery/premium/` to replace missing/heavy runtime sources.
+- Extended `runtime.js`, `brand.js`, `scripts/publicPages.shared.js`, `scripts/publicPageRenderer.js` and `gallery.js` so public/runtime media can resolve optimized variants and render through `<picture>` instead of a single heavy source.
+- Updated the manual shell pages and generated-page renderer to load `asset-manifest.js`, use optimized brand images with intrinsic dimensions and point JSON-LD brand images at the optimized title asset.
+- Updated `styles/base.css` and `styles/tokens.css` so picture-based media keeps existing layout geometry, dark surfaces use a richer premium gold, and the new asset sizes reduce first-fold pressure on mobile.
+- Added AVIF to the tracked Nginx static asset regex so the deploy config can cache the new optimized image format directly when the site config is refreshed.
+- Extended Playwright smoke/regression coverage to assert optimized brand pictures are present and that homepage/auth/dashboard shells keep zero horizontal scroll on mobile.
+- Added `deploy/LIVE_QA_CHECKLIST_PC_MOBILE.md` as the repeatable desktop/phone verification checklist for post-deploy evidence capture.

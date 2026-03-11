@@ -17,10 +17,11 @@
 - [ ] If exact chronology becomes important, replace the new derived `Company Events` overview in `manager-dashboard` with a persisted audit/event timeline instead of summarising current operational data.
 - [ ] Resolve the local workstation `spawn EPERM` blocker so `npm run test:ci` and `npm run test:e2e:mobile` become reliable again.
 - [ ] Install Playwright-managed browsers on the workstation after the config change, so browser QA no longer depends on a missing local `chrome.exe`.
-- [ ] Convert runtime brand and gallery assets to WebP/AVIF with fallbacks, because the current PNG/JPG files are still heavy.
 - [ ] Split `manager-dashboard.js` into feature modules (`projects`, `quotes`, `services`, `materials`, `clients`, `staff`, `estimates`, `messages`) once the new overview shell settles.
 - [ ] Split `client-dashboard.js` into feature modules (`overview`, `projects/documents`, `quotes/services`, `direct manager`, `project chat`) once the new top board settles.
 - [ ] Move more responsive layout ownership out of `styles/base.css` into `styles/public.css` and `styles/workspace.css` after the current contrast/mobile pass is validated live.
+- [ ] Run the new live QA checklist on desktop and a phone-sized viewport after the next droplet deploy, then capture screenshots for homepage, gallery interaction, dashboards and the quote/contact form.
+- [ ] Revisit whether a CDN/media platform is worth introducing later if the runtime gallery set grows beyond the current `sharp` pipeline.
 
 ## Completed
 
@@ -47,3 +48,9 @@
 - [x] Switched Playwright desktop coverage to managed Chromium instead of relying on a locally installed Chrome channel.
 - [x] Updated deploy and cutover documentation to use `ecosystem.config.js --update-env`, `/healthz` and a short post-restart delay.
 - [x] Shifted dark-surface typography tokens to a deeper dark-gold range so text on black surfaces reads as darker premium gold instead of pale gold.
+- [x] Added a repeatable `sharp`-based asset pipeline that generates optimized brand and runtime gallery variants in AVIF, WebP and fallback formats.
+- [x] Switched manual and generated public/workspace shell headers to `<picture>` markup backed by optimized brand assets with intrinsic dimensions.
+- [x] Restored real runtime `Gallery/premium/*` files from generated outputs so public pages and gallery flows no longer reference missing alias files.
+- [x] Updated gallery and generated public sections to read optimized media variants instead of a single heavy JPG/PNG path.
+- [x] Tuned shared dark-surface gold tokens from bronze-leaning values toward a richer premium gold and aligned borders/accents with the new hue.
+- [x] Added a dedicated live QA checklist for desktop and phone verification after deploy, including screenshot evidence requirements.
