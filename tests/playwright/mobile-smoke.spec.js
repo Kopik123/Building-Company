@@ -76,7 +76,7 @@ const mockClientSession = async (page) => {
     });
   });
 
-  await page.route('**/api/inbox/threads?pageSize=100', async (route) => {
+  await page.route('**/api/inbox/threads?*', async (route) => {
     await route.fulfill({
       json: {
         threads: [{
@@ -275,7 +275,7 @@ const mockManagerSession = async (page) => {
     });
   });
 
-  await page.route('**/api/inbox/threads?pageSize=100', async (route) => {
+  await page.route('**/api/inbox/threads?*', async (route) => {
     await route.fulfill({
       json: {
         threads: [{
@@ -302,7 +302,7 @@ const mockManagerSession = async (page) => {
     });
   });
 
-  await page.route('**/api/group/threads?pageSize=100', async (route) => {
+  await page.route('**/api/group/threads?*', async (route) => {
     await route.fulfill({
       json: {
         threads: [{ id: 'manager-group-thread-1', name: 'Prestige Kitchen', updatedAt: '2026-03-09T10:00:00Z' }]
@@ -417,6 +417,12 @@ test('manager dashboard mobile menu opens', async ({ page }) => {
 test('manager dashboard exposes project controls for logged session on mobile', async ({ page }) => {
   await mockManagerSession(page);
   await page.goto('/manager-dashboard.html');
+  await expect(page.getByRole('heading', { name: /company events/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /mail box/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /available options/i })).toBeVisible();
+  await expect(page.locator('#manager-mailbox-private-count')).toContainText('1');
+  await expect(page.locator('#manager-mailbox-project-count')).toContainText('1');
+  await expect(page.locator('#manager-available-options a[href="#manager-projects-section"]').first()).toBeVisible();
   await expect(page.locator('#project-create-form input[name="title"]')).toBeVisible();
   await expect(page.locator('#projects-list button').first()).toBeVisible();
   await page.locator('#projects-list button').first().evaluate((node) => node.click());
