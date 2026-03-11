@@ -40,3 +40,13 @@
 - Re-ran `cmd /c npm run test:ci` and `cmd /c npm run test:e2e:mobile` after the manager dashboard overview refactor and kept both gates green.
 - Diagnosed the droplet deploy logs and confirmed the process now binds to `127.0.0.1:3000`, while the remaining failed `curl` is consistent with an immediate post-restart timing race rather than a broken listener.
 - Recorded that local live QA through MCP Playwright is currently blocked on the workstation because the expected Chrome executable is missing, so browser-based live inspection needs a local Playwright browser install first.
+- Saved `Plans/Full Stabilization, Mobile Sizing, Performance And Growth Plan For The Site.md` and registered the plan in `Plans/Plan History.md` so the next stabilization/performance work has a single tracked reference.
+- Added semantic contrast tokens in `styles/tokens.css` (`text-on-light`, `text-on-dark` and muted variants) to enforce the rule that light surfaces keep dark text and dark surfaces keep gold text.
+- Tightened public mobile sizing in `styles/public.css`: smaller header logo/title proportions, denser `390px`/`640px` card spacing and less dominant first-fold hero content on phones.
+- Applied the same contrast and mobile-sizing cleanup in `styles/workspace.css`, including smaller client/manager board spacing and more controlled heading sizes on narrow screens.
+- Rebuilt `client-dashboard.html` around the shared workspace operations board, replacing the older hero/session top with `Project Status`, `Mail Box` and `Available Options`.
+- Extended `client-dashboard.js` with lightweight project/mailbox overview rendering and thread-summary loaders so the client top board stays informative without forcing full message-history fetches at bootstrap.
+- Updated `tests/playwright/mobile-smoke.spec.js` so mobile regression coverage checks the new client workspace top board and mailbox counters.
+- Switched `tests/playwright/playwright.config.js` to Playwright-managed desktop Chromium instead of relying on a local Chrome channel, which is the better technology choice for reliable repeatable UI checks in this repo.
+- Updated README and the cutover checklist so droplet deploy instructions restart through `ecosystem.config.js --update-env`, wait briefly after PM2 restart and validate via `/healthz`.
+- Re-ran the available local validation entry points and confirmed the current blocker is environmental: both `npm run test:ci` and `npm run test:e2e:mobile` still fail locally with `spawn EPERM`, so the repo config is improved but the workstation runner still needs fixing.
