@@ -21,6 +21,10 @@ const { auth, roleCheck } = require('../middleware/auth');
 const asyncHandler = require('../utils/asyncHandler');
 const { upload } = require('../utils/upload');
 const { clearServicesCache, clearGalleryCache } = require('../utils/publicCache');
+const createStaffSearchSeedRoutes = require('./manager/staff-search-seed');
+const createCatalogRoutes = require('./manager/catalog-routes');
+const createEstimateRoutes = require('./manager/estimate-routes');
+
 
 const router = express.Router();
 
@@ -411,251 +415,96 @@ const resolveEstimateLineInput = async ({ lineType, serviceId, materialId, descr
   };
 };
 
-router.post(
-  '/staff',
-  [
-    ...managerGuard,
-    body('email').isEmail(),
-    body('password').isLength({ min: 8 }),
-    body('name').trim().notEmpty(),
-    body('role').isIn(['employee', 'manager']),
-    body('phone').optional().trim()
-  ],
-  asyncHandler(async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
+router.use(createStaffSearchSeedRoutes({
+  body,
+  query,
+  validationResult,
+  asyncHandler,
+  managerGuard,
+  staffGuard,
+  User,
+  ServiceOffering,
+  Material,
+  Project,
+  ProjectMedia,
+  sequelize,
+  fn,
+  col,
+  Op,
+  sqlWhere,
+  MAX_PAGE_SIZE,
+  normalizeEmail,
+  escapeLike,
+  paginationDto,
+  getPagination,
+  parseBoolean,
+  STARTER_SERVICE_SEED,
+  STARTER_MATERIAL_SEED,
+  STARTER_PROJECT_SEED,
+  STATIC_GALLERY_PREFIX,
+  clearServicesCache,
+  clearGalleryCache,
+  fs,
+  path,
+  projectRoot: path.join(__dirname, '..')
+}));
 
-    const email = normalizeEmail(req.body.email);
-    const { password, name, phone, role } = req.body;
+router.use(createCatalogRoutes({
+  body,
+  param,
+  query,
+  validationResult,
+  asyncHandler,
+  staffGuard,
+  ServiceOffering,
+  Material,
+  Op,
+  fn,
+  col,
+  sqlWhere,
+  SERVICE_CATEGORIES,
+  MATERIAL_CATEGORIES,
+  MAX_PAGE_SIZE,
+  parseBoolean,
+  escapeLike,
+  getPagination,
+  paginationDto,
+  toNullableNumber,
+  slugify,
+  clearServicesCache
+}));
 
-    // Only admins can create managers
-    if (role === 'manager' && req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Only admins can create manager accounts' });
-    }
-
-    const existing = await User.findOne({ where: { email } });
-    if (existing) {
-      return res.status(400).json({ error: 'Email already registered' });
-    }
-
-    const user = await User.create({ email, password, name, phone: phone || null, role });
-    return res.status(201).json({ user });
-  })
-);
-
-router.get(
-  '/clients/search',
-  [
-    ...staffGuard,
-    query('email').optional().trim().isLength({ min: 1, max: 255 }),
-    query('q').optional().trim().isLength({ min: 1, max: 255 }),
-    query('page').optional().isInt({ min: 1 }).toInt(),
-    query('pageSize').optional().isInt({ min: 1, max: MAX_PAGE_SIZE }).toInt()
-  ],
-  asyncHandler(async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    const { page, pageSize, offset } = getPagination(req);
-    const needleRaw = String(req.query.email || req.query.q || '').trim().toLowerCase();
-    const where = { role: 'client', isActive: true };
-
-    if (needleRaw) {
-      const pattern = `%${escapeLike(needleRaw)}%`;
-      where[Op.or] = [
-        sqlWhere(fn('LOWER', col('email')), { [Op.like]: pattern }),
-        sqlWhere(fn('LOWER', col('name')), { [Op.like]: pattern })
-      ];
-    }
-
-    const { rows, count } = await User.findAndCountAll({
-      where,
-      attributes: ['id', 'name', 'email', 'phone'],
-      order: [['email', 'ASC']],
-      limit: pageSize,
-      offset
-    });
-
-    return res.json({ clients: rows, pagination: paginationDto(page, pageSize, count) });
-  })
-);
-
-router.get(
-  '/staff/search',
-  [
-    ...staffGuard,
-    query('email').optional().trim().isLength({ min: 1, max: 255 }),
-    query('q').optional().trim().isLength({ min: 1, max: 255 }),
-    query('page').optional().isInt({ min: 1 }).toInt(),
-    query('pageSize').optional().isInt({ min: 1, max: MAX_PAGE_SIZE }).toInt()
-  ],
-  asyncHandler(async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    const { page, pageSize, offset } = getPagination(req);
-    const needleRaw = String(req.query.email || req.query.q || '').trim().toLowerCase();
-    const where = {
-      role: { [Op.in]: ['employee', 'manager', 'admin'] },
-      isActive: true
-    };
-
-    if (needleRaw) {
-      const pattern = `%${escapeLike(needleRaw)}%`;
-      where[Op.or] = [
-        sqlWhere(fn('LOWER', col('email')), { [Op.like]: pattern }),
-        sqlWhere(fn('LOWER', col('name')), { [Op.like]: pattern })
-      ];
-    }
-
-    const { rows, count } = await User.findAndCountAll({
-      where,
-      attributes: ['id', 'name', 'email', 'role'],
-      order: [['email', 'ASC']],
-      limit: pageSize,
-      offset
-    });
-
-    return res.json({ staff: rows, pagination: paginationDto(page, pageSize, count) });
-  })
-);
-
-router.post(
-  '/seed/starter',
-  [
-    ...managerGuard,
-    body('force').optional().isBoolean()
-  ],
-  asyncHandler(async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    const force = parseBoolean(req.body.force, false);
-    const stats = {
-      servicesCreated: 0,
-      servicesUpdated: 0,
-      materialsCreated: 0,
-      materialsUpdated: 0,
-      projectsCreated: 0,
-      mediaCreated: 0
-    };
-
-    const tx = await sequelize.transaction();
-    try {
-      for (const item of STARTER_SERVICE_SEED) {
-        const [service, created] = await ServiceOffering.findOrCreate({
-          where: { slug: item.slug },
-          defaults: { ...item, isActive: true },
-          transaction: tx
-        });
-        if (created) {
-          stats.servicesCreated += 1;
-        } else if (force) {
-          await service.update({ ...item, isActive: true }, { transaction: tx });
-          stats.servicesUpdated += 1;
-        }
-      }
-
-      for (const item of STARTER_MATERIAL_SEED) {
-        const [material, created] = await Material.findOrCreate({
-          where: { sku: item.sku },
-          defaults: { ...item, isActive: true },
-          transaction: tx
-        });
-        if (created) {
-          stats.materialsCreated += 1;
-        } else if (force) {
-          await material.update({ ...item, isActive: true }, { transaction: tx });
-          stats.materialsUpdated += 1;
-        }
-      }
-
-      for (const projectSeed of STARTER_PROJECT_SEED) {
-        const [project, created] = await Project.findOrCreate({
-          where: { title: projectSeed.title, location: projectSeed.location || null },
-          defaults: {
-            title: projectSeed.title,
-            location: projectSeed.location || null,
-            status: projectSeed.status,
-            description: projectSeed.description,
-            budgetEstimate: projectSeed.budgetEstimate,
-            showInGallery: projectSeed.showInGallery,
-            galleryOrder: projectSeed.galleryOrder,
-            isActive: true
-          },
-          transaction: tx
-        });
-
-        if (created) {
-          stats.projectsCreated += 1;
-        } else if (force) {
-          await project.update(
-            {
-              status: projectSeed.status,
-              description: projectSeed.description,
-              budgetEstimate: projectSeed.budgetEstimate,
-              showInGallery: projectSeed.showInGallery,
-              galleryOrder: projectSeed.galleryOrder,
-              isActive: true
-            },
-            { transaction: tx }
-          );
-        }
-
-        const existingMediaCount = await ProjectMedia.count({ where: { projectId: project.id }, transaction: tx });
-        if (existingMediaCount > 0 && !force) {
-          continue;
-        }
-
-        if (force) {
-          await ProjectMedia.destroy({ where: { projectId: project.id }, transaction: tx });
-        }
-
-        for (let index = 0; index < projectSeed.media.length; index += 1) {
-          const filename = projectSeed.media[index];
-          const relativePath = `${STATIC_GALLERY_PREFIX}${filename}`;
-          const absolutePath = path.join(__dirname, '..', relativePath);
-          if (!fs.existsSync(absolutePath)) {
-            continue;
-          }
-
-          await ProjectMedia.create(
-            {
-              projectId: project.id,
-              mediaType: 'image',
-              url: `/${relativePath.replace(/\\/g, '/')}`,
-              storagePath: relativePath.replace(/\\/g, '/'),
-              filename,
-              mimeType: 'image/jpeg',
-              caption: projectSeed.title,
-              showInGallery: true,
-              galleryOrder: index,
-              isCover: index === 0
-            },
-            { transaction: tx }
-          );
-          stats.mediaCreated += 1;
-        }
-      }
-
-      await tx.commit();
-      clearServicesCache();
-      clearGalleryCache();
-      return res.json({ message: 'Starter seed completed', force, stats });
-    } catch (error) {
-      await tx.rollback();
-      throw error;
-    }
-  })
-);
+router.use(createEstimateRoutes({
+  body,
+  param,
+  query,
+  validationResult,
+  asyncHandler,
+  managerGuard,
+  staffGuard,
+  Estimate,
+  EstimateLine,
+  Project,
+  Quote,
+  User,
+  ESTIMATE_STATUSES,
+  ESTIMATE_LINE_TYPES,
+  MAX_PAGE_SIZE,
+  Op,
+  fn,
+  col,
+  sqlWhere,
+  getPagination,
+  paginationDto,
+  escapeLike,
+  loadEstimateDetail,
+  toEstimateDto,
+  toEstimateLineDto,
+  toNullableNumber,
+  resolveEstimateLineInput,
+  calculateEstimateLineTotal,
+  recalculateEstimateTotals
+}));
 
 router.post(
   '/quotes/:id/accept',
@@ -1296,683 +1145,6 @@ router.delete(
     await media.destroy();
     clearGalleryCache();
     return res.json({ message: 'Media deleted' });
-  })
-);
-
-router.get(
-  '/services',
-  [
-    ...staffGuard,
-    query('showOnWebsite').optional().isIn(['true', 'false', '1', '0']),
-    query('isFeatured').optional().isIn(['true', 'false', '1', '0']),
-    query('isActive').optional().isIn(['true', 'false', '1', '0']),
-    query('category').optional().isIn(SERVICE_CATEGORIES),
-    query('q').optional().trim().isLength({ min: 1, max: 255 }),
-    query('page').optional().isInt({ min: 1 }).toInt(),
-    query('pageSize').optional().isInt({ min: 1, max: MAX_PAGE_SIZE }).toInt()
-  ],
-  asyncHandler(async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    const where = {};
-    if (typeof req.query.showOnWebsite !== 'undefined') {
-      where.showOnWebsite = parseBoolean(req.query.showOnWebsite);
-    }
-    if (typeof req.query.isFeatured !== 'undefined') {
-      where.isFeatured = parseBoolean(req.query.isFeatured);
-    }
-    if (typeof req.query.isActive !== 'undefined') {
-      where.isActive = parseBoolean(req.query.isActive);
-    }
-    if (req.query.category) where.category = req.query.category;
-    if (req.query.q) {
-      const needle = `%${escapeLike(String(req.query.q || '').trim().toLowerCase())}%`;
-      where[Op.or] = [
-        sqlWhere(fn('LOWER', col('title')), { [Op.like]: needle }),
-        sqlWhere(fn('LOWER', col('slug')), { [Op.like]: needle }),
-        sqlWhere(fn('LOWER', col('shortDescription')), { [Op.like]: needle })
-      ];
-    }
-
-    const { page, pageSize, offset } = getPagination(req);
-    const { rows, count } = await ServiceOffering.findAndCountAll({
-      where,
-      order: [['displayOrder', 'ASC'], ['createdAt', 'DESC']],
-      limit: pageSize,
-      offset
-    });
-
-    return res.json({
-      services: rows,
-      pagination: paginationDto(page, pageSize, count)
-    });
-  })
-);
-
-router.post(
-  '/services',
-  [
-    ...staffGuard,
-    body('title').trim().notEmpty(),
-    body('slug').optional().trim(),
-    body('shortDescription').optional().trim(),
-    body('fullDescription').optional().trim(),
-    body('category').optional().isIn(SERVICE_CATEGORIES),
-    body('basePriceFrom').optional({ nullable: true }).isNumeric(),
-    body('heroImageUrl').optional().trim(),
-    body('isFeatured').optional().isBoolean(),
-    body('showOnWebsite').optional().isBoolean(),
-    body('displayOrder').optional().isInt(),
-    body('isActive').optional().isBoolean()
-  ],
-  asyncHandler(async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    const slug = slugify(req.body.slug || req.body.title);
-    if (!slug) {
-      return res.status(400).json({ error: 'Invalid slug/title' });
-    }
-
-    const existing = await ServiceOffering.findOne({ where: { slug } });
-    if (existing) {
-      return res.status(409).json({ error: 'Service slug already exists' });
-    }
-
-    const service = await ServiceOffering.create({
-      slug,
-      title: String(req.body.title || '').trim(),
-      shortDescription: req.body.shortDescription ? String(req.body.shortDescription).trim() : null,
-      fullDescription: req.body.fullDescription ? String(req.body.fullDescription).trim() : null,
-      category: req.body.category || 'other',
-      basePriceFrom: toNullableNumber(req.body.basePriceFrom),
-      heroImageUrl: req.body.heroImageUrl ? String(req.body.heroImageUrl).trim() : null,
-      isFeatured: parseBoolean(req.body.isFeatured, false),
-      showOnWebsite: parseBoolean(req.body.showOnWebsite, true),
-      displayOrder: Number.parseInt(req.body.displayOrder, 10) || 0,
-      isActive: parseBoolean(req.body.isActive, true)
-    });
-
-    clearServicesCache();
-    return res.status(201).json({ service });
-  })
-);
-
-router.patch(
-  '/services/:id',
-  [
-    ...staffGuard,
-    param('id').isUUID(),
-    body('title').optional().trim().notEmpty(),
-    body('slug').optional().trim(),
-    body('shortDescription').optional().trim(),
-    body('fullDescription').optional().trim(),
-    body('category').optional().isIn(SERVICE_CATEGORIES),
-    body('basePriceFrom').optional({ nullable: true }).isNumeric(),
-    body('heroImageUrl').optional().trim(),
-    body('isFeatured').optional().isBoolean(),
-    body('showOnWebsite').optional().isBoolean(),
-    body('displayOrder').optional().isInt(),
-    body('isActive').optional().isBoolean()
-  ],
-  asyncHandler(async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    const service = await ServiceOffering.findByPk(req.params.id);
-    if (!service) {
-      return res.status(404).json({ error: 'Service not found' });
-    }
-
-    const payload = {};
-    if (typeof req.body.title !== 'undefined') payload.title = String(req.body.title || '').trim();
-    if (typeof req.body.shortDescription !== 'undefined') payload.shortDescription = String(req.body.shortDescription || '').trim() || null;
-    if (typeof req.body.fullDescription !== 'undefined') payload.fullDescription = String(req.body.fullDescription || '').trim() || null;
-    if (typeof req.body.category !== 'undefined') payload.category = req.body.category;
-    if (typeof req.body.basePriceFrom !== 'undefined') payload.basePriceFrom = toNullableNumber(req.body.basePriceFrom);
-    if (typeof req.body.heroImageUrl !== 'undefined') payload.heroImageUrl = String(req.body.heroImageUrl || '').trim() || null;
-    if (typeof req.body.isFeatured !== 'undefined') payload.isFeatured = parseBoolean(req.body.isFeatured);
-    if (typeof req.body.showOnWebsite !== 'undefined') payload.showOnWebsite = parseBoolean(req.body.showOnWebsite);
-    if (typeof req.body.displayOrder !== 'undefined') payload.displayOrder = Number.parseInt(req.body.displayOrder, 10) || 0;
-    if (typeof req.body.isActive !== 'undefined') payload.isActive = parseBoolean(req.body.isActive);
-
-    if (typeof req.body.slug !== 'undefined' || typeof req.body.title !== 'undefined') {
-      const nextSlug = slugify(req.body.slug || payload.title || service.title);
-      if (!nextSlug) return res.status(400).json({ error: 'Invalid slug/title' });
-      const existing = await ServiceOffering.findOne({ where: { slug: nextSlug, id: { [Op.ne]: service.id } } });
-      if (existing) return res.status(409).json({ error: 'Service slug already exists' });
-      payload.slug = nextSlug;
-    }
-
-    if (!Object.keys(payload).length) {
-      return res.status(400).json({ error: 'No changes provided' });
-    }
-
-    await service.update(payload);
-    clearServicesCache();
-    return res.json({ service });
-  })
-);
-
-router.delete(
-  '/services/:id',
-  [...staffGuard, param('id').isUUID()],
-  asyncHandler(async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    const service = await ServiceOffering.findByPk(req.params.id);
-    if (!service) {
-      return res.status(404).json({ error: 'Service not found' });
-    }
-
-    await service.destroy();
-    clearServicesCache();
-    return res.json({ message: 'Service deleted' });
-  })
-);
-
-router.get(
-  '/materials',
-  [
-    ...staffGuard,
-    query('category').optional().isIn(MATERIAL_CATEGORIES),
-    query('lowStock').optional().isIn(['true', 'false', '1', '0']),
-    query('isActive').optional().isIn(['true', 'false', '1', '0']),
-    query('q').optional().trim().isLength({ min: 1, max: 255 }),
-    query('page').optional().isInt({ min: 1 }).toInt(),
-    query('pageSize').optional().isInt({ min: 1, max: MAX_PAGE_SIZE }).toInt()
-  ],
-  asyncHandler(async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    const baseWhere = {};
-    if (req.query.category) baseWhere.category = req.query.category;
-    if (typeof req.query.isActive !== 'undefined') {
-      baseWhere.isActive = parseBoolean(req.query.isActive);
-    }
-    if (req.query.q) {
-      const needle = `%${escapeLike(String(req.query.q || '').trim().toLowerCase())}%`;
-      baseWhere[Op.or] = [
-        sqlWhere(fn('LOWER', col('name')), { [Op.like]: needle }),
-        sqlWhere(fn('LOWER', col('sku')), { [Op.like]: needle }),
-        sqlWhere(fn('LOWER', col('supplier')), { [Op.like]: needle })
-      ];
-    }
-
-    const lowStockFilterSet = typeof req.query.lowStock !== 'undefined';
-    const lowStockOnly = parseBoolean(req.query.lowStock, false);
-    const where = { ...baseWhere };
-    if (lowStockFilterSet) {
-      where[Op.and] = [
-        lowStockOnly
-          ? sqlWhere(col('stockQty'), { [Op.lte]: col('minStockQty') })
-          : sqlWhere(col('stockQty'), { [Op.gt]: col('minStockQty') })
-      ];
-    }
-
-    const { page, pageSize, offset } = getPagination(req);
-    const { rows, count } = await Material.findAndCountAll({
-      where,
-      order: [['category', 'ASC'], ['name', 'ASC']],
-      limit: pageSize,
-      offset
-    });
-
-    const lowStockCount = await Material.count({
-      where: {
-        ...baseWhere,
-        [Op.and]: [sqlWhere(col('stockQty'), { [Op.lte]: col('minStockQty') })]
-      }
-    });
-
-    return res.json({
-      materials: rows,
-      stats: { total: count, lowStockCount },
-      pagination: paginationDto(page, pageSize, count)
-    });
-  })
-);
-
-router.post(
-  '/materials',
-  [
-    ...staffGuard,
-    body('name').trim().notEmpty(),
-    body('sku').optional().trim(),
-    body('category').optional().isIn(MATERIAL_CATEGORIES),
-    body('unit').optional().trim(),
-    body('stockQty').optional({ nullable: true }).isNumeric(),
-    body('minStockQty').optional({ nullable: true }).isNumeric(),
-    body('unitCost').optional({ nullable: true }).isNumeric(),
-    body('supplier').optional().trim(),
-    body('notes').optional().trim(),
-    body('isActive').optional().isBoolean()
-  ],
-  asyncHandler(async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    const skuRaw = String(req.body.sku || '').trim();
-    if (skuRaw) {
-      const existing = await Material.findOne({ where: { sku: skuRaw } });
-      if (existing) return res.status(409).json({ error: 'Material SKU already exists' });
-    }
-
-    const material = await Material.create({
-      sku: skuRaw || null,
-      name: String(req.body.name || '').trim(),
-      category: req.body.category || 'other',
-      unit: String(req.body.unit || 'pcs').trim() || 'pcs',
-      stockQty: toNullableNumber(req.body.stockQty) ?? 0,
-      minStockQty: toNullableNumber(req.body.minStockQty) ?? 0,
-      unitCost: toNullableNumber(req.body.unitCost),
-      supplier: req.body.supplier ? String(req.body.supplier).trim() : null,
-      notes: req.body.notes ? String(req.body.notes).trim() : null,
-      isActive: parseBoolean(req.body.isActive, true)
-    });
-
-    return res.status(201).json({ material });
-  })
-);
-
-router.patch(
-  '/materials/:id',
-  [
-    ...staffGuard,
-    param('id').isUUID(),
-    body('name').optional().trim().notEmpty(),
-    body('sku').optional().trim(),
-    body('category').optional().isIn(MATERIAL_CATEGORIES),
-    body('unit').optional().trim(),
-    body('stockQty').optional({ nullable: true }).isNumeric(),
-    body('minStockQty').optional({ nullable: true }).isNumeric(),
-    body('unitCost').optional({ nullable: true }).isNumeric(),
-    body('supplier').optional().trim(),
-    body('notes').optional().trim(),
-    body('isActive').optional().isBoolean()
-  ],
-  asyncHandler(async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    const material = await Material.findByPk(req.params.id);
-    if (!material) {
-      return res.status(404).json({ error: 'Material not found' });
-    }
-
-    const payload = {};
-    if (typeof req.body.name !== 'undefined') payload.name = String(req.body.name || '').trim();
-    if (typeof req.body.category !== 'undefined') payload.category = req.body.category;
-    if (typeof req.body.unit !== 'undefined') payload.unit = String(req.body.unit || '').trim() || 'pcs';
-    if (typeof req.body.stockQty !== 'undefined') payload.stockQty = toNullableNumber(req.body.stockQty) ?? 0;
-    if (typeof req.body.minStockQty !== 'undefined') payload.minStockQty = toNullableNumber(req.body.minStockQty) ?? 0;
-    if (typeof req.body.unitCost !== 'undefined') payload.unitCost = toNullableNumber(req.body.unitCost);
-    if (typeof req.body.supplier !== 'undefined') payload.supplier = String(req.body.supplier || '').trim() || null;
-    if (typeof req.body.notes !== 'undefined') payload.notes = String(req.body.notes || '').trim() || null;
-    if (typeof req.body.isActive !== 'undefined') payload.isActive = parseBoolean(req.body.isActive);
-
-    if (typeof req.body.sku !== 'undefined') {
-      const nextSku = String(req.body.sku || '').trim() || null;
-      if (nextSku) {
-        const existing = await Material.findOne({ where: { sku: nextSku, id: { [Op.ne]: material.id } } });
-        if (existing) return res.status(409).json({ error: 'Material SKU already exists' });
-      }
-      payload.sku = nextSku;
-    }
-
-    if (!Object.keys(payload).length) {
-      return res.status(400).json({ error: 'No changes provided' });
-    }
-
-    await material.update(payload);
-    return res.json({ material });
-  })
-);
-
-router.delete(
-  '/materials/:id',
-  [...staffGuard, param('id').isUUID()],
-  asyncHandler(async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    const material = await Material.findByPk(req.params.id);
-    if (!material) {
-      return res.status(404).json({ error: 'Material not found' });
-    }
-
-    await material.destroy();
-    return res.json({ message: 'Material deleted' });
-  })
-);
-
-router.get(
-  '/estimates',
-  [
-    ...staffGuard,
-    query('projectId').optional().isUUID(),
-    query('quoteId').optional().isUUID(),
-    query('status').optional().isIn(ESTIMATE_STATUSES),
-    query('q').optional().trim().isLength({ min: 1, max: 255 }),
-    query('page').optional().isInt({ min: 1 }).toInt(),
-    query('pageSize').optional().isInt({ min: 1, max: MAX_PAGE_SIZE }).toInt()
-  ],
-  asyncHandler(async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    const where = { isActive: true };
-    if (req.query.projectId) where.projectId = req.query.projectId;
-    if (req.query.quoteId) where.quoteId = req.query.quoteId;
-    if (req.query.status) where.status = req.query.status;
-    if (req.query.q) {
-      const needle = `%${escapeLike(String(req.query.q || '').trim().toLowerCase())}%`;
-      where[Op.or] = [
-        sqlWhere(fn('LOWER', col('title')), { [Op.like]: needle }),
-        sqlWhere(fn('LOWER', col('notes')), { [Op.like]: needle })
-      ];
-    }
-
-    const { page, pageSize, offset } = getPagination(req);
-    const { rows, count } = await Estimate.findAndCountAll({
-      where,
-      include: [
-        { model: Project, as: 'project', attributes: ['id', 'title', 'location'], required: false },
-        { model: Quote, as: 'quote', attributes: ['id', 'projectType', 'location', 'status'], required: false },
-        { model: User, as: 'creator', attributes: ['id', 'name', 'email'], required: false }
-      ],
-      order: [['updatedAt', 'DESC']],
-      limit: pageSize,
-      offset
-    });
-
-    return res.json({
-      estimates: rows.map((estimate) => toEstimateDto(estimate)),
-      pagination: paginationDto(page, pageSize, count)
-    });
-  })
-);
-
-router.get(
-  '/estimates/:id',
-  [...staffGuard, param('id').isUUID()],
-  asyncHandler(async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    const estimate = await loadEstimateDetail(req.params.id);
-    if (!estimate) {
-      return res.status(404).json({ error: 'Estimate not found' });
-    }
-
-    return res.json({ estimate });
-  })
-);
-
-router.post(
-  '/estimates',
-  [
-    ...managerGuard,
-    body('projectId').optional({ nullable: true }).isUUID(),
-    body('quoteId').optional({ nullable: true }).isUUID(),
-    body('title').trim().notEmpty(),
-    body('status').optional().isIn(ESTIMATE_STATUSES),
-    body('notes').optional().trim()
-  ],
-  asyncHandler(async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    const estimate = await Estimate.create({
-      projectId: req.body.projectId || null,
-      quoteId: req.body.quoteId || null,
-      createdById: req.user.id,
-      title: String(req.body.title || '').trim(),
-      status: req.body.status || 'draft',
-      notes: req.body.notes ? String(req.body.notes).trim() : null,
-      subtotal: 0,
-      total: 0,
-      isActive: true
-    });
-
-    const detail = await loadEstimateDetail(estimate.id);
-    return res.status(201).json({ estimate: detail });
-  })
-);
-
-router.patch(
-  '/estimates/:id',
-  [
-    ...managerGuard,
-    param('id').isUUID(),
-    body('projectId').optional({ nullable: true }).isUUID(),
-    body('quoteId').optional({ nullable: true }).isUUID(),
-    body('title').optional().trim().notEmpty(),
-    body('status').optional().isIn(ESTIMATE_STATUSES),
-    body('notes').optional().trim()
-  ],
-  asyncHandler(async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    const estimate = await Estimate.findByPk(req.params.id);
-    if (!estimate) {
-      return res.status(404).json({ error: 'Estimate not found' });
-    }
-
-    const payload = {};
-    if (typeof req.body.projectId !== 'undefined') payload.projectId = req.body.projectId || null;
-    if (typeof req.body.quoteId !== 'undefined') payload.quoteId = req.body.quoteId || null;
-    if (typeof req.body.title !== 'undefined') payload.title = String(req.body.title || '').trim();
-    if (typeof req.body.status !== 'undefined') payload.status = req.body.status;
-    if (typeof req.body.notes !== 'undefined') payload.notes = String(req.body.notes || '').trim() || null;
-
-    if (!Object.keys(payload).length) {
-      return res.status(400).json({ error: 'No changes provided' });
-    }
-
-    await estimate.update(payload);
-    const detail = await loadEstimateDetail(estimate.id);
-    return res.json({ estimate: detail });
-  })
-);
-
-router.delete(
-  '/estimates/:id',
-  [...managerGuard, param('id').isUUID()],
-  asyncHandler(async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    const estimate = await Estimate.findByPk(req.params.id);
-    if (!estimate) {
-      return res.status(404).json({ error: 'Estimate not found' });
-    }
-
-    await estimate.destroy();
-    return res.json({ message: 'Estimate deleted' });
-  })
-);
-
-router.post(
-  '/estimates/:id/lines',
-  [
-    ...managerGuard,
-    param('id').isUUID(),
-    body('lineType').optional().isIn(ESTIMATE_LINE_TYPES),
-    body('serviceId').optional({ nullable: true }).isUUID(),
-    body('materialId').optional({ nullable: true }).isUUID(),
-    body('description').optional().trim(),
-    body('unit').optional().trim(),
-    body('quantity').optional({ nullable: true }).isNumeric(),
-    body('unitCost').optional({ nullable: true }).isNumeric(),
-    body('lineTotalOverride').optional({ nullable: true }).isNumeric(),
-    body('notes').optional().trim(),
-    body('sortOrder').optional().isInt()
-  ],
-  asyncHandler(async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    const estimate = await Estimate.findByPk(req.params.id);
-    if (!estimate) {
-      return res.status(404).json({ error: 'Estimate not found' });
-    }
-
-    const resolved = await resolveEstimateLineInput({
-      lineType: req.body.lineType,
-      serviceId: req.body.serviceId,
-      materialId: req.body.materialId,
-      description: req.body.description,
-      unit: req.body.unit,
-      unitCost: req.body.unitCost
-    });
-    const sortOrder = typeof req.body.sortOrder !== 'undefined'
-      ? Number.parseInt(req.body.sortOrder, 10) || 0
-      : await EstimateLine.count({ where: { estimateId: estimate.id } });
-    const quantity = toNullableNumber(req.body.quantity) ?? 1;
-    const lineTotalOverride = toNullableNumber(req.body.lineTotalOverride);
-    const line = await EstimateLine.create({
-      estimateId: estimate.id,
-      lineType: resolved.lineType,
-      serviceId: resolved.serviceId,
-      materialId: resolved.materialId,
-      description: resolved.description,
-      unit: resolved.unit,
-      quantity,
-      unitCost: resolved.unitCost,
-      lineTotalOverride,
-      lineTotal: calculateEstimateLineTotal({ quantity, unitCost: resolved.unitCost, lineTotalOverride }),
-      notes: req.body.notes ? String(req.body.notes).trim() : null,
-      sortOrder
-    });
-
-    await recalculateEstimateTotals(estimate.id);
-    const detail = await loadEstimateDetail(estimate.id);
-    return res.status(201).json({ line: toEstimateLineDto(line), estimate: detail });
-  })
-);
-
-router.patch(
-  '/estimates/:id/lines/:lineId',
-  [
-    ...managerGuard,
-    param('id').isUUID(),
-    param('lineId').isUUID(),
-    body('lineType').optional().isIn(ESTIMATE_LINE_TYPES),
-    body('serviceId').optional({ nullable: true }).isUUID(),
-    body('materialId').optional({ nullable: true }).isUUID(),
-    body('description').optional().trim(),
-    body('unit').optional().trim(),
-    body('quantity').optional({ nullable: true }).isNumeric(),
-    body('unitCost').optional({ nullable: true }).isNumeric(),
-    body('lineTotalOverride').optional({ nullable: true }).isNumeric(),
-    body('notes').optional().trim(),
-    body('sortOrder').optional().isInt()
-  ],
-  asyncHandler(async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    const line = await EstimateLine.findOne({
-      where: {
-        id: req.params.lineId,
-        estimateId: req.params.id
-      }
-    });
-    if (!line) {
-      return res.status(404).json({ error: 'Estimate line not found' });
-    }
-
-    const resolved = await resolveEstimateLineInput({
-      lineType: req.body.lineType || line.lineType,
-      serviceId: typeof req.body.serviceId !== 'undefined' ? req.body.serviceId : line.serviceId,
-      materialId: typeof req.body.materialId !== 'undefined' ? req.body.materialId : line.materialId,
-      description: typeof req.body.description !== 'undefined' ? req.body.description : line.description,
-      unit: typeof req.body.unit !== 'undefined' ? req.body.unit : line.unit,
-      unitCost: typeof req.body.unitCost !== 'undefined' ? req.body.unitCost : line.unitCost
-    });
-    const quantity = typeof req.body.quantity !== 'undefined' ? (toNullableNumber(req.body.quantity) ?? 1) : toNullableNumber(line.quantity) ?? 1;
-    const lineTotalOverride = typeof req.body.lineTotalOverride !== 'undefined'
-      ? toNullableNumber(req.body.lineTotalOverride)
-      : toNullableNumber(line.lineTotalOverride);
-    const payload = {
-      lineType: resolved.lineType,
-      serviceId: resolved.serviceId,
-      materialId: resolved.materialId,
-      description: resolved.description,
-      unit: resolved.unit,
-      quantity,
-      unitCost: resolved.unitCost,
-      lineTotalOverride,
-      lineTotal: calculateEstimateLineTotal({ quantity, unitCost: resolved.unitCost, lineTotalOverride })
-    };
-    if (typeof req.body.notes !== 'undefined') payload.notes = String(req.body.notes || '').trim() || null;
-    if (typeof req.body.sortOrder !== 'undefined') payload.sortOrder = Number.parseInt(req.body.sortOrder, 10) || 0;
-
-    await line.update(payload);
-    await recalculateEstimateTotals(req.params.id);
-    const detail = await loadEstimateDetail(req.params.id);
-    return res.json({ line: toEstimateLineDto(line), estimate: detail });
-  })
-);
-
-router.delete(
-  '/estimates/:id/lines/:lineId',
-  [...managerGuard, param('id').isUUID(), param('lineId').isUUID()],
-  asyncHandler(async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    const line = await EstimateLine.findOne({
-      where: {
-        id: req.params.lineId,
-        estimateId: req.params.id
-      }
-    });
-    if (!line) {
-      return res.status(404).json({ error: 'Estimate line not found' });
-    }
-
-    await line.destroy();
-    const estimate = await recalculateEstimateTotals(req.params.id);
-    const detail = estimate ? await loadEstimateDetail(req.params.id) : null;
-    return res.json({ message: 'Estimate line deleted', estimate: detail });
   })
 );
 

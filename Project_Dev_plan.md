@@ -74,3 +74,7 @@
 - Reduced `apps/mobile-v1/App.js` by extracting reusable mobile API/session loading helpers into `apps/mobile-v1/src/api.js` and `apps/mobile-v1/src/useApiList.js`, which improves parity with the web-side shared-client direction.
 - Saved `Plans/Plan Naprawy Bledow Znalezionych Przez SonarQube.md` and linked it with `Project_todos.md` so SonarQube cleanup now has a tracked triage and execution path.
 - Added `scripts/sonar-export.sh` as the repo-native Linux export path for SonarQube issues, quality gate and measures so the next cleanup pass can work from real issue data instead of inferred hotspots.
+- Continued the Sonar/stability cleanup by splitting `routes/manager.js` so `staff/search/seed`, `services/materials` and `estimates` now register through dedicated subrouters under `routes/manager/` while quote/project/media endpoints stay in the main router.
+- Reduced `apps/mobile-v1/App.js` further by extracting React Native screen components into `apps/mobile-v1/src/screens.js` and moving the shared mobile style sheet into `apps/mobile-v1/src/styles.js`, leaving the app shell focused on session and tab orchestration.
+- Re-ran `npm run verify:generated` and `npm run test:ci` after the manager-route split and mobile-v1 screen/style extraction; both now pass with the refactor in place.
+- Re-checked `npm run test:e2e:mobile` and confirmed the only remaining failure is still the workstation-level Playwright `spawn EPERM` blocker, not an application regression from this refactor.

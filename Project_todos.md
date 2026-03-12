@@ -66,3 +66,7 @@
 - [x] Started reducing `apps/mobile-v1/App.js` by extracting reusable API and list-loading helpers into `apps/mobile-v1/src/api.js` and `apps/mobile-v1/src/useApiList.js`.
 - [x] Saved `Plans/Plan Naprawy Bledow Znalezionych Przez SonarQube.md` and registered it in `Plans/Plan History.md` as the tracked cleanup plan for SonarQube findings.
 - [x] Added `scripts/sonar-export.sh` as the repeatable Linux/DigitalOcean export path for full SonarQube issue, quality gate and measure snapshots.
+- [x] Split `routes/manager.js` so `staff/search/seed`, `services/materials` and `estimates` now live in dedicated subrouters under `routes/manager/`, reducing the main route monolith without changing endpoint shapes.
+- [x] Reduced `apps/mobile-v1/App.js` further by extracting screen components into `apps/mobile-v1/src/screens.js` and shared React Native styles into `apps/mobile-v1/src/styles.js`.
+- [ ] Continue the manager-route cleanup by extracting the remaining `quotes` and `projects/media` sections once the new subrouter split has baked in under tests.
+- [ ] Continue reducing `apps/mobile-v1/App.js` by extracting session/tab shell logic after the new `screens.js`/`styles.js` split stabilises.
