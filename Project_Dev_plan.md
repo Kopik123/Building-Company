@@ -81,3 +81,4 @@
 - Rebuilt the homepage shell in `index.html` so it now starts with a three-part `header.png` board: left account panel, central artwork panel and right menu panel.
 - Split the homepage flow into alternating light/dark bands in `styles/public.css`, matching the requested black/white background rhythm while keeping existing `projects`, `gallery`, `services`, `contact` and `quote` anchors intact.
 - Updated homepage Playwright regression coverage in `tests/playwright/public-redesign.spec.js` and `tests/playwright/mobile-smoke.spec.js` so the tests validate the new board layout instead of the older `brand-title-link` header.
+- Tuned the live proportions of the new homepage board in `styles/public.css`: smaller `header.png` height, a full dark top band and stronger balance between account, art and menu panels after the first production screenshot review.
