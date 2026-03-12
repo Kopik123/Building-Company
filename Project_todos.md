@@ -16,6 +16,9 @@
 - [ ] If exact chronology becomes important, replace the new derived `Company Events` overview in `manager-dashboard` with a persisted audit/event timeline instead of summarising current operational data.
 - [ ] Resolve the remaining workstation child-process policy that still raises `spawn EPERM` for Playwright worker/browser launch, even after moving to managed Chromium and removing the internal static-server spawn.
 - [ ] Re-run `npm run test:e2e:mobile` on a machine where Node can launch Playwright workers and browsers, then record the first green local pass.
+- [ ] Export the real issue list from SonarQube for branch `vscode`, then map every `Bug` and `Vulnerability` to `real fix`, `false positive` or `accepted tradeoff`.
+- [ ] Start the SonarQube cleanup with the biggest maintainability hotspots: `manager-dashboard.js`, `routes/manager.js`, `client-dashboard.js`, `styles/base.css` and `apps/mobile-v1/App.js`.
+- [ ] Plan the `multer 1.x -> 2.x` migration as a separate Sonar/dependency-hardening task instead of running `npm audit fix --force`.
 - [ ] Split `manager-dashboard.js` into feature modules (`projects`, `quotes`, `services`, `materials`, `clients`, `staff`, `estimates`, `messages`) once the new overview shell settles.
 - [ ] Split `client-dashboard.js` into feature modules (`overview`, `projects/documents`, `quotes/services`, `direct manager`, `project chat`) once the new top board settles.
 - [ ] Move more responsive layout ownership out of `styles/base.css` into `styles/public.css` and `styles/workspace.css` after the current contrast/mobile pass is validated live.
@@ -60,3 +63,4 @@
 - [x] Confirmed the remaining local `spawn EPERM` blocker is isolated to Playwright worker/browser launch, not the API test suite or app code itself.
 - [x] Moved shared `titleCase`, `formatDateTime`, overview entry and mailbox preview helpers into `runtime.js` so client and manager dashboards stop duplicating the same shell logic.
 - [x] Started reducing `apps/mobile-v1/App.js` by extracting reusable API and list-loading helpers into `apps/mobile-v1/src/api.js` and `apps/mobile-v1/src/useApiList.js`.
+- [x] Saved `Plans/Plan Naprawy Bledow Znalezionych Przez SonarQube.md` and registered it in `Plans/Plan History.md` as the tracked cleanup plan for SonarQube findings.
