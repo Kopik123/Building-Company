@@ -18,9 +18,10 @@ test('homepage renders premium shell, new IA and homepage section order', async 
   await page.goto('/index.html');
 
   await expect(page.locator('body.public-site.page-home')).toBeVisible();
-  await expect(page.locator('.site-header .brand-title-link .brand-title-image')).toBeVisible();
-  await expect(page.locator('.brand-mark-link picture source[type="image/avif"]')).toHaveCount(1);
-  await expect(page.locator('.brand-title-link picture source[type="image/webp"]')).toHaveCount(1);
+  await expect(page.locator('.site-header--homeboard .home-header-art-image')).toBeVisible();
+  await expect(page.locator('.site-header--homeboard .home-header-art-image[src="/header.png"]')).toHaveCount(1);
+  await expect(page.locator('.site-header--homeboard .home-header-panel--account')).toBeVisible();
+  await expect(page.locator('.site-header--homeboard .home-header-panel--menu')).toBeVisible();
   await expect(page.locator('.home-hero-copy h1')).toContainText(/premium bathroom, kitchen and interior renovation studio/i);
   await expect(page.locator('#projects')).toBeVisible();
   await expect(page.locator('#gallery')).toBeVisible();

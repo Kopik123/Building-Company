@@ -78,3 +78,6 @@
 - Reduced `apps/mobile-v1/App.js` further by extracting React Native screen components into `apps/mobile-v1/src/screens.js` and moving the shared mobile style sheet into `apps/mobile-v1/src/styles.js`, leaving the app shell focused on session and tab orchestration.
 - Re-ran `npm run verify:generated` and `npm run test:ci` after the manager-route split and mobile-v1 screen/style extraction; both now pass with the refactor in place.
 - Re-checked `npm run test:e2e:mobile` and confirmed the only remaining failure is still the workstation-level Playwright `spawn EPERM` blocker, not an application regression from this refactor.
+- Rebuilt the homepage shell in `index.html` so it now starts with a three-part `header.png` board: left account panel, central artwork panel and right menu panel.
+- Split the homepage flow into alternating light/dark bands in `styles/public.css`, matching the requested black/white background rhythm while keeping existing `projects`, `gallery`, `services`, `contact` and `quote` anchors intact.
+- Updated homepage Playwright regression coverage in `tests/playwright/public-redesign.spec.js` and `tests/playwright/mobile-smoke.spec.js` so the tests validate the new board layout instead of the older `brand-title-link` header.

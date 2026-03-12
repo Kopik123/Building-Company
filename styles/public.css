@@ -911,3 +911,276 @@ body.public-site .quote-form textarea:focus {
     justify-content: center;
   }
 }
+
+/* Homepage board layout */
+body.public-site.page-home {
+  background:
+    linear-gradient(180deg, rgba(248, 245, 240, 0.98) 0 120px, rgba(239, 234, 225, 0.98) 120px 100%),
+    var(--ll-surface-marble);
+  color: var(--ll-text-on-light);
+}
+
+body.public-site.page-home::before {
+  background:
+    linear-gradient(90deg, transparent 6%, rgba(172, 135, 76, 0.16) 6.08%, transparent 6.18%, transparent 93.82%, rgba(172, 135, 76, 0.16) 93.92%, transparent 94%),
+    repeating-linear-gradient(
+      180deg,
+      rgba(8, 8, 8, 0.045) 0,
+      rgba(8, 8, 8, 0.045) 1px,
+      transparent 1px,
+      transparent 92px
+    );
+  opacity: 0.32;
+}
+
+.page-home .site-header--homeboard {
+  border-bottom: 0;
+  background:
+    linear-gradient(180deg, rgba(246, 242, 236, 0.96), rgba(240, 235, 226, 0.98));
+  box-shadow: none;
+}
+
+.page-home .home-shell--header {
+  padding-top: var(--ll-space-lg);
+  padding-bottom: var(--ll-space-lg);
+}
+
+.page-home .home-shell--band {
+  padding-top: var(--ll-space-xl);
+  padding-bottom: var(--ll-space-xl);
+}
+
+.page-home .home-header-board {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.9fr) minmax(0, 1.5fr) minmax(250px, 1fr);
+  gap: var(--ll-space-md);
+  align-items: stretch;
+}
+
+.page-home .home-header-panel,
+.page-home .home-header-art {
+  min-height: 100%;
+  border: 1px solid var(--ll-border-gold-strong);
+  box-shadow: var(--ll-shadow-premium), var(--ll-shadow-line);
+}
+
+.page-home .home-header-panel {
+  display: grid;
+  align-content: start;
+  gap: 1rem;
+  padding: clamp(1rem, 2vw, 1.35rem);
+  background:
+    linear-gradient(180deg, rgba(11, 11, 11, 0.98), rgba(3, 3, 3, 0.99));
+  color: var(--ll-text-on-dark);
+}
+
+.page-home .home-header-panel-title {
+  margin: 0;
+  color: var(--ll-text-on-dark-strong);
+  font-size: clamp(1.35rem, 2.8vw, 2rem);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.page-home .home-header-auth-link,
+.page-home .home-header-panel-actions a,
+.page-home .site-nav--panel a {
+  color: var(--ll-text-on-dark);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.page-home .home-header-auth-link {
+  display: inline-flex;
+  width: fit-content;
+  min-height: 44px;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 1rem;
+}
+
+.page-home .home-header-panel-copy {
+  margin: 0;
+  color: var(--ll-text-on-dark-muted);
+  font-size: 0.98rem;
+  line-height: 1.7;
+}
+
+.page-home .home-header-panel-actions {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.page-home .home-header-panel-actions a,
+.page-home .site-nav--panel a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  width: fit-content;
+}
+
+.page-home .home-header-art {
+  display: grid;
+  place-items: center;
+  padding: clamp(0.75rem, 1.8vw, 1rem);
+  background: #040404;
+  overflow: hidden;
+}
+
+.page-home .home-header-art-image {
+  display: block;
+  width: 100%;
+  max-width: min(100%, 520px);
+  height: auto;
+  object-fit: contain;
+}
+
+.page-home .site-nav--panel {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.9rem;
+  padding: 0;
+}
+
+.page-home .section--home-dark {
+  background:
+    linear-gradient(180deg, rgba(8, 8, 8, 0.985), rgba(3, 3, 3, 1));
+  color: var(--ll-text-on-dark);
+  border-top: 1px solid rgba(172, 135, 76, 0.32);
+  border-bottom: 1px solid rgba(172, 135, 76, 0.32);
+}
+
+.page-home .section--home-light {
+  background:
+    linear-gradient(180deg, rgba(247, 243, 237, 0.99), rgba(238, 233, 224, 0.99));
+  color: var(--ll-text-on-light);
+  border-top: 1px solid rgba(172, 135, 76, 0.26);
+  border-bottom: 1px solid rgba(172, 135, 76, 0.26);
+}
+
+.page-home .section--home-light-secondary {
+  background:
+    linear-gradient(180deg, rgba(241, 236, 228, 0.99), rgba(249, 246, 240, 0.99));
+}
+
+.page-home .home-hero-card,
+.page-home .home-showcase-grid > *,
+.page-home .home-secondary-grid > * {
+  margin: 0;
+}
+
+.page-home .home-hero-card {
+  min-height: min(76vh, 720px);
+}
+
+.page-home .home-showcase-grid,
+.page-home .home-secondary-grid {
+  gap: var(--ll-space-lg);
+}
+
+.page-home .home-contact-band {
+  margin: 0;
+  min-height: 72px;
+}
+
+@media (max-width: 992px) {
+  .page-home .home-header-board {
+    grid-template-columns: 1fr;
+  }
+
+  .page-home .home-header-art {
+    order: 1;
+  }
+
+  .page-home .home-header-panel--account {
+    order: 2;
+  }
+
+  .page-home .home-header-panel--menu {
+    order: 3;
+  }
+
+  .page-home .home-header-panel,
+  .page-home .home-header-art {
+    min-height: auto;
+  }
+
+  .page-home .site-nav--panel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  body.public-site.page-home::before {
+    opacity: 0.22;
+  }
+
+  .page-home .home-shell--header {
+    padding-top: var(--ll-space-md);
+    padding-bottom: var(--ll-space-md);
+  }
+
+  .page-home .home-shell--band {
+    padding-top: var(--ll-space-lg);
+    padding-bottom: var(--ll-space-lg);
+  }
+
+  .page-home .home-header-panel,
+  .page-home .home-header-art {
+    padding: 0.95rem;
+  }
+
+  .page-home .home-header-panel-title {
+    font-size: clamp(1.15rem, 7vw, 1.55rem);
+  }
+
+  .page-home .home-header-panel-copy {
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+
+  .page-home .home-header-art-image {
+    max-width: min(100%, 400px);
+  }
+
+  .page-home .site-nav--panel {
+    gap: 0.7rem;
+  }
+
+  .page-home .home-hero-card {
+    min-height: auto;
+  }
+}
+
+@media (max-width: 390px) {
+  .page-home .home-header-panel,
+  .page-home .home-header-art {
+    padding: 0.82rem;
+  }
+
+  .page-home .home-header-panel-actions a,
+  .page-home .site-nav--panel a,
+  .page-home .home-header-auth-link {
+    min-height: 42px;
+    font-size: 0.78rem;
+    letter-spacing: 0.05em;
+  }
+
+  .page-home .site-nav--panel {
+    grid-template-columns: 1fr;
+    gap: 0.55rem;
+  }
+
+  .page-home .home-header-panel-copy {
+    font-size: 0.84rem;
+  }
+
+  .page-home .home-shell--band {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+}

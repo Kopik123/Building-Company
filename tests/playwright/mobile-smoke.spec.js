@@ -348,7 +348,9 @@ const mockManagerSession = async (page) => {
 test('homepage mobile menu opens and keeps the shared account shell', async ({ page }) => {
   await page.goto('/index.html');
   await openNavIfNeeded(page);
-  await expect(page.locator('.brand-title-link picture source[type="image/avif"]')).toHaveCount(1);
+  await expect(page.locator('.site-header--homeboard .home-header-art-image[src="/header.png"]')).toHaveCount(1);
+  await expect(page.locator('.site-header--homeboard .home-header-panel--account')).toBeVisible();
+  await expect(page.locator('.site-header--homeboard .home-header-panel--menu')).toBeVisible();
   await expect(page.locator('[data-nav-menu] a[href="/about.html"]')).toBeVisible();
   await expect(page.locator('[data-nav-menu] a[href="/gallery.html"]')).toBeVisible();
   await expect(page.locator('[data-nav-menu] a[href="/contact.html"]')).toBeVisible();

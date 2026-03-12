@@ -26,6 +26,9 @@
 - [ ] Run the new live QA checklist on desktop and a phone-sized viewport after the next droplet deploy, then capture screenshots for homepage, gallery interaction, dashboards and the quote/contact form.
 - [ ] Revisit whether a CDN/media platform is worth introducing later if the runtime gallery set grows beyond the current `sharp` pipeline.
 - [ ] Keep `Project_Web_Design_Plan.md` aligned with the real current design system whenever header structure, color logic, IA or responsive rules change.
+- [ ] Re-check the new `header.png` homepage board on live desktop and mobile, especially the balance between the account panel, artwork panel and menu panel.
+- [ ] Decide whether the new `header.png` board should remain homepage-only or become the shared top shell for `about`, `gallery`, `contact` and `quote`.
+- [ ] Decide whether `header.png` should be added to the existing `sharp` optimization pipeline as AVIF/WebP once the homepage composition is approved live.
 
 ## Completed
 
@@ -68,5 +71,6 @@
 - [x] Added `scripts/sonar-export.sh` as the repeatable Linux/DigitalOcean export path for full SonarQube issue, quality gate and measure snapshots.
 - [x] Split `routes/manager.js` so `staff/search/seed`, `services/materials` and `estimates` now live in dedicated subrouters under `routes/manager/`, reducing the main route monolith without changing endpoint shapes.
 - [x] Reduced `apps/mobile-v1/App.js` further by extracting screen components into `apps/mobile-v1/src/screens.js` and shared React Native styles into `apps/mobile-v1/src/styles.js`.
+- [x] Rebuilt the homepage around a `header.png` board with a left account panel, central artwork panel and right menu panel, then moved the homepage flow into alternating light/dark background bands.
 - [ ] Continue the manager-route cleanup by extracting the remaining `quotes` and `projects/media` sections once the new subrouter split has baked in under tests.
 - [ ] Continue reducing `apps/mobile-v1/App.js` by extracting session/tab shell logic after the new `screens.js`/`styles.js` split stabilises.
