@@ -17,6 +17,7 @@
 - [ ] Resolve the remaining workstation child-process policy that still raises `spawn EPERM` for Playwright worker/browser launch, even after moving to managed Chromium and removing the internal static-server spawn.
 - [ ] Re-run `npm run test:e2e:mobile` on a machine where Node can launch Playwright workers and browsers, then record the first green local pass.
 - [ ] Export the real issue list from SonarQube for branch `vscode`, then map every `Bug` and `Vulnerability` to `real fix`, `false positive` or `accepted tradeoff`.
+- [ ] Run `scripts/sonar-export.sh` with `SONAR_URL` and `SONAR_TOKEN`, then attach `sonar-issues-full.json`, `sonar-quality-gate.json` and `sonar-measures.json` to the Sonar cleanup workflow.
 - [ ] Start the SonarQube cleanup with the biggest maintainability hotspots: `manager-dashboard.js`, `routes/manager.js`, `client-dashboard.js`, `styles/base.css` and `apps/mobile-v1/App.js`.
 - [ ] Plan the `multer 1.x -> 2.x` migration as a separate Sonar/dependency-hardening task instead of running `npm audit fix --force`.
 - [ ] Split `manager-dashboard.js` into feature modules (`projects`, `quotes`, `services`, `materials`, `clients`, `staff`, `estimates`, `messages`) once the new overview shell settles.
@@ -64,3 +65,4 @@
 - [x] Moved shared `titleCase`, `formatDateTime`, overview entry and mailbox preview helpers into `runtime.js` so client and manager dashboards stop duplicating the same shell logic.
 - [x] Started reducing `apps/mobile-v1/App.js` by extracting reusable API and list-loading helpers into `apps/mobile-v1/src/api.js` and `apps/mobile-v1/src/useApiList.js`.
 - [x] Saved `Plans/Plan Naprawy Bledow Znalezionych Przez SonarQube.md` and registered it in `Plans/Plan History.md` as the tracked cleanup plan for SonarQube findings.
+- [x] Added `scripts/sonar-export.sh` as the repeatable Linux/DigitalOcean export path for full SonarQube issue, quality gate and measure snapshots.

@@ -73,3 +73,4 @@
 - Moved duplicated overview/mailbox helpers (`titleCase`, `formatDateTime`, `createOverviewEntry`, `renderMailboxPreviewList`) into `runtime.js` and rewired both `client-dashboard.js` and `manager-dashboard.js` to consume the shared runtime helpers.
 - Reduced `apps/mobile-v1/App.js` by extracting reusable mobile API/session loading helpers into `apps/mobile-v1/src/api.js` and `apps/mobile-v1/src/useApiList.js`, which improves parity with the web-side shared-client direction.
 - Saved `Plans/Plan Naprawy Bledow Znalezionych Przez SonarQube.md` and linked it with `Project_todos.md` so SonarQube cleanup now has a tracked triage and execution path.
+- Added `scripts/sonar-export.sh` as the repo-native Linux export path for SonarQube issues, quality gate and measures so the next cleanup pass can work from real issue data instead of inferred hotspots.
