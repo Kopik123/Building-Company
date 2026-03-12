@@ -62,3 +62,13 @@
 - Extended Playwright smoke/regression coverage to assert optimized brand pictures are present and that homepage/auth/dashboard shells keep zero horizontal scroll on mobile.
 - Added `deploy/LIVE_QA_CHECKLIST_PC_MOBILE.md` as the repeatable desktop/phone verification checklist for post-deploy evidence capture.
 - Removed the obsolete `RELEASE_NOTES_design-lock-v1.md` document and replaced it with `Project_Web_Design_Plan.md` so the repo now has a stable three-file loop: target design state, open issues and completed work.
+
+## 2026-03-12
+
+- Saved `Plans/Pelna Analiza Projektu I Plan Naprawy - Usprawnien.md` and registered it in `Plans/Plan History.md` so the stabilization/modularization wave has a tracked project plan.
+- Added `test-results/` to `.gitignore` and stopped carrying `.last-run.json` as a tracked repo file, because it is a volatile Playwright artifact that kept dirtying the worktree after validation.
+- Replaced the fragile `node --test` CLI usage in `package.json` with `scripts/run-api-v2-tests.js`, using `node:test` programmatic execution one file at a time to avoid the workstation `spawn EPERM` blocker without breaking per-file test isolation.
+- Updated `scripts/run-playwright.js` to keep the external static server path but call the Playwright CLI programmatically without the broken `from: 'user'` argument handling.
+- Verified that the remaining local Playwright blocker is environmental: Node cannot spawn worker processes or the Chromium executable on this workstation, so the failure is outside app logic.
+- Moved duplicated overview/mailbox helpers (`titleCase`, `formatDateTime`, `createOverviewEntry`, `renderMailboxPreviewList`) into `runtime.js` and rewired both `client-dashboard.js` and `manager-dashboard.js` to consume the shared runtime helpers.
+- Reduced `apps/mobile-v1/App.js` by extracting reusable mobile API/session loading helpers into `apps/mobile-v1/src/api.js` and `apps/mobile-v1/src/useApiList.js`, which improves parity with the web-side shared-client direction.

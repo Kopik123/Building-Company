@@ -18,8 +18,9 @@
     "test:ci": "npm run verify:generated && npm run test:api:v2",
     "migrate": "node scripts/migrate.js",
     "migrate:status": "node scripts/migrate.js --status",
-    "test:api:v2": "node --test tests/api-v2/*.test.js",
-    "test:e2e:mobile": "playwright test -c tests/playwright/playwright.config.js",
+    "test:api:v2": "node scripts/run-api-v2-tests.js",
+    "playwright:install": "playwright install chromium webkit",
+    "test:e2e:mobile": "node scripts/run-playwright.js -c tests/playwright/playwright.config.js",
     "test:all": "npm run test:api:v2 && npm run test:e2e:mobile"
   },
   "dependencies": {

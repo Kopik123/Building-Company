@@ -4,7 +4,6 @@
 
 - [ ] Run `powershell -ExecutionPolicy Bypass -File .\scripts\setup-vscode.ps1` on the local machine that uses VS Code.
 - [ ] Review whether `ms-vscode.live-server` is still needed if the project always runs through the app server and Playwright.
-- [ ] Decide whether tracked `test-results` artifacts should remain versioned in the repository or be removed in a separate cleanup task.
 - [ ] Plan a separate migration from `multer 1.x` to `multer 2.x`, because the dependency is still flagged in install warnings.
 - [ ] Review whether the premium theme overrides now living in `styles/public.css` and `styles/workspace.css` should be split into smaller section-specific files after the visual direction stabilises.
 - [ ] Keep every new feature review aligned with future Android/iOS app readiness, especially API contracts, auth/session handling, messaging and media flows.
@@ -15,8 +14,8 @@
 - [ ] Re-check the new global `logo | title | account/nav` header proportions on live desktop and mobile, especially the title image width versus the account box width.
 - [ ] Update the live Nginx site file only if it still points to `localhost` or `::1`; keep `127.0.0.1:3000` if the current upstream already matches the real listener.
 - [ ] If exact chronology becomes important, replace the new derived `Company Events` overview in `manager-dashboard` with a persisted audit/event timeline instead of summarising current operational data.
-- [ ] Resolve the local workstation `spawn EPERM` blocker so `npm run test:ci` and `npm run test:e2e:mobile` become reliable again.
-- [ ] Install Playwright-managed browsers on the workstation after the config change, so browser QA no longer depends on a missing local `chrome.exe`.
+- [ ] Resolve the remaining workstation child-process policy that still raises `spawn EPERM` for Playwright worker/browser launch, even after moving to managed Chromium and removing the internal static-server spawn.
+- [ ] Re-run `npm run test:e2e:mobile` on a machine where Node can launch Playwright workers and browsers, then record the first green local pass.
 - [ ] Split `manager-dashboard.js` into feature modules (`projects`, `quotes`, `services`, `materials`, `clients`, `staff`, `estimates`, `messages`) once the new overview shell settles.
 - [ ] Split `client-dashboard.js` into feature modules (`overview`, `projects/documents`, `quotes/services`, `direct manager`, `project chat`) once the new top board settles.
 - [ ] Move more responsive layout ownership out of `styles/base.css` into `styles/public.css` and `styles/workspace.css` after the current contrast/mobile pass is validated live.
@@ -27,6 +26,7 @@
 ## Completed
 
 - [x] Added a repeatable VS Code bootstrap script for extensions and workspace settings.
+- [x] Removed tracked `test-results/.last-run.json` from the repo path and added `test-results/` to `.gitignore` so Playwright artifacts no longer dirty the worktree after validation runs.
 - [x] Added shared workspace extension recommendations in `.vscode/extensions.json`.
 - [x] Merged project-wide VS Code defaults into `.vscode/settings.json` without removing existing SonarLint and chat tool settings.
 - [x] Implemented the premium black / marble / dark-gold theme across public pages and workspace shells.
@@ -56,3 +56,7 @@
 - [x] Tuned shared dark-surface gold tokens from bronze-leaning values toward a richer premium gold and aligned borders/accents with the new hue.
 - [x] Added a dedicated live QA checklist for desktop and phone verification after deploy, including screenshot evidence requirements.
 - [x] Replaced the obsolete `RELEASE_NOTES_design-lock-v1.md` with `Project_Web_Design_Plan.md` as the active design source-of-truth document working alongside `Project_todos.md` and `Project_Dev_plan.md`.
+- [x] Replaced the failing `node --test` worker flow with an in-process sequential API test runner so `npm run test:api:v2` and `npm run test:ci` are reliable again on the local workstation.
+- [x] Confirmed the remaining local `spawn EPERM` blocker is isolated to Playwright worker/browser launch, not the API test suite or app code itself.
+- [x] Moved shared `titleCase`, `formatDateTime`, overview entry and mailbox preview helpers into `runtime.js` so client and manager dashboards stop duplicating the same shell logic.
+- [x] Started reducing `apps/mobile-v1/App.js` by extracting reusable API and list-loading helpers into `apps/mobile-v1/src/api.js` and `apps/mobile-v1/src/useApiList.js`.

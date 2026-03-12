@@ -62,6 +62,57 @@
   const requestAccordionRefresh = runtime.requestAccordionRefresh || (() => {
     window.dispatchEvent(new CustomEvent('ll:dashboard-accordions-refresh'));
   });
+  const titleCase = runtime.titleCase || ((value) => String(value || '')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/\b\w/g, (char) => char.toUpperCase()));
+  const formatDateTime = runtime.formatDateTime || ((value) => {
+    if (!value) return '';
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return '';
+    return parsed.toLocaleString('en-GB');
+  });
+  const createOverviewEntry = runtime.createOverviewEntry || (({ title, detail, meta }) => {
+    const item = document.createElement('article');
+    item.className = 'workspace-overview-entry';
+
+    const heading = document.createElement('h3');
+    heading.textContent = title;
+    item.appendChild(heading);
+
+    if (detail) {
+      const text = document.createElement('p');
+      text.textContent = detail;
+      item.appendChild(text);
+    }
+
+    if (meta) {
+      const metaLine = document.createElement('p');
+      metaLine.className = 'muted';
+      metaLine.textContent = meta;
+      item.appendChild(metaLine);
+    }
+
+    return item;
+  });
+  const renderMailboxPreviewList = runtime.renderMailboxPreviewList || ((node, items, { loaded, loadingText, emptyText, mapItem }) => {
+    node.innerHTML = '';
+
+    if (!loaded) {
+      node.innerHTML = `<p class="muted">${escapeHtml(loadingText)}</p>`;
+      return;
+    }
+
+    if (!items.length) {
+      node.innerHTML = `<p class="muted">${escapeHtml(emptyText)}</p>`;
+      return;
+    }
+
+    const frag = document.createDocumentFragment();
+    items.slice(0, 2).forEach((item) => frag.appendChild(createOverviewEntry(mapItem(item))));
+    node.appendChild(frag);
+  });
 
   const clearSession = () => {
     (runtime.clearSession || (() => {
@@ -204,61 +255,6 @@
       frag.appendChild(card);
     });
     el.servicesList.appendChild(frag);
-  };
-
-  const titleCase = (value) => String(value || '')
-    .replace(/[_-]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .replace(/\b\w/g, (char) => char.toUpperCase());
-
-  const formatDateTime = (value) => {
-    if (!value) return '';
-    const parsed = new Date(value);
-    if (Number.isNaN(parsed.getTime())) return '';
-    return parsed.toLocaleString('en-GB');
-  };
-
-  const createOverviewEntry = ({ title, detail, meta }) => {
-    const item = document.createElement('article');
-    item.className = 'workspace-overview-entry';
-
-    const heading = document.createElement('h3');
-    heading.textContent = title;
-    item.appendChild(heading);
-
-    if (detail) {
-      const text = document.createElement('p');
-      text.textContent = detail;
-      item.appendChild(text);
-    }
-
-    if (meta) {
-      const metaLine = document.createElement('p');
-      metaLine.className = 'muted';
-      metaLine.textContent = meta;
-      item.appendChild(metaLine);
-    }
-
-    return item;
-  };
-
-  const renderMailboxPreviewList = (node, items, { loaded, loadingText, emptyText, mapItem }) => {
-    node.innerHTML = '';
-
-    if (!loaded) {
-      node.innerHTML = `<p class="muted">${escapeHtml(loadingText)}</p>`;
-      return;
-    }
-
-    if (!items.length) {
-      node.innerHTML = `<p class="muted">${escapeHtml(emptyText)}</p>`;
-      return;
-    }
-
-    const frag = document.createDocumentFragment();
-    items.slice(0, 2).forEach((item) => frag.appendChild(createOverviewEntry(mapItem(item))));
-    node.appendChild(frag);
   };
 
   const renderProjectStatusOverview = () => {
