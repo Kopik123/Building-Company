@@ -1223,9 +1223,9 @@ body.public-site.page-home::before {
 .public-shell-header {
   position: relative;
   display: grid;
-  gap: clamp(0.7rem, 1.6vw, 1rem);
-  padding-top: clamp(0.8rem, 2vw, 1.1rem);
-  padding-bottom: clamp(0.85rem, 2vw, 1.15rem);
+  gap: clamp(0.45rem, 1vw, 0.7rem);
+  padding-top: clamp(0.45rem, 1.2vw, 0.7rem);
+  padding-bottom: clamp(0.55rem, 1.3vw, 0.8rem);
 }
 
 .public-brand-board,
@@ -1236,7 +1236,7 @@ body.public-site.page-home::before {
 }
 
 .public-brand-board {
-  max-width: min(100%, 980px);
+  width: min(100%, 920px);
   margin: 0 auto;
   background:
     linear-gradient(180deg, rgba(11, 11, 11, 0.99), rgba(4, 4, 4, 0.99));
@@ -1246,7 +1246,7 @@ body.public-site.page-home::before {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: clamp(0.8rem, 1.7vw, 1rem) clamp(1rem, 2.5vw, 1.6rem);
+  padding: clamp(0.28rem, 0.8vw, 0.45rem) clamp(0.75rem, 1.8vw, 1.1rem);
 }
 
 .public-brand-picture {
@@ -1256,7 +1256,7 @@ body.public-site.page-home::before {
 
 .public-brand-title-image {
   display: block;
-  width: min(100%, 860px);
+  width: min(100%, 820px);
   max-width: 100%;
   height: auto;
   margin: 0 auto;
@@ -1265,27 +1265,39 @@ body.public-site.page-home::before {
 
 .public-shell-strip {
   display: grid;
-  grid-template-columns: minmax(340px, 1.1fr) minmax(280px, 0.95fr);
-  gap: clamp(0.6rem, 1.2vw, 0.85rem);
-  align-items: stretch;
+  grid-template-columns: minmax(430px, 1.2fr) minmax(360px, 1fr);
+  gap: 0;
+  width: min(100%, 1040px);
+  margin: 0 auto;
+  align-items: center;
+  border: 1px solid var(--ll-border-gold-strong);
+  background: rgba(4, 4, 4, 0.98);
+  box-shadow: var(--ll-shadow-premium), var(--ll-shadow-line);
 }
 
 .public-inline-auth,
 .public-shell-nav {
   display: grid;
-  gap: 0.7rem;
+  gap: 0.45rem;
   align-content: start;
-  padding: clamp(0.8rem, 1.6vw, 1rem);
-  background: rgba(4, 4, 4, 0.98);
+  min-height: 0;
+  padding: clamp(0.5rem, 1vw, 0.7rem) clamp(0.7rem, 1.4vw, 0.95rem);
+  background: transparent;
   color: var(--ll-text-on-dark);
+  border: 0;
+  box-shadow: none;
+}
+
+.public-inline-auth {
+  border-right: 1px solid rgba(172, 135, 76, 0.34);
 }
 
 .public-strip-heading {
   margin: 0;
   color: var(--ll-text-on-dark-strong);
-  font-size: 0.82rem;
+  font-size: 0.74rem;
   font-weight: 700;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
 }
 
@@ -1295,23 +1307,24 @@ body.public-site.page-home::before {
 
 .public-inline-login-form {
   display: grid;
-  gap: 0.65rem;
+  gap: 0.42rem;
 }
 
 .public-inline-login-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto auto;
-  gap: 0.55rem;
+  gap: 0.4rem;
   align-items: stretch;
 }
 
 .public-inline-login-row input {
   min-width: 0;
-  min-height: 46px;
-  padding: 0.72rem 0.84rem;
+  min-height: 40px;
+  padding: 0.58rem 0.7rem;
   border: 1px solid rgba(172, 135, 76, 0.38);
   background: rgba(10, 10, 10, 0.98);
   color: var(--ll-text-on-dark);
+  font-size: 0.88rem;
 }
 
 .public-inline-login-row input::placeholder {
@@ -1324,14 +1337,14 @@ body.public-site.page-home::before {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 46px;
-  padding: 0.7rem 0.95rem;
+  min-height: 40px;
+  padding: 0.58rem 0.82rem;
   border: 1px solid rgba(172, 135, 76, 0.54);
   background: rgba(216, 166, 30, 0.09);
   color: var(--ll-text-on-dark);
-  font-size: 0.8rem;
+  font-size: 0.76rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   white-space: nowrap;
 }
@@ -1348,19 +1361,19 @@ body.public-site.page-home::before {
 .public-inline-login-status {
   margin: 0;
   color: var(--ll-text-on-dark-muted);
-  font-size: 0.9rem;
-  line-height: 1.55;
+  font-size: 0.82rem;
+  line-height: 1.45;
 }
 
 .public-inline-session {
   display: grid;
-  gap: 0.7rem;
+  gap: 0.45rem;
 }
 
 .public-inline-session-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.55rem;
+  gap: 0.4rem;
 }
 
 .public-inline-session-link--button {
@@ -1369,22 +1382,24 @@ body.public-site.page-home::before {
 }
 
 .public-shell-nav {
-  grid-template-rows: auto 1fr;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 0.45rem 1rem;
 }
 
 .site-nav--public-shell {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 0.75rem 1rem;
+  gap: 0.5rem 0.9rem;
   padding: 0;
 }
 
 .site-nav--public-shell a {
   color: var(--ll-text-on-dark);
-  font-size: 0.82rem;
+  font-size: 0.74rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
@@ -1395,6 +1410,7 @@ body.public-site.page-home::before {
 @media (max-width: 992px) {
   .site-header--public-shell .public-shell-strip {
     grid-template-columns: 1fr;
+    width: min(100%, 920px);
   }
 
   .site-header--public-shell .public-strip-heading--nav {
@@ -1405,6 +1421,11 @@ body.public-site.page-home::before {
     grid-template-columns: 1fr auto;
     grid-template-rows: auto auto;
     align-items: start;
+  }
+
+  .site-header--public-shell .public-inline-auth {
+    border-right: 0;
+    border-bottom: 1px solid rgba(172, 135, 76, 0.34);
   }
 
   .site-header--public-shell .public-strip-heading--nav {
@@ -1432,21 +1453,21 @@ body.public-site.page-home::before {
 
 @media (max-width: 640px) {
   .site-header--public-shell .public-shell-header {
-    padding-top: 0.7rem;
-    padding-bottom: 0.8rem;
+    padding-top: 0.55rem;
+    padding-bottom: 0.65rem;
   }
 
   .site-header--public-shell .public-brand-link {
-    padding: 0.7rem 0.85rem;
+    padding: 0.22rem 0.55rem;
   }
 
   .site-header--public-shell .public-brand-title-image {
-    width: min(100%, 660px);
+    width: min(100%, 520px);
   }
 
   .site-header--public-shell .public-inline-auth,
   .site-header--public-shell .public-shell-nav {
-    padding: 0.78rem;
+    padding: 0.68rem;
   }
 
   .site-header--public-shell .public-inline-login-row {
@@ -1468,18 +1489,18 @@ body.public-site.page-home::before {
 
 @media (max-width: 390px) {
   .site-header--public-shell .public-shell-header {
-    gap: 0.55rem;
-    padding-top: 0.55rem;
-    padding-bottom: 0.65rem;
+    gap: 0.42rem;
+    padding-top: 0.45rem;
+    padding-bottom: 0.55rem;
   }
 
   .site-header--public-shell .public-inline-auth,
   .site-header--public-shell .public-shell-nav {
-    padding: 0.68rem;
+    padding: 0.58rem;
   }
 
   .site-header--public-shell .public-strip-heading {
-    font-size: 0.72rem;
+    font-size: 0.68rem;
   }
 
   .site-header--public-shell .public-inline-login-row input,
@@ -1488,7 +1509,13 @@ body.public-site.page-home::before {
   .site-header--public-shell .public-inline-session-link,
   .site-header--public-shell .site-nav--public-shell a {
     min-height: 42px;
-    font-size: 0.74rem;
+    font-size: 0.72rem;
     letter-spacing: 0.06em;
+  }
+
+  .site-header--public-shell .public-inline-login-helper,
+  .site-header--public-shell .public-inline-session-copy,
+  .site-header--public-shell .public-inline-login-status {
+    font-size: 0.78rem;
   }
 }

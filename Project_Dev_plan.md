@@ -91,3 +91,4 @@
 - Added the shared shell styles to `styles/public.css`, including responsive handling for the centered `title.png` board, the inline login form and the right-aligned public nav.
 - Regenerated the public service/location pages, then re-ran `npm run verify:generated` and `npm run test:ci`; both passed after the new shell rollout.
 - Re-ran `npm run test:e2e:mobile` and confirmed the remaining failure is still the known workstation-level `spawn EPERM` issue rather than a regression from the new public shell.
+- Tightened the shared public shell proportions in `styles/public.css` so `title.png` now sits in a slimmer top bar and the inline login/menu strip reads as a lower quick-access band instead of two oversized panels.

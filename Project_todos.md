@@ -27,6 +27,7 @@
 - [ ] Revisit whether a CDN/media platform is worth introducing later if the runtime gallery set grows beyond the current `sharp` pipeline.
 - [ ] Keep `Project_Web_Design_Plan.md` aligned with the real current design system whenever header structure, color logic, IA or responsive rules change.
 - [ ] Re-check the new shared `title.png` public shell on live desktop and mobile, especially the balance between the centered brand board and the inline login/navigation strip.
+- [ ] Re-check the slimmer `title.png` top bar and the lower quick-access login/menu strip on live desktop and mobile after the next deploy.
 - [ ] Verify the inline login strip state on all public pages for both guest and authenticated sessions after the next droplet deploy.
 - [ ] Decide later whether `header.png` should remain only as a historical/supporting asset now that `title.png` is the shared public shell lockup.
 
