@@ -9,6 +9,12 @@
   const navToggle = document.querySelector('[data-nav-toggle]');
   const navMenu = document.querySelector('[data-nav-menu]');
   const authLinks = Array.from(document.querySelectorAll('[data-auth-link]'));
+  const inlineLoginForm = document.querySelector('[data-inline-login-form]');
+  const inlineLoginStatus = document.querySelector('[data-inline-login-status]');
+  const inlineSession = document.querySelector('[data-inline-session]');
+  const inlineSessionCopy = document.querySelector('[data-inline-session-copy]');
+  const inlineAccountLink = document.querySelector('[data-inline-account-link]');
+  const inlineLogoutButton = document.querySelector('[data-inline-logout]');
   const menuWrap =
     document.querySelector('[data-menu-wrap]') ||
     (navMenu ? navMenu.closest('.menu-wrap') : null) ||
@@ -19,6 +25,21 @@
   const clearSession = runtime.clearSession || (() => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
+  });
+
+  const saveSession = runtime.saveSession || ((token, user) => {
+    localStorage.setItem(TOKEN_KEY, token);
+    localStorage.setItem(USER_KEY, JSON.stringify(user || {}));
+  });
+
+  const parseError = runtime.parseError || ((payload) => payload?.error || 'Request failed.');
+  const setStatus = runtime.setStatus || ((node, message = '', type = '') => {
+    if (!node) return;
+    node.className = 'form-status';
+    if (type === 'success') node.classList.add('is-success');
+    if (type === 'error') node.classList.add('is-error');
+    if (type === 'loading') node.classList.add('is-loading');
+    node.textContent = message;
   });
 
   const getSavedUser = runtime.getStoredUser || (() => {
@@ -212,15 +233,56 @@
     return String(authLink?.getAttribute('data-auth-guest-label') || '').trim() || brand?.publicAuthLabel || 'Account';
   };
 
+  const renderInlineAuthState = (user) => {
+    if (!inlineSession) return;
+
+    const loggedIn = Boolean(user && localStorage.getItem(TOKEN_KEY));
+    const accountHref = accountPathForRole(user?.role);
+
+    inlineLoginForm?.toggleAttribute('hidden', loggedIn);
+    inlineSession.toggleAttribute('hidden', !loggedIn);
+
+    if (!loggedIn) {
+      if (inlineSessionCopy) {
+        inlineSessionCopy.textContent = 'Use the inline login to move into project visibility.';
+      }
+      if (inlineAccountLink) {
+        inlineAccountLink.setAttribute('href', '/auth.html');
+      }
+      return;
+    }
+
+    if (inlineSessionCopy) {
+      const identity = user?.name || user?.email || 'Account ready';
+      inlineSessionCopy.textContent = `${identity} is signed in. Continue through the private account route.`;
+    }
+
+    if (inlineAccountLink) {
+      inlineAccountLink.setAttribute('href', accountHref);
+      inlineAccountLink.textContent = 'Open Account';
+    }
+  };
+
   const updateNavigationForSession = (user) => {
     const loggedIn = Boolean(user && localStorage.getItem(TOKEN_KEY));
     const accountHref = accountPathForRole(user?.role);
-    if (!authLinks.length) return;
     authLinks.forEach((link) => {
       link.textContent = loggedIn ? 'Account' : getGuestAuthLabel(link);
       link.setAttribute('href', loggedIn ? accountHref : '/auth.html');
       link.classList.toggle('is-authenticated', loggedIn);
     });
+    renderInlineAuthState(user);
+  };
+
+  const fetchJson = async (url, options = {}) => {
+    const response = await fetch(url, options);
+    const payload = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(parseError(payload));
+    }
+
+    return payload;
   };
 
   const validateSession = async () => {
@@ -250,6 +312,51 @@
       updateNavigationForSession(null);
     }
   };
+
+  if (inlineLoginForm) {
+    inlineLoginForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      const formData = new FormData(inlineLoginForm);
+      const email = String(formData.get('email') || '').trim();
+      const password = String(formData.get('password') || '');
+
+      if (!email || !password) {
+        setStatus(inlineLoginStatus, 'Email and password are required.', 'error');
+        return;
+      }
+
+      setStatus(inlineLoginStatus, 'Logging in...', 'loading');
+
+      try {
+        const payload = await fetchJson('/api/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ email, password })
+        });
+
+        saveSession(payload.token, payload.user);
+        updateNavigationForSession(payload.user);
+        setStatus(inlineLoginStatus, 'Login successful. Redirecting to account...', 'success');
+        inlineLoginForm.reset();
+        window.setTimeout(() => {
+          window.location.assign(accountPathForRole(payload.user?.role));
+        }, 350);
+      } catch (error) {
+        setStatus(inlineLoginStatus, error.message || 'Login failed.', 'error');
+      }
+    });
+  }
+
+  if (inlineLogoutButton) {
+    inlineLogoutButton.addEventListener('click', () => {
+      clearSession();
+      updateNavigationForSession(null);
+      setStatus(inlineLoginStatus, '');
+    });
+  }
 
   const isMobileMenuMode = () => window.matchMedia('(max-width: 992px)').matches;
 

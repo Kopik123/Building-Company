@@ -4,7 +4,6 @@
 
 - [ ] Run `powershell -ExecutionPolicy Bypass -File .\scripts\setup-vscode.ps1` on the local machine that uses VS Code.
 - [ ] Review whether `ms-vscode.live-server` is still needed if the project always runs through the app server and Playwright.
-- [ ] Decide whether tracked `test-results` artifacts should remain versioned in the repository or be removed in a separate cleanup task.
 - [ ] Plan a separate migration from `multer 1.x` to `multer 2.x`, because the dependency is still flagged in install warnings.
 - [ ] Review whether the premium theme overrides now living in `styles/public.css` and `styles/workspace.css` should be split into smaller section-specific files after the visual direction stabilises.
 - [ ] Keep every new feature review aligned with future Android/iOS app readiness, especially API contracts, auth/session handling, messaging and media flows.
@@ -15,17 +14,27 @@
 - [ ] Re-check the new global `logo | title | account/nav` header proportions on live desktop and mobile, especially the title image width versus the account box width.
 - [ ] Update the live Nginx site file only if it still points to `localhost` or `::1`; keep `127.0.0.1:3000` if the current upstream already matches the real listener.
 - [ ] If exact chronology becomes important, replace the new derived `Company Events` overview in `manager-dashboard` with a persisted audit/event timeline instead of summarising current operational data.
-- [ ] Resolve the local workstation `spawn EPERM` blocker so `npm run test:ci` and `npm run test:e2e:mobile` become reliable again.
-- [ ] Install Playwright-managed browsers on the workstation after the config change, so browser QA no longer depends on a missing local `chrome.exe`.
+- [ ] Resolve the remaining workstation child-process policy that still raises `spawn EPERM` for Playwright worker/browser launch, even after moving to managed Chromium and removing the internal static-server spawn.
+- [ ] Re-run `npm run test:e2e:mobile` on a machine where Node can launch Playwright workers and browsers, then record the first green local pass.
+- [ ] Export the real issue list from SonarQube for branch `vscode`, then map every `Bug` and `Vulnerability` to `real fix`, `false positive` or `accepted tradeoff`.
+- [ ] Run `scripts/sonar-export.sh` with `SONAR_URL` and `SONAR_TOKEN`, then attach `sonar-issues-full.json`, `sonar-quality-gate.json` and `sonar-measures.json` to the Sonar cleanup workflow.
+- [ ] Start the SonarQube cleanup with the biggest maintainability hotspots: `manager-dashboard.js`, `routes/manager.js`, `client-dashboard.js`, `styles/base.css` and `apps/mobile-v1/App.js`.
+- [ ] Plan the `multer 1.x -> 2.x` migration as a separate Sonar/dependency-hardening task instead of running `npm audit fix --force`.
 - [ ] Split `manager-dashboard.js` into feature modules (`projects`, `quotes`, `services`, `materials`, `clients`, `staff`, `estimates`, `messages`) once the new overview shell settles.
 - [ ] Split `client-dashboard.js` into feature modules (`overview`, `projects/documents`, `quotes/services`, `direct manager`, `project chat`) once the new top board settles.
 - [ ] Move more responsive layout ownership out of `styles/base.css` into `styles/public.css` and `styles/workspace.css` after the current contrast/mobile pass is validated live.
 - [ ] Run the new live QA checklist on desktop and a phone-sized viewport after the next droplet deploy, then capture screenshots for homepage, gallery interaction, dashboards and the quote/contact form.
 - [ ] Revisit whether a CDN/media platform is worth introducing later if the runtime gallery set grows beyond the current `sharp` pipeline.
+- [ ] Keep `Project_Web_Design_Plan.md` aligned with the real current design system whenever header structure, color logic, IA or responsive rules change.
+- [ ] Re-check the new shared `title.png` public shell on live desktop and mobile, especially the balance between the centered brand board and the inline login/navigation strip.
+- [ ] Re-check the slimmer `title.png` top bar and the lower quick-access login/menu strip on live desktop and mobile after the next deploy.
+- [ ] Verify the inline login strip state on all public pages for both guest and authenticated sessions after the next droplet deploy.
+- [ ] Decide later whether `header.png` should remain only as a historical/supporting asset now that `title.png` is the shared public shell lockup.
 
 ## Completed
 
 - [x] Added a repeatable VS Code bootstrap script for extensions and workspace settings.
+- [x] Removed tracked `test-results/.last-run.json` from the repo path and added `test-results/` to `.gitignore` so Playwright artifacts no longer dirty the worktree after validation runs.
 - [x] Added shared workspace extension recommendations in `.vscode/extensions.json`.
 - [x] Merged project-wide VS Code defaults into `.vscode/settings.json` without removing existing SonarLint and chat tool settings.
 - [x] Implemented the premium black / marble / dark-gold theme across public pages and workspace shells.
@@ -54,3 +63,20 @@
 - [x] Updated gallery and generated public sections to read optimized media variants instead of a single heavy JPG/PNG path.
 - [x] Tuned shared dark-surface gold tokens from bronze-leaning values toward a richer premium gold and aligned borders/accents with the new hue.
 - [x] Added a dedicated live QA checklist for desktop and phone verification after deploy, including screenshot evidence requirements.
+- [x] Replaced the obsolete `RELEASE_NOTES_design-lock-v1.md` with `Project_Web_Design_Plan.md` as the active design source-of-truth document working alongside `Project_todos.md` and `Project_Dev_plan.md`.
+- [x] Replaced the failing `node --test` worker flow with an in-process sequential API test runner so `npm run test:api:v2` and `npm run test:ci` are reliable again on the local workstation.
+- [x] Confirmed the remaining local `spawn EPERM` blocker is isolated to Playwright worker/browser launch, not the API test suite or app code itself.
+- [x] Moved shared `titleCase`, `formatDateTime`, overview entry and mailbox preview helpers into `runtime.js` so client and manager dashboards stop duplicating the same shell logic.
+- [x] Started reducing `apps/mobile-v1/App.js` by extracting reusable API and list-loading helpers into `apps/mobile-v1/src/api.js` and `apps/mobile-v1/src/useApiList.js`.
+- [x] Saved `Plans/Plan Naprawy Bledow Znalezionych Przez SonarQube.md` and registered it in `Plans/Plan History.md` as the tracked cleanup plan for SonarQube findings.
+- [x] Added `scripts/sonar-export.sh` as the repeatable Linux/DigitalOcean export path for full SonarQube issue, quality gate and measure snapshots.
+- [x] Split `routes/manager.js` so `staff/search/seed`, `services/materials` and `estimates` now live in dedicated subrouters under `routes/manager/`, reducing the main route monolith without changing endpoint shapes.
+- [x] Reduced `apps/mobile-v1/App.js` further by extracting screen components into `apps/mobile-v1/src/screens.js` and shared React Native styles into `apps/mobile-v1/src/styles.js`.
+- [x] Rebuilt the homepage around a `header.png` board with a left account panel, central artwork panel and right menu panel, then moved the homepage flow into alternating light/dark background bands.
+- [x] Saved `Plans/Redesign Publicznego Shellu Pod title.png.md` and registered it in `Plans/Plan History.md` as the tracked redesign plan for the new shared public shell.
+- [x] Replaced the temporary homepage-only `header.png` board with one shared public shell based on `title.png`, using the same top structure across homepage, brand pages, legal pages and generated service/location pages.
+- [x] Added a real inline public login strip wired to the existing auth/session flow in `site.js`, including guest login/register controls and a session-aware account state.
+- [x] Updated `scripts/publicPages.shared.js` and `scripts/publicPageRenderer.js` so generated pages now use the same `title.png` shell and the fixed nav order `About Us | Gallery | Quote | Contact | Account`.
+- [x] Updated Playwright public/mobile expectations so regression coverage validates the new shared `title.png` shell and inline login instead of the old homepage-only header layout.
+- [ ] Continue the manager-route cleanup by extracting the remaining `quotes` and `projects/media` sections once the new subrouter split has baked in under tests.
+- [ ] Continue reducing `apps/mobile-v1/App.js` by extracting session/tab shell logic after the new `screens.js`/`styles.js` split stabilises.

@@ -167,6 +167,63 @@
   const requestAccordionRefresh = runtime.requestAccordionRefresh || (() => {
     window.dispatchEvent(new CustomEvent('ll:dashboard-accordions-refresh'));
   });
+  const titleCase = runtime.titleCase || ((value) => String(value || '')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/\b\w/g, (char) => char.toUpperCase()));
+  const formatDateTime = runtime.formatDateTime || ((value) => {
+    if (!value) return '';
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return '';
+    return parsed.toLocaleString('en-GB');
+  });
+  const createOverviewEntry = runtime.createOverviewEntry || (({ title, detail, meta }) => {
+    const item = document.createElement('article');
+    item.className = 'workspace-overview-entry';
+
+    const heading = document.createElement('h3');
+    heading.textContent = title;
+    item.appendChild(heading);
+
+    if (detail) {
+      const text = document.createElement('p');
+      text.textContent = detail;
+      item.appendChild(text);
+    }
+
+    if (meta) {
+      const metaLine = document.createElement('p');
+      metaLine.className = 'muted';
+      metaLine.textContent = meta;
+      item.appendChild(metaLine);
+    }
+
+    return item;
+  });
+  const renderMailboxPreviewList = runtime.renderMailboxPreviewList || ((node, items, { loaded, loadingText, emptyText, mapItem }) => {
+    node.innerHTML = '';
+
+    if (!loaded) {
+      const text = document.createElement('p');
+      text.className = 'muted';
+      text.textContent = loadingText;
+      node.appendChild(text);
+      return;
+    }
+
+    if (!items.length) {
+      const text = document.createElement('p');
+      text.className = 'muted';
+      text.textContent = emptyText;
+      node.appendChild(text);
+      return;
+    }
+
+    const frag = document.createDocumentFragment();
+    items.slice(0, 2).forEach((item) => frag.appendChild(createOverviewEntry(mapItem(item))));
+    node.appendChild(frag);
+  });
   const createControlField = (labelText, control) => {
     const field = document.createElement('label');
     field.className = 'dashboard-control-field';
@@ -344,67 +401,6 @@
     }
     el.session.textContent = `Logged as ${state.user.name || state.user.email} (${state.user.role})`;
     renderAvailableOptions();
-  };
-
-  const titleCase = (value) => String(value || '')
-    .replace(/[_-]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .replace(/\b\w/g, (char) => char.toUpperCase());
-
-  const formatDateTime = (value) => {
-    if (!value) return '';
-    const parsed = new Date(value);
-    if (Number.isNaN(parsed.getTime())) return '';
-    return parsed.toLocaleString('en-GB');
-  };
-
-  const createOverviewEntry = ({ title, detail, meta }) => {
-    const item = document.createElement('article');
-    item.className = 'workspace-overview-entry';
-
-    const heading = document.createElement('h3');
-    heading.textContent = title;
-    item.appendChild(heading);
-
-    if (detail) {
-      const text = document.createElement('p');
-      text.textContent = detail;
-      item.appendChild(text);
-    }
-
-    if (meta) {
-      const metaLine = document.createElement('p');
-      metaLine.className = 'muted';
-      metaLine.textContent = meta;
-      item.appendChild(metaLine);
-    }
-
-    return item;
-  };
-
-  const renderMailboxPreviewList = (node, items, { loaded, loadingText, emptyText, mapItem }) => {
-    node.innerHTML = '';
-
-    if (!loaded) {
-      const text = document.createElement('p');
-      text.className = 'muted';
-      text.textContent = loadingText;
-      node.appendChild(text);
-      return;
-    }
-
-    if (!items.length) {
-      const text = document.createElement('p');
-      text.className = 'muted';
-      text.textContent = emptyText;
-      node.appendChild(text);
-      return;
-    }
-
-    const frag = document.createDocumentFragment();
-    items.slice(0, 2).forEach((item) => frag.appendChild(createOverviewEntry(mapItem(item))));
-    node.appendChild(frag);
   };
 
   const renderCompanyEvents = () => {

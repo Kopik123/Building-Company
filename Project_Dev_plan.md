@@ -61,3 +61,34 @@
 - Added AVIF to the tracked Nginx static asset regex so the deploy config can cache the new optimized image format directly when the site config is refreshed.
 - Extended Playwright smoke/regression coverage to assert optimized brand pictures are present and that homepage/auth/dashboard shells keep zero horizontal scroll on mobile.
 - Added `deploy/LIVE_QA_CHECKLIST_PC_MOBILE.md` as the repeatable desktop/phone verification checklist for post-deploy evidence capture.
+- Removed the obsolete `RELEASE_NOTES_design-lock-v1.md` document and replaced it with `Project_Web_Design_Plan.md` so the repo now has a stable three-file loop: target design state, open issues and completed work.
+
+## 2026-03-12
+
+- Saved `Plans/Pelna Analiza Projektu I Plan Naprawy - Usprawnien.md` and registered it in `Plans/Plan History.md` so the stabilization/modularization wave has a tracked project plan.
+- Added `test-results/` to `.gitignore` and stopped carrying `.last-run.json` as a tracked repo file, because it is a volatile Playwright artifact that kept dirtying the worktree after validation.
+- Replaced the fragile `node --test` CLI usage in `package.json` with `scripts/run-api-v2-tests.js`, using `node:test` programmatic execution one file at a time to avoid the workstation `spawn EPERM` blocker without breaking per-file test isolation.
+- Updated `scripts/run-playwright.js` to keep the external static server path but call the Playwright CLI programmatically without the broken `from: 'user'` argument handling.
+- Verified that the remaining local Playwright blocker is environmental: Node cannot spawn worker processes or the Chromium executable on this workstation, so the failure is outside app logic.
+- Moved duplicated overview/mailbox helpers (`titleCase`, `formatDateTime`, `createOverviewEntry`, `renderMailboxPreviewList`) into `runtime.js` and rewired both `client-dashboard.js` and `manager-dashboard.js` to consume the shared runtime helpers.
+- Reduced `apps/mobile-v1/App.js` by extracting reusable mobile API/session loading helpers into `apps/mobile-v1/src/api.js` and `apps/mobile-v1/src/useApiList.js`, which improves parity with the web-side shared-client direction.
+- Saved `Plans/Plan Naprawy Bledow Znalezionych Przez SonarQube.md` and linked it with `Project_todos.md` so SonarQube cleanup now has a tracked triage and execution path.
+- Added `scripts/sonar-export.sh` as the repo-native Linux export path for SonarQube issues, quality gate and measures so the next cleanup pass can work from real issue data instead of inferred hotspots.
+- Continued the Sonar/stability cleanup by splitting `routes/manager.js` so `staff/search/seed`, `services/materials` and `estimates` now register through dedicated subrouters under `routes/manager/` while quote/project/media endpoints stay in the main router.
+- Reduced `apps/mobile-v1/App.js` further by extracting React Native screen components into `apps/mobile-v1/src/screens.js` and moving the shared mobile style sheet into `apps/mobile-v1/src/styles.js`, leaving the app shell focused on session and tab orchestration.
+- Re-ran `npm run verify:generated` and `npm run test:ci` after the manager-route split and mobile-v1 screen/style extraction; both now pass with the refactor in place.
+- Re-checked `npm run test:e2e:mobile` and confirmed the only remaining failure is still the workstation-level Playwright `spawn EPERM` blocker, not an application regression from this refactor.
+- Rebuilt the homepage shell in `index.html` so it now starts with a three-part `header.png` board: left account panel, central artwork panel and right menu panel.
+- Split the homepage flow into alternating light/dark bands in `styles/public.css`, matching the requested black/white background rhythm while keeping existing `projects`, `gallery`, `services`, `contact` and `quote` anchors intact.
+- Updated homepage Playwright regression coverage in `tests/playwright/public-redesign.spec.js` and `tests/playwright/mobile-smoke.spec.js` so the tests validate the new board layout instead of the older `brand-title-link` header.
+- Tuned the live proportions of the new homepage board in `styles/public.css`: smaller `header.png` height, a full dark top band and stronger balance between account, art and menu panels after the first production screenshot review.
+- Saved `Plans/Redesign Publicznego Shellu Pod title.png.md` and registered it in `Plans/Plan History.md` before rolling out the new shared public shell.
+- Replaced the temporary homepage-only `header.png` composition with a shared public shell built around a centered `title.png` board and a lower inline utility strip.
+- Updated `scripts/publicPages.shared.js` so all public navigation now resolves in the fixed order `About Us | Gallery | Quote | Contact | Account`.
+- Reworked `scripts/publicPageRenderer.js` so generated service, location and legal pages render the same `title.png` shell and no longer diverge from the manual pages.
+- Replaced the manual public-page headers in `index.html`, `about.html`, `gallery.html`, `contact.html`, `quote.html`, `privacy.html`, `cookie-policy.html` and `terms.html` with the same shared shell markup.
+- Extended `site.js` with a real inline public login/session strip that posts to the existing auth flow, stores session state and swaps to an account/session view when the user is already logged in.
+- Added the shared shell styles to `styles/public.css`, including responsive handling for the centered `title.png` board, the inline login form and the right-aligned public nav.
+- Regenerated the public service/location pages, then re-ran `npm run verify:generated` and `npm run test:ci`; both passed after the new shell rollout.
+- Re-ran `npm run test:e2e:mobile` and confirmed the remaining failure is still the known workstation-level `spawn EPERM` issue rather than a regression from the new public shell.
+- Tightened the shared public shell proportions in `styles/public.css` so `title.png` now sits in a slimmer top bar and the inline login/menu strip reads as a lower quick-access band instead of two oversized panels.

@@ -18,9 +18,9 @@ test('homepage renders premium shell, new IA and homepage section order', async 
   await page.goto('/index.html');
 
   await expect(page.locator('body.public-site.page-home')).toBeVisible();
-  await expect(page.locator('.site-header .brand-title-link .brand-title-image')).toBeVisible();
-  await expect(page.locator('.brand-mark-link picture source[type="image/avif"]')).toHaveCount(1);
-  await expect(page.locator('.brand-title-link picture source[type="image/webp"]')).toHaveCount(1);
+  await expect(page.locator('.site-header--public-shell .public-brand-title-image[src="/assets/optimized/brand/title.png"]')).toHaveCount(1);
+  await expect(page.locator('.site-header--public-shell [data-inline-login-form]')).toBeVisible();
+  await expect(page.locator('.site-header--public-shell .public-shell-nav')).toBeVisible();
   await expect(page.locator('.home-hero-copy h1')).toContainText(/premium bathroom, kitchen and interior renovation studio/i);
   await expect(page.locator('#projects')).toBeVisible();
   await expect(page.locator('#gallery')).toBeVisible();
@@ -31,9 +31,11 @@ test('homepage renders premium shell, new IA and homepage section order', async 
   await openNavIfNeeded(page);
   await expect(page.locator('[data-nav-menu] a[href="/about.html"]')).toBeVisible();
   await expect(page.locator('[data-nav-menu] a[href="/gallery.html"]')).toBeVisible();
-  await expect(page.locator('[data-nav-menu] a[href="/contact.html"]')).toBeVisible();
   await expect(page.locator('[data-nav-menu] a[href="/quote.html"]')).toBeVisible();
-  await expect(page.locator('[data-auth-link]').first()).toContainText(/^account$/i);
+  await expect(page.locator('[data-nav-menu] a[href="/contact.html"]')).toBeVisible();
+  await expect(page.locator('[data-nav-menu] a[href="/auth.html"]')).toContainText(/^account$/i);
+  await expect(page.locator('[data-inline-login-form] input[name="email"]')).toBeVisible();
+  await expect(page.locator('[data-inline-login-form] input[name="password"]')).toBeVisible();
   await expectNoHorizontalScroll(page);
 });
 
@@ -60,9 +62,12 @@ test('brand pages render about, gallery, contact and quote routes', async ({ pag
 test('service, location and legal pages keep the same shell and SEO contact path', async ({ page }) => {
   await page.goto('/premium-bathrooms-manchester.html');
   await expect(page.locator('body.public-site.page-service')).toBeVisible();
+  await expect(page.locator('.site-header--public-shell .public-brand-title-image[src="/assets/optimized/brand/title.png"]')).toHaveCount(1);
+  await expect(page.locator('.site-header--public-shell [data-inline-login-form]')).toBeVisible();
   await expect(page.locator('main h1').first()).toContainText(/Bathrooms/i);
   await expect(page.locator('[data-nav-menu] a[href="/contact.html"]')).toHaveCount(1);
   await expect(page.locator('[data-nav-menu] a[href="/quote.html"]')).toHaveCount(1);
+  await expect(page.locator('[data-nav-menu] a[href="/auth.html"]')).toHaveCount(1);
   await expect(page.locator('#consultation form, form.js-quote-form')).toHaveCount(1);
 
   await page.goto('/premium-renovations-chorlton.html');
@@ -71,6 +76,8 @@ test('service, location and legal pages keep the same shell and SEO contact path
 
   await page.goto('/privacy.html');
   await expect(page.locator('body.public-site.page-legal')).toBeVisible();
+  await expect(page.locator('.site-header--public-shell .public-brand-title-image[src="/assets/optimized/brand/title.png"]')).toHaveCount(1);
+  await expect(page.locator('.site-header--public-shell [data-inline-login-form]')).toBeVisible();
   await expect(page.getByRole('heading', { name: /privacy policy for studio enquiries/i })).toBeVisible();
   await expect(page.locator('footer .footer-block .footer-links a[href="/about.html"]').first()).toBeVisible();
   await expect(page.locator('footer .footer-block .footer-links a[href="/quote.html"]').first()).toBeVisible();

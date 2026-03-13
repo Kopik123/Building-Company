@@ -27,42 +27,60 @@
   <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"LocalBusiness","@id":"https://levellines.co.uk/#business","name":"Level Lines Studio","url":"https://levellines.co.uk/","image":["https://levellines.co.uk/assets/optimized/brand/title.png","https://levellines.co.uk/Gallery/premium/brick-dark-main.jpg"],"telephone":["+44 7942 874 446","+44 7304 506 391"],"email":"LevelLineStudioMCR@gmail.com","areaServed":["North West - Lancashire","Manchester","Liverpool","Preston","Rochdale","Oldham","Macclesfield","Stockport","Northwich","Warrington"],"address":{"@type":"PostalAddress","addressRegion":"North West - Lancashire","addressCountry":"GB"}},{"@type":"WebSite","@id":"https://levellines.co.uk/#website","url":"https://levellines.co.uk/","name":"Level Lines Studio","publisher":{"@id":"https://levellines.co.uk/#business"}}]}</script>
 </head>
 <body class="public-site page-home">
-  <header class="site-header" id="top">
-    <div class="container header-inner grid-12">
-      <a class="brand brand-mark-link" href="/index.html" aria-label="Level Lines Studio home">
-        <picture class="brand-picture brand-picture--icon">
-          <source type="image/avif" srcset="/assets/optimized/brand/logo.avif" />
-          <source type="image/webp" srcset="/assets/optimized/brand/logo.webp" />
-          <img src="/assets/optimized/brand/logo.png" alt="Level Lines Studio icon" class="brand-icon-image" width="420" height="330" decoding="async" />
-        </picture>
-      </a>
-      <a class="brand brand-title-link" href="/index.html" aria-label="Level Lines Studio home">
-        <picture class="brand-picture brand-picture--title">
-          <source type="image/avif" srcset="/assets/optimized/brand/title.avif" />
-          <source type="image/webp" srcset="/assets/optimized/brand/title.webp" />
-          <img src="/assets/optimized/brand/title.png" alt="Level Lines Studio" class="brand-lockup-image brand-title-image" width="1800" height="412" decoding="async" />
-        </picture>
-      </a>
-      <div class="header-utility-panel menu-wrap" data-menu-wrap>
-        <a class="header-auth-link" href="/auth.html" data-auth-link data-auth-guest-label="Account">Account</a>
-        <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation menu">
-          <span class="nav-toggle-line"></span>
-          <span class="nav-toggle-line"></span>
-          <span class="nav-toggle-line"></span>
-        </button>
-        <nav class="site-nav" id="site-nav" data-nav-menu aria-label="Main navigation">
-          <a href="/about.html" data-nav-link>About Us</a>
-          <a href="/gallery.html" data-nav-link>Gallery</a>
-          <a href="/contact.html" data-nav-link>Contact</a>
-          <a href="/quote.html" data-nav-link>Quote</a>
-        </nav>
+    <header class="site-header site-header--public-shell" id="top">
+    <div class="container public-shell-header">
+      <div class="public-brand-board">
+        <a class="public-brand-link" href="/index.html" aria-label="Level Lines Studio home">
+          <picture class="public-brand-picture">
+            <source type="image/avif" srcset="/assets/optimized/brand/title.avif" />
+            <source type="image/webp" srcset="/assets/optimized/brand/title.webp" />
+            <img src="/assets/optimized/brand/title.png" alt="Level Lines Studio" class="public-brand-title-image" width="1800" height="412" decoding="async" />
+          </picture>
+        </a>
+      </div>
+      <div class="public-shell-strip">
+        <section class="public-inline-auth" data-inline-auth-shell aria-label="Studio login">
+          <p class="public-strip-heading">Login</p>
+          <form class="public-inline-login-form" data-inline-login-form novalidate>
+            <div class="public-inline-login-row">
+              <input type="email" name="email" autocomplete="username email" placeholder="Email" aria-label="Email" required />
+              <input type="password" name="password" autocomplete="current-password" placeholder="Password" aria-label="Password" required />
+              <button class="public-inline-login-submit" type="submit">Login</button>
+              <a class="public-inline-login-link" href="/auth.html">Register</a>
+            </div>
+            <p class="public-inline-login-helper">Move public enquiries into private project visibility.</p>
+          </form>
+          <div class="public-inline-session" data-inline-session hidden>
+            <p class="public-inline-session-copy" data-inline-session-copy>Account ready.</p>
+            <div class="public-inline-session-actions">
+              <a class="public-inline-session-link" href="/auth.html" data-inline-account-link>Open Account</a>
+              <button class="public-inline-session-link public-inline-session-link--button" type="button" data-inline-logout>Log out</button>
+            </div>
+          </div>
+          <p class="form-status public-inline-login-status" data-inline-login-status aria-live="polite"></p>
+        </section>
+        <div class="public-shell-nav menu-wrap" data-menu-wrap>
+          <p class="public-strip-heading public-strip-heading--nav">Menu</p>
+          <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation menu">
+            <span class="nav-toggle-line"></span>
+            <span class="nav-toggle-line"></span>
+            <span class="nav-toggle-line"></span>
+          </button>
+          <nav class="site-nav site-nav--public-shell" id="site-nav" data-nav-menu aria-label="Main navigation">
+            <a href="/about.html" data-nav-link>About Us</a>
+            <a href="/gallery.html" data-nav-link>Gallery</a>
+            <a href="/quote.html" data-nav-link>Quote</a>
+            <a href="/contact.html" data-nav-link>Contact</a>
+            <a href="/auth.html" data-nav-link data-auth-link data-auth-guest-label="Account">Account</a>
+          </nav>
+        </div>
       </div>
     </div>
   </header>
 
-  <main>
-    <section class="section section--light">
-      <div class="container home-shell">
+  <main class="home-main">
+    <section class="section section--home-dark">
+      <div class="container home-shell home-shell--band">
         <section class="home-hero-card" data-home-section>
           <div class="home-hero-copy">
             <p class="section-eyebrow">Premium Renovation Studio</p>
@@ -83,7 +101,11 @@
             <a class="home-auth-cta" href="/auth.html" data-auth-link data-auth-guest-label="Account">Account</a>
           </aside>
         </section>
+      </div>
+    </section>
 
+    <section class="section section--home-light">
+      <div class="container home-shell home-shell--band">
         <section class="home-showcase-grid" data-home-section>
           <aside class="surface-card surface-card--light studio-projects-panel" id="projects">
             <div class="studio-panel-head studio-panel-head--stack">
@@ -114,7 +136,11 @@
             </div>
           </article>
         </section>
+      </div>
+    </section>
 
+    <section class="section section--home-light section--home-light-secondary">
+      <div class="container home-shell home-shell--band">
         <section class="home-secondary-grid" data-home-section>
           <article class="surface-card surface-card--dark studio-summary-card" id="services">
             <div>
@@ -147,14 +173,18 @@
               <p class="form-status" aria-live="polite"></p>
             </form>
           </article>
+        </section>
+      </div>
+    </section>
 
-          <section class="home-contact-band" id="contact">
-            <a href="tel:+447942874446" data-brand-phone="0">+44 7942 874 446</a>
-            <span>|</span>
-            <a href="tel:+447304506391" data-brand-phone="1">+44 7304 506 391</a>
-            <span>|</span>
-            <a href="mailto:LevelLineStudioMCR@gmail.com" data-brand-email>LevelLineStudioMCR@gmail.com</a>
-          </section>
+    <section class="section section--home-dark">
+      <div class="container home-shell home-shell--band">
+        <section class="home-contact-band" id="contact">
+          <a href="tel:+447942874446" data-brand-phone="0">+44 7942 874 446</a>
+          <span>|</span>
+          <a href="tel:+447304506391" data-brand-phone="1">+44 7304 506 391</a>
+          <span>|</span>
+          <a href="mailto:LevelLineStudioMCR@gmail.com" data-brand-email>LevelLineStudioMCR@gmail.com</a>
         </section>
       </div>
       <script type="application/json" data-gallery-projects-json>[
@@ -215,5 +245,6 @@
   <script src="/quote.js" defer></script>
 </body>
 </html>
+
 
 

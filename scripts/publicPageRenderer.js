@@ -61,14 +61,17 @@ const renderResponsivePicture = ({ asset, alt, className = '', imgClassName = ''
         </picture>`;
 };
 
-const renderBrandLockup = (shared) => {
-  const icon = {
-    fallback: brandAssets.headerIcon?.fallback || shared.headerIconPath || '/logo.png',
-    webp: brandAssets.headerIcon?.webp || '',
-    avif: brandAssets.headerIcon?.avif || '',
-    width: Number(brandAssets.headerIcon?.width) || 1093,
-    height: Number(brandAssets.headerIcon?.height) || 860
-  };
+const renderPublicNavLinks = (shared) =>
+  shared.navLinks
+    .map((link) => {
+      const authAttrs = link.isAuthLink
+        ? ` data-auth-link data-auth-guest-label="${escapeHtml(shared.publicAuthLabel || 'Account')}"`
+        : '';
+      return `          <a href="${escapeHtml(link.href)}" data-nav-link${authAttrs}>${escapeHtml(link.label)}</a>`;
+    })
+    .join('\n');
+
+const renderPublicTitleBoard = (shared) => {
   const title = {
     fallback: brandAssets.title?.fallback || shared.titleImagePath || shared.logoPath || '/title.png',
     webp: brandAssets.title?.webp || '',
@@ -77,30 +80,59 @@ const renderBrandLockup = (shared) => {
     height: Number(brandAssets.title?.height) || 780
   };
 
-  return `      <a class="brand brand-mark-link" href="/index.html" aria-label="${escapeHtml(shared.brandName)} home">
-${renderResponsivePicture({ asset: icon, alt: `${shared.brandName} icon`, imgClassName: 'brand-icon-image', className: 'brand-picture brand-picture--icon', loading: 'eager' })}
-      </a>
-      <a class="brand brand-title-link" href="/index.html" aria-label="${escapeHtml(shared.brandName)} home">
-${renderResponsivePicture({ asset: title, alt: shared.brandName, imgClassName: 'brand-lockup-image brand-title-image', className: 'brand-picture brand-picture--title', loading: 'eager' })}
-      </a>`;
+  return `      <div class="public-brand-board">
+        <a class="public-brand-link" href="/index.html" aria-label="${escapeHtml(shared.brandName)} home">
+${renderResponsivePicture({
+  asset: title,
+  alt: shared.brandName,
+  className: 'public-brand-picture',
+  imgClassName: 'public-brand-title-image',
+  loading: 'eager'
+})}
+        </a>
+      </div>`;
 };
 
-const renderHeaderUtilityPanel = (shared) => `      <div class="header-utility-panel menu-wrap" data-menu-wrap>
-        <a class="header-auth-link" href="/auth.html" data-auth-link data-auth-guest-label="${escapeHtml(shared.publicAuthLabel || 'Account')}">${escapeHtml(shared.publicAuthLabel || 'Account')}</a>
-        <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation menu">
-          <span class="nav-toggle-line"></span>
-          <span class="nav-toggle-line"></span>
-          <span class="nav-toggle-line"></span>
-        </button>
-        <nav class="site-nav" id="site-nav" data-nav-menu aria-label="Main navigation">
-${renderNavLinks(shared)}
-        </nav>
-      </div>`;
+const renderInlineLoginStrip = (shared) => `        <section class="public-inline-auth" data-inline-auth-shell aria-label="Studio login">
+          <p class="public-strip-heading">Login</p>
+          <form class="public-inline-login-form" data-inline-login-form novalidate>
+            <div class="public-inline-login-row">
+              <input type="email" name="email" autocomplete="username email" placeholder="Email" aria-label="Email" required />
+              <input type="password" name="password" autocomplete="current-password" placeholder="Password" aria-label="Password" required />
+              <button class="public-inline-login-submit" type="submit">Login</button>
+              <a class="public-inline-login-link" href="/auth.html">Register</a>
+            </div>
+            <p class="public-inline-login-helper">Move public enquiries into private project visibility.</p>
+          </form>
+          <div class="public-inline-session" data-inline-session hidden>
+            <p class="public-inline-session-copy" data-inline-session-copy>Account ready.</p>
+            <div class="public-inline-session-actions">
+              <a class="public-inline-session-link" href="/auth.html" data-inline-account-link>Open Account</a>
+              <button class="public-inline-session-link public-inline-session-link--button" type="button" data-inline-logout>Log out</button>
+            </div>
+          </div>
+          <p class="form-status public-inline-login-status" data-inline-login-status aria-live="polite"></p>
+        </section>`;
 
-const renderNavLinks = (shared) =>
-  shared.navLinks
-    .map((link) => `          <a href="${escapeHtml(link.href)}" data-nav-link>${escapeHtml(link.label)}</a>`)
-    .join('\n');
+const renderPublicShell = (shared) => `  <header class="site-header site-header--public-shell" id="top">
+    <div class="container public-shell-header">
+${renderPublicTitleBoard(shared)}
+      <div class="public-shell-strip">
+${renderInlineLoginStrip(shared)}
+        <div class="public-shell-nav menu-wrap" data-menu-wrap>
+          <p class="public-strip-heading public-strip-heading--nav">Menu</p>
+          <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation menu">
+            <span class="nav-toggle-line"></span>
+            <span class="nav-toggle-line"></span>
+            <span class="nav-toggle-line"></span>
+          </button>
+          <nav class="site-nav site-nav--public-shell" id="site-nav" data-nav-menu aria-label="Main navigation">
+${renderPublicNavLinks(shared)}
+          </nav>
+        </div>
+      </div>
+    </div>
+  </header>`;
 
 const renderLinks = (links, className = '') =>
   links
@@ -546,12 +578,7 @@ ${renderJsonLdScripts(jsonLd)}
 </head>
 <body class="${escapeHtml(bodyClass)}">
 
-  <header class="site-header" id="top">
-    <div class="container header-inner grid-12">
-${renderBrandLockup(shared)}
-${renderHeaderUtilityPanel(shared)}
-    </div>
-  </header>
+${renderPublicShell(shared)}
   <main>
 
 ${board

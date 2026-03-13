@@ -42,8 +42,9 @@ module.exports = {
   navLinks: [
     { href: '/about.html', label: 'About Us' },
     { href: '/gallery.html', label: 'Gallery' },
+    { href: '/quote.html', label: 'Quote' },
     { href: '/contact.html', label: 'Contact' },
-    { href: '/quote.html', label: 'Quote' }
+    { href: '/auth.html', label: 'Account', isAuthLink: true }
   ],
   serviceLinks: [
     { href: '/premium-bathrooms-manchester.html', label: 'Full Bathroom Renovations' },
