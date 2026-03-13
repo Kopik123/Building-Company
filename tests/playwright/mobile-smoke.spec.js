@@ -348,14 +348,14 @@ const mockManagerSession = async (page) => {
 test('homepage mobile menu opens and keeps the shared account shell', async ({ page }) => {
   await page.goto('/index.html');
   await openNavIfNeeded(page);
-  await expect(page.locator('.site-header--homeboard .home-header-art-image[src="/header.png"]')).toHaveCount(1);
-  await expect(page.locator('.site-header--homeboard .home-header-panel--account')).toBeVisible();
-  await expect(page.locator('.site-header--homeboard .home-header-panel--menu')).toBeVisible();
+  await expect(page.locator('.site-header--public-shell .public-brand-title-image[src="/assets/optimized/brand/title.png"]')).toHaveCount(1);
+  await expect(page.locator('.site-header--public-shell [data-inline-login-form]')).toBeVisible();
+  await expect(page.locator('.site-header--public-shell .public-shell-nav')).toBeVisible();
   await expect(page.locator('[data-nav-menu] a[href="/about.html"]')).toBeVisible();
   await expect(page.locator('[data-nav-menu] a[href="/gallery.html"]')).toBeVisible();
-  await expect(page.locator('[data-nav-menu] a[href="/contact.html"]')).toBeVisible();
   await expect(page.locator('[data-nav-menu] a[href="/quote.html"]')).toBeVisible();
-  await expect(page.locator('[data-auth-link]').first()).toContainText(/^account$/i);
+  await expect(page.locator('[data-nav-menu] a[href="/contact.html"]')).toBeVisible();
+  await expect(page.locator('[data-nav-menu] a[href="/auth.html"]')).toContainText(/^account$/i);
   await expectNoHorizontalScroll(page);
 });
 

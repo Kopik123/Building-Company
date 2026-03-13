@@ -24,19 +24,56 @@
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"ContactPage","name":"Contact Level Lines Studio","url":"https://levellines.co.uk/contact.html","description":"Direct contact details for Level Lines Studio."}</script>
 </head>
 <body class="public-site page-contact">
-  <header class="site-header" id="top"><div class="container header-inner grid-12"><a class="brand brand-mark-link" href="/index.html" aria-label="Level Lines Studio home">
-        <picture class="brand-picture brand-picture--icon">
-          <source type="image/avif" srcset="/assets/optimized/brand/logo.avif" />
-          <source type="image/webp" srcset="/assets/optimized/brand/logo.webp" />
-          <img src="/assets/optimized/brand/logo.png" alt="Level Lines Studio icon" class="brand-icon-image" width="420" height="330" decoding="async" />
-        </picture>
-      </a><a class="brand brand-title-link" href="/index.html" aria-label="Level Lines Studio home">
-        <picture class="brand-picture brand-picture--title">
-          <source type="image/avif" srcset="/assets/optimized/brand/title.avif" />
-          <source type="image/webp" srcset="/assets/optimized/brand/title.webp" />
-          <img src="/assets/optimized/brand/title.png" alt="Level Lines Studio" class="brand-lockup-image brand-title-image" width="1800" height="412" decoding="async" />
-        </picture>
-      </a><div class="header-utility-panel menu-wrap" data-menu-wrap><a class="header-auth-link" href="/auth.html" data-auth-link data-auth-guest-label="Account">Account</a><button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation menu"><span class="nav-toggle-line"></span><span class="nav-toggle-line"></span><span class="nav-toggle-line"></span></button><nav class="site-nav" id="site-nav" data-nav-menu aria-label="Main navigation"><a href="/about.html" data-nav-link>About Us</a><a href="/gallery.html" data-nav-link>Gallery</a><a href="/contact.html" data-nav-link>Contact</a><a href="/quote.html" data-nav-link>Quote</a></nav></div></div></header>
+    <header class="site-header site-header--public-shell" id="top">
+    <div class="container public-shell-header">
+      <div class="public-brand-board">
+        <a class="public-brand-link" href="/index.html" aria-label="Level Lines Studio home">
+          <picture class="public-brand-picture">
+            <source type="image/avif" srcset="/assets/optimized/brand/title.avif" />
+            <source type="image/webp" srcset="/assets/optimized/brand/title.webp" />
+            <img src="/assets/optimized/brand/title.png" alt="Level Lines Studio" class="public-brand-title-image" width="1800" height="412" decoding="async" />
+          </picture>
+        </a>
+      </div>
+      <div class="public-shell-strip">
+        <section class="public-inline-auth" data-inline-auth-shell aria-label="Studio login">
+          <p class="public-strip-heading">Login</p>
+          <form class="public-inline-login-form" data-inline-login-form novalidate>
+            <div class="public-inline-login-row">
+              <input type="email" name="email" autocomplete="username email" placeholder="Email" aria-label="Email" required />
+              <input type="password" name="password" autocomplete="current-password" placeholder="Password" aria-label="Password" required />
+              <button class="public-inline-login-submit" type="submit">Login</button>
+              <a class="public-inline-login-link" href="/auth.html">Register</a>
+            </div>
+            <p class="public-inline-login-helper">Move public enquiries into private project visibility.</p>
+          </form>
+          <div class="public-inline-session" data-inline-session hidden>
+            <p class="public-inline-session-copy" data-inline-session-copy>Account ready.</p>
+            <div class="public-inline-session-actions">
+              <a class="public-inline-session-link" href="/auth.html" data-inline-account-link>Open Account</a>
+              <button class="public-inline-session-link public-inline-session-link--button" type="button" data-inline-logout>Log out</button>
+            </div>
+          </div>
+          <p class="form-status public-inline-login-status" data-inline-login-status aria-live="polite"></p>
+        </section>
+        <div class="public-shell-nav menu-wrap" data-menu-wrap>
+          <p class="public-strip-heading public-strip-heading--nav">Menu</p>
+          <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation menu">
+            <span class="nav-toggle-line"></span>
+            <span class="nav-toggle-line"></span>
+            <span class="nav-toggle-line"></span>
+          </button>
+          <nav class="site-nav site-nav--public-shell" id="site-nav" data-nav-menu aria-label="Main navigation">
+            <a href="/about.html" data-nav-link>About Us</a>
+            <a href="/gallery.html" data-nav-link>Gallery</a>
+            <a href="/quote.html" data-nav-link>Quote</a>
+            <a href="/contact.html" data-nav-link>Contact</a>
+            <a href="/auth.html" data-nav-link data-auth-link data-auth-guest-label="Account">Account</a>
+          </nav>
+        </div>
+      </div>
+    </div>
+  </header>
   <main>
     <section class="section section--light">
       <div class="container brand-page-hero"><div><p class="section-eyebrow">Contact</p><h1>Direct studio contact for premium bathroom, kitchen and interior briefs.</h1><p class="section-lead" data-brand-copy="copy.contact.heroLead">Contact the studio directly when the brief calls for premium finish control, cleaner planning and a quieter route from enquiry to site.</p></div><aside class="brand-page-side"><p class="section-eyebrow section-eyebrow--compact">Response pattern</p><p>Early conversations focus on rooms, finish ambition, budget direction and timing. If the fit is right, the next step becomes a more detailed quote route.</p></aside></div>
@@ -53,6 +90,7 @@
   <script src="/brand.js" defer></script><script src="/runtime.js" defer></script><script src="/site.js" defer></script>
 </body>
 </html>
+
 
 
 

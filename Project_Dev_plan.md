@@ -82,3 +82,12 @@
 - Split the homepage flow into alternating light/dark bands in `styles/public.css`, matching the requested black/white background rhythm while keeping existing `projects`, `gallery`, `services`, `contact` and `quote` anchors intact.
 - Updated homepage Playwright regression coverage in `tests/playwright/public-redesign.spec.js` and `tests/playwright/mobile-smoke.spec.js` so the tests validate the new board layout instead of the older `brand-title-link` header.
 - Tuned the live proportions of the new homepage board in `styles/public.css`: smaller `header.png` height, a full dark top band and stronger balance between account, art and menu panels after the first production screenshot review.
+- Saved `Plans/Redesign Publicznego Shellu Pod title.png.md` and registered it in `Plans/Plan History.md` before rolling out the new shared public shell.
+- Replaced the temporary homepage-only `header.png` composition with a shared public shell built around a centered `title.png` board and a lower inline utility strip.
+- Updated `scripts/publicPages.shared.js` so all public navigation now resolves in the fixed order `About Us | Gallery | Quote | Contact | Account`.
+- Reworked `scripts/publicPageRenderer.js` so generated service, location and legal pages render the same `title.png` shell and no longer diverge from the manual pages.
+- Replaced the manual public-page headers in `index.html`, `about.html`, `gallery.html`, `contact.html`, `quote.html`, `privacy.html`, `cookie-policy.html` and `terms.html` with the same shared shell markup.
+- Extended `site.js` with a real inline public login/session strip that posts to the existing auth flow, stores session state and swaps to an account/session view when the user is already logged in.
+- Added the shared shell styles to `styles/public.css`, including responsive handling for the centered `title.png` board, the inline login form and the right-aligned public nav.
+- Regenerated the public service/location pages, then re-ran `npm run verify:generated` and `npm run test:ci`; both passed after the new shell rollout.
+- Re-ran `npm run test:e2e:mobile` and confirmed the remaining failure is still the known workstation-level `spawn EPERM` issue rather than a regression from the new public shell.

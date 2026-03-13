@@ -26,9 +26,9 @@
 - [ ] Run the new live QA checklist on desktop and a phone-sized viewport after the next droplet deploy, then capture screenshots for homepage, gallery interaction, dashboards and the quote/contact form.
 - [ ] Revisit whether a CDN/media platform is worth introducing later if the runtime gallery set grows beyond the current `sharp` pipeline.
 - [ ] Keep `Project_Web_Design_Plan.md` aligned with the real current design system whenever header structure, color logic, IA or responsive rules change.
-- [ ] Re-check the new `header.png` homepage board on live desktop and mobile, especially the balance between the account panel, artwork panel and menu panel.
-- [ ] Decide whether the new `header.png` board should remain homepage-only or become the shared top shell for `about`, `gallery`, `contact` and `quote`.
-- [ ] Decide whether `header.png` should be added to the existing `sharp` optimization pipeline as AVIF/WebP once the homepage composition is approved live.
+- [ ] Re-check the new shared `title.png` public shell on live desktop and mobile, especially the balance between the centered brand board and the inline login/navigation strip.
+- [ ] Verify the inline login strip state on all public pages for both guest and authenticated sessions after the next droplet deploy.
+- [ ] Decide later whether `header.png` should remain only as a historical/supporting asset now that `title.png` is the shared public shell lockup.
 
 ## Completed
 
@@ -72,5 +72,10 @@
 - [x] Split `routes/manager.js` so `staff/search/seed`, `services/materials` and `estimates` now live in dedicated subrouters under `routes/manager/`, reducing the main route monolith without changing endpoint shapes.
 - [x] Reduced `apps/mobile-v1/App.js` further by extracting screen components into `apps/mobile-v1/src/screens.js` and shared React Native styles into `apps/mobile-v1/src/styles.js`.
 - [x] Rebuilt the homepage around a `header.png` board with a left account panel, central artwork panel and right menu panel, then moved the homepage flow into alternating light/dark background bands.
+- [x] Saved `Plans/Redesign Publicznego Shellu Pod title.png.md` and registered it in `Plans/Plan History.md` as the tracked redesign plan for the new shared public shell.
+- [x] Replaced the temporary homepage-only `header.png` board with one shared public shell based on `title.png`, using the same top structure across homepage, brand pages, legal pages and generated service/location pages.
+- [x] Added a real inline public login strip wired to the existing auth/session flow in `site.js`, including guest login/register controls and a session-aware account state.
+- [x] Updated `scripts/publicPages.shared.js` and `scripts/publicPageRenderer.js` so generated pages now use the same `title.png` shell and the fixed nav order `About Us | Gallery | Quote | Contact | Account`.
+- [x] Updated Playwright public/mobile expectations so regression coverage validates the new shared `title.png` shell and inline login instead of the old homepage-only header layout.
 - [ ] Continue the manager-route cleanup by extracting the remaining `quotes` and `projects/media` sections once the new subrouter split has baked in under tests.
 - [ ] Continue reducing `apps/mobile-v1/App.js` by extracting session/tab shell logic after the new `screens.js`/`styles.js` split stabilises.

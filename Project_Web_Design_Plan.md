@@ -42,23 +42,26 @@
 
 ## Header System
 
-- Shared shell on public and workspace pages:
-  - left: `logo`
-  - center: `title`
-  - right: `Account` + primary nav/menu
-- Header must remain balanced on:
+- Public pages use a shared top shell:
+  - centered `title.png` brand board on a dark surface
+  - lower inline strip with:
+    - left: real login/session controls
+    - right: `About Us | Gallery | Quote | Contact | Account`
+- Workspace pages keep their own operational shell, but must stay visually aligned with the same premium black / marble / dark-gold system.
+- The public shell must remain balanced on:
   - desktop wide screens
   - tablet widths
   - phone widths around `390px`
-- Title image must never overpower the account/nav block.
+- The `title.png` board must never overpower the inline login/nav strip.
+- Inline login must work consistently on all public pages and switch to a session/account state when the user is already authenticated.
 
 ## Public Information Architecture
 
 - Primary navigation:
   - `About Us`
   - `Gallery`
-  - `Contact`
   - `Quote`
+  - `Contact`
   - `Account`
 - Homepage order on mobile:
   - header
@@ -69,6 +72,7 @@
   - contact
   - quote
 - Service and location pages remain SEO pages, but should stay visually inside the same premium shell.
+- Brand, service, location and legal pages all reuse the same public shell through shared renderer logic rather than per-page variants.
 
 ## Workspace Structure
 

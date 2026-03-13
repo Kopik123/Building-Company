@@ -2,6 +2,7 @@
 
 | Date | Time | Plan Title | File |
 | --- | --- | --- | --- |
+| 2026-03-13 | 00:09:56 +00:00 | Redesign Publicznego Shellu Pod title.png | `Plans/Redesign Publicznego Shellu Pod title.png.md` |
 | 2026-03-12 | 17:55:58 +00:00 | Plan Naprawy Bledow Znalezionych Przez SonarQube | `Plans/Plan Naprawy Bledow Znalezionych Przez SonarQube.md` |
 | 2026-03-12 | 00:57:12 +00:00 | Pelna Analiza Projektu I Plan Naprawy / Usprawnien | `Plans/Pelna Analiza Projektu I Plan Naprawy - Usprawnien.md` |
 | 2026-03-11 | 23:40:43 +00:00 | Live QA, Asset Optimization And Richer Gold Tuning | `Plans/Live QA, Asset Optimization And Richer Gold Tuning.md` |

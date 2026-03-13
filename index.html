@@ -27,31 +27,54 @@
   <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"LocalBusiness","@id":"https://levellines.co.uk/#business","name":"Level Lines Studio","url":"https://levellines.co.uk/","image":["https://levellines.co.uk/assets/optimized/brand/title.png","https://levellines.co.uk/Gallery/premium/brick-dark-main.jpg"],"telephone":["+44 7942 874 446","+44 7304 506 391"],"email":"LevelLineStudioMCR@gmail.com","areaServed":["North West - Lancashire","Manchester","Liverpool","Preston","Rochdale","Oldham","Macclesfield","Stockport","Northwich","Warrington"],"address":{"@type":"PostalAddress","addressRegion":"North West - Lancashire","addressCountry":"GB"}},{"@type":"WebSite","@id":"https://levellines.co.uk/#website","url":"https://levellines.co.uk/","name":"Level Lines Studio","publisher":{"@id":"https://levellines.co.uk/#business"}}]}</script>
 </head>
 <body class="public-site page-home">
-  <header class="site-header site-header--homeboard" id="top">
-    <div class="container home-shell home-shell--header">
-      <section class="home-header-board" aria-label="Homepage entry board">
-        <div class="home-header-panel home-header-panel--account">
-          <p class="home-header-panel-title">Account</p>
-          <a class="home-header-auth-link" href="/auth.html" data-auth-link data-auth-guest-label="Account">Account</a>
-          <p class="home-header-panel-copy">Login, register and move public enquiries into private project visibility.</p>
-          <div class="home-header-panel-actions">
-            <a href="/auth.html">Login / Register</a>
-            <a href="/quote.html">Fast Quote</a>
-          </div>
-        </div>
-        <a class="home-header-art" href="/index.html" aria-label="Level Lines Studio home">
-          <img src="/header.png" alt="Level Lines Studio header artwork" class="home-header-art-image" width="610" height="667" decoding="async" />
+    <header class="site-header site-header--public-shell" id="top">
+    <div class="container public-shell-header">
+      <div class="public-brand-board">
+        <a class="public-brand-link" href="/index.html" aria-label="Level Lines Studio home">
+          <picture class="public-brand-picture">
+            <source type="image/avif" srcset="/assets/optimized/brand/title.avif" />
+            <source type="image/webp" srcset="/assets/optimized/brand/title.webp" />
+            <img src="/assets/optimized/brand/title.png" alt="Level Lines Studio" class="public-brand-title-image" width="1800" height="412" decoding="async" />
+          </picture>
         </a>
-        <section class="home-header-panel home-header-panel--menu">
-          <p class="home-header-panel-title">Panel Menu</p>
-          <nav class="site-nav site-nav--panel" id="site-nav" data-nav-menu aria-label="Main navigation">
+      </div>
+      <div class="public-shell-strip">
+        <section class="public-inline-auth" data-inline-auth-shell aria-label="Studio login">
+          <p class="public-strip-heading">Login</p>
+          <form class="public-inline-login-form" data-inline-login-form novalidate>
+            <div class="public-inline-login-row">
+              <input type="email" name="email" autocomplete="username email" placeholder="Email" aria-label="Email" required />
+              <input type="password" name="password" autocomplete="current-password" placeholder="Password" aria-label="Password" required />
+              <button class="public-inline-login-submit" type="submit">Login</button>
+              <a class="public-inline-login-link" href="/auth.html">Register</a>
+            </div>
+            <p class="public-inline-login-helper">Move public enquiries into private project visibility.</p>
+          </form>
+          <div class="public-inline-session" data-inline-session hidden>
+            <p class="public-inline-session-copy" data-inline-session-copy>Account ready.</p>
+            <div class="public-inline-session-actions">
+              <a class="public-inline-session-link" href="/auth.html" data-inline-account-link>Open Account</a>
+              <button class="public-inline-session-link public-inline-session-link--button" type="button" data-inline-logout>Log out</button>
+            </div>
+          </div>
+          <p class="form-status public-inline-login-status" data-inline-login-status aria-live="polite"></p>
+        </section>
+        <div class="public-shell-nav menu-wrap" data-menu-wrap>
+          <p class="public-strip-heading public-strip-heading--nav">Menu</p>
+          <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation menu">
+            <span class="nav-toggle-line"></span>
+            <span class="nav-toggle-line"></span>
+            <span class="nav-toggle-line"></span>
+          </button>
+          <nav class="site-nav site-nav--public-shell" id="site-nav" data-nav-menu aria-label="Main navigation">
             <a href="/about.html" data-nav-link>About Us</a>
             <a href="/gallery.html" data-nav-link>Gallery</a>
+            <a href="/quote.html" data-nav-link>Quote</a>
             <a href="/contact.html" data-nav-link>Contact</a>
-            <a href="/quote.html" data-nav-link>Free Quote</a>
+            <a href="/auth.html" data-nav-link data-auth-link data-auth-guest-label="Account">Account</a>
           </nav>
-        </section>
-      </section>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -222,5 +245,6 @@
   <script src="/quote.js" defer></script>
 </body>
 </html>
+
 
 

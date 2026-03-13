@@ -1202,3 +1202,293 @@ body.public-site.page-home::before {
     padding-bottom: 1rem;
   }
 }
+
+.site-header--public-shell {
+  position: relative;
+  border-bottom: 1px solid rgba(172, 135, 76, 0.34);
+  background:
+    linear-gradient(180deg, rgba(10, 10, 10, 0.985), rgba(5, 5, 5, 0.995));
+}
+
+.site-header--public-shell::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(216, 166, 30, 0.06), transparent 22%, transparent 78%, rgba(216, 166, 30, 0.06)),
+    linear-gradient(180deg, rgba(216, 166, 30, 0.08), transparent 68%);
+}
+
+.public-shell-header {
+  position: relative;
+  display: grid;
+  gap: clamp(0.7rem, 1.6vw, 1rem);
+  padding-top: clamp(0.8rem, 2vw, 1.1rem);
+  padding-bottom: clamp(0.85rem, 2vw, 1.15rem);
+}
+
+.public-brand-board,
+.public-inline-auth,
+.public-shell-nav {
+  border: 1px solid var(--ll-border-gold-strong);
+  box-shadow: var(--ll-shadow-premium), var(--ll-shadow-line);
+}
+
+.public-brand-board {
+  max-width: min(100%, 980px);
+  margin: 0 auto;
+  background:
+    linear-gradient(180deg, rgba(11, 11, 11, 0.99), rgba(4, 4, 4, 0.99));
+}
+
+.public-brand-link {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: clamp(0.8rem, 1.7vw, 1rem) clamp(1rem, 2.5vw, 1.6rem);
+}
+
+.public-brand-picture {
+  display: block;
+  width: 100%;
+}
+
+.public-brand-title-image {
+  display: block;
+  width: min(100%, 860px);
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  object-fit: contain;
+}
+
+.public-shell-strip {
+  display: grid;
+  grid-template-columns: minmax(340px, 1.1fr) minmax(280px, 0.95fr);
+  gap: clamp(0.6rem, 1.2vw, 0.85rem);
+  align-items: stretch;
+}
+
+.public-inline-auth,
+.public-shell-nav {
+  display: grid;
+  gap: 0.7rem;
+  align-content: start;
+  padding: clamp(0.8rem, 1.6vw, 1rem);
+  background: rgba(4, 4, 4, 0.98);
+  color: var(--ll-text-on-dark);
+}
+
+.public-strip-heading {
+  margin: 0;
+  color: var(--ll-text-on-dark-strong);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.public-strip-heading--nav {
+  text-align: right;
+}
+
+.public-inline-login-form {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.public-inline-login-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto auto;
+  gap: 0.55rem;
+  align-items: stretch;
+}
+
+.public-inline-login-row input {
+  min-width: 0;
+  min-height: 46px;
+  padding: 0.72rem 0.84rem;
+  border: 1px solid rgba(172, 135, 76, 0.38);
+  background: rgba(10, 10, 10, 0.98);
+  color: var(--ll-text-on-dark);
+}
+
+.public-inline-login-row input::placeholder {
+  color: var(--ll-text-on-dark-muted);
+}
+
+.public-inline-login-submit,
+.public-inline-login-link,
+.public-inline-session-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  padding: 0.7rem 0.95rem;
+  border: 1px solid rgba(172, 135, 76, 0.54);
+  background: rgba(216, 166, 30, 0.09);
+  color: var(--ll-text-on-dark);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.public-inline-login-submit:hover,
+.public-inline-login-link:hover,
+.public-inline-session-link:hover,
+.site-nav--public-shell a:hover {
+  color: var(--ll-text-on-dark-strong);
+}
+
+.public-inline-login-helper,
+.public-inline-session-copy,
+.public-inline-login-status {
+  margin: 0;
+  color: var(--ll-text-on-dark-muted);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.public-inline-session {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.public-inline-session-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.public-inline-session-link--button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.public-shell-nav {
+  grid-template-rows: auto 1fr;
+}
+
+.site-nav--public-shell {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem 1rem;
+  padding: 0;
+}
+
+.site-nav--public-shell a {
+  color: var(--ll-text-on-dark);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.page-home .site-header--public-shell {
+  margin-bottom: 0;
+}
+
+@media (max-width: 992px) {
+  .site-header--public-shell .public-shell-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .site-header--public-shell .public-strip-heading--nav {
+    text-align: left;
+  }
+
+  .site-header--public-shell .public-shell-nav {
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    align-items: start;
+  }
+
+  .site-header--public-shell .public-strip-heading--nav {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .site-header--public-shell .nav-toggle {
+    grid-column: 2;
+    grid-row: 1;
+    display: inline-flex;
+    justify-self: end;
+  }
+
+  .site-header--public-shell .site-nav--public-shell {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+    padding-top: 0.55rem;
+  }
+
+  .site-header--public-shell .public-inline-login-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .site-header--public-shell .public-shell-header {
+    padding-top: 0.7rem;
+    padding-bottom: 0.8rem;
+  }
+
+  .site-header--public-shell .public-brand-link {
+    padding: 0.7rem 0.85rem;
+  }
+
+  .site-header--public-shell .public-brand-title-image {
+    width: min(100%, 660px);
+  }
+
+  .site-header--public-shell .public-inline-auth,
+  .site-header--public-shell .public-shell-nav {
+    padding: 0.78rem;
+  }
+
+  .site-header--public-shell .public-inline-login-row {
+    grid-template-columns: 1fr;
+  }
+
+  .site-header--public-shell .public-inline-login-submit,
+  .site-header--public-shell .public-inline-login-link,
+  .site-header--public-shell .public-inline-session-link {
+    width: 100%;
+  }
+
+  .site-header--public-shell .public-inline-login-helper,
+  .site-header--public-shell .public-inline-session-copy,
+  .site-header--public-shell .public-inline-login-status {
+    font-size: 0.84rem;
+  }
+}
+
+@media (max-width: 390px) {
+  .site-header--public-shell .public-shell-header {
+    gap: 0.55rem;
+    padding-top: 0.55rem;
+    padding-bottom: 0.65rem;
+  }
+
+  .site-header--public-shell .public-inline-auth,
+  .site-header--public-shell .public-shell-nav {
+    padding: 0.68rem;
+  }
+
+  .site-header--public-shell .public-strip-heading {
+    font-size: 0.72rem;
+  }
+
+  .site-header--public-shell .public-inline-login-row input,
+  .site-header--public-shell .public-inline-login-submit,
+  .site-header--public-shell .public-inline-login-link,
+  .site-header--public-shell .public-inline-session-link,
+  .site-header--public-shell .site-nav--public-shell a {
+    min-height: 42px;
+    font-size: 0.74rem;
+    letter-spacing: 0.06em;
+  }
+}
