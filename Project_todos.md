@@ -88,6 +88,7 @@
 - [x] Updated `scripts/publicPages.shared.js` and `scripts/publicPageRenderer.js` so generated pages now use the same `title.png` shell and the fixed nav order `About Us | Gallery | Quote | Contact | Account`.
 - [x] Updated Playwright public/mobile expectations so regression coverage validates the new shared `title.png` shell and inline login instead of the old homepage-only header layout.
 - [x] Changed the public `title.png` shell so the main menu is hidden by default and opens only from a hamburger toggle instead of staying visible in the header.
+- [x] Switched the public brochure typography to gold across dark surfaces, light cards, footer links, form text and CTA labels so the live site now matches the requested black/light/gold color direction.
 - [ ] Continue the manager-route cleanup by extracting the remaining `quotes` and `projects/media` sections once the new subrouter split has baked in under tests.
 - [ ] Continue reducing `apps/mobile-v1/App.js` by extracting session/tab shell logic after the new `screens.js`/`styles.js` split stabilises.
 - [ ] Revisit SonarQube CPD exclusions once `about/contact/gallery/quote/legal` move further into the shared public renderer, so static HTML exclusions can be narrowed again.

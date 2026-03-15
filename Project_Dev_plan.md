@@ -130,3 +130,5 @@
 - Updated the public sticky shell so `data-nav-menu` starts hidden in HTML, `site.js` manages `hidden`/`aria-hidden` alongside the existing toggle state, and the menu no longer renders as a permanently visible bar in the `title.png` header.
 - Changed the public menu trigger styling in `styles/public.css` so the control reads as a clean three-line hamburger button while keeping the text label only for accessibility.
 - Regenerated the manual and generated public pages, then re-ran `npm run generate:public-pages`, `npm run verify:generated`, `node --check` for the touched shell/runtime/tests and `npm run test:ci`; all passed after the header menu toggle fix.
+- Added a public-site typography override in `styles/public.css` so light cards, legal/content shells, form text, footer links and CTA labels now render in the same gold family as the dark surfaces instead of falling back to dark text on the pale cards.
+- Re-ran `npm run test:ci` after the public gold-typography pass; the generated-page verification and full API suite both still passed.
