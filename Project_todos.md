@@ -26,10 +26,26 @@
 - [ ] Run the new live QA checklist on desktop and a phone-sized viewport after the next droplet deploy, then capture screenshots for homepage, gallery interaction, dashboards and the quote/contact form.
 - [ ] Revisit whether a CDN/media platform is worth introducing later if the runtime gallery set grows beyond the current `sharp` pipeline.
 - [ ] Keep `Project_Web_Design_Plan.md` aligned with the real current design system whenever header structure, color logic, IA or responsive rules change.
+- [ ] Run live QA for the new quote-first brochure IA across `/`, `/about.html`, `/services.html`, `/gallery.html`, `/quote.html`, `/contact.html`, the legal pages and at least two generated service/location pages, checking sticky shell behaviour, compact mobile auth/menu flow and CTA clarity.
 - [ ] Re-check the new shared `title.png` public shell on live desktop and mobile, especially the balance between the centered brand board and the inline login/navigation strip.
 - [ ] Re-check the slimmer `title.png` top bar and the lower quick-access login/menu strip on live desktop and mobile after the next deploy.
 - [ ] Verify the inline login strip state on all public pages for both guest and authenticated sessions after the next droplet deploy.
 - [ ] Decide later whether `header.png` should remain only as a historical/supporting asset now that `title.png` is the shared public shell lockup.
+- [ ] Define one explicit CRM lifecycle for clients (`lead`, `quoted`, `approved`, `active project`, `completed`, `archived`) and use it consistently across manager flows and future mobile contracts.
+- [ ] Add a real project workflow model with `stage`, `milestone`, `task/work package`, `owner` and `due date` instead of relying mainly on broad project status and notes.
+- [ ] Design and implement a durable activity/audit feed for company, client and project timelines instead of relying only on derived summary boards.
+- [ ] Close the operational gap in `quote -> estimate -> approval -> project` so estimate approvals are explicit, versioned and portable to mobile clients.
+- [ ] Consolidate manual public pages and generated SEO pages onto one content model/source so brochure copy, metadata, FAQ and CTA logic stop drifting.
+- [ ] Create a shared web/mobile contract layer for auth/session, project summaries, thread summaries, notifications and estimate state before expanding mobile-v1 further.
+- [ ] Re-check live readability/contrast after the public-site all-gold typography pass; keep the black/light/gold direction, but verify the chosen gold remains readable on light cards and form surfaces.
+- [x] Change `/api/manager/projects` so list responses default to `includeMedia=false`, returning counts or cover data instead of full media collections.
+- [x] Reduce the expensive manager project search path by narrowing or separating the current broad `LOWER(... LIKE %...%)` filters across joined tables.
+- [x] Remove eager thread-summary preload from `client-dashboard.js` bootstrap and keep mailbox/thread summaries truly lazy.
+- [x] Stop reloading `projects + services + materials` together after the manager seed action unless the seed result actually changed all three domains.
+- [x] Replace the heaviest full-container rerenders in `manager-dashboard.js` and `client-dashboard.js` with keyed per-item updates, starting with projects, threads and messages.
+- [x] Rework `gallery.js` so project changes update active state and transforms without rebuilding the whole stage and project strip.
+- [x] Replace the global 1-second polling loop in `apps/mobile-v1/App.js` with a scheduler keyed to the nearest due poll or screen-focus refreshes.
+- [x] Add a short TTL cache or deferred validation strategy for `/api/auth/me` in `site.js` so the shared public shell does not revalidate every public page load unnecessarily.
 
 ## Completed
 
@@ -78,5 +94,9 @@
 - [x] Added a real inline public login strip wired to the existing auth/session flow in `site.js`, including guest login/register controls and a session-aware account state.
 - [x] Updated `scripts/publicPages.shared.js` and `scripts/publicPageRenderer.js` so generated pages now use the same `title.png` shell and the fixed nav order `About Us | Gallery | Quote | Contact | Account`.
 - [x] Updated Playwright public/mobile expectations so regression coverage validates the new shared `title.png` shell and inline login instead of the old homepage-only header layout.
+- [x] Changed the public `title.png` shell so the main menu is hidden by default and opens only from a hamburger toggle instead of staying visible in the header.
+- [x] Switched the public brochure typography to gold across dark surfaces, light cards, footer links, form text and CTA labels so the live site now matches the requested black/light/gold color direction.
+- [x] Kept the newer, narrower `title.png` variant in the worktree and reduced its visual aggression through CSS only, shrinking the rendered brand width and restoring more breathing room in the sticky header without reverting the asset itself.
 - [ ] Continue the manager-route cleanup by extracting the remaining `quotes` and `projects/media` sections once the new subrouter split has baked in under tests.
 - [ ] Continue reducing `apps/mobile-v1/App.js` by extracting session/tab shell logic after the new `screens.js`/`styles.js` split stabilises.
+- [ ] Revisit SonarQube CPD exclusions once `about/contact/gallery/quote/legal` move further into the shared public renderer, so static HTML exclusions can be narrowed again.

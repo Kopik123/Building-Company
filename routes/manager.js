@@ -728,15 +728,11 @@ router.get(
       where[Op.or] = [
         sqlWhere(fn('LOWER', col('title')), { [Op.like]: needle }),
         sqlWhere(fn('LOWER', col('location')), { [Op.like]: needle }),
-        sqlWhere(fn('LOWER', col('description')), { [Op.like]: needle }),
-        sqlWhere(fn('LOWER', col('client.email')), { [Op.like]: needle }),
-        sqlWhere(fn('LOWER', col('client.name')), { [Op.like]: needle }),
-        sqlWhere(fn('LOWER', col('assignedManager.email')), { [Op.like]: needle }),
-        sqlWhere(fn('LOWER', col('quote.location')), { [Op.like]: needle })
+        sqlWhere(fn('LOWER', col('description')), { [Op.like]: needle })
       ];
     }
 
-    const includeMedia = parseBoolean(req.query.includeMedia, true);
+    const includeMedia = parseBoolean(req.query.includeMedia, false);
     const { page, pageSize, offset } = getPagination(req);
     const { rows, count } = await Project.findAndCountAll({
       where,

@@ -43,33 +43,54 @@
 ## Header System
 
 - Public pages use a shared top shell:
-  - centered `title.png` brand board on a dark surface
-  - lower inline strip with:
-    - left: real login/session controls
-    - right: `About Us | Gallery | Quote | Contact | Account`
+  - sticky dark shell built around `title.png`
+  - desktop:
+    - visible login/password inputs inside the shell
+    - one `Menu` button opening a vertical dropdown
+  - mobile:
+    - compact sticky shell
+    - `Login` entry through the compact auth toggle
+    - one `Menu` button opening a vertical dropdown
 - Workspace pages keep their own operational shell, but must stay visually aligned with the same premium black / marble / dark-gold system.
 - The public shell must remain balanced on:
   - desktop wide screens
   - tablet widths
   - phone widths around `390px`
-- The `title.png` board must never overpower the inline login/nav strip.
+- `title.png` must behave like a narrow persistent brand strip, not a large hero board.
 - Inline login must work consistently on all public pages and switch to a session/account state when the user is already authenticated.
 
 ## Public Information Architecture
 
+- Quote-first structure:
+  - homepage leads toward `Quote`
+  - `Services` and `Gallery` support trust and orientation
+  - `Contact` stays as a direct fit-check route
 - Primary navigation:
-  - `About Us`
+  - `Home`
+  - `About`
+  - `Services`
   - `Gallery`
   - `Quote`
   - `Contact`
   - `Account`
+- Homepage target structure:
+  - intro / brand
+  - services hub
+  - gallery case-study band
+  - plan / design / craft summary
+  - direct contact CTA
+  - quote form
+- Public pages should each use one clear CTA path instead of multiple duplicated top-level blocks.
+- Service hub page exists as a first-class brochure page:
+  - all main services visible in one place
+  - supporting links to service pages and quote
 - Homepage order on mobile:
-  - header
-  - login/account
-  - projects
-  - gallery
+  - sticky header
+  - intro
   - services
-  - contact
+  - gallery
+  - process / trust
+  - contact CTA
   - quote
 - Service and location pages remain SEO pages, but should stay visually inside the same premium shell.
 - Brand, service, location and legal pages all reuse the same public shell through shared renderer logic rather than per-page variants.
@@ -123,13 +144,13 @@
 
 ## Current Design Priorities
 
-- Keep the dark-gold premium shell consistent across homepage, auth, client dashboard and manager dashboard.
+- Keep the dark-gold premium shell consistent across homepage, services, gallery, contact, quote, auth, client dashboard and manager dashboard.
 - Continue reducing first-paint weight by replacing heavy runtime imagery with optimized variants.
-- Keep generated public pages aligned with manual pages through shared renderer logic, not one-off edits.
+- Keep generated public pages aligned with manual pages through one consistent shell, nav order and footer language.
 
 ## Next Design Rollout
 
-- Final live QA on desktop and phone after each visual pass.
+- Final live QA on desktop and phone after each visual pass, especially for the sticky shell and compact mobile auth/menu flow.
 - Continue moving layout responsibility from `styles/base.css` into `styles/public.css` and `styles/workspace.css`.
 - Keep refining public pages so they follow the same structural language without turning them into dashboard-like layouts.
 - Prepare all major UI flows so they can map cleanly into future Android/iOS screens.

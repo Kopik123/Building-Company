@@ -113,6 +113,152 @@
     items.slice(0, 2).forEach((item) => frag.appendChild(createOverviewEntry(mapItem(item))));
     node.appendChild(frag);
   });
+  const syncKeyedList = runtime.syncKeyedList || ((container, items, { getKey, createNode, updateNode, createEmptyNode } = {}) => {
+    if (!container) return;
+    const existingByKey = new Map();
+    let emptyNode = null;
+    Array.from(container.children).forEach((child) => {
+      if (child.dataset.emptyState === 'true') {
+        emptyNode = child;
+        return;
+      }
+      if (child.dataset.renderKey) existingByKey.set(child.dataset.renderKey, child);
+    });
+    if (!Array.isArray(items) || !items.length) {
+      existingByKey.forEach((node) => node.remove());
+      if (!createEmptyNode) {
+        if (emptyNode) emptyNode.remove();
+        return;
+      }
+      const nextEmptyNode = createEmptyNode();
+      nextEmptyNode.dataset.emptyState = 'true';
+      if (emptyNode) {
+        if (emptyNode !== nextEmptyNode) emptyNode.replaceWith(nextEmptyNode);
+      } else {
+        container.appendChild(nextEmptyNode);
+      }
+      return;
+    }
+    if (emptyNode) emptyNode.remove();
+    const orderedNodes = items.map((item, index) => {
+      const key = String(getKey(item, index));
+      let node = existingByKey.get(key);
+      if (!node) {
+        node = createNode(item, index);
+        node.dataset.renderKey = key;
+      }
+      updateNode(node, item, index);
+      existingByKey.delete(key);
+      return node;
+    });
+    orderedNodes.forEach((node, index) => {
+      const currentNode = container.children[index];
+      if (currentNode !== node) {
+        container.insertBefore(node, currentNode || null);
+      }
+    });
+    existingByKey.forEach((node) => node.remove());
+  });
+
+  const createMutedNode = (message) => {
+    const node = document.createElement('p');
+    node.className = 'muted';
+    node.textContent = message;
+    return node;
+  };
+
+  const syncProjectSelectOptions = () => {
+    const select = el.uploadForm.elements.projectId;
+    const existingByValue = new Map(Array.from(select.options).map((option) => [String(option.value || ''), option]));
+    const entries = state.projects.length
+      ? state.projects.map((project) => ({ value: project.id, label: project.title }))
+      : [{ value: '', label: 'No projects' }];
+
+    entries.forEach((entry, index) => {
+      const key = String(entry.value || '');
+      let option = existingByValue.get(key);
+      if (!option) {
+        option = document.createElement('option');
+        option.value = entry.value;
+      }
+      option.textContent = entry.label;
+      if (select.options[index] !== option) {
+        select.insertBefore(option, select.options[index] || null);
+      }
+      existingByValue.delete(key);
+    });
+
+    existingByValue.forEach((option) => option.remove());
+  };
+
+  const createProjectCard = () => {
+    const card = document.createElement('article');
+    card.className = 'dashboard-item';
+    const heading = document.createElement('h3');
+    heading.className = 'dashboard-item-title';
+    const meta = document.createElement('p');
+    meta.className = 'muted';
+    const description = document.createElement('p');
+    const docsWrap = document.createElement('div');
+    docsWrap.className = 'dashboard-pill-list';
+    card.appendChild(heading);
+    card.appendChild(meta);
+    card.appendChild(description);
+    card.appendChild(docsWrap);
+    return card;
+  };
+
+  const updateProjectCard = (card, project) => {
+    const manager = project.assignedManager?.name || project.assignedManager?.email || 'Not assigned';
+    const docsCount = Array.isArray(project.documents) ? project.documents.length : 0;
+    const [heading, meta, description, docsWrap] = card.children;
+    heading.textContent = project.title || 'Project';
+    meta.textContent = `${project.status || '-'} | ${project.location || '-'} | Manager: ${manager} | Docs: ${docsCount}`;
+    description.textContent = project.description || '';
+    docsWrap.replaceChildren();
+    (project.documents || []).slice(0, 5).forEach((doc) => {
+      const link = document.createElement('a');
+      link.className = 'btn btn-outline';
+      link.href = doc.url;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.textContent = doc.filename;
+      docsWrap.appendChild(link);
+    });
+  };
+
+  const createThreadCard = ({ onOpen }) => {
+    const card = document.createElement('article');
+    card.className = 'dashboard-item';
+    const heading = document.createElement('h3');
+    heading.className = 'dashboard-item-title';
+    const meta = document.createElement('p');
+    meta.className = 'muted';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-outline';
+    btn.textContent = 'Open';
+    btn.addEventListener('click', async () => {
+      const threadId = card.dataset.threadId || '';
+      if (!threadId) return;
+      await onOpen(threadId);
+    });
+    card.appendChild(heading);
+    card.appendChild(meta);
+    card.appendChild(btn);
+    return card;
+  };
+
+  const createMessageCard = () => {
+    const card = document.createElement('article');
+    card.className = 'dashboard-item';
+    const meta = document.createElement('p');
+    meta.className = 'muted';
+    const body = document.createElement('p');
+    card.appendChild(meta);
+    card.appendChild(body);
+    return card;
+  };
 
   const clearSession = () => {
     (runtime.clearSession || (() => {
@@ -178,48 +324,24 @@
   };
 
   const renderProjects = () => {
-    el.projectsList.innerHTML = '';
-    const select = el.uploadForm.elements.projectId;
-    select.innerHTML = '';
+    syncProjectSelectOptions();
 
     if (!state.projects.length) {
-      el.projectsList.innerHTML = '<p class="muted">No projects linked yet. Contact your manager.</p>';
-      const option = document.createElement('option');
-      option.value = '';
-      option.textContent = 'No projects';
-      select.appendChild(option);
+      syncKeyedList(el.projectsList, [], {
+        getKey: () => '',
+        createNode: createProjectCard,
+        updateNode: updateProjectCard,
+        createEmptyNode: () => createMutedNode('No projects linked yet. Contact your manager.')
+      });
       return;
     }
 
-    const frag = document.createDocumentFragment();
-    state.projects.forEach((project) => {
-      const card = document.createElement('article');
-      card.className = 'dashboard-item';
-      const manager = project.assignedManager?.name || project.assignedManager?.email || 'Not assigned';
-      const docsCount = Array.isArray(project.documents) ? project.documents.length : 0;
-      card.innerHTML = `<h3>${escapeHtml(project.title)}</h3><p class="muted">${escapeHtml(project.status)} | ${escapeHtml(project.location || '-')} | Manager: ${escapeHtml(manager)} | Docs: ${escapeHtml(docsCount)}</p><p>${escapeHtml(project.description || '')}</p>`;
-
-      const docsWrap = document.createElement('div');
-      docsWrap.className = 'dashboard-pill-list';
-      (project.documents || []).slice(0, 5).forEach((doc) => {
-        const link = document.createElement('a');
-        link.className = 'btn btn-outline';
-        link.href = doc.url;
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
-        link.textContent = doc.filename;
-        docsWrap.appendChild(link);
-      });
-
-      card.appendChild(docsWrap);
-      frag.appendChild(card);
-
-      const option = document.createElement('option');
-      option.value = project.id;
-      option.textContent = project.title;
-      select.appendChild(option);
+    syncKeyedList(el.projectsList, state.projects, {
+      getKey: (project) => project.id,
+      createNode: createProjectCard,
+      updateNode: updateProjectCard,
+      createEmptyNode: () => createMutedNode('No projects linked yet. Contact your manager.')
     });
-    el.projectsList.appendChild(frag);
   };
 
   const renderQuotes = () => {
@@ -413,108 +535,82 @@
   };
 
   const renderThreads = () => {
-    el.threadsList.innerHTML = '';
-    if (!state.threads.length) {
-      el.threadsList.innerHTML = '<p class="muted">No communication threads yet.</p>';
-      return;
-    }
-
-    const frag = document.createDocumentFragment();
-    state.threads.forEach((thread) => {
-      const card = document.createElement('article');
-      card.className = `dashboard-item ${thread.id === state.selectedThreadId ? 'is-active' : ''}`;
-      card.innerHTML = `<h3>${escapeHtml(thread.name || thread.subject || 'Thread')}</h3><p class="muted">Updated: ${escapeHtml(new Date(thread.updatedAt).toLocaleString('en-GB'))}</p>`;
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'btn btn-outline';
-      btn.textContent = 'Open';
-      btn.addEventListener('click', async () => {
-        state.selectedThreadId = thread.id;
-        renderThreads();
-        await loadMessages();
-      });
-      card.appendChild(btn);
-      frag.appendChild(card);
+    syncKeyedList(el.threadsList, state.threads, {
+      getKey: (thread) => thread.id,
+      createNode: () => createThreadCard({
+        onOpen: async (threadId) => {
+          state.selectedThreadId = threadId;
+          renderThreads();
+          await loadMessages();
+        }
+      }),
+      updateNode: (card, thread) => {
+        card.dataset.threadId = thread.id;
+        card.className = `dashboard-item ${thread.id === state.selectedThreadId ? 'is-active' : ''}`;
+        card.children[0].textContent = thread.name || thread.subject || 'Thread';
+        card.children[1].textContent = `Updated: ${formatDateTime(thread.updatedAt) || '-'}`;
+      },
+      createEmptyNode: () => createMutedNode('No communication threads yet.')
     });
-    el.threadsList.appendChild(frag);
   };
 
   const renderDirectThreads = () => {
-    el.directThreadsList.innerHTML = '';
-    if (!state.directThreads.length) {
-      const fallbackManager = getPreferredManager();
-      el.directThreadsList.innerHTML = fallbackManager
-        ? `<p class="muted">No private thread yet. Use the message box to start a direct conversation with ${escapeHtml(fallbackManager.name || fallbackManager.email)}.</p>`
-        : '<p class="muted">No manager thread yet. A direct conversation becomes available once a manager is assigned.</p>';
-      return;
-    }
-
-    const frag = document.createDocumentFragment();
-    state.directThreads.forEach((thread) => {
-      const counterparty = getThreadCounterparty(thread);
-      const card = document.createElement('article');
-      card.className = `dashboard-item ${thread.id === state.selectedDirectThreadId ? 'is-active' : ''}`;
-      card.innerHTML = `<h3>${escapeHtml(counterparty?.name || counterparty?.email || thread.subject || 'Direct thread')}</h3><p class="muted">${escapeHtml(thread.subject || 'Direct manager conversation')} | Updated: ${escapeHtml(new Date(thread.updatedAt).toLocaleString('en-GB'))}</p>`;
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'btn btn-outline';
-      btn.textContent = 'Open';
-      btn.addEventListener('click', async () => {
-        state.selectedDirectThreadId = thread.id;
-        renderDirectThreads();
-        await loadDirectMessages();
-      });
-      card.appendChild(btn);
-      frag.appendChild(card);
+    const fallbackManager = getPreferredManager();
+    syncKeyedList(el.directThreadsList, state.directThreads, {
+      getKey: (thread) => thread.id,
+      createNode: () => createThreadCard({
+        onOpen: async (threadId) => {
+          state.selectedDirectThreadId = threadId;
+          renderDirectThreads();
+          await loadDirectMessages();
+        }
+      }),
+      updateNode: (card, thread) => {
+        const counterparty = getThreadCounterparty(thread);
+        card.dataset.threadId = thread.id;
+        card.className = `dashboard-item ${thread.id === state.selectedDirectThreadId ? 'is-active' : ''}`;
+        card.children[0].textContent = counterparty?.name || counterparty?.email || thread.subject || 'Direct thread';
+        card.children[1].textContent = `${thread.subject || 'Direct manager conversation'} | Updated: ${formatDateTime(thread.updatedAt) || '-'}`;
+      },
+      createEmptyNode: () => createMutedNode(
+        fallbackManager
+          ? `No private thread yet. Use the message box to start a direct conversation with ${fallbackManager.name || fallbackManager.email}.`
+          : 'No manager thread yet. A direct conversation becomes available once a manager is assigned.'
+      )
     });
-    el.directThreadsList.appendChild(frag);
   };
 
   const renderMessages = () => {
-    el.messagesList.innerHTML = '';
-    if (!state.selectedThreadId) {
-      el.messagesList.innerHTML = '<p class="muted">Select a thread to view messages.</p>';
-      return;
-    }
-    if (!state.messages.length) {
-      el.messagesList.innerHTML = '<p class="muted">No messages in this thread.</p>';
-      return;
-    }
-
-    const frag = document.createDocumentFragment();
-    state.messages.forEach((message) => {
-      const card = document.createElement('article');
-      card.className = 'dashboard-item';
-      const sender = message.sender?.name || message.sender?.email || 'Unknown';
-      card.innerHTML = `<p class="muted">${escapeHtml(sender)} | ${escapeHtml(new Date(message.createdAt).toLocaleString('en-GB'))}</p><p>${escapeHtml(message.body || '')}</p>`;
-      frag.appendChild(card);
+    syncKeyedList(el.messagesList, state.selectedThreadId ? state.messages : [], {
+      getKey: (message, index) => message.id || `${message.createdAt || 'message'}-${index}`,
+      createNode: createMessageCard,
+      updateNode: (card, message) => {
+        const sender = message.sender?.name || message.sender?.email || 'Unknown';
+        card.children[0].textContent = `${sender} | ${formatDateTime(message.createdAt) || '-'}`;
+        card.children[1].textContent = message.body || '';
+      },
+      createEmptyNode: () => createMutedNode(state.selectedThreadId ? 'No messages in this thread.' : 'Select a thread to view messages.')
     });
-    el.messagesList.appendChild(frag);
   };
 
   const renderDirectMessages = () => {
-    el.directMessagesList.innerHTML = '';
-    if (!state.selectedDirectThreadId) {
-      const fallbackManager = getPreferredManager();
-      el.directMessagesList.innerHTML = fallbackManager
-        ? `<p class="muted">Start a direct thread with ${escapeHtml(fallbackManager.name || fallbackManager.email)}.</p>`
-        : '<p class="muted">A direct manager conversation will appear here once a manager is assigned.</p>';
-      return;
-    }
-    if (!state.directMessages.length) {
-      el.directMessagesList.innerHTML = '<p class="muted">No private messages in this thread.</p>';
-      return;
-    }
-
-    const frag = document.createDocumentFragment();
-    state.directMessages.forEach((message) => {
-      const card = document.createElement('article');
-      card.className = 'dashboard-item';
-      const sender = message.sender?.name || message.sender?.email || 'Unknown';
-      card.innerHTML = `<p class="muted">${escapeHtml(sender)} | ${escapeHtml(new Date(message.createdAt).toLocaleString('en-GB'))}</p><p>${escapeHtml(message.body || '')}</p>`;
-      frag.appendChild(card);
+    const fallbackManager = getPreferredManager();
+    syncKeyedList(el.directMessagesList, state.selectedDirectThreadId ? state.directMessages : [], {
+      getKey: (message, index) => message.id || `${message.createdAt || 'direct-message'}-${index}`,
+      createNode: createMessageCard,
+      updateNode: (card, message) => {
+        const sender = message.sender?.name || message.sender?.email || 'Unknown';
+        card.children[0].textContent = `${sender} | ${formatDateTime(message.createdAt) || '-'}`;
+        card.children[1].textContent = message.body || '';
+      },
+      createEmptyNode: () => createMutedNode(
+        state.selectedDirectThreadId
+          ? 'No private messages in this thread.'
+          : (fallbackManager
+            ? `Start a direct thread with ${fallbackManager.name || fallbackManager.email}.`
+            : 'A direct manager conversation will appear here once a manager is assigned.')
+      )
     });
-    el.directMessagesList.appendChild(frag);
   };
 
   const loadMessages = async () => {
@@ -660,10 +756,6 @@
 
       el.session.textContent = `Logged as ${state.user.name || state.user.email} (${state.user.role})`;
       await loadOverview();
-      await Promise.allSettled([
-        ensureDirectThreadSummaries(),
-        ensureThreadSummaries()
-      ]);
       setupLazySections();
       requestAccordionRefresh();
     } catch (error) {

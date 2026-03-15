@@ -165,6 +165,63 @@
     node.appendChild(frag);
   };
 
+  const syncKeyedList = (container, items, { getKey, createNode, updateNode, createEmptyNode } = {}) => {
+    if (!container) return;
+
+    const existingByKey = new Map();
+    let emptyNode = null;
+
+    Array.from(container.children).forEach((child) => {
+      if (child.dataset.emptyState === 'true') {
+        emptyNode = child;
+        return;
+      }
+      if (child.dataset.renderKey) {
+        existingByKey.set(child.dataset.renderKey, child);
+      }
+    });
+
+    if (!Array.isArray(items) || !items.length) {
+      existingByKey.forEach((node) => node.remove());
+      if (!createEmptyNode) {
+        if (emptyNode) emptyNode.remove();
+        return;
+      }
+
+      const nextEmptyNode = createEmptyNode();
+      nextEmptyNode.dataset.emptyState = 'true';
+      if (emptyNode) {
+        if (emptyNode !== nextEmptyNode) emptyNode.replaceWith(nextEmptyNode);
+      } else {
+        container.appendChild(nextEmptyNode);
+      }
+      return;
+    }
+
+    if (emptyNode) emptyNode.remove();
+
+    const orderedNodes = items.map((item, index) => {
+      const key = String(getKey(item, index));
+      let node = existingByKey.get(key);
+      if (!node) {
+        node = createNode(item, index);
+        node.dataset.renderKey = key;
+      }
+      updateNode(node, item, index);
+      existingByKey.delete(key);
+      return node;
+    });
+
+    orderedNodes.forEach((node, index) => {
+      const currentNode = container.children[index];
+      if (currentNode !== node) {
+        container.insertBefore(node, currentNode || null);
+      }
+    });
+
+    existingByKey.forEach((node) => node.remove());
+  };
+
   const requestAccordionRefresh = () => {
     window.dispatchEvent(new CustomEvent('ll:dashboard-accordions-refresh'));
   };
@@ -287,6 +344,7 @@
     formatDateTime,
     createOverviewEntry,
     renderMailboxPreviewList,
+    syncKeyedList,
     requestAccordionRefresh,
     onceVisible,
     getBrandAsset,

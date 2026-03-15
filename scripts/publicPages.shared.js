@@ -40,7 +40,9 @@ module.exports = {
     'Warrington'
   ],
   navLinks: [
-    { href: '/about.html', label: 'About Us' },
+    { href: '/index.html', label: 'Home' },
+    { href: '/about.html', label: 'About' },
+    { href: '/services.html', label: 'Services' },
     { href: '/gallery.html', label: 'Gallery' },
     { href: '/quote.html', label: 'Quote' },
     { href: '/contact.html', label: 'Contact' },
@@ -56,7 +58,9 @@ module.exports = {
     { href: '/quote.html', label: 'Flooring Installation' }
   ],
   studioLinks: [
-    { href: '/about.html', label: 'About Us' },
+    { href: '/index.html', label: 'Home' },
+    { href: '/about.html', label: 'About' },
+    { href: '/services.html', label: 'Services' },
     { href: '/gallery.html', label: 'Gallery' },
     { href: '/contact.html', label: 'Contact' },
     { href: '/quote.html', label: 'Quote' },

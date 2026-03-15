@@ -210,6 +210,11 @@ const buildServicePages = () =>
       ogImage: page.ogImage,
       bodyClass: page.bodyClass,
       generatedBy: 'npm run generate:services',
+      breadcrumbItems: [
+        { label: 'Home', href: '/' },
+        { label: 'Services', href: '/services.html' },
+        { label: page.title.replace(` | ${shared.brandName}`, ''), href: `/${page.fileName}` }
+      ],
       jsonLd: [
         {
           ...page.jsonLd,

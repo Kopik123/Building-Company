@@ -2,15 +2,19 @@
   const runtime = window.LevelLinesRuntime || {};
   const TOKEN_KEY = runtime.TOKEN_KEY || 'll_auth_token';
   const USER_KEY = runtime.USER_KEY || 'll_auth_user';
+  const AUTH_ME_CACHE_KEY = 'll_auth_me_cache';
+  const AUTH_ME_TTL_MS = 60 * 1000;
   const brand = window.LEVEL_LINES_BRAND || null;
 
   const body = document.body;
   const header = document.querySelector('.site-header');
   const navToggle = document.querySelector('[data-nav-toggle]');
   const navMenu = document.querySelector('[data-nav-menu]');
+  const authToggle = document.querySelector('[data-auth-toggle]');
   const authLinks = Array.from(document.querySelectorAll('[data-auth-link]'));
   const inlineLoginForm = document.querySelector('[data-inline-login-form]');
   const inlineLoginStatus = document.querySelector('[data-inline-login-status]');
+  const inlineAuthPanel = document.querySelector('[data-auth-panel]');
   const inlineSession = document.querySelector('[data-inline-session]');
   const inlineSessionCopy = document.querySelector('[data-inline-session-copy]');
   const inlineAccountLink = document.querySelector('[data-inline-account-link]');
@@ -21,16 +25,66 @@
     (navMenu ? navMenu.closest('.main-nav') : null);
 
   let menuPreviouslyFocused = null;
+  let authPreviouslyFocused = null;
 
-  const clearSession = runtime.clearSession || (() => {
+  const readAuthMeCache = (token) => {
+    if (!token || !window.sessionStorage) return null;
+
+    try {
+      const payload = JSON.parse(sessionStorage.getItem(AUTH_ME_CACHE_KEY) || 'null');
+      if (!payload || payload.token !== token) return null;
+      if (Number(payload.expiresAt || 0) <= Date.now()) return null;
+      return payload.user || null;
+    } catch {
+      return null;
+    }
+  };
+
+  const writeAuthMeCache = (token, user) => {
+    if (!token || !window.sessionStorage) return;
+
+    try {
+      sessionStorage.setItem(
+        AUTH_ME_CACHE_KEY,
+        JSON.stringify({
+          token,
+          user: user || null,
+          expiresAt: Date.now() + AUTH_ME_TTL_MS
+        })
+      );
+    } catch {
+      // Ignore cache write failures and keep auth flow functional.
+    }
+  };
+
+  const clearAuthMeCache = () => {
+    if (!window.sessionStorage) return;
+    try {
+      sessionStorage.removeItem(AUTH_ME_CACHE_KEY);
+    } catch {
+      // Ignore cache clear failures and keep auth flow functional.
+    }
+  };
+
+  const baseClearSession = runtime.clearSession || (() => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
   });
 
-  const saveSession = runtime.saveSession || ((token, user) => {
+  const clearSession = () => {
+    clearAuthMeCache();
+    baseClearSession();
+  };
+
+  const baseSaveSession = runtime.saveSession || ((token, user) => {
     localStorage.setItem(TOKEN_KEY, token);
     localStorage.setItem(USER_KEY, JSON.stringify(user || {}));
   });
+
+  const saveSession = (token, user) => {
+    baseSaveSession(token, user);
+    writeAuthMeCache(token, user);
+  };
 
   const parseError = runtime.parseError || ((payload) => payload?.error || 'Request failed.');
   const setStatus = runtime.setStatus || ((node, message = '', type = '') => {
@@ -238,6 +292,11 @@
 
     const loggedIn = Boolean(user && localStorage.getItem(TOKEN_KEY));
     const accountHref = accountPathForRole(user?.role);
+    const authToggleLabel = authToggle?.querySelector('.public-auth-toggle-label');
+
+    if (authToggleLabel) {
+      authToggleLabel.textContent = loggedIn ? 'Account' : 'Login';
+    }
 
     inlineLoginForm?.toggleAttribute('hidden', loggedIn);
     inlineSession.toggleAttribute('hidden', !loggedIn);
@@ -288,11 +347,19 @@
   const validateSession = async () => {
     const token = localStorage.getItem(TOKEN_KEY);
     if (!token) {
+      clearAuthMeCache();
       updateNavigationForSession(null);
       return;
     }
 
     updateNavigationForSession(getSavedUser());
+
+    const cachedUser = readAuthMeCache(token);
+    if (cachedUser) {
+      localStorage.setItem(USER_KEY, JSON.stringify(cachedUser));
+      updateNavigationForSession(cachedUser);
+      return;
+    }
 
     try {
       const response = await fetch('/api/auth/me', {
@@ -306,6 +373,7 @@
       if (!payload?.user) throw new Error('Session expired');
 
       localStorage.setItem(USER_KEY, JSON.stringify(payload.user));
+      writeAuthMeCache(token, payload.user);
       updateNavigationForSession(payload.user);
     } catch {
       clearSession();
@@ -355,10 +423,14 @@
       clearSession();
       updateNavigationForSession(null);
       setStatus(inlineLoginStatus, '');
+      if (header) {
+        header.classList.remove('is-auth-open');
+      }
     });
   }
 
   const isMobileMenuMode = () => window.matchMedia('(max-width: 992px)').matches;
+  const isCompactAuthMode = () => window.matchMedia('(max-width: 768px)').matches;
 
   const getMenuFocusable = () => {
     if (!navMenu) return [];
@@ -371,6 +443,8 @@
     if (!navMenu || !navToggle) return;
 
     navMenu.classList.toggle('is-open', isOpen);
+    navMenu.toggleAttribute('hidden', !isOpen);
+    navMenu.setAttribute('aria-hidden', String(!isOpen));
     navToggle.classList.toggle('is-open', isOpen);
     navToggle.setAttribute('aria-expanded', String(isOpen));
     body.classList.toggle('nav-open', isOpen);
@@ -393,6 +467,39 @@
 
   const closeMenu = () => setMenuState(false);
 
+  const getAuthFocusable = () => {
+    if (!inlineAuthPanel) return [];
+    return Array.from(inlineAuthPanel.querySelectorAll('input, a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])')).filter(
+      (node) => !node.hasAttribute('hidden')
+    );
+  };
+
+  const setAuthPanelState = (isOpen) => {
+    if (!inlineAuthPanel || !authToggle) return;
+
+    if (!isCompactAuthMode()) {
+      header?.classList.remove('is-auth-open');
+      authToggle.setAttribute('aria-expanded', 'false');
+      return;
+    }
+
+    header?.classList.toggle('is-auth-open', isOpen);
+    authToggle.setAttribute('aria-expanded', String(isOpen));
+
+    if (isOpen) {
+      authPreviouslyFocused = document.activeElement;
+      const first = getAuthFocusable()[0];
+      if (first) first.focus();
+    }
+
+    if (!isOpen && authPreviouslyFocused && typeof authPreviouslyFocused.focus === 'function') {
+      authPreviouslyFocused.focus();
+      authPreviouslyFocused = null;
+    }
+  };
+
+  const closeAuthPanel = () => setAuthPanelState(false);
+
   if (header) {
     const syncHeader = () => {
       header.classList.toggle('is-scrolled', window.scrollY > 8);
@@ -403,8 +510,11 @@
   }
 
   if (navMenu && navToggle) {
+    setMenuState(false);
+
     navToggle.addEventListener('click', () => {
       const willOpen = !navMenu.classList.contains('is-open');
+      if (willOpen) closeAuthPanel();
       setMenuState(willOpen);
     });
 
@@ -453,6 +563,46 @@
     window.addEventListener('resize', () => {
       if (!isMobileMenuMode() && navMenu.classList.contains('is-open')) {
         closeMenu();
+      }
+      if (!isCompactAuthMode()) {
+        closeAuthPanel();
+      }
+    });
+  }
+
+  if (authToggle) {
+    authToggle.setAttribute('aria-expanded', 'false');
+
+    authToggle.addEventListener('click', () => {
+      const token = localStorage.getItem(TOKEN_KEY);
+      const user = getSavedUser();
+      if (token && user && isCompactAuthMode()) {
+        window.location.assign(accountPathForRole(user.role));
+        return;
+      }
+
+      if (!isCompactAuthMode()) {
+        inlineLoginForm?.querySelector('input[name="email"]')?.focus();
+        return;
+      }
+
+      const willOpen = !header?.classList.contains('is-auth-open');
+      if (willOpen) closeMenu();
+      setAuthPanelState(willOpen);
+    });
+
+    document.addEventListener('click', (event) => {
+      if (!header?.classList.contains('is-auth-open')) return;
+      if (inlineAuthPanel?.contains(event.target) || authToggle.contains(event.target)) return;
+      closeAuthPanel();
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (!header?.classList.contains('is-auth-open')) return;
+
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeAuthPanel();
       }
     });
   }

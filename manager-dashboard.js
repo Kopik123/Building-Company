@@ -201,6 +201,126 @@
 
     return item;
   });
+  const syncKeyedList = runtime.syncKeyedList || ((container, items, { getKey, createNode, updateNode, createEmptyNode } = {}) => {
+    if (!container) return;
+    const existingByKey = new Map();
+    let emptyNode = null;
+    Array.from(container.children).forEach((child) => {
+      if (child.dataset.emptyState === 'true') {
+        emptyNode = child;
+        return;
+      }
+      if (child.dataset.renderKey) existingByKey.set(child.dataset.renderKey, child);
+    });
+    if (!Array.isArray(items) || !items.length) {
+      existingByKey.forEach((node) => node.remove());
+      if (!createEmptyNode) {
+        if (emptyNode) emptyNode.remove();
+        return;
+      }
+      const nextEmptyNode = createEmptyNode();
+      nextEmptyNode.dataset.emptyState = 'true';
+      if (emptyNode) {
+        if (emptyNode !== nextEmptyNode) emptyNode.replaceWith(nextEmptyNode);
+      } else {
+        container.appendChild(nextEmptyNode);
+      }
+      return;
+    }
+    if (emptyNode) emptyNode.remove();
+    const orderedNodes = items.map((item, index) => {
+      const key = String(getKey(item, index));
+      let node = existingByKey.get(key);
+      if (!node) {
+        node = createNode(item, index);
+        node.dataset.renderKey = key;
+      }
+      updateNode(node, item, index);
+      existingByKey.delete(key);
+      return node;
+    });
+    orderedNodes.forEach((node, index) => {
+      const currentNode = container.children[index];
+      if (currentNode !== node) {
+        container.insertBefore(node, currentNode || null);
+      }
+    });
+    existingByKey.forEach((node) => node.remove());
+  });
+
+  const createMutedNode = (message) => {
+    const node = document.createElement('p');
+    node.className = 'muted';
+    node.textContent = message;
+    return node;
+  };
+
+  const createProjectListCard = () => {
+    const card = document.createElement('article');
+    card.className = 'dashboard-item';
+    const heading = document.createElement('h3');
+    heading.className = 'dashboard-item-title';
+    const meta = document.createElement('p');
+    meta.className = 'muted';
+    const row = document.createElement('div');
+    row.className = 'dashboard-actions-row';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-outline';
+    btn.textContent = 'Select';
+    btn.addEventListener('click', async () => {
+      const projectId = card.dataset.projectId || '';
+      if (!projectId) return;
+      state.selectedProjectId = projectId;
+      if (!state.projectDetailsById.has(projectId)) {
+        try {
+          await loadProjectDetail(projectId, true);
+        } catch (error) {
+          window.alert(error.message || 'Could not load project details');
+        }
+      }
+      fillProjectEditor();
+      renderProjects();
+    });
+    row.appendChild(btn);
+    card.appendChild(heading);
+    card.appendChild(meta);
+    card.appendChild(row);
+    return card;
+  };
+
+  const createThreadCard = ({ onOpen }) => {
+    const card = document.createElement('article');
+    card.className = 'dashboard-item';
+    const heading = document.createElement('h3');
+    heading.className = 'dashboard-item-title';
+    const meta = document.createElement('p');
+    meta.className = 'muted';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-outline';
+    btn.textContent = 'Open';
+    btn.addEventListener('click', async () => {
+      const threadId = card.dataset.threadId || '';
+      if (!threadId) return;
+      await onOpen(threadId);
+    });
+    card.appendChild(heading);
+    card.appendChild(meta);
+    card.appendChild(btn);
+    return card;
+  };
+
+  const createMessageCard = () => {
+    const card = document.createElement('article');
+    card.className = 'dashboard-item';
+    const meta = document.createElement('p');
+    meta.className = 'muted';
+    const body = document.createElement('p');
+    card.appendChild(meta);
+    card.appendChild(body);
+    return card;
+  };
   const renderMailboxPreviewList = runtime.renderMailboxPreviewList || ((node, items, { loaded, loadingText, emptyText, mapItem }) => {
     node.innerHTML = '';
 
@@ -636,41 +756,28 @@
   };
 
   const renderProjects = () => {
-    el.projectsList.innerHTML = '';
     if (!state.projects.length) {
-      el.projectsList.innerHTML = '<p class=\"muted\">No projects found for current filters.</p>';
+      syncKeyedList(el.projectsList, [], {
+        getKey: () => '',
+        createNode: createProjectListCard,
+        updateNode: () => {},
+        createEmptyNode: () => createMutedNode('No projects found for current filters.')
+      });
       el.projectEditorCard.hidden = true;
       renderOperationsShell();
       return;
     }
-    const frag = document.createDocumentFragment();
-    state.projects.forEach((project) => {
-      const card = document.createElement('article');
-      card.className = `dashboard-item ${project.id === state.selectedProjectId ? 'is-active' : ''}`;
-      card.innerHTML = `<h3>${escapeHtml(project.title)}</h3><p class=\"muted\">${escapeHtml(project.status)} | ${escapeHtml(project.location || 'No location')} | ${escapeHtml(project.imageCount || 0)} images/${escapeHtml(project.documentCount || 0)} docs | Client: ${escapeHtml(project.client?.email || 'No client')} | Staff: ${escapeHtml(project.assignedManager?.email || 'No staff')}</p>`;
-      const row = document.createElement('div');
-      row.className = 'dashboard-actions-row';
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'btn btn-outline';
-      btn.textContent = 'Select';
-      btn.addEventListener('click', async () => {
-        state.selectedProjectId = project.id;
-        if (!state.projectDetailsById.has(project.id)) {
-          try {
-            await loadProjectDetail(project.id, true);
-          } catch (error) {
-            window.alert(error.message || 'Could not load project details');
-          }
-        }
-        fillProjectEditor();
-        renderProjects();
-      });
-      row.appendChild(btn);
-      card.appendChild(row);
-      frag.appendChild(card);
+    syncKeyedList(el.projectsList, state.projects, {
+      getKey: (project) => project.id,
+      createNode: createProjectListCard,
+      updateNode: (card, project) => {
+        card.dataset.projectId = project.id;
+        card.className = `dashboard-item ${project.id === state.selectedProjectId ? 'is-active' : ''}`;
+        card.children[0].textContent = project.title || 'Project';
+        card.children[1].textContent = `${project.status || '-'} | ${project.location || 'No location'} | ${project.imageCount || 0} images/${project.documentCount || 0} docs | Client: ${project.client?.email || 'No client'} | Staff: ${project.assignedManager?.email || 'No staff'}`;
+      },
+      createEmptyNode: () => createMutedNode('No projects found for current filters.')
     });
-    el.projectsList.appendChild(frag);
     renderPagination(el.projectsPagination, el.projectsPrev, el.projectsNext, state.projectsPagination);
     renderOperationsShell();
   };
@@ -1117,106 +1224,72 @@
   };
 
   const renderDirectThreads = () => {
-    el.managerDirectThreadsList.innerHTML = '';
-    if (!state.directThreads.length) {
-      el.managerDirectThreadsList.innerHTML = '<p class="muted">No private threads yet.</p>';
-      renderOperationsShell();
-      return;
-    }
-
-    const frag = document.createDocumentFragment();
-    state.directThreads.forEach((thread) => {
-      const counterparty = getInboxCounterparty(thread);
-      const card = document.createElement('article');
-      card.className = `dashboard-item ${thread.id === state.selectedDirectThreadId ? 'is-active' : ''}`;
-      card.innerHTML = `<h3>${escapeHtml(counterparty?.name || counterparty?.email || 'Direct thread')}</h3><p class="muted">${escapeHtml(thread.subject || 'Private inbox')} | Updated: ${escapeHtml(new Date(thread.updatedAt).toLocaleString('en-GB'))}</p>`;
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'btn btn-outline';
-      btn.textContent = 'Open';
-      btn.addEventListener('click', async () => {
-        state.selectedDirectThreadId = thread.id;
-        renderDirectThreads();
-        await loadDirectMessages();
-      });
-      card.appendChild(btn);
-      frag.appendChild(card);
+    syncKeyedList(el.managerDirectThreadsList, state.directThreads, {
+      getKey: (thread) => thread.id,
+      createNode: () => createThreadCard({
+        onOpen: async (threadId) => {
+          state.selectedDirectThreadId = threadId;
+          renderDirectThreads();
+          await loadDirectMessages();
+        }
+      }),
+      updateNode: (card, thread) => {
+        const counterparty = getInboxCounterparty(thread);
+        card.dataset.threadId = thread.id;
+        card.className = `dashboard-item ${thread.id === state.selectedDirectThreadId ? 'is-active' : ''}`;
+        card.children[0].textContent = counterparty?.name || counterparty?.email || 'Direct thread';
+        card.children[1].textContent = `${thread.subject || 'Private inbox'} | Updated: ${formatDateTime(thread.updatedAt) || '-'}`;
+      },
+      createEmptyNode: () => createMutedNode('No private threads yet.')
     });
-    el.managerDirectThreadsList.appendChild(frag);
     renderOperationsShell();
   };
 
   const renderDirectMessages = () => {
-    el.managerDirectMessagesList.innerHTML = '';
-    if (!state.selectedDirectThreadId) {
-      el.managerDirectMessagesList.innerHTML = '<p class="muted">Select a private thread to view messages.</p>';
-      return;
-    }
-    if (!state.directMessages.length) {
-      el.managerDirectMessagesList.innerHTML = '<p class="muted">No private messages in this thread.</p>';
-      return;
-    }
-
-    const frag = document.createDocumentFragment();
-    state.directMessages.forEach((message) => {
-      const card = document.createElement('article');
-      card.className = 'dashboard-item';
-      const sender = message.sender?.name || message.sender?.email || 'Unknown';
-      card.innerHTML = `<p class="muted">${escapeHtml(sender)} | ${escapeHtml(new Date(message.createdAt).toLocaleString('en-GB'))}</p><p>${escapeHtml(message.body || '')}</p>`;
-      frag.appendChild(card);
+    syncKeyedList(el.managerDirectMessagesList, state.selectedDirectThreadId ? state.directMessages : [], {
+      getKey: (message, index) => message.id || `${message.createdAt || 'direct-message'}-${index}`,
+      createNode: createMessageCard,
+      updateNode: (card, message) => {
+        const sender = message.sender?.name || message.sender?.email || 'Unknown';
+        card.children[0].textContent = `${sender} | ${formatDateTime(message.createdAt) || '-'}`;
+        card.children[1].textContent = message.body || '';
+      },
+      createEmptyNode: () => createMutedNode(state.selectedDirectThreadId ? 'No private messages in this thread.' : 'Select a private thread to view messages.')
     });
-    el.managerDirectMessagesList.appendChild(frag);
   };
 
   const renderGroupThreads = () => {
-    el.managerGroupThreadsList.innerHTML = '';
-    if (!state.groupThreads.length) {
-      el.managerGroupThreadsList.innerHTML = '<p class="muted">No project chat threads available.</p>';
-      renderOperationsShell();
-      return;
-    }
-
-    const frag = document.createDocumentFragment();
-    state.groupThreads.forEach((thread) => {
-      const card = document.createElement('article');
-      card.className = `dashboard-item ${thread.id === state.selectedGroupThreadId ? 'is-active' : ''}`;
-      card.innerHTML = `<h3>${escapeHtml(thread.name || thread.subject || 'Project thread')}</h3><p class="muted">Updated: ${escapeHtml(new Date(thread.updatedAt).toLocaleString('en-GB'))}</p>`;
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'btn btn-outline';
-      btn.textContent = 'Open';
-      btn.addEventListener('click', async () => {
-        state.selectedGroupThreadId = thread.id;
-        renderGroupThreads();
-        await loadGroupMessages();
-      });
-      card.appendChild(btn);
-      frag.appendChild(card);
+    syncKeyedList(el.managerGroupThreadsList, state.groupThreads, {
+      getKey: (thread) => thread.id,
+      createNode: () => createThreadCard({
+        onOpen: async (threadId) => {
+          state.selectedGroupThreadId = threadId;
+          renderGroupThreads();
+          await loadGroupMessages();
+        }
+      }),
+      updateNode: (card, thread) => {
+        card.dataset.threadId = thread.id;
+        card.className = `dashboard-item ${thread.id === state.selectedGroupThreadId ? 'is-active' : ''}`;
+        card.children[0].textContent = thread.name || thread.subject || 'Project thread';
+        card.children[1].textContent = `Updated: ${formatDateTime(thread.updatedAt) || '-'}`;
+      },
+      createEmptyNode: () => createMutedNode('No project chat threads available.')
     });
-    el.managerGroupThreadsList.appendChild(frag);
     renderOperationsShell();
   };
 
   const renderGroupMessages = () => {
-    el.managerGroupMessagesList.innerHTML = '';
-    if (!state.selectedGroupThreadId) {
-      el.managerGroupMessagesList.innerHTML = '<p class="muted">Select a project chat thread to view messages.</p>';
-      return;
-    }
-    if (!state.groupMessages.length) {
-      el.managerGroupMessagesList.innerHTML = '<p class="muted">No project messages in this thread.</p>';
-      return;
-    }
-
-    const frag = document.createDocumentFragment();
-    state.groupMessages.forEach((message) => {
-      const card = document.createElement('article');
-      card.className = 'dashboard-item';
-      const sender = message.sender?.name || message.sender?.email || 'Unknown';
-      card.innerHTML = `<p class="muted">${escapeHtml(sender)} | ${escapeHtml(new Date(message.createdAt).toLocaleString('en-GB'))}</p><p>${escapeHtml(message.body || '')}</p>`;
-      frag.appendChild(card);
+    syncKeyedList(el.managerGroupMessagesList, state.selectedGroupThreadId ? state.groupMessages : [], {
+      getKey: (message, index) => message.id || `${message.createdAt || 'group-message'}-${index}`,
+      createNode: createMessageCard,
+      updateNode: (card, message) => {
+        const sender = message.sender?.name || message.sender?.email || 'Unknown';
+        card.children[0].textContent = `${sender} | ${formatDateTime(message.createdAt) || '-'}`;
+        card.children[1].textContent = message.body || '';
+      },
+      createEmptyNode: () => createMutedNode(state.selectedGroupThreadId ? 'No project messages in this thread.' : 'Select a project chat thread to view messages.')
     });
-    el.managerGroupMessagesList.appendChild(frag);
   };
 
   const loadProjectDetail = async (projectId, force = false) => {
@@ -2058,10 +2131,29 @@
       const payload = await api('/api/manager/seed/starter', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ force }) });
       const stats = payload?.stats || {};
       setStatus(el.seedStatus, `Seed done. Services +${stats.servicesCreated || 0}, materials +${stats.materialsCreated || 0}, projects +${stats.projectsCreated || 0}, media +${stats.mediaCreated || 0}.`, 'success');
-      state.projectsQuery.page = 1;
-      state.servicesQuery.page = 1;
-      state.materialsQuery.page = 1;
-      await Promise.all([loadProjects(), loadServices(), loadMaterials()]);
+      const refreshTasks = [];
+      const servicesChanged = Number(stats.servicesCreated || 0) > 0 || Number(stats.servicesUpdated || 0) > 0;
+      const materialsChanged = Number(stats.materialsCreated || 0) > 0 || Number(stats.materialsUpdated || 0) > 0;
+      const projectsChanged = Number(stats.projectsCreated || 0) > 0 || Number(stats.mediaCreated || 0) > 0;
+
+      if (projectsChanged) {
+        state.projectsQuery.page = 1;
+        refreshTasks.push(loadProjects());
+      }
+
+      if (servicesChanged) {
+        state.servicesQuery.page = 1;
+        refreshTasks.push(loadServices());
+      }
+
+      if (materialsChanged) {
+        state.materialsQuery.page = 1;
+        refreshTasks.push(loadMaterials());
+      }
+
+      if (refreshTasks.length) {
+        await Promise.all(refreshTasks);
+      }
     } catch (error) {
       setStatus(el.seedStatus, error.message || 'Seed failed.', 'error');
     }

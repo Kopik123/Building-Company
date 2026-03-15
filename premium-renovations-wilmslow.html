@@ -27,6 +27,7 @@
   <link rel="stylesheet" href="/styles/workspace.css" />
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"Service","name":"Premium Renovations in Wilmslow","description":"Selective bathroom, kitchen and interior renovation briefs in Wilmslow by Level Lines Studio for homeowners who value finish control, quieter luxury and a calmer build process.","serviceType":"Premium bathroom, kitchen and interior renovations","image":"https://levellines.co.uk/Gallery/premium/exterior-front.jpg","provider":{"@type":"LocalBusiness","name":"Level Lines Studio","telephone":["+44 7942 874 446","+44 7304 506 391"],"email":"LevelLineStudioMCR@gmail.com"},"areaServed":["Wilmslow","North West - Lancashire"],"url":"https://levellines.co.uk/premium-renovations-wilmslow.html"}</script>
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Do you work on high-spec finish upgrades?","acceptedAnswer":{"@type":"Answer","text":"Yes. Many Wilmslow enquiries are finish-led projects rather than purely functional refurbishments."}},{"@type":"Question","name":"Can you match an architect or designer vision?","acceptedAnswer":{"@type":"Answer","text":"Yes. The studio is comfortable translating an existing visual direction into buildable detail."}},{"@type":"Question","name":"Do you cover surrounding areas too?","acceptedAnswer":{"@type":"Answer","text":"Yes. Wilmslow sits within a wider North West footprint that includes Stockport, Macclesfield and Manchester."}}],"url":"https://levellines.co.uk/premium-renovations-wilmslow.html"}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://levellines.co.uk/"},{"@type":"ListItem","position":2,"name":"Services","item":"https://levellines.co.uk/services.html"},{"@type":"ListItem","position":3,"name":"Renovations in Wilmslow","item":"https://levellines.co.uk/premium-renovations-wilmslow.html"}]}</script>
 </head>
 <body class="public-site page-location">
 
@@ -37,40 +38,42 @@
 <picture class="public-brand-picture">
           <source type="image/avif" srcset="/assets/optimized/brand/title.avif" />
           <source type="image/webp" srcset="/assets/optimized/brand/title.webp" />
-          <img src="/assets/optimized/brand/title.png" alt="Level Lines Studio" class="public-brand-title-image" width="1800" height="412" loading="eager" decoding="async" />
+          <img src="/assets/optimized/brand/title.png" alt="Level Lines Studio" class="public-brand-title-image" width="1536" height="232" loading="eager" decoding="async" />
         </picture>
         </a>
       </div>
-      <div class="public-shell-strip">
-        <section class="public-inline-auth" data-inline-auth-shell aria-label="Studio login">
-          <p class="public-strip-heading">Login</p>
-          <form class="public-inline-login-form" data-inline-login-form novalidate>
-            <div class="public-inline-login-row">
-              <input type="email" name="email" autocomplete="username email" placeholder="Email" aria-label="Email" required />
-              <input type="password" name="password" autocomplete="current-password" placeholder="Password" aria-label="Password" required />
-              <button class="public-inline-login-submit" type="submit">Login</button>
-              <a class="public-inline-login-link" href="/auth.html">Register</a>
-            </div>
-            <p class="public-inline-login-helper">Move public enquiries into private project visibility.</p>
-          </form>
-          <div class="public-inline-session" data-inline-session hidden>
-            <p class="public-inline-session-copy" data-inline-session-copy>Account ready.</p>
-            <div class="public-inline-session-actions">
-              <a class="public-inline-session-link" href="/auth.html" data-inline-account-link>Open Account</a>
-              <button class="public-inline-session-link public-inline-session-link--button" type="button" data-inline-logout>Log out</button>
-            </div>
+      <div class="public-shell-controls">
+      <button class="public-auth-toggle" type="button" data-auth-toggle aria-expanded="false" aria-controls="public-auth-panel">
+        <span class="public-auth-toggle-label">Login</span>
+      </button>
+      <section class="public-auth-panel" id="public-auth-panel" data-auth-panel aria-label="Studio login">
+        <form class="public-inline-login-form" data-inline-login-form novalidate>
+          <div class="public-inline-login-row">
+            <input type="email" name="email" autocomplete="username email" placeholder="Login" aria-label="Login" required />
+            <input type="password" name="password" autocomplete="current-password" placeholder="Password" aria-label="Password" required />
+            <button class="public-inline-login-submit" type="submit">Enter</button>
           </div>
-          <p class="form-status public-inline-login-status" data-inline-login-status aria-live="polite"></p>
-        </section>
+        </form>
+        <div class="public-inline-session" data-inline-session hidden>
+          <p class="public-inline-session-copy" data-inline-session-copy>Account ready.</p>
+          <div class="public-inline-session-actions">
+            <a class="public-inline-session-link" href="/auth.html" data-inline-account-link>Open Account</a>
+            <button class="public-inline-session-link public-inline-session-link--button" type="button" data-inline-logout>Log out</button>
+          </div>
+        </div>
+        <p class="form-status public-inline-login-status" data-inline-login-status aria-live="polite"></p>
+      </section>
         <div class="public-shell-nav menu-wrap" data-menu-wrap>
-          <p class="public-strip-heading public-strip-heading--nav">Menu</p>
-          <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation menu">
+          <button class="nav-toggle public-menu-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation menu">
+            <span class="public-menu-toggle-label">Menu</span>
             <span class="nav-toggle-line"></span>
             <span class="nav-toggle-line"></span>
             <span class="nav-toggle-line"></span>
           </button>
-          <nav class="site-nav site-nav--public-shell" id="site-nav" data-nav-menu aria-label="Main navigation">
-          <a href="/about.html" data-nav-link>About Us</a>
+          <nav class="site-nav site-nav--public-shell" id="site-nav" data-nav-menu aria-label="Main navigation" hidden aria-hidden="true">
+          <a href="/index.html" data-nav-link>Home</a>
+          <a href="/about.html" data-nav-link>About</a>
+          <a href="/services.html" data-nav-link>Services</a>
           <a href="/gallery.html" data-nav-link>Gallery</a>
           <a href="/quote.html" data-nav-link>Quote</a>
           <a href="/contact.html" data-nav-link>Contact</a>
@@ -326,7 +329,9 @@
       <div class="footer-block">
         <h3>Studio</h3>
         <div class="footer-links">
-          <a href="/about.html">About Us</a>
+          <a href="/index.html">Home</a>
+          <a href="/about.html">About</a>
+          <a href="/services.html">Services</a>
           <a href="/gallery.html">Gallery</a>
           <a href="/contact.html">Contact</a>
           <a href="/quote.html">Quote</a>
