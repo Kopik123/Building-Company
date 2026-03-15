@@ -132,3 +132,9 @@
 - Regenerated the manual and generated public pages, then re-ran `npm run generate:public-pages`, `npm run verify:generated`, `node --check` for the touched shell/runtime/tests and `npm run test:ci`; all passed after the header menu toggle fix.
 - Added a public-site typography override in `styles/public.css` so light cards, legal/content shells, form text, footer links and CTA labels now render in the same gold family as the dark surfaces instead of falling back to dark text on the pale cards.
 - Re-ran `npm run test:ci` after the public gold-typography pass; the generated-page verification and full API suite both still passed.
+- Saved `Plans/Pelna Analiza Projektu - Audit 360 + Roadmapa Rozwoju.md` as the current full-project audit covering architecture, product operations, public UX/SEO, performance hotspots and the decision-ready roadmap.
+- Re-grounded the audit in the actual repository state by reviewing the current Express app composition, domain models/associations, route surface, mobile-v1 structure, tracker documents and the biggest code hotspots by line count.
+- Re-ran `npm run verify:generated` and `npm run test:ci` as the baseline technical validation for the audit; both passed, while the already known Playwright workstation blocker remains outside this repo-level gate.
+- Added the missing audit-derived backlog items into `Project_todos.md`, including CRM lifecycle, project stages/tasks, durable activity feed, explicit estimate approval flow, shared web/mobile contracts and unifying the public content model.
+- Kept the current narrower `title.png` variant in place and tuned `styles/public.css` instead of reverting the asset, reducing the rendered brand width and adding breathing room so the sticky shell stays calmer even with the tighter crop.
+- Re-ran `npm run test:ci` after the non-destructive `title.png` shell-tuning pass; generated-page verification and the API suite both still passed.

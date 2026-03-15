@@ -1602,15 +1602,15 @@ body.public-site.page-home::before {
 
 .site-header--public-shell .public-brand-link {
   justify-content: flex-start;
-  padding: 0;
+  padding: 0.18rem 0.7rem 0.18rem 0.15rem;
 }
 
 .site-header--public-shell .public-brand-picture {
-  width: min(100%, 34rem);
+  width: min(100%, 28rem);
 }
 
 .site-header--public-shell .public-brand-title-image {
-  width: min(100%, 560px);
+  width: min(100%, 460px);
   margin: 0;
 }
 
@@ -2012,7 +2012,7 @@ body.public-site.page-home::before {
   }
 
   .site-header--public-shell .public-brand-picture {
-    width: min(100%, 15.5rem);
+    width: min(100%, 13.75rem);
   }
 
   .site-header--public-shell .public-brand-title-image {
@@ -2092,7 +2092,7 @@ body.public-site.page-home::before {
   }
 
   .site-header--public-shell .public-brand-picture {
-    width: min(100%, 12.75rem);
+    width: min(100%, 11.75rem);
   }
 
   .public-menu-toggle,
