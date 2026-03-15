@@ -80,3 +80,4 @@
 - [x] Updated Playwright public/mobile expectations so regression coverage validates the new shared `title.png` shell and inline login instead of the old homepage-only header layout.
 - [ ] Continue the manager-route cleanup by extracting the remaining `quotes` and `projects/media` sections once the new subrouter split has baked in under tests.
 - [ ] Continue reducing `apps/mobile-v1/App.js` by extracting session/tab shell logic after the new `screens.js`/`styles.js` split stabilises.
+- [ ] Revisit SonarQube CPD exclusions once `about/contact/gallery/quote/legal` move further into the shared public renderer, so static HTML exclusions can be narrowed again.

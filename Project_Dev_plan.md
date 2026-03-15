@@ -96,3 +96,4 @@
 - Updated the static public pages plus regenerated service/location pages to use the new `1536x232` `title.png` intrinsic dimensions, keeping the quick-access login/menu strip visually aligned with the slimmer shell.
 - Tightened the public shell again in `styles/public.css` so the upper `title` bar and the lower `login + menu` strip behave like a true two-tier quick-access header across homepage and all public pages.
 - Updated `deploy/LIVE_QA_CHECKLIST_PC_MOBILE.md` so the post-deploy checks now validate the new thin `title` strip and lower quick-access login/menu band instead of the older `logo | title | account/nav` shell wording.
+- Added `sonar-project.properties` with targeted `sonar.cpd.exclusions` for static/generated public HTML outputs, so SonarQube duplication metrics stop flagging intentional shared public shell markup while still checking scripts and styles normally.
