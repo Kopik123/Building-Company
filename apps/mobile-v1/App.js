@@ -23,6 +23,8 @@ export default function App() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [appState, setAppState] = useState(AppState.currentState);
   const pollersRef = useRef(new Map());
+  const schedulerTimerRef = useRef(null);
+  const [pollerVersion, setPollerVersion] = useState(0);
 
   const role = String(session.user?.role || 'client').toLowerCase();
   const staffRole = ['employee', 'manager', 'admin'].includes(role);
@@ -35,9 +37,11 @@ export default function App() {
       nextRunAt: Date.now() + safeInterval,
       callback
     });
+    setPollerVersion((value) => value + 1);
 
     return () => {
       pollersRef.current.delete(id);
+      setPollerVersion((value) => value + 1);
     };
   }, []);
 
@@ -60,27 +64,55 @@ export default function App() {
   useEffect(() => {
     if (!session.accessToken || appState !== 'active') return undefined;
 
-    const timer = setInterval(() => {
+    const clearScheduledPoll = () => {
+      if (schedulerTimerRef.current) {
+        clearTimeout(schedulerTimerRef.current);
+        schedulerTimerRef.current = null;
+      }
+    };
+
+    const scheduleNextPoll = () => {
+      clearScheduledPoll();
+
+      const entries = Array.from(pollersRef.current.values()).filter(Boolean);
+      if (!entries.length) return;
+
       const now = Date.now();
-      pollersRef.current.forEach((entry) => {
-        if (!entry || now < entry.nextRunAt) return;
-        entry.nextRunAt = now + entry.intervalMs;
-        Promise.resolve(entry.callback()).catch(() => {});
-      });
-    }, 1000);
+      const nextRunAt = entries.reduce((soonest, entry) => {
+        const dueAt = Number(entry.nextRunAt) || now;
+        return Math.min(soonest, dueAt);
+      }, Number.POSITIVE_INFINITY);
+      const delay = Math.max(0, nextRunAt - now);
+
+      schedulerTimerRef.current = setTimeout(() => {
+        schedulerTimerRef.current = null;
+        const runStartedAt = Date.now();
+
+        pollersRef.current.forEach((entry) => {
+          if (!entry || runStartedAt < entry.nextRunAt) return;
+          entry.nextRunAt = runStartedAt + entry.intervalMs;
+          Promise.resolve(entry.callback()).catch(() => {});
+        });
+
+        scheduleNextPoll();
+      }, delay);
+    };
+
+    scheduleNextPoll();
 
     return () => {
-      clearInterval(timer);
+      clearScheduledPoll();
     };
-  }, [appState, session.accessToken]);
+  }, [appState, session.accessToken, pollerVersion]);
 
   useEffect(() => {
     if (appState !== 'active') return;
     const now = Date.now();
     pollersRef.current.forEach((entry) => {
       if (!entry) return;
-      entry.nextRunAt = now + entry.intervalMs;
+      entry.nextRunAt = now;
     });
+    setPollerVersion((value) => value + 1);
   }, [appState, session.accessToken]);
 
   useEffect(() => {

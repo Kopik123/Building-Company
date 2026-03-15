@@ -2,6 +2,8 @@
   const runtime = window.LevelLinesRuntime || {};
   const TOKEN_KEY = runtime.TOKEN_KEY || 'll_auth_token';
   const USER_KEY = runtime.USER_KEY || 'll_auth_user';
+  const AUTH_ME_CACHE_KEY = 'll_auth_me_cache';
+  const AUTH_ME_TTL_MS = 60 * 1000;
   const brand = window.LEVEL_LINES_BRAND || null;
 
   const body = document.body;
@@ -22,15 +24,64 @@
 
   let menuPreviouslyFocused = null;
 
-  const clearSession = runtime.clearSession || (() => {
+  const readAuthMeCache = (token) => {
+    if (!token || !window.sessionStorage) return null;
+
+    try {
+      const payload = JSON.parse(sessionStorage.getItem(AUTH_ME_CACHE_KEY) || 'null');
+      if (!payload || payload.token !== token) return null;
+      if (Number(payload.expiresAt || 0) <= Date.now()) return null;
+      return payload.user || null;
+    } catch {
+      return null;
+    }
+  };
+
+  const writeAuthMeCache = (token, user) => {
+    if (!token || !window.sessionStorage) return;
+
+    try {
+      sessionStorage.setItem(
+        AUTH_ME_CACHE_KEY,
+        JSON.stringify({
+          token,
+          user: user || null,
+          expiresAt: Date.now() + AUTH_ME_TTL_MS
+        })
+      );
+    } catch {
+      // Ignore cache write failures and keep auth flow functional.
+    }
+  };
+
+  const clearAuthMeCache = () => {
+    if (!window.sessionStorage) return;
+    try {
+      sessionStorage.removeItem(AUTH_ME_CACHE_KEY);
+    } catch {
+      // Ignore cache clear failures and keep auth flow functional.
+    }
+  };
+
+  const baseClearSession = runtime.clearSession || (() => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
   });
 
-  const saveSession = runtime.saveSession || ((token, user) => {
+  const clearSession = () => {
+    clearAuthMeCache();
+    baseClearSession();
+  };
+
+  const baseSaveSession = runtime.saveSession || ((token, user) => {
     localStorage.setItem(TOKEN_KEY, token);
     localStorage.setItem(USER_KEY, JSON.stringify(user || {}));
   });
+
+  const saveSession = (token, user) => {
+    baseSaveSession(token, user);
+    writeAuthMeCache(token, user);
+  };
 
   const parseError = runtime.parseError || ((payload) => payload?.error || 'Request failed.');
   const setStatus = runtime.setStatus || ((node, message = '', type = '') => {
@@ -288,11 +339,19 @@
   const validateSession = async () => {
     const token = localStorage.getItem(TOKEN_KEY);
     if (!token) {
+      clearAuthMeCache();
       updateNavigationForSession(null);
       return;
     }
 
     updateNavigationForSession(getSavedUser());
+
+    const cachedUser = readAuthMeCache(token);
+    if (cachedUser) {
+      localStorage.setItem(USER_KEY, JSON.stringify(cachedUser));
+      updateNavigationForSession(cachedUser);
+      return;
+    }
 
     try {
       const response = await fetch('/api/auth/me', {
@@ -306,6 +365,7 @@
       if (!payload?.user) throw new Error('Session expired');
 
       localStorage.setItem(USER_KEY, JSON.stringify(payload.user));
+      writeAuthMeCache(token, payload.user);
       updateNavigationForSession(payload.user);
     } catch {
       clearSession();
