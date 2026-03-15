@@ -443,6 +443,8 @@
     if (!navMenu || !navToggle) return;
 
     navMenu.classList.toggle('is-open', isOpen);
+    navMenu.toggleAttribute('hidden', !isOpen);
+    navMenu.setAttribute('aria-hidden', String(!isOpen));
     navToggle.classList.toggle('is-open', isOpen);
     navToggle.setAttribute('aria-expanded', String(isOpen));
     body.classList.toggle('nav-open', isOpen);
@@ -508,6 +510,8 @@
   }
 
   if (navMenu && navToggle) {
+    setMenuState(false);
+
     navToggle.addEventListener('click', () => {
       const willOpen = !navMenu.classList.contains('is-open');
       if (willOpen) closeAuthPanel();

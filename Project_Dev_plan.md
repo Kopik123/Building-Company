@@ -127,3 +127,6 @@
 - Replaced the 1-second global polling heartbeat in `apps/mobile-v1/App.js` with a nearest-due timeout scheduler that re-arms only when a poller is due or the app returns to the foreground.
 - Added a short session-scoped TTL cache around `/api/auth/me` in `site.js`, so the shared public shell can reuse a fresh authenticated user snapshot instead of revalidating on every public page load.
 - Re-ran `node --check apps/mobile-v1/App.js`, `node --check site.js` and `cmd /c npm run test:ci`; all passed after the mobile scheduler and public-session cache changes.
+- Updated the public sticky shell so `data-nav-menu` starts hidden in HTML, `site.js` manages `hidden`/`aria-hidden` alongside the existing toggle state, and the menu no longer renders as a permanently visible bar in the `title.png` header.
+- Changed the public menu trigger styling in `styles/public.css` so the control reads as a clean three-line hamburger button while keeping the text label only for accessibility.
+- Regenerated the manual and generated public pages, then re-ran `npm run generate:public-pages`, `npm run verify:generated`, `node --check` for the touched shell/runtime/tests and `npm run test:ci`; all passed after the header menu toggle fix.

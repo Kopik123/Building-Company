@@ -349,6 +349,7 @@ test('homepage mobile shell keeps compact auth and menu access', async ({ page }
   await page.goto('/index.html');
   await expect(page.locator('.site-header--public-shell .public-auth-toggle')).toBeVisible();
   await expect(page.locator('.site-header--public-shell [data-inline-login-form]')).toBeHidden();
+  await expect(page.locator('.site-header--public-shell [data-nav-menu]')).toBeHidden();
   await page.locator('.site-header--public-shell .public-auth-toggle').click();
   await expect(page.locator('.site-header--public-shell [data-inline-login-form]')).toBeVisible();
   await openNavIfNeeded(page);

@@ -146,7 +146,7 @@ ${renderInlineLoginStrip(shared)}
             <span class="nav-toggle-line"></span>
             <span class="nav-toggle-line"></span>
           </button>
-          <nav class="site-nav site-nav--public-shell" id="site-nav" data-nav-menu aria-label="Main navigation">
+          <nav class="site-nav site-nav--public-shell" id="site-nav" data-nav-menu aria-label="Main navigation" hidden aria-hidden="true">
 ${renderPublicNavLinks(shared)}
           </nav>
         </div>

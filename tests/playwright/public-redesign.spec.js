@@ -21,6 +21,7 @@ test('homepage renders the quote-first shell, service hub and section flow', asy
   await expect(page.locator('.site-header--public-shell .public-brand-title-image[src="/assets/optimized/brand/title.png"]')).toHaveCount(1);
   await expect(page.locator('.site-header--public-shell [data-inline-login-form]')).toBeVisible();
   await expect(page.locator('.site-header--public-shell .public-menu-toggle')).toBeVisible();
+  await expect(page.locator('.site-header--public-shell [data-nav-menu]')).toBeHidden();
   await expect(page.locator('main h1').first()).toContainText(/premium bathrooms, kitchens and interiors/i);
   await expect(page.locator('#projects')).toBeVisible();
   await expect(page.locator('#gallery')).toBeVisible();
@@ -70,6 +71,7 @@ test('service, location and legal pages keep the same shell and SEO contact path
   await expect(page.locator('body.public-site.page-service')).toBeVisible();
   await expect(page.locator('.site-header--public-shell .public-brand-title-image[src="/assets/optimized/brand/title.png"]')).toHaveCount(1);
   await expect(page.locator('.site-header--public-shell [data-inline-login-form]')).toBeVisible();
+  await expect(page.locator('.site-header--public-shell [data-nav-menu]')).toBeHidden();
   await expect(page.locator('main h1').first()).toContainText(/Bathrooms/i);
   await openNavIfNeeded(page);
   await expect(page.locator('[data-nav-menu] a[href="/index.html"]')).toBeVisible();
@@ -87,6 +89,7 @@ test('service, location and legal pages keep the same shell and SEO contact path
   await expect(page.locator('body.public-site.page-legal')).toBeVisible();
   await expect(page.locator('.site-header--public-shell .public-brand-title-image[src="/assets/optimized/brand/title.png"]')).toHaveCount(1);
   await expect(page.locator('.site-header--public-shell [data-inline-login-form]')).toBeVisible();
+  await expect(page.locator('.site-header--public-shell [data-nav-menu]')).toBeHidden();
   await expect(page.getByRole('heading', { name: /privacy policy for studio enquiries, consultations/i })).toBeVisible();
   await expect(page.locator('footer .footer-block .footer-links a[href="/about.html"]').first()).toBeVisible();
   await expect(page.locator('footer .footer-block .footer-links a[href="/quote.html"]').first()).toBeVisible();
