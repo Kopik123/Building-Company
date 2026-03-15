@@ -41,8 +41,12 @@ const createStubs = () => {
     }
   };
   const project = createProjectInstance();
+  const calls = {
+    projectFindAndCountAllArgs: null
+  };
 
   return {
+    calls,
     models: {
       User: {
         async findByPk(id) {
@@ -57,7 +61,8 @@ const createStubs = () => {
       Material: {},
       sequelize: {},
       Project: {
-        async findAndCountAll() {
+        async findAndCountAll(args) {
+          calls.projectFindAndCountAllArgs = args;
           return { rows: [project], count: 1 };
         }
       },
@@ -115,4 +120,21 @@ test('manager projects keeps list responses lean by default and supports explici
   const fullProject = fullResponse.body?.projects?.[0];
   assert.equal(Array.isArray(fullProject?.media), true);
   assert.equal(fullProject?.media?.length, 2);
+});
+
+test('manager projects search keeps q scoped to project fields', async () => {
+  const stubs = createStubs();
+  mockModels(stubs.models);
+
+  const route = loadRoute('routes/manager.js');
+  const app = buildExpressApp('/api/manager', route);
+  const token = signAccessToken('11111111-1111-4111-8111-111111111111', 'manager');
+
+  await request(app)
+    .get('/api/manager/projects?q=manchester')
+    .set('Authorization', `Bearer ${token}`)
+    .expect(200);
+
+  assert.equal(Array.isArray(stubs.calls.projectFindAndCountAllArgs?.where?.[Op.or]), true);
+  assert.equal(stubs.calls.projectFindAndCountAllArgs.where[Op.or].length, 3);
 });

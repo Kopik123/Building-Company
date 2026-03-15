@@ -106,3 +106,6 @@
 - Changed `routes/manager.js` so `/api/manager/projects` now defaults to lightweight list payloads without full media arrays, while preserving explicit `includeMedia=true` support.
 - Removed the eager thread-summary preload from `client-dashboard.js` bootstrap so direct/group mailbox summaries stay truly lazy and align with the existing section-visibility flow.
 - Extended `tests/api-v2/manager-projects-include-media.test.js` so the new default lean manager-project list behaviour is covered by API regression tests.
+- Narrowed the manager project free-text search in `routes/manager.js` to project-owned fields only (`title`, `location`, `description`) so the common list path no longer pushes broad `LOWER(... LIKE %...%)` filters across joined relations.
+- Added a shared keyed-list sync helper in `runtime.js` and rewired the `projects`, `threads` and `messages` sections in both `client-dashboard.js` and `manager-dashboard.js` to patch existing DOM nodes instead of fully clearing and rebuilding those containers on every update.
+- Extended the manager project API regression suite with a search-shape assertion so the narrowed `q` path is protected in tests.
