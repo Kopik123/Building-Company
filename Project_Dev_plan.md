@@ -100,6 +100,18 @@
 
 ## 2026-03-15
 
+- Saved `Plans/Redesign Od Zera - Cala Strona, Design, IA I SEO.md` and registered it in `Plans/Plan History.md` as the tracked full redesign/IA/SEO plan for the public website.
+- Reworked the shared public shell inputs and nav source so the sticky header now follows the final brochure IA: `Home`, `About`, `Services`, `Gallery`, `Quote`, `Contact`, `Account`, with compact mobile auth toggle behaviour handled in `site.js`.
+- Rebuilt the manual public brochure pages (`index.html`, `about.html`, `services.html`, `gallery.html`, `contact.html`, `quote.html`) around one quote-first structure: clear intro, fewer duplicated top-level elements, stronger CTA hierarchy and a consistent dark-shell / light-card visual rhythm.
+- Added `services.html` as a first-class brochure hub page so service discovery no longer relies only on footer links or dispersed homepage sections.
+- Rebuilt the legal pages (`privacy.html`, `cookie-policy.html`, `terms.html`) into the same shared shell and footer system so they no longer drift away from the main site design or navigation.
+- Updated `sitemap.xml` to include `services.html` and refreshed the manual page metadata so the new brochure IA has matching canonical, title, description and breadcrumb structure.
+- Updated `Project_Web_Design_Plan.md` so the design source of truth now reflects the sticky `title.png` shell, the quote-first brochure IA and the compact mobile auth/menu behaviour.
+- Updated Playwright public/mobile expectations so the regression suite now checks the new menu set, the `services.html` route and the compact mobile auth flow instead of the previous shell assumptions.
+- Regenerated the service/location pages after the shared shell/nav changes so the generated SEO pages now inherit `Home / About / Services / Gallery / Quote / Contact / Account` and breadcrumb links back through `services.html`.
+- Aligned `auth.html`, `client-dashboard.html` and `manager-dashboard.html` with the new `Home / About / Services / Gallery / Quote / Contact` menu language and the slimmer `title.png` intrinsic dimensions so the shell no longer mixes old and new nav labels.
+- Updated `deploy/LIVE_QA_CHECKLIST_PC_MOBILE.md` so post-deploy checks now include `services.html`, a legal page and the new sticky/compact shell behaviour instead of the older quick-access wording.
+- Re-ran `node --check` for the touched shell/generator/runtime files, `npm run generate:public-pages`, `npm run verify:generated` and `npm run test:ci`; the generator, verification and API suite all passed after the redesign rollout.
 - Performed a repo-wide performance review focused on the slowest manager/client dashboard paths, manager search/list routes, gallery runtime updates, public session validation and the mobile-v1 polling loop.
 - Saved `Plans/Checklist Usprawnien Wolnego Lub Nieefektywnego Kodu.md` and registered it in `Plans/Plan History.md` as the execution checklist for slow or inefficient code findings.
 - Added the concrete performance remediation items to `Project_todos.md`, covering manager list payload weight, expensive search filters, eager thread preloads, heavy dashboard rerenders, gallery rebuilds, mobile polling cadence and public session validation overhead.

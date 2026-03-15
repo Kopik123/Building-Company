@@ -27,6 +27,7 @@
   <link rel="stylesheet" href="/styles/workspace.css" />
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"Service","name":"Premium Interior Renovations in Manchester","description":"Premium interior renovations in Manchester with carpentry precision, wall-system discipline and coordinated finish control by Level Lines Studio.","serviceType":"Premium interior renovations","image":"https://levellines.co.uk/Gallery/premium/exterior-front.jpg","provider":{"@type":"LocalBusiness","name":"Level Lines Studio","telephone":["+44 7942 874 446","+44 7304 506 391"],"email":"LevelLineStudioMCR@gmail.com"},"areaServed":["Manchester","North West - Lancashire"],"url":"https://levellines.co.uk/interior-renovations-manchester.html"}</script>
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Do you take on work beyond bathrooms and kitchens?","acceptedAnswer":{"@type":"Answer","text":"Yes. We handle selected interior scopes where carpentry, tiling and wall systems are central to the outcome."}},{"@type":"Question","name":"Are internal and external wall systems quoted separately?","acceptedAnswer":{"@type":"Answer","text":"They can be scoped separately or folded into a broader interior brief depending on the project."}},{"@type":"Question","name":"Who is this service for?","acceptedAnswer":{"@type":"Answer","text":"Clients who want a consistent premium language across more than one room or across the building fabric itself."}}],"url":"https://levellines.co.uk/interior-renovations-manchester.html"}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://levellines.co.uk/"},{"@type":"ListItem","position":2,"name":"Services","item":"https://levellines.co.uk/services.html"},{"@type":"ListItem","position":3,"name":"Premium Interior Renovations Manchester","item":"https://levellines.co.uk/interior-renovations-manchester.html"}]}</script>
 </head>
 <body class="public-site page-service">
 
@@ -41,36 +42,38 @@
         </picture>
         </a>
       </div>
-      <div class="public-shell-strip">
-        <section class="public-inline-auth" data-inline-auth-shell aria-label="Studio login">
-          <p class="public-strip-heading">Login</p>
-          <form class="public-inline-login-form" data-inline-login-form novalidate>
-            <div class="public-inline-login-row">
-              <input type="email" name="email" autocomplete="username email" placeholder="Email" aria-label="Email" required />
-              <input type="password" name="password" autocomplete="current-password" placeholder="Password" aria-label="Password" required />
-              <button class="public-inline-login-submit" type="submit">Login</button>
-              <a class="public-inline-login-link" href="/auth.html">Register</a>
-            </div>
-            <p class="public-inline-login-helper">Move public enquiries into private project visibility.</p>
-          </form>
-          <div class="public-inline-session" data-inline-session hidden>
-            <p class="public-inline-session-copy" data-inline-session-copy>Account ready.</p>
-            <div class="public-inline-session-actions">
-              <a class="public-inline-session-link" href="/auth.html" data-inline-account-link>Open Account</a>
-              <button class="public-inline-session-link public-inline-session-link--button" type="button" data-inline-logout>Log out</button>
-            </div>
+      <div class="public-shell-controls">
+      <button class="public-auth-toggle" type="button" data-auth-toggle aria-expanded="false" aria-controls="public-auth-panel">
+        <span class="public-auth-toggle-label">Login</span>
+      </button>
+      <section class="public-auth-panel" id="public-auth-panel" data-auth-panel aria-label="Studio login">
+        <form class="public-inline-login-form" data-inline-login-form novalidate>
+          <div class="public-inline-login-row">
+            <input type="email" name="email" autocomplete="username email" placeholder="Login" aria-label="Login" required />
+            <input type="password" name="password" autocomplete="current-password" placeholder="Password" aria-label="Password" required />
+            <button class="public-inline-login-submit" type="submit">Enter</button>
           </div>
-          <p class="form-status public-inline-login-status" data-inline-login-status aria-live="polite"></p>
-        </section>
+        </form>
+        <div class="public-inline-session" data-inline-session hidden>
+          <p class="public-inline-session-copy" data-inline-session-copy>Account ready.</p>
+          <div class="public-inline-session-actions">
+            <a class="public-inline-session-link" href="/auth.html" data-inline-account-link>Open Account</a>
+            <button class="public-inline-session-link public-inline-session-link--button" type="button" data-inline-logout>Log out</button>
+          </div>
+        </div>
+        <p class="form-status public-inline-login-status" data-inline-login-status aria-live="polite"></p>
+      </section>
         <div class="public-shell-nav menu-wrap" data-menu-wrap>
-          <p class="public-strip-heading public-strip-heading--nav">Menu</p>
-          <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation menu">
+          <button class="nav-toggle public-menu-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation menu">
+            <span class="public-menu-toggle-label">Menu</span>
             <span class="nav-toggle-line"></span>
             <span class="nav-toggle-line"></span>
             <span class="nav-toggle-line"></span>
           </button>
           <nav class="site-nav site-nav--public-shell" id="site-nav" data-nav-menu aria-label="Main navigation">
-          <a href="/about.html" data-nav-link>About Us</a>
+          <a href="/index.html" data-nav-link>Home</a>
+          <a href="/about.html" data-nav-link>About</a>
+          <a href="/services.html" data-nav-link>Services</a>
           <a href="/gallery.html" data-nav-link>Gallery</a>
           <a href="/quote.html" data-nav-link>Quote</a>
           <a href="/contact.html" data-nav-link>Contact</a>
@@ -352,7 +355,9 @@
       <div class="footer-block">
         <h3>Studio</h3>
         <div class="footer-links">
-          <a href="/about.html">About Us</a>
+          <a href="/index.html">Home</a>
+          <a href="/about.html">About</a>
+          <a href="/services.html">Services</a>
           <a href="/gallery.html">Gallery</a>
           <a href="/contact.html">Contact</a>
           <a href="/quote.html">Quote</a>

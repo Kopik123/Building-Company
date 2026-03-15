@@ -2,6 +2,7 @@
 
 | Date | Time | Plan Title | File |
 | --- | --- | --- | --- |
+| 2026-03-15 | 19:51:43 +00:00 | Redesign Od Zera - Cala Strona, Design, IA I SEO | `Plans/Redesign Od Zera - Cala Strona, Design, IA I SEO.md` |
 | 2026-03-15 | 14:03:51 +00:00 | Checklist Usprawnien Wolnego Lub Nieefektywnego Kodu | `Plans/Checklist Usprawnien Wolnego Lub Nieefektywnego Kodu.md` |
 | 2026-03-13 | 00:09:56 +00:00 | Redesign Publicznego Shellu Pod title.png | `Plans/Redesign Publicznego Shellu Pod title.png.md` |
 | 2026-03-12 | 17:55:58 +00:00 | Plan Naprawy Bledow Znalezionych Przez SonarQube | `Plans/Plan Naprawy Bledow Znalezionych Przez SonarQube.md` |

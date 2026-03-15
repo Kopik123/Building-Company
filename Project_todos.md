@@ -26,6 +26,7 @@
 - [ ] Run the new live QA checklist on desktop and a phone-sized viewport after the next droplet deploy, then capture screenshots for homepage, gallery interaction, dashboards and the quote/contact form.
 - [ ] Revisit whether a CDN/media platform is worth introducing later if the runtime gallery set grows beyond the current `sharp` pipeline.
 - [ ] Keep `Project_Web_Design_Plan.md` aligned with the real current design system whenever header structure, color logic, IA or responsive rules change.
+- [ ] Run live QA for the new quote-first brochure IA across `/`, `/about.html`, `/services.html`, `/gallery.html`, `/quote.html`, `/contact.html`, the legal pages and at least two generated service/location pages, checking sticky shell behaviour, compact mobile auth/menu flow and CTA clarity.
 - [ ] Re-check the new shared `title.png` public shell on live desktop and mobile, especially the balance between the centered brand board and the inline login/navigation strip.
 - [ ] Re-check the slimmer `title.png` top bar and the lower quick-access login/menu strip on live desktop and mobile after the next deploy.
 - [ ] Verify the inline login strip state on all public pages for both guest and authenticated sessions after the next droplet deploy.

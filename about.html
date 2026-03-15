@@ -3,16 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>About Us | Level Lines Studio</title>
-  <meta name="description" content="About Level Lines Studio, a premium renovation studio defined by symmetry, line quality, material restraint and high-standard execution across the North West." />
+  <title>About | Level Lines Studio</title>
+  <meta name="description" content="About Level Lines Studio: a premium renovation studio built around quote-first intake, cleaner planning and controlled finish delivery across the North West." />
   <meta name="robots" content="index,follow,max-image-preview:large" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Level Lines Studio" />
-  <meta property="og:title" content="About Us | Level Lines Studio" />
-  <meta property="og:description" content="A premium renovation studio defined by symmetry, line quality, material restraint and high-standard execution across the North West." />
+  <meta property="og:title" content="About | Level Lines Studio" />
+  <meta property="og:description" content="About Level Lines Studio: a premium renovation studio built around quote-first intake, cleaner planning and controlled finish delivery across the North West." />
   <meta property="og:image" content="https://levellines.co.uk/Gallery/premium/brick-dark-main.jpg" />
   <meta property="og:url" content="https://levellines.co.uk/about.html" />
   <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="About | Level Lines Studio" />
+  <meta name="twitter:description" content="About Level Lines Studio: a premium renovation studio built around quote-first intake, cleaner planning and controlled finish delivery across the North West." />
+  <meta name="twitter:image" content="https://levellines.co.uk/Gallery/premium/brick-dark-main.jpg" />
   <link rel="canonical" href="https://levellines.co.uk/about.html" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -21,10 +24,10 @@
   <link rel="stylesheet" href="/styles/base.css" />
   <link rel="stylesheet" href="/styles/public.css" />
   <link rel="stylesheet" href="/styles/workspace.css" />
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"AboutPage","name":"About Level Lines Studio","url":"https://levellines.co.uk/about.html","description":"About Level Lines Studio, a premium renovation studio for bathrooms, kitchens and interiors across the North West."}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"AboutPage","name":"About Level Lines Studio","url":"https://levellines.co.uk/about.html","description":"How Level Lines Studio plans, designs and delivers premium renovation briefs."},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://levellines.co.uk/"},{"@type":"ListItem","position":2,"name":"About","item":"https://levellines.co.uk/about.html"}]}]}</script>
 </head>
 <body class="public-site page-about">
-    <header class="site-header site-header--public-shell" id="top">
+  <header class="site-header site-header--public-shell" id="top">
     <div class="container public-shell-header">
       <div class="public-brand-board">
         <a class="public-brand-link" href="/index.html" aria-label="Level Lines Studio home">
@@ -35,17 +38,17 @@
           </picture>
         </a>
       </div>
-      <div class="public-shell-strip">
-        <section class="public-inline-auth" data-inline-auth-shell aria-label="Studio login">
-          <p class="public-strip-heading">Login</p>
+      <div class="public-shell-controls">
+        <button class="public-auth-toggle" type="button" data-auth-toggle aria-expanded="false" aria-controls="public-auth-panel">
+          <span class="public-auth-toggle-label">Login</span>
+        </button>
+        <section class="public-auth-panel" id="public-auth-panel" data-auth-panel aria-label="Studio login">
           <form class="public-inline-login-form" data-inline-login-form novalidate>
             <div class="public-inline-login-row">
-              <input type="email" name="email" autocomplete="username email" placeholder="Email" aria-label="Email" required />
+              <input type="email" name="email" autocomplete="username email" placeholder="Login" aria-label="Login" required />
               <input type="password" name="password" autocomplete="current-password" placeholder="Password" aria-label="Password" required />
-              <button class="public-inline-login-submit" type="submit">Login</button>
-              <a class="public-inline-login-link" href="/auth.html">Register</a>
+              <button class="public-inline-login-submit" type="submit">Enter</button>
             </div>
-            <p class="public-inline-login-helper">Move public enquiries into private project visibility.</p>
           </form>
           <div class="public-inline-session" data-inline-session hidden>
             <p class="public-inline-session-copy" data-inline-session-copy>Account ready.</p>
@@ -57,14 +60,16 @@
           <p class="form-status public-inline-login-status" data-inline-login-status aria-live="polite"></p>
         </section>
         <div class="public-shell-nav menu-wrap" data-menu-wrap>
-          <p class="public-strip-heading public-strip-heading--nav">Menu</p>
-          <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation menu">
+          <button class="nav-toggle public-menu-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation menu">
+            <span class="public-menu-toggle-label">Menu</span>
             <span class="nav-toggle-line"></span>
             <span class="nav-toggle-line"></span>
             <span class="nav-toggle-line"></span>
           </button>
           <nav class="site-nav site-nav--public-shell" id="site-nav" data-nav-menu aria-label="Main navigation">
-            <a href="/about.html" data-nav-link>About Us</a>
+            <a href="/index.html" data-nav-link>Home</a>
+            <a href="/about.html" data-nav-link>About</a>
+            <a href="/services.html" data-nav-link>Services</a>
             <a href="/gallery.html" data-nav-link>Gallery</a>
             <a href="/quote.html" data-nav-link>Quote</a>
             <a href="/contact.html" data-nav-link>Contact</a>
@@ -74,46 +79,87 @@
       </div>
     </div>
   </header>
-  <main>
-    <section class="section section--light">
-      <div class="container brand-page-hero">
-        <div>
-          <p class="section-eyebrow">About Us</p>
-          <h1>Black, marble and gold held inside a calmer architectural renovation standard.</h1>
-          <p class="section-lead" data-brand-copy="copy.about.heroLead">A premium renovation studio shaped around line quality, restrained materials and execution that feels deliberate rather than improvised.</p>
-        </div>
-        <aside class="brand-page-side">
-          <p class="section-eyebrow section-eyebrow--compact">Studio method</p>
-          <p>Level Lines Studio approaches bathrooms, kitchens and interiors through one sequence: plan the brief properly, design the finish language and deliver with controlled craft.</p>
-          <a class="home-auth-cta" href="/quote.html">Start with a quote</a>
+
+  <main class="public-page-main">
+    <section class="public-section public-section--dark">
+      <div class="container page-intro-grid">
+        <article class="content-card content-card--light">
+          <p class="section-eyebrow">About</p>
+          <h1>A premium renovation studio built to make the public route clearer and the private delivery route calmer.</h1>
+          <p class="section-lead">Level Lines Studio is not just a gallery website or a contractor brochure. It is a quote-first studio structure for bathrooms, kitchens and interiors where planning, design and craft stay aligned.</p>
+          <ul class="page-bullet-list">
+            <li>One direct route from public enquiry to private project visibility.</li>
+            <li>A joined-up renovation scope instead of disconnected trade fragments.</li>
+            <li>Professional communication, quieter luxury and stronger finish control.</li>
+          </ul>
+        </article>
+        <aside class="content-card content-card--dark">
+          <p class="section-eyebrow">Why it feels different</p>
+          <h2>The studio is designed to reduce friction for the client and reduce clutter on the site.</h2>
+          <p class="hero-aside-copy">That means fewer repeated panels, less competing content in the first screen and one consistent route into quote, account and project communication.</p>
+          <div class="page-actions">
+            <a class="btn btn-gold" href="/quote.html">Start Quote</a>
+            <a class="btn-outline-gold" href="/gallery.html">View Gallery</a>
+          </div>
         </aside>
       </div>
     </section>
-    <section class="section section--dark">
-      <div class="container brand-page-grid">
-        <article class="brand-panel brand-panel--dark">
-          <p class="section-eyebrow section-eyebrow--compact">Plan</p>
-          <h2>Clear structure before site work starts.</h2>
-          <p>Survey, budget, programme logic and finish ambition are aligned early, so the project begins with discipline instead of improvisation.</p>
+
+    <section class="public-section public-section--light">
+      <div class="container page-grid-3">
+        <article class="content-card content-card--light">
+          <h2>Plan</h2>
+          <p class="page-aside-copy">The brief is clarified early: rooms, scope, budget direction, timing and access are shaped before site work starts.</p>
         </article>
-        <article class="brand-panel brand-panel--light">
-          <p class="section-eyebrow section-eyebrow--compact">Design</p>
-          <h2>Symmetry, levels and material restraint.</h2>
-          <p>Stone, brass, tile geometry, cabinetry and wall lines are coordinated as one visual language rather than treated as disconnected trade decisions.</p>
+        <article class="content-card content-card--dark">
+          <h2>Design</h2>
+          <p class="page-aside-copy">Materials, lines, trims and joinery are treated as one finish system, not as last-minute decisions.</p>
         </article>
-        <article class="brand-panel brand-panel--light">
-          <p class="section-eyebrow section-eyebrow--compact">Craft</p>
-          <h2>Execution that reads calm and exact.</h2>
-          <p>The finish target is precise, quiet and durable: cleaner cuts, tighter interfaces and fewer visual compromises.</p>
-        </article>
-        <article class="brand-panel brand-panel--dark">
-          <p class="section-eyebrow section-eyebrow--compact">Coverage</p>
-          <h2>North West service footprint with direct studio oversight.</h2>
-          <div class="footer-area-list" data-brand-area-list data-item-class="footer-area-chip"></div>
+        <article class="content-card content-card--light">
+          <h2>Craft</h2>
+          <p class="page-aside-copy">Execution aims for a calm result: straighter setting out, better interfaces and fewer visual compromises.</p>
         </article>
       </div>
     </section>
+
+    <section class="public-section public-section--dark">
+      <div class="container page-grid-2">
+        <article class="content-card content-card--dark">
+          <p class="section-eyebrow">Coverage</p>
+          <h2>Direct North West footprint with proper oversight.</h2>
+          <p class="page-aside-copy">The studio stays selective enough to keep communication and finish standards controlled.</p>
+          <div class="footer-area-list" data-brand-area-list data-item-class="footer-area-chip"></div>
+        </article>
+        <article class="content-card content-card--light">
+          <p class="section-eyebrow">Contact</p>
+          <h2>Public website on one side, direct studio access on the other.</h2>
+          <p class="page-aside-copy">Every page keeps the same contact and quote route so the site never turns into a dead end.</p>
+          <ul class="contact-link-list">
+            <li><a data-brand-phone="0" href="tel:+447942874446">+44 7942 874 446</a></li>
+            <li><a data-brand-phone="1" href="tel:+447304506391">+44 7304 506 391</a></li>
+            <li><a data-brand-email href="mailto:LevelLineStudioMCR@gmail.com">LevelLineStudioMCR@gmail.com</a></li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="public-section public-section--dark">
+      <div class="container">
+        <div class="content-card content-card--dark cta-band">
+          <div>
+            <p class="section-eyebrow">Next Step</p>
+            <h2>If the brief is real, move into the quote route now.</h2>
+            <p class="section-lead">About should explain the studio clearly, then point back into action.</p>
+          </div>
+          <div class="page-actions">
+            <a class="btn btn-gold" href="/quote.html">Start Quote</a>
+            <a class="btn-outline-gold" href="/contact.html">Contact Studio</a>
+          </div>
+        </div>
+      </div>
+    </section>
   </main>
+
   <footer class="site-footer">
     <div class="container footer-grid">
       <div class="footer-block footer-block--brand">
@@ -126,20 +172,40 @@
           <a class="footer-contact-link" data-brand-email href="mailto:LevelLineStudioMCR@gmail.com">LevelLineStudioMCR@gmail.com</a>
         </address>
       </div>
-      <div class="footer-block"><h3>Services</h3><div class="footer-links" data-brand-service-links data-link-class="footer-service-link"></div></div>
-      <div class="footer-block"><h3>Studio</h3><div class="footer-links"><a href="/about.html">About Us</a><a href="/gallery.html">Gallery</a><a href="/contact.html">Contact</a><a href="/quote.html">Quote</a><a href="/auth.html">Account</a><a href="/privacy.html">Privacy</a><a href="/cookie-policy.html">Cookie Policy</a><a href="/terms.html">Terms</a></div></div>
-      <div class="footer-block"><h3>Studio Region</h3><p class="footer-copy" data-brand-region>North West - Lancashire</p><div class="footer-area-list" data-brand-area-list data-item-class="footer-area-chip"></div></div>
+      <div class="footer-block">
+        <h3>Services</h3>
+        <div class="footer-links" data-brand-service-links data-link-class="footer-service-link"></div>
+      </div>
+      <div class="footer-block">
+        <h3>Studio</h3>
+        <div class="footer-links">
+          <a href="/index.html">Home</a>
+          <a href="/about.html">About</a>
+          <a href="/services.html">Services</a>
+          <a href="/gallery.html">Gallery</a>
+          <a href="/contact.html">Contact</a>
+          <a href="/quote.html">Quote</a>
+          <a href="/auth.html">Account</a>
+          <a href="/privacy.html">Privacy</a>
+          <a href="/cookie-policy.html">Cookie Policy</a>
+          <a href="/terms.html">Terms</a>
+        </div>
+      </div>
+      <div class="footer-block">
+        <h3>Studio Region</h3>
+        <p class="footer-copy" data-brand-region>North West - Lancashire</p>
+        <div class="footer-area-list" data-brand-area-list data-item-class="footer-area-chip"></div>
+      </div>
     </div>
-    <div class="container footer-bottom"><p>&copy; <span data-current-year></span> Level Lines Studio. All rights reserved.</p><p class="footer-bottom-note">Plan | Design | Craft</p></div>
+    <div class="container footer-bottom">
+      <p>&copy; <span data-current-year></span> Level Lines Studio. All rights reserved.</p>
+      <p class="footer-bottom-note">Plan | Design | Craft</p>
+    </div>
   </footer>
+
   <script src="/asset-manifest.js" defer></script>
   <script src="/brand.js" defer></script>
   <script src="/runtime.js" defer></script>
   <script src="/site.js" defer></script>
 </body>
 </html>
-
-
-
-
-

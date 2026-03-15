@@ -20,6 +20,26 @@ const renderJsonLdScripts = (jsonLd) => {
     .join('\n');
 };
 
+const buildCanonicalUrl = (shared, fileName, explicitCanonicalUrl) => {
+  if (explicitCanonicalUrl) return explicitCanonicalUrl;
+  if (!fileName || fileName === 'index.html') return `${shared.siteUrl}/`;
+  return `${shared.siteUrl}/${fileName}`;
+};
+
+const buildBreadcrumbJsonLd = (shared, breadcrumbItems = []) => {
+  if (!Array.isArray(breadcrumbItems) || !breadcrumbItems.length) return null;
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: breadcrumbItems.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.label,
+      item: item.href.startsWith('http') ? item.href : `${shared.siteUrl}${item.href}`
+    }))
+  };
+};
+
 const renderStylesheets = () => `  <link rel="stylesheet" href="/styles/tokens.css" />
   <link rel="stylesheet" href="/styles/base.css" />
   <link rel="stylesheet" href="/styles/public.css" />
@@ -93,35 +113,35 @@ ${renderResponsivePicture({
       </div>`;
 };
 
-const renderInlineLoginStrip = (shared) => `        <section class="public-inline-auth" data-inline-auth-shell aria-label="Studio login">
-          <p class="public-strip-heading">Login</p>
-          <form class="public-inline-login-form" data-inline-login-form novalidate>
-            <div class="public-inline-login-row">
-              <input type="email" name="email" autocomplete="username email" placeholder="Email" aria-label="Email" required />
-              <input type="password" name="password" autocomplete="current-password" placeholder="Password" aria-label="Password" required />
-              <button class="public-inline-login-submit" type="submit">Login</button>
-              <a class="public-inline-login-link" href="/auth.html">Register</a>
-            </div>
-            <p class="public-inline-login-helper">Move public enquiries into private project visibility.</p>
-          </form>
-          <div class="public-inline-session" data-inline-session hidden>
-            <p class="public-inline-session-copy" data-inline-session-copy>Account ready.</p>
-            <div class="public-inline-session-actions">
-              <a class="public-inline-session-link" href="/auth.html" data-inline-account-link>Open Account</a>
-              <button class="public-inline-session-link public-inline-session-link--button" type="button" data-inline-logout>Log out</button>
-            </div>
+const renderInlineLoginStrip = (shared) => `      <button class="public-auth-toggle" type="button" data-auth-toggle aria-expanded="false" aria-controls="public-auth-panel">
+        <span class="public-auth-toggle-label">Login</span>
+      </button>
+      <section class="public-auth-panel" id="public-auth-panel" data-auth-panel aria-label="Studio login">
+        <form class="public-inline-login-form" data-inline-login-form novalidate>
+          <div class="public-inline-login-row">
+            <input type="email" name="email" autocomplete="username email" placeholder="Login" aria-label="Login" required />
+            <input type="password" name="password" autocomplete="current-password" placeholder="Password" aria-label="Password" required />
+            <button class="public-inline-login-submit" type="submit">Enter</button>
           </div>
-          <p class="form-status public-inline-login-status" data-inline-login-status aria-live="polite"></p>
-        </section>`;
+        </form>
+        <div class="public-inline-session" data-inline-session hidden>
+          <p class="public-inline-session-copy" data-inline-session-copy>Account ready.</p>
+          <div class="public-inline-session-actions">
+            <a class="public-inline-session-link" href="/auth.html" data-inline-account-link>Open Account</a>
+            <button class="public-inline-session-link public-inline-session-link--button" type="button" data-inline-logout>Log out</button>
+          </div>
+        </div>
+        <p class="form-status public-inline-login-status" data-inline-login-status aria-live="polite"></p>
+      </section>`;
 
 const renderPublicShell = (shared) => `  <header class="site-header site-header--public-shell" id="top">
     <div class="container public-shell-header">
 ${renderPublicTitleBoard(shared)}
-      <div class="public-shell-strip">
+      <div class="public-shell-controls">
 ${renderInlineLoginStrip(shared)}
         <div class="public-shell-nav menu-wrap" data-menu-wrap>
-          <p class="public-strip-heading public-strip-heading--nav">Menu</p>
-          <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation menu">
+          <button class="nav-toggle public-menu-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation menu">
+            <span class="public-menu-toggle-label">Menu</span>
             <span class="nav-toggle-line"></span>
             <span class="nav-toggle-line"></span>
             <span class="nav-toggle-line"></span>
@@ -543,6 +563,8 @@ const renderPublicPage = ({
   ogImage,
   bodyClass,
   jsonLd,
+  breadcrumbItems = [],
+  canonicalUrl,
   robotsContent = 'index,follow,max-image-preview:large',
   hero,
   board,
@@ -564,17 +586,17 @@ const renderPublicPage = ({
   <meta property="og:title" content="${escapeHtml(title)}" />
   <meta property="og:description" content="${escapeHtml(metaDescription)}" />
   <meta property="og:image" content="${escapeHtml(ogImage)}" />
-  <meta property="og:url" content="${escapeHtml(`${shared.siteUrl}/${fileName}`)}" />
+  <meta property="og:url" content="${escapeHtml(buildCanonicalUrl(shared, fileName, canonicalUrl))}" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="${escapeHtml(title)}" />
   <meta name="twitter:description" content="${escapeHtml(metaDescription)}" />
   <meta name="twitter:image" content="${escapeHtml(ogImage)}" />
-  <link rel="canonical" href="${escapeHtml(`${shared.siteUrl}/${fileName}`)}" />
+  <link rel="canonical" href="${escapeHtml(buildCanonicalUrl(shared, fileName, canonicalUrl))}" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet" />
 ${renderStylesheets()}
-${renderJsonLdScripts(jsonLd)}
+${renderJsonLdScripts([...((Array.isArray(jsonLd) ? jsonLd : [jsonLd]).filter(Boolean)), buildBreadcrumbJsonLd(shared, breadcrumbItems)].filter(Boolean))}
 </head>
 <body class="${escapeHtml(bodyClass)}">
 
@@ -616,6 +638,8 @@ ${renderFooter(shared)}
 
 module.exports = {
   renderPublicPage,
+  renderPublicShell,
+  renderFooter,
   renderIntroSection,
   renderPillarSection,
   renderFeatureSection,

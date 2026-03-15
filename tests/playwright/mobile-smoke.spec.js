@@ -345,13 +345,17 @@ const mockManagerSession = async (page) => {
   });
 };
 
-test('homepage mobile menu opens and keeps the shared account shell', async ({ page }) => {
+test('homepage mobile shell keeps compact auth and menu access', async ({ page }) => {
   await page.goto('/index.html');
+  await expect(page.locator('.site-header--public-shell .public-auth-toggle')).toBeVisible();
+  await expect(page.locator('.site-header--public-shell [data-inline-login-form]')).toBeHidden();
+  await page.locator('.site-header--public-shell .public-auth-toggle').click();
+  await expect(page.locator('.site-header--public-shell [data-inline-login-form]')).toBeVisible();
   await openNavIfNeeded(page);
   await expect(page.locator('.site-header--public-shell .public-brand-title-image[src="/assets/optimized/brand/title.png"]')).toHaveCount(1);
-  await expect(page.locator('.site-header--public-shell [data-inline-login-form]')).toBeVisible();
-  await expect(page.locator('.site-header--public-shell .public-shell-nav')).toBeVisible();
+  await expect(page.locator('[data-nav-menu] a[href="/index.html"]')).toBeVisible();
   await expect(page.locator('[data-nav-menu] a[href="/about.html"]')).toBeVisible();
+  await expect(page.locator('[data-nav-menu] a[href="/services.html"]')).toBeVisible();
   await expect(page.locator('[data-nav-menu] a[href="/gallery.html"]')).toBeVisible();
   await expect(page.locator('[data-nav-menu] a[href="/quote.html"]')).toBeVisible();
   await expect(page.locator('[data-nav-menu] a[href="/contact.html"]')).toBeVisible();

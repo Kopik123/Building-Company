@@ -4,15 +4,18 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Quote | Level Lines Studio</title>
-  <meta name="description" content="Send a premium renovation enquiry to Level Lines Studio for bathroom, kitchen and interior projects across the North West." />
+  <meta name="description" content="Send a private renovation enquiry to Level Lines Studio for bathrooms, kitchens, interior renovations and connected finish trades." />
   <meta name="robots" content="index,follow,max-image-preview:large" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Level Lines Studio" />
   <meta property="og:title" content="Quote | Level Lines Studio" />
-  <meta property="og:description" content="Send a premium renovation enquiry to Level Lines Studio for bathroom, kitchen and interior projects across the North West." />
+  <meta property="og:description" content="Send a private renovation enquiry to Level Lines Studio for bathrooms, kitchens, interior renovations and connected finish trades." />
   <meta property="og:image" content="https://levellines.co.uk/Gallery/premium/kitchen-panorama-main.jpg" />
   <meta property="og:url" content="https://levellines.co.uk/quote.html" />
   <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Quote | Level Lines Studio" />
+  <meta name="twitter:description" content="Send a private renovation enquiry to Level Lines Studio for bathrooms, kitchens, interior renovations and connected finish trades." />
+  <meta name="twitter:image" content="https://levellines.co.uk/Gallery/premium/kitchen-panorama-main.jpg" />
   <link rel="canonical" href="https://levellines.co.uk/quote.html" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -21,9 +24,10 @@
   <link rel="stylesheet" href="/styles/base.css" />
   <link rel="stylesheet" href="/styles/public.css" />
   <link rel="stylesheet" href="/styles/workspace.css" />
+  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebPage","name":"Quote | Level Lines Studio","url":"https://levellines.co.uk/quote.html","description":"Private enquiry route for premium renovation briefs."},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://levellines.co.uk/"},{"@type":"ListItem","position":2,"name":"Quote","item":"https://levellines.co.uk/quote.html"}]}]}</script>
 </head>
 <body class="public-site page-quote">
-    <header class="site-header site-header--public-shell" id="top">
+  <header class="site-header site-header--public-shell" id="top">
     <div class="container public-shell-header">
       <div class="public-brand-board">
         <a class="public-brand-link" href="/index.html" aria-label="Level Lines Studio home">
@@ -34,17 +38,17 @@
           </picture>
         </a>
       </div>
-      <div class="public-shell-strip">
-        <section class="public-inline-auth" data-inline-auth-shell aria-label="Studio login">
-          <p class="public-strip-heading">Login</p>
+      <div class="public-shell-controls">
+        <button class="public-auth-toggle" type="button" data-auth-toggle aria-expanded="false" aria-controls="public-auth-panel">
+          <span class="public-auth-toggle-label">Login</span>
+        </button>
+        <section class="public-auth-panel" id="public-auth-panel" data-auth-panel aria-label="Studio login">
           <form class="public-inline-login-form" data-inline-login-form novalidate>
             <div class="public-inline-login-row">
-              <input type="email" name="email" autocomplete="username email" placeholder="Email" aria-label="Email" required />
+              <input type="email" name="email" autocomplete="username email" placeholder="Login" aria-label="Login" required />
               <input type="password" name="password" autocomplete="current-password" placeholder="Password" aria-label="Password" required />
-              <button class="public-inline-login-submit" type="submit">Login</button>
-              <a class="public-inline-login-link" href="/auth.html">Register</a>
+              <button class="public-inline-login-submit" type="submit">Enter</button>
             </div>
-            <p class="public-inline-login-helper">Move public enquiries into private project visibility.</p>
           </form>
           <div class="public-inline-session" data-inline-session hidden>
             <p class="public-inline-session-copy" data-inline-session-copy>Account ready.</p>
@@ -56,14 +60,16 @@
           <p class="form-status public-inline-login-status" data-inline-login-status aria-live="polite"></p>
         </section>
         <div class="public-shell-nav menu-wrap" data-menu-wrap>
-          <p class="public-strip-heading public-strip-heading--nav">Menu</p>
-          <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation menu">
+          <button class="nav-toggle public-menu-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation menu">
+            <span class="public-menu-toggle-label">Menu</span>
             <span class="nav-toggle-line"></span>
             <span class="nav-toggle-line"></span>
             <span class="nav-toggle-line"></span>
           </button>
           <nav class="site-nav site-nav--public-shell" id="site-nav" data-nav-menu aria-label="Main navigation">
-            <a href="/about.html" data-nav-link>About Us</a>
+            <a href="/index.html" data-nav-link>Home</a>
+            <a href="/about.html" data-nav-link>About</a>
+            <a href="/services.html" data-nav-link>Services</a>
             <a href="/gallery.html" data-nav-link>Gallery</a>
             <a href="/quote.html" data-nav-link>Quote</a>
             <a href="/contact.html" data-nav-link>Contact</a>
@@ -73,36 +79,140 @@
       </div>
     </div>
   </header>
-  <main>
-    <section class="section section--light">
-      <div class="container brand-page-hero"><div><p class="section-eyebrow">Quote</p><h1>Send one private enquiry for bathrooms, kitchens and interior renovation briefs.</h1><p class="section-lead" data-brand-copy="copy.quote.heroLead">Use one private enquiry route for bathroom, kitchen and interior briefs, then describe the rooms, timing and finish ambition.</p></div><aside class="brand-page-side"><p class="section-eyebrow section-eyebrow--compact">Best first message</p><p>Describe the rooms, whether the brief is finish-led or layout-led, the budget direction and the timing window. That gives the studio enough to respond properly.</p></aside></div>
+
+  <main class="public-page-main">
+    <section class="public-section public-section--dark">
+      <div class="container page-intro-grid">
+        <article class="content-card content-card--light">
+          <p class="section-eyebrow">Quote</p>
+          <h1>Send one private enquiry for bathrooms, kitchens, interior renovations and connected specialist trades.</h1>
+          <p class="section-lead">This is the main conversion route. Use it when the brief is real enough to describe rooms, finish ambition, timing and budget direction.</p>
+        </article>
+        <aside class="content-card content-card--dark">
+          <p class="section-eyebrow">How to brief</p>
+          <h2>Be specific enough to let the studio respond properly.</h2>
+          <ul class="page-micro-list">
+            <li>Which rooms or systems are involved?</li>
+            <li>What finish tone or design direction are you aiming for?</li>
+            <li>What timing window and budget direction are realistic?</li>
+          </ul>
+        </aside>
+      </div>
     </section>
-    <section class="section section--dark">
-      <div class="container quote-page-grid">
-        <article class="quote-panel quote-panel--dark"><p class="section-eyebrow section-eyebrow--compact">What to include</p><h2>Rooms, finish ambition and timing.</h2><p>The studio uses the same enquiry route for selective bathrooms, kitchens and interior renovation scopes. The reply is measured, not generic.</p></article>
-        <form class="quote-form quote-panel quote-panel--light js-quote-form" data-form-context="Quote Page" novalidate>
+
+    <section class="public-section public-section--light">
+      <div class="container quote-layout">
+        <article class="content-card content-card--dark">
+          <p class="section-eyebrow">Before you send</p>
+          <h2>Good quote requests save time later.</h2>
+          <p class="page-aside-copy">The strongest enquiries usually say whether the brief is bathroom-led, kitchen-led or broader interior-led, and whether the client is after layout change, finish upgrade or both.</p>
+          <ul class="page-micro-list">
+            <li>Bathrooms and kitchens can be single-room or full-scope.</li>
+            <li>Interior, wall-system and carpentry work can be folded into one brief.</li>
+            <li>Quote is preferred over fragmented contact messages.</li>
+          </ul>
+        </article>
+        <form class="quote-form content-card content-card--light js-quote-form" data-form-context="Quote Page" novalidate>
           <input type="hidden" name="location" value="North West" />
           <div class="form-grid">
             <label>Name<input type="text" name="name" autocomplete="name" required /></label>
             <label>Phone<input type="tel" name="phone" autocomplete="tel" /></label>
-            <label>Email<input type="email" name="email" autocomplete="email" /></label>
-            <label>Project type<select name="projectType" required data-brand-project-type-select data-default-label="Select"></select></label>
-            <label>Budget<select name="budget" data-brand-budget-select data-default-label="Select"></select></label>
-            <label class="span-2">Project brief<textarea name="message" rows="6" required placeholder="Tell us about the rooms, the finish ambition and your timing."></textarea></label>
+            <label>Email<input type="email" name="email" autocomplete="email" required /></label>
+            <label>Project type
+              <select name="projectType" required data-brand-project-type-select data-default-label="Select"></select>
+            </label>
+            <label>Budget
+              <select name="budget" data-brand-budget-select data-default-label="Select"></select>
+            </label>
+            <label class="span-2">Project brief<textarea name="message" rows="6" required placeholder="Tell us about the rooms, finish ambition and timing."></textarea></label>
           </div>
           <button class="btn btn-gold btn-block" type="submit">Send Enquiry</button>
           <p class="form-status" aria-live="polite"></p>
         </form>
       </div>
     </section>
+
+    <section class="public-section public-section--dark">
+      <div class="container page-grid-3">
+        <article class="content-card content-card--dark">
+          <h2>What happens next</h2>
+          <p class="page-aside-copy">The reply is measured: initial fit, likely next step, then a more detailed private conversation if the scope aligns.</p>
+        </article>
+        <article class="content-card content-card--light">
+          <h2>When account matters</h2>
+          <p class="page-aside-copy">Account access becomes useful when the enquiry moves into project visibility, document sharing or direct communication.</p>
+        </article>
+        <article class="content-card content-card--light">
+          <h2>Need contact first?</h2>
+          <p class="page-aside-copy">If the brief is not yet clear enough for quote, the contact page gives you the direct studio route.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="public-section public-section--dark">
+      <div class="container">
+        <div class="content-card content-card--dark cta-band">
+          <div>
+            <p class="section-eyebrow">Need Direct Contact?</p>
+            <h2>Use the contact route only when you need a fit check before quoting.</h2>
+            <p class="section-lead">Otherwise, quote is the strongest path because it gives the studio enough information to respond well.</p>
+          </div>
+          <div class="page-actions">
+            <a class="btn-outline-gold" href="/contact.html">Contact Studio</a>
+            <a class="btn-outline-gold" href="/gallery.html">View Gallery</a>
+          </div>
+        </div>
+      </div>
+    </section>
   </main>
-  <footer class="site-footer"><div class="container footer-grid"><div class="footer-block footer-block--brand"><p class="section-eyebrow section-eyebrow--compact">Level Lines Studio</p><h3 data-brand-name>Level Lines Studio</h3><p class="footer-copy" data-brand-footer-copy>A premium renovation studio for bathrooms, kitchens and interiors, shaped with quiet planning, material restraint and finish control across the North West.</p><address class="footer-contact-list" aria-label="Level Lines Studio contact details"><a class="footer-contact-link" data-brand-phone="0" href="tel:+447942874446">+44 7942 874 446</a><a class="footer-contact-link" data-brand-phone="1" href="tel:+447304506391">+44 7304 506 391</a><a class="footer-contact-link" data-brand-email href="mailto:LevelLineStudioMCR@gmail.com">LevelLineStudioMCR@gmail.com</a></address></div><div class="footer-block"><h3>Services</h3><div class="footer-links" data-brand-service-links data-link-class="footer-service-link"></div></div><div class="footer-block"><h3>Studio</h3><div class="footer-links"><a href="/about.html">About Us</a><a href="/gallery.html">Gallery</a><a href="/contact.html">Contact</a><a href="/quote.html">Quote</a><a href="/auth.html">Account</a><a href="/privacy.html">Privacy</a><a href="/cookie-policy.html">Cookie Policy</a><a href="/terms.html">Terms</a></div></div><div class="footer-block"><h3>Studio Region</h3><p class="footer-copy" data-brand-region>North West - Lancashire</p><div class="footer-area-list" data-brand-area-list data-item-class="footer-area-chip"></div></div></div><div class="container footer-bottom"><p>&copy; <span data-current-year></span> Level Lines Studio. All rights reserved.</p><p class="footer-bottom-note">Plan | Design | Craft</p></div></footer>
+
+  <footer class="site-footer">
+    <div class="container footer-grid">
+      <div class="footer-block footer-block--brand">
+        <p class="section-eyebrow section-eyebrow--compact">Level Lines Studio</p>
+        <h3 data-brand-name>Level Lines Studio</h3>
+        <p class="footer-copy" data-brand-footer-copy>A premium renovation studio for bathrooms, kitchens and interiors, shaped with quiet planning, material restraint and finish control across the North West.</p>
+        <address class="footer-contact-list" aria-label="Level Lines Studio contact details">
+          <a class="footer-contact-link" data-brand-phone="0" href="tel:+447942874446">+44 7942 874 446</a>
+          <a class="footer-contact-link" data-brand-phone="1" href="tel:+447304506391">+44 7304 506 391</a>
+          <a class="footer-contact-link" data-brand-email href="mailto:LevelLineStudioMCR@gmail.com">LevelLineStudioMCR@gmail.com</a>
+        </address>
+      </div>
+      <div class="footer-block">
+        <h3>Services</h3>
+        <div class="footer-links" data-brand-service-links data-link-class="footer-service-link"></div>
+      </div>
+      <div class="footer-block">
+        <h3>Studio</h3>
+        <div class="footer-links">
+          <a href="/index.html">Home</a>
+          <a href="/about.html">About</a>
+          <a href="/services.html">Services</a>
+          <a href="/gallery.html">Gallery</a>
+          <a href="/contact.html">Contact</a>
+          <a href="/quote.html">Quote</a>
+          <a href="/auth.html">Account</a>
+          <a href="/privacy.html">Privacy</a>
+          <a href="/cookie-policy.html">Cookie Policy</a>
+          <a href="/terms.html">Terms</a>
+        </div>
+      </div>
+      <div class="footer-block">
+        <h3>Studio Region</h3>
+        <p class="footer-copy" data-brand-region>North West - Lancashire</p>
+        <div class="footer-area-list" data-brand-area-list data-item-class="footer-area-chip"></div>
+      </div>
+    </div>
+    <div class="container footer-bottom">
+      <p>&copy; <span data-current-year></span> Level Lines Studio. All rights reserved.</p>
+      <p class="footer-bottom-note">Plan | Design | Craft</p>
+    </div>
+  </footer>
+
   <script src="/asset-manifest.js" defer></script>
-  <script src="/brand.js" defer></script><script src="/runtime.js" defer></script><script src="/site.js" defer></script><script src="/quote.js" defer></script>
+  <script src="/brand.js" defer></script>
+  <script src="/runtime.js" defer></script>
+  <script src="/site.js" defer></script>
+  <script src="/quote.js" defer></script>
 </body>
 </html>
-
-
-
-
-

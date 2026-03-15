@@ -284,6 +284,11 @@ const buildLocationPages = () =>
       ogImage: page.ogImage,
       bodyClass: 'public-site page-location',
       generatedBy: 'npm run generate:locations',
+      breadcrumbItems: [
+        { label: 'Home', href: '/' },
+        { label: 'Services', href: '/services.html' },
+        { label: `Renovations in ${page.location}`, href: `/${page.fileName}` }
+      ],
       jsonLd: [
         {
           '@context': 'https://schema.org',
