@@ -97,3 +97,9 @@
 - Tightened the public shell again in `styles/public.css` so the upper `title` bar and the lower `login + menu` strip behave like a true two-tier quick-access header across homepage and all public pages.
 - Updated `deploy/LIVE_QA_CHECKLIST_PC_MOBILE.md` so the post-deploy checks now validate the new thin `title` strip and lower quick-access login/menu band instead of the older `logo | title | account/nav` shell wording.
 - Added `sonar-project.properties` with targeted `sonar.cpd.exclusions` for static/generated public HTML outputs, so SonarQube duplication metrics stop flagging intentional shared public shell markup while still checking scripts and styles normally.
+
+## 2026-03-15
+
+- Performed a repo-wide performance review focused on the slowest manager/client dashboard paths, manager search/list routes, gallery runtime updates, public session validation and the mobile-v1 polling loop.
+- Saved `Plans/Checklist Usprawnien Wolnego Lub Nieefektywnego Kodu.md` and registered it in `Plans/Plan History.md` as the execution checklist for slow or inefficient code findings.
+- Added the concrete performance remediation items to `Project_todos.md`, covering manager list payload weight, expensive search filters, eager thread preloads, heavy dashboard rerenders, gallery rebuilds, mobile polling cadence and public session validation overhead.
