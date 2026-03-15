@@ -103,3 +103,6 @@
 - Performed a repo-wide performance review focused on the slowest manager/client dashboard paths, manager search/list routes, gallery runtime updates, public session validation and the mobile-v1 polling loop.
 - Saved `Plans/Checklist Usprawnien Wolnego Lub Nieefektywnego Kodu.md` and registered it in `Plans/Plan History.md` as the execution checklist for slow or inefficient code findings.
 - Added the concrete performance remediation items to `Project_todos.md`, covering manager list payload weight, expensive search filters, eager thread preloads, heavy dashboard rerenders, gallery rebuilds, mobile polling cadence and public session validation overhead.
+- Changed `routes/manager.js` so `/api/manager/projects` now defaults to lightweight list payloads without full media arrays, while preserving explicit `includeMedia=true` support.
+- Removed the eager thread-summary preload from `client-dashboard.js` bootstrap so direct/group mailbox summaries stay truly lazy and align with the existing section-visibility flow.
+- Extended `tests/api-v2/manager-projects-include-media.test.js` so the new default lean manager-project list behaviour is covered by API regression tests.

@@ -736,7 +736,7 @@ router.get(
       ];
     }
 
-    const includeMedia = parseBoolean(req.query.includeMedia, true);
+    const includeMedia = parseBoolean(req.query.includeMedia, false);
     const { page, pageSize, offset } = getPagination(req);
     const { rows, count } = await Project.findAndCountAll({
       where,

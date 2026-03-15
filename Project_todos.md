@@ -30,9 +30,9 @@
 - [ ] Re-check the slimmer `title.png` top bar and the lower quick-access login/menu strip on live desktop and mobile after the next deploy.
 - [ ] Verify the inline login strip state on all public pages for both guest and authenticated sessions after the next droplet deploy.
 - [ ] Decide later whether `header.png` should remain only as a historical/supporting asset now that `title.png` is the shared public shell lockup.
-- [ ] Change `/api/manager/projects` so list responses default to `includeMedia=false`, returning counts or cover data instead of full media collections.
+- [x] Change `/api/manager/projects` so list responses default to `includeMedia=false`, returning counts or cover data instead of full media collections.
 - [ ] Reduce the expensive manager project search path by narrowing or separating the current broad `LOWER(... LIKE %...%)` filters across joined tables.
-- [ ] Remove eager thread-summary preload from `client-dashboard.js` bootstrap and keep mailbox/thread summaries truly lazy.
+- [x] Remove eager thread-summary preload from `client-dashboard.js` bootstrap and keep mailbox/thread summaries truly lazy.
 - [ ] Stop reloading `projects + services + materials` together after the manager seed action unless the seed result actually changed all three domains.
 - [ ] Replace the heaviest full-container rerenders in `manager-dashboard.js` and `client-dashboard.js` with keyed per-item updates, starting with projects, threads and messages.
 - [ ] Rework `gallery.js` so project changes update active state and transforms without rebuilding the whole stage and project strip.

@@ -79,13 +79,23 @@ test.afterEach(() => {
   mock.stopAll();
 });
 
-test('manager projects supports includeMedia=false with count fields only', async () => {
+test('manager projects keeps list responses lean by default and supports explicit media expansion', async () => {
   const stubs = createStubs();
   mockModels(stubs.models);
 
   const route = loadRoute('routes/manager.js');
   const app = buildExpressApp('/api/manager', route);
   const token = signAccessToken('11111111-1111-4111-8111-111111111111', 'manager');
+
+  const defaultResponse = await request(app)
+    .get('/api/manager/projects')
+    .set('Authorization', `Bearer ${token}`)
+    .expect(200);
+
+  const defaultProject = defaultResponse.body?.projects?.[0];
+  assert.equal(defaultProject?.media, undefined);
+  assert.equal(defaultProject?.imageCount, 1);
+  assert.equal(defaultProject?.documentCount, 1);
 
   const leanResponse = await request(app)
     .get('/api/manager/projects?includeMedia=false')

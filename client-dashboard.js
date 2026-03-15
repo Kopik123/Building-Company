@@ -660,10 +660,6 @@
 
       el.session.textContent = `Logged as ${state.user.name || state.user.email} (${state.user.role})`;
       await loadOverview();
-      await Promise.allSettled([
-        ensureDirectThreadSummaries(),
-        ensureThreadSummaries()
-      ]);
       setupLazySections();
       requestAccordionRefresh();
     } catch (error) {
