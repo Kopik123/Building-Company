@@ -11,8 +11,8 @@
 
 ## Desktop
 
-- [ ] Header reads cleanly as `logo | title | account/nav`.
-- [ ] `title.png` stays centred and does not overpower the account block.
+- [ ] Header reads cleanly as a thin `title.png` brand strip with a lower quick-access strip for login and menu.
+- [ ] `title.png` stays centred, narrow and does not behave like a large hero board.
 - [ ] Homepage first fold has no clipped copy, awkward wrapping or broken spacing.
 - [ ] Gallery arrows, project rail and active image/project titles stay visible and aligned.
 - [ ] Client and manager top boards feel balanced and equal in visual weight.
@@ -21,7 +21,7 @@
 ## Phone (~390px)
 
 - [ ] No horizontal scroll on homepage, auth, client dashboard and manager dashboard.
-- [ ] Header compresses without overlap between logo, title and account/nav.
+- [ ] Thin `title` bar compresses without overlap and the lower login/menu strip remains readable and tap-safe.
 - [ ] Homepage sections keep readable spacing in this order:
   - header
   - login/account

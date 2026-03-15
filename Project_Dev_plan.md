@@ -92,3 +92,7 @@
 - Regenerated the public service/location pages, then re-ran `npm run verify:generated` and `npm run test:ci`; both passed after the new shell rollout.
 - Re-ran `npm run test:e2e:mobile` and confirmed the remaining failure is still the known workstation-level `spawn EPERM` issue rather than a regression from the new public shell.
 - Tightened the shared public shell proportions in `styles/public.css` so `title.png` now sits in a slimmer top bar and the inline login/menu strip reads as a lower quick-access band instead of two oversized panels.
+- Regenerated the optimized `title` brand asset and manifest from the new thin `title.png` source, updating the runtime dimensions from `1800x412` to `1536x232` so the public shell now renders the intended narrow brand strip instead of the older taller board.
+- Updated the static public pages plus regenerated service/location pages to use the new `1536x232` `title.png` intrinsic dimensions, keeping the quick-access login/menu strip visually aligned with the slimmer shell.
+- Tightened the public shell again in `styles/public.css` so the upper `title` bar and the lower `login + menu` strip behave like a true two-tier quick-access header across homepage and all public pages.
+- Updated `deploy/LIVE_QA_CHECKLIST_PC_MOBILE.md` so the post-deploy checks now validate the new thin `title` strip and lower quick-access login/menu band instead of the older `logo | title | account/nav` shell wording.

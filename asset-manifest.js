@@ -11,8 +11,8 @@ const manifest = {
       "fallback": "/assets/optimized/brand/title.png",
       "webp": "/assets/optimized/brand/title.webp",
       "avif": "/assets/optimized/brand/title.avif",
-      "width": 1800,
-      "height": 412
+      "width": 1536,
+      "height": 232
     },
     "workspace": {
       "fallback": "/assets/optimized/brand/logo4.png",

@@ -76,8 +76,8 @@ const renderPublicTitleBoard = (shared) => {
     fallback: brandAssets.title?.fallback || shared.titleImagePath || shared.logoPath || '/title.png',
     webp: brandAssets.title?.webp || '',
     avif: brandAssets.title?.avif || '',
-    width: Number(brandAssets.title?.width) || 3408,
-    height: Number(brandAssets.title?.height) || 780
+    width: Number(brandAssets.title?.width) || 1536,
+    height: Number(brandAssets.title?.height) || 232
   };
 
   return `      <div class="public-brand-board">
