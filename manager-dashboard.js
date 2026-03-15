@@ -2131,10 +2131,29 @@
       const payload = await api('/api/manager/seed/starter', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ force }) });
       const stats = payload?.stats || {};
       setStatus(el.seedStatus, `Seed done. Services +${stats.servicesCreated || 0}, materials +${stats.materialsCreated || 0}, projects +${stats.projectsCreated || 0}, media +${stats.mediaCreated || 0}.`, 'success');
-      state.projectsQuery.page = 1;
-      state.servicesQuery.page = 1;
-      state.materialsQuery.page = 1;
-      await Promise.all([loadProjects(), loadServices(), loadMaterials()]);
+      const refreshTasks = [];
+      const servicesChanged = Number(stats.servicesCreated || 0) > 0 || Number(stats.servicesUpdated || 0) > 0;
+      const materialsChanged = Number(stats.materialsCreated || 0) > 0 || Number(stats.materialsUpdated || 0) > 0;
+      const projectsChanged = Number(stats.projectsCreated || 0) > 0 || Number(stats.mediaCreated || 0) > 0;
+
+      if (projectsChanged) {
+        state.projectsQuery.page = 1;
+        refreshTasks.push(loadProjects());
+      }
+
+      if (servicesChanged) {
+        state.servicesQuery.page = 1;
+        refreshTasks.push(loadServices());
+      }
+
+      if (materialsChanged) {
+        state.materialsQuery.page = 1;
+        refreshTasks.push(loadMaterials());
+      }
+
+      if (refreshTasks.length) {
+        await Promise.all(refreshTasks);
+      }
     } catch (error) {
       setStatus(el.seedStatus, error.message || 'Seed failed.', 'error');
     }

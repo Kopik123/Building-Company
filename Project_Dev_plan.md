@@ -109,3 +109,6 @@
 - Narrowed the manager project free-text search in `routes/manager.js` to project-owned fields only (`title`, `location`, `description`) so the common list path no longer pushes broad `LOWER(... LIKE %...%)` filters across joined relations.
 - Added a shared keyed-list sync helper in `runtime.js` and rewired the `projects`, `threads` and `messages` sections in both `client-dashboard.js` and `manager-dashboard.js` to patch existing DOM nodes instead of fully clearing and rebuilding those containers on every update.
 - Extended the manager project API regression suite with a search-shape assertion so the narrowed `q` path is protected in tests.
+- Reworked the manager seed action in `manager-dashboard.js` so it now refreshes only the domains the seed actually changed, instead of always reloading projects, services and materials together.
+- Replaced the gallery's full `stage` and `projectStrip` rebuilds with keyed DOM sync in `gallery.js`, so project changes now update only the cards and chips that actually changed while preserving active-strip state and roller transforms.
+- Re-ran `node --check manager-dashboard.js`, `node --check gallery.js` and `cmd /c npm run test:ci`; all passed after the seed/gallery performance changes.

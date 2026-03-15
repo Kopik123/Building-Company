@@ -1,6 +1,37 @@
 (() => {
   const runtime = window.LevelLinesRuntime || {};
   const getOptimizedMedia = runtime.getOptimizedMedia || ((src) => ({ fallback: src }));
+  const syncKeyedList = runtime.syncKeyedList || ((container, items, { getKey, createNode, updateNode } = {}) => {
+    if (!container) return;
+
+    const existingByKey = new Map();
+    Array.from(container.children).forEach((child) => {
+      if (child.dataset.renderKey) {
+        existingByKey.set(child.dataset.renderKey, child);
+      }
+    });
+
+    const orderedNodes = (Array.isArray(items) ? items : []).map((item, index) => {
+      const key = String(getKey(item, index));
+      let node = existingByKey.get(key);
+      if (!node) {
+        node = createNode(item, index);
+        node.dataset.renderKey = key;
+      }
+      updateNode(node, item, index);
+      existingByKey.delete(key);
+      return node;
+    });
+
+    orderedNodes.forEach((node, index) => {
+      const currentNode = container.children[index];
+      if (currentNode !== node) {
+        container.insertBefore(node, currentNode || null);
+      }
+    });
+
+    existingByKey.forEach((node) => node.remove());
+  });
   const createResponsivePicture = runtime.createResponsivePicture || ((media, options = {}) => {
     const image = document.createElement('img');
     image.src = media?.fallback || media?.src || '';
@@ -228,6 +259,31 @@
 
   const currentProject = () => projects[state.projectIndex];
 
+  const findPictureImage = (node) => node?.querySelector('img');
+
+  const syncPictureNode = (container, picture, mediaKey) => {
+    const currentPicture = container.firstElementChild;
+    if (container.dataset.mediaKey !== mediaKey || !currentPicture) {
+      if (currentPicture) {
+        currentPicture.replaceWith(picture);
+      } else {
+        container.prepend(picture);
+      }
+      container.dataset.mediaKey = mediaKey;
+      return;
+    }
+
+    const nextImage = findPictureImage(picture);
+    const currentImage = findPictureImage(currentPicture);
+    if (currentImage && nextImage) {
+      currentImage.alt = nextImage.alt;
+      currentImage.loading = nextImage.loading;
+      currentImage.decoding = nextImage.decoding;
+      if (nextImage.width) currentImage.width = nextImage.width;
+      if (nextImage.height) currentImage.height = nextImage.height;
+    }
+  };
+
   const loadManagedProjects = async () => {
     try {
       const response = await fetch('/api/gallery/projects', { headers: { Accept: 'application/json' } });
@@ -406,31 +462,42 @@
     stopAnimation();
 
     const project = currentProject();
-    stage.innerHTML = '';
-    state.cards = [];
+    syncKeyedList(stage, project.images, {
+      getKey: (imageItem, index) => imageItem.src || imageItem.media?.fallback || `${project.name}-${index}`,
+      createNode: () => {
+        const card = document.createElement('article');
+        card.className = 'roller-card is-hidden';
 
-    project.images.forEach((imageItem, index) => {
-      const card = document.createElement('article');
-      card.className = 'roller-card is-hidden';
-      card.dataset.index = String(index);
+        const caption = document.createElement('p');
+        caption.className = 'roller-caption';
+        card.appendChild(caption);
+        return card;
+      },
+      updateNode: (card, imageItem, index) => {
+        card.dataset.index = String(index);
+        const mediaKey = imageItem.src || imageItem.media?.fallback || `${project.name}-${index}`;
+        const picture = createResponsivePicture(imageItem.media, {
+          alt: `${project.name} - ${imageItem.label}`,
+          className: 'roller-picture',
+          imgClassName: 'roller-image',
+          loading: 'lazy',
+          sizes: imageItem.media?.sizes
+        });
+        syncPictureNode(card, picture, mediaKey);
 
-      const image = createResponsivePicture(imageItem.media, {
-        alt: `${project.name} - ${imageItem.label}`,
-        className: 'roller-picture',
-        imgClassName: 'roller-image',
-        loading: 'lazy',
-        sizes: imageItem.media?.sizes
-      });
-
-      const caption = document.createElement('p');
-      caption.className = 'roller-caption';
-      caption.textContent = imageItem.label;
-
-      card.appendChild(image);
-      card.appendChild(caption);
-      stage.appendChild(card);
-      state.cards.push(card);
+        let caption = card.querySelector('.roller-caption');
+        if (!caption) {
+          caption = document.createElement('p');
+          caption.className = 'roller-caption';
+          card.appendChild(caption);
+        }
+        if (caption.textContent !== imageItem.label) {
+          caption.textContent = imageItem.label;
+        }
+      }
     });
+
+    state.cards = Array.from(stage.querySelectorAll('.roller-card'));
 
     state.position = normalizePosition(state.target, project.images.length);
     state.velocity = 0;
@@ -441,51 +508,69 @@
   };
 
   const buildProjectStrip = () => {
-    projectStrip.innerHTML = '';
-    state.chips = [];
+    syncKeyedList(projectStrip, projects, {
+      getKey: (project, index) => project.name || project.images[0]?.src || index,
+      createNode: () => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'project-chip';
+        button.setAttribute('aria-pressed', 'false');
+        button.addEventListener('click', () => {
+          const nextIndex = Number(button.dataset.projectIndex || 0);
+          selectProject(nextIndex);
+        });
 
-    projects.forEach((project, index) => {
-      const projectName = splitProjectName(project.name);
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'project-chip';
-      button.setAttribute('aria-label', `Show project ${project.name}`);
-      button.setAttribute('aria-pressed', 'false');
+        const copy = document.createElement('div');
+        copy.className = 'project-chip-copy';
 
-      const image = createResponsivePicture(project.images[0].media, {
-        alt: `${project.name} thumbnail`,
-        className: 'project-chip-picture',
-        imgClassName: 'project-chip-image',
-        loading: 'lazy',
-        sizes: project.images[0].media?.thumbnailSizes || project.images[0].media?.sizes
-      });
+        const level = document.createElement('small');
+        level.className = 'project-chip-level';
 
-      const copy = document.createElement('div');
-      copy.className = 'project-chip-copy';
+        const title = document.createElement('strong');
+        title.className = 'project-chip-title';
 
-      const level = document.createElement('small');
-      level.className = 'project-chip-level';
-      level.textContent = levelLabel(index);
+        const subtitle = document.createElement('span');
+        subtitle.className = 'project-chip-subtitle';
 
-      const title = document.createElement('strong');
-      title.className = 'project-chip-title';
-      title.textContent = projectName.title;
+        copy.appendChild(level);
+        copy.appendChild(title);
+        copy.appendChild(subtitle);
+        button.appendChild(copy);
+        return button;
+      },
+      updateNode: (button, project, index) => {
+        const projectName = splitProjectName(project.name);
+        const mediaKey = project.images[0]?.src || project.images[0]?.media?.fallback || `${project.name}-${index}`;
+        button.dataset.projectIndex = String(index);
+        button.setAttribute('aria-label', `Show project ${project.name}`);
 
-      const subtitle = document.createElement('span');
-      subtitle.className = 'project-chip-subtitle';
-      subtitle.textContent = projectName.subtitle;
+        const picture = createResponsivePicture(project.images[0].media, {
+          alt: `${project.name} thumbnail`,
+          className: 'project-chip-picture',
+          imgClassName: 'project-chip-image',
+          loading: 'lazy',
+          sizes: project.images[0].media?.thumbnailSizes || project.images[0].media?.sizes
+        });
+        syncPictureNode(button, picture, mediaKey);
 
-      button.appendChild(image);
-      copy.appendChild(level);
-      copy.appendChild(title);
-      copy.appendChild(subtitle);
-      button.appendChild(copy);
+        const level = button.querySelector('.project-chip-level');
+        if (level && level.textContent !== levelLabel(index)) {
+          level.textContent = levelLabel(index);
+        }
 
-      button.addEventListener('click', () => selectProject(index));
+        const title = button.querySelector('.project-chip-title');
+        if (title && title.textContent !== projectName.title) {
+          title.textContent = projectName.title;
+        }
 
-      projectStrip.appendChild(button);
-      state.chips.push(button);
+        const subtitle = button.querySelector('.project-chip-subtitle');
+        if (subtitle && subtitle.textContent !== projectName.subtitle) {
+          subtitle.textContent = projectName.subtitle;
+        }
+      }
     });
+
+    state.chips = Array.from(projectStrip.querySelectorAll('.project-chip'));
 
     updateProjectStripState();
   };
