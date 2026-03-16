@@ -6,6 +6,7 @@
 - [ ] Resolve local PowerShell execution-policy blocking `npm.ps1`; until fixed, keep using `npm.cmd` for local validation commands.
 - [ ] Run live QA on the new vNext shell after droplet deploy (`/`, `/about.html`, `/services.html`, `/gallery.html`, `/quote.html`, `/contact.html`, `/auth.html`, dashboards, 2 service pages, 2 location pages), with explicit readability checks for all-gold typography on light cards.
 - [ ] Run live QA on the latest desktop shell merge after deploy, checking that the login strip and nav now read as one connected module, the section backdrop stays light, and the dark-card/gold-text treatment still feels readable.
+- [ ] Run live QA on the latest homepage-specific shell merge after deploy, checking that homepage sections now keep a light backdrop, every homepage box stays dark, and the combined desktop `login + menu` module matches the title board height without a divider line.
 - [x] Ran `powershell -ExecutionPolicy Bypass -File .\scripts\setup-vscode.ps1` on the local machine and confirmed the VS Code workspace bootstrap completes with the current recommendations.
 - [x] Reviewed `ms-vscode.live-server` usage and removed it from the VS Code recommendations/bootstrap because the repo runs through the app server and Playwright instead.
 - [x] Planned a separate migration from `multer 1.x` to `multer 2.x` in `todosv2.md`, based on the real upload surface in `utils/upload.js`, `client`, `inbox`, `group` and manager project-media routes.

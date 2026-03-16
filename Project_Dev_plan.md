@@ -192,3 +192,6 @@
 - Logged and tracked a local environment issue where PowerShell execution policy blocks `npm.ps1`, using `npm.cmd` as the immediate workaround for command execution.
 - Refined `styles/public.css` again so the public brochure keeps a light section backdrop, renders both left/right cards on the same dark card treatment, uses one gold text color across the visible public content, and visually merges the desktop login strip with the nav into one connected shell block.
 - Re-ran `npm.cmd run test:ci` and the focused public Playwright regression (`tests/playwright/public-redesign.spec.js`) after the shell/background merge; both stayed green.
+- Adjusted `styles/public.css` so the homepage now keeps a light backdrop behind the box layout while forcing all homepage content boxes and the CTA/quote panel onto the same dark card treatment.
+- Reworked the desktop header shell to make `login + menu` one combined module with no horizontal divider between them, while matching the shared module height to the `title.png` board and preserving the older mobile dropdown behavior.
+- Re-ran `npm.cmd run test:ci` and the focused public Playwright regression (`tests/playwright/public-redesign.spec.js`) after the homepage backdrop and combined-shell pass; both stayed green.
