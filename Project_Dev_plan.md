@@ -170,3 +170,4 @@
 - Extended `gallery.js` with a service-gallery mode and a reusable fullscreen lightbox overlay, so clicking any gallery image now opens a closable fullscreen view while generated service/location pages remain compatible with their inline case-study payloads.
 - Updated `index.html`, `gallery.html`, `styles/public.css`, `api/v2/README.md`, and the legacy/v2 gallery tests to reflect the new service-led gallery wording, overlay styling and API surface.
 - Re-ran `node --check` on the touched runtime/API/test files and `cmd /c npm run test:ci`; both the generated-page verification and API suite passed after the folder-based gallery/fullscreen rollout.
+- Removed `Project_Web_Design_Plan.md` to clear the previous visual-direction brief before planning the next site redesign from a clean baseline, and updated `Project_todos.md` to track the replacement source-of-truth document instead.
