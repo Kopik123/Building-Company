@@ -2,10 +2,10 @@
 
 ## Open
 
-- [ ] Run `powershell -ExecutionPolicy Bypass -File .\scripts\setup-vscode.ps1` on the local machine that uses VS Code.
-- [ ] Review whether `ms-vscode.live-server` is still needed if the project always runs through the app server and Playwright.
-- [ ] Plan a separate migration from `multer 1.x` to `multer 2.x`, because the dependency is still flagged in install warnings.
-- [ ] Review whether the premium theme overrides now living in `styles/public.css` and `styles/workspace.css` should be split into smaller section-specific files after the visual direction stabilises.
+- [x] Ran `powershell -ExecutionPolicy Bypass -File .\scripts\setup-vscode.ps1` on the local machine and confirmed the VS Code workspace bootstrap completes with the current recommendations.
+- [x] Reviewed `ms-vscode.live-server` usage and removed it from the VS Code recommendations/bootstrap because the repo runs through the app server and Playwright instead.
+- [x] Planned a separate migration from `multer 1.x` to `multer 2.x` in `todosv2.md`, based on the real upload surface in `utils/upload.js`, `client`, `inbox`, `group` and manager project-media routes.
+- [x] Reviewed the current CSS split and decided not to break `styles/public.css` / `styles/workspace.css` into smaller files yet; the bigger maintainability priority remains moving more responsibility out of `styles/base.css`.
 - [ ] Keep every new feature review aligned with future Android/iOS app readiness, especially API contracts, auth/session handling, messaging and media flows.
 - [ ] Re-check the new homepage header/account hierarchy on live desktop and mobile devices after deployment, because the account entry point moved out of the header and into the hero card.
 - [ ] Implement the planned `client_proposal_quote` structure on the public quote page with phased UX, richer project fields and mobile-safe validation.
@@ -19,10 +19,11 @@
 - [ ] Export the real issue list from SonarQube for branch `vscode`, then map every `Bug` and `Vulnerability` to `real fix`, `false positive` or `accepted tradeoff`.
 - [ ] Run `scripts/sonar-export.sh` with `SONAR_URL` and `SONAR_TOKEN`, then attach `sonar-issues-full.json`, `sonar-quality-gate.json` and `sonar-measures.json` to the Sonar cleanup workflow.
 - [ ] Start the SonarQube cleanup with the biggest maintainability hotspots: `manager-dashboard.js`, `routes/manager.js`, `client-dashboard.js`, `styles/base.css` and `apps/mobile-v1/App.js`.
-- [ ] Plan the `multer 1.x -> 2.x` migration as a separate Sonar/dependency-hardening task instead of running `npm audit fix --force`.
+- [x] Scoped the `multer 1.x -> 2.x` move as a dedicated dependency-hardening task instead of using `npm audit fix --force`.
 - [ ] Split `manager-dashboard.js` into feature modules (`projects`, `quotes`, `services`, `materials`, `clients`, `staff`, `estimates`, `messages`) once the new overview shell settles.
 - [ ] Split `client-dashboard.js` into feature modules (`overview`, `projects/documents`, `quotes/services`, `direct manager`, `project chat`) once the new top board settles.
 - [ ] Move more responsive layout ownership out of `styles/base.css` into `styles/public.css` and `styles/workspace.css` after the current contrast/mobile pass is validated live.
+- [x] Removed the obsolete shared `brand-mark-link` / `brand-title-link` header lockup block from `styles/base.css` after the runtime moved fully to the newer public-shell markup.
 - [ ] Run the new live QA checklist on desktop and a phone-sized viewport after the next droplet deploy, then capture screenshots for homepage, gallery interaction, dashboards and the quote/contact form.
 - [ ] Revisit whether a CDN/media platform is worth introducing later if the runtime gallery set grows beyond the current `sharp` pipeline.
 - [ ] Keep `Project_Web_Design_Plan.md` aligned with the real current design system whenever header structure, color logic, IA or responsive rules change.
@@ -39,6 +40,7 @@
 - [ ] Consolidate manual public pages and generated SEO pages onto one content model/source so brochure copy, metadata, FAQ and CTA logic stop drifting.
 - [ ] Create a shared web/mobile contract layer for auth/session, project summaries, thread summaries, notifications and estimate state before expanding mobile-v1 further.
 - [ ] Re-check live readability/contrast after the public-site all-gold typography pass; keep the black/light/gold direction, but verify the chosen gold remains readable on light cards and form surfaces.
+- [x] Consolidated the historical `Plans/` documents and `Plan History` into one root-level `todosv2.md` so planning no longer lives across many overlapping markdown files.
 - [x] Change `/api/manager/projects` so list responses default to `includeMedia=false`, returning counts or cover data instead of full media collections.
 - [x] Reduce the expensive manager project search path by narrowing or separating the current broad `LOWER(... LIKE %...%)` filters across joined tables.
 - [x] Remove eager thread-summary preload from `client-dashboard.js` bootstrap and keep mailbox/thread summaries truly lazy.

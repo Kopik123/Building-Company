@@ -8,7 +8,6 @@
     "usernamehw.errorlens",
     "formulahendry.auto-rename-tag",
     "naumovs.color-highlight",
-    "streetsidesoftware.code-spell-checker",
-    "ms-vscode.live-server"
+    "streetsidesoftware.code-spell-checker"
   ]
 }

@@ -32,7 +32,7 @@
   - white / stone / marble surfaces
   - dark gold accents, borders and dark-surface typography
 - Fixed contrast rule:
-  - light background -> dark text
+  - light background -> gold text
   - dark background -> gold text
 - Gold direction:
   - richer premium gold
