@@ -119,3 +119,21 @@ test('createApp exposes a simple healthz endpoint for process checks', async () 
   assert.equal(response.body?.service, 'building-company');
   assert.equal(typeof response.body?.uptimeSeconds, 'number');
 });
+
+test('createApp forces css and image assets to revalidate after deploys', async () => {
+  mockModels(createModelsStub());
+
+  const { createApp } = loadRoute('app.js');
+  const app = createApp();
+
+  const cssResponse = await request(app)
+    .get('/styles/base.css')
+    .expect(200);
+
+  const imageResponse = await request(app)
+    .get('/mainbackground.png')
+    .expect(200);
+
+  assert.equal(cssResponse.headers['cache-control'], 'no-cache');
+  assert.equal(imageResponse.headers['cache-control'], 'no-cache');
+});

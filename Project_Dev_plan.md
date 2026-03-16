@@ -198,3 +198,6 @@
 - Added the new root-level `mainbackground.png` asset and switched the global site background in `styles/base.css` to use it as the main page backdrop under the existing dark/gold overlays.
 - Updated `styles/public.css` so homepage sections become transparent over the shared backdrop instead of repainting it, and enlarged/repositioned the desktop nav text upward within the combined `login + menu` shell while keeping mobile behavior unchanged.
 - Re-ran `npm.cmd run test:ci` and the focused public Playwright regression (`tests/playwright/public-redesign.spec.js`) after the main-background and desktop menu alignment pass; both stayed green.
+- Updated `app.js` static asset cache headers so HTML plus all frequently changed frontend assets (`CSS`, `JS`, `png/jpg/webp/avif/svg`) now use `Cache-Control: no-cache`, while fonts keep long immutable caching.
+- Added an API regression in `tests/api-v2/app-legacy-routes.test.js` to lock in the new revalidation behavior for `/styles/base.css` and `/mainbackground.png`.
+- Re-ran `npm.cmd run test:ci` after the cache-header change so future deploys should show frontend updates on normal refresh without manual browser-history clearing.

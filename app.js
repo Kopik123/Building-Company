@@ -33,12 +33,14 @@ const setStaticCacheHeaders = (res, filePath) => {
     return;
   }
 
-  if (['.css', '.js'].includes(ext)) {
-    res.setHeader('Cache-Control', 'public, max-age=86400');
+  // During active site iteration we want browsers to revalidate assets automatically
+  // so deploys show up without manual history/cache clearing.
+  if (['.css', '.js', '.png', '.jpg', '.jpeg', '.webp', '.avif', '.svg'].includes(ext)) {
+    res.setHeader('Cache-Control', 'no-cache');
     return;
   }
 
-  if (['.png', '.jpg', '.jpeg', '.webp', '.avif', '.svg', '.woff', '.woff2'].includes(ext)) {
+  if (['.woff', '.woff2'].includes(ext)) {
     res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
     return;
   }

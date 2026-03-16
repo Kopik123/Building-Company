@@ -4,6 +4,7 @@
 
 - [x] Define and implement a brand-new visual direction from scratch after the full style wipe, including fresh design tokens, responsive header behavior and a single current source-of-truth for design decisions.
 - [ ] Resolve local PowerShell execution-policy blocking `npm.ps1`; until fixed, keep using `npm.cmd` for local validation commands.
+- [ ] After the next droplet deploy, verify in DevTools that `CSS`, `JS` and image assets now return `Cache-Control: no-cache`, so browser refreshes pick up changes without manual history clearing.
 - [ ] Run live QA on the new vNext shell after droplet deploy (`/`, `/about.html`, `/services.html`, `/gallery.html`, `/quote.html`, `/contact.html`, `/auth.html`, dashboards, 2 service pages, 2 location pages), with explicit readability checks for all-gold typography on light cards.
 - [ ] Run live QA on the latest desktop shell merge after deploy, checking that the login strip and nav now read as one connected module, the section backdrop stays light, and the dark-card/gold-text treatment still feels readable.
 - [ ] Run live QA on the latest homepage-specific shell merge after deploy, checking that homepage sections now keep a light backdrop, every homepage box stays dark, and the combined desktop `login + menu` module matches the title board height without a divider line.
