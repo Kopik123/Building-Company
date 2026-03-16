@@ -18,7 +18,8 @@ body {
   font-family: var(--font-ui);
   color: var(--color-text);
   background:
-    radial-gradient(120% 80% at 50% -10%, rgba(209, 164, 74, 0.16), transparent 55%),
+    radial-gradient(120% 80% at 50% -10%, rgba(209, 164, 74, 0.1), transparent 55%),
+    url('/mainbackground.png') center top / cover fixed no-repeat,
     linear-gradient(180deg, #090909 0%, #040404 60%, #020202 100%);
   line-height: 1.58;
   text-rendering: optimizeLegibility;

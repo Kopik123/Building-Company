@@ -195,3 +195,6 @@
 - Adjusted `styles/public.css` so the homepage now keeps a light backdrop behind the box layout while forcing all homepage content boxes and the CTA/quote panel onto the same dark card treatment.
 - Reworked the desktop header shell to make `login + menu` one combined module with no horizontal divider between them, while matching the shared module height to the `title.png` board and preserving the older mobile dropdown behavior.
 - Re-ran `npm.cmd run test:ci` and the focused public Playwright regression (`tests/playwright/public-redesign.spec.js`) after the homepage backdrop and combined-shell pass; both stayed green.
+- Added the new root-level `mainbackground.png` asset and switched the global site background in `styles/base.css` to use it as the main page backdrop under the existing dark/gold overlays.
+- Updated `styles/public.css` so homepage sections become transparent over the shared backdrop instead of repainting it, and enlarged/repositioned the desktop nav text upward within the combined `login + menu` shell while keeping mobile behavior unchanged.
+- Re-ran `npm.cmd run test:ci` and the focused public Playwright regression (`tests/playwright/public-redesign.spec.js`) after the main-background and desktop menu alignment pass; both stayed green.
