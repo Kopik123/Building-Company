@@ -14,6 +14,20 @@ const expectNoHorizontalScroll = async (page) => {
   expect(hasOverflow).toBeFalsy();
 };
 
+const expectShellNavigationDefaultState = async (page) => {
+  const toggle = page.locator('.site-header--public-shell .public-menu-toggle');
+  const navMenu = page.locator('.site-header--public-shell [data-nav-menu]');
+
+  if (await toggle.first().isVisible()) {
+    await expect(toggle).toBeVisible();
+    await expect(navMenu).toBeHidden();
+    return;
+  }
+
+  await expect(toggle).toBeHidden();
+  await expect(navMenu).toBeVisible();
+};
+
 const mockPublicClientSession = async (page) => {
   await page.addInitScript(() => {
     localStorage.setItem('ll_auth_token', 'test-token');
@@ -45,8 +59,7 @@ test('homepage renders one dominant card and routes navigation to dedicated page
   await expect(page.locator('body.public-site.page-home')).toBeVisible();
   await expect(page.locator('.site-header--public-shell .public-brand-title-image[src="/assets/optimized/brand/title.png"]')).toHaveCount(1);
   await expect(page.locator('.site-header--public-shell [data-inline-login-form]')).toBeVisible();
-  await expect(page.locator('.site-header--public-shell .public-menu-toggle')).toBeVisible();
-  await expect(page.locator('.site-header--public-shell [data-nav-menu]')).toBeHidden();
+  await expectShellNavigationDefaultState(page);
   await expect(page.locator('main h1').first()).toContainText(/premium bathrooms, kitchens and interiors delivered/i);
   await openNavIfNeeded(page);
   await expect(page.locator('[data-nav-menu] a[href="/index.html"]')).toBeVisible();
@@ -106,7 +119,7 @@ test('service, location and legal pages keep the same shell and single primary c
   await expect(page.locator('body.public-site.page-service')).toBeVisible();
   await expect(page.locator('.site-header--public-shell .public-brand-title-image[src="/assets/optimized/brand/title.png"]')).toHaveCount(1);
   await expect(page.locator('.site-header--public-shell [data-inline-login-form]')).toBeVisible();
-  await expect(page.locator('.site-header--public-shell [data-nav-menu]')).toBeHidden();
+  await expectShellNavigationDefaultState(page);
   await expect(page.locator('main h1').first()).toContainText(/Bathrooms/i);
   await openNavIfNeeded(page);
   await expect(page.locator('[data-nav-menu] a[href="/index.html"]')).toBeVisible();
@@ -124,7 +137,7 @@ test('service, location and legal pages keep the same shell and single primary c
   await expect(page.locator('body.public-site.page-legal')).toBeVisible();
   await expect(page.locator('.site-header--public-shell .public-brand-title-image[src="/assets/optimized/brand/title.png"]')).toHaveCount(1);
   await expect(page.locator('.site-header--public-shell [data-inline-login-form]')).toBeVisible();
-  await expect(page.locator('.site-header--public-shell [data-nav-menu]')).toBeHidden();
+  await expectShellNavigationDefaultState(page);
   await expect(page.getByRole('heading', { name: /privacy policy for studio enquiries, consultations/i })).toBeVisible();
   await expect(page.locator('footer .footer-block .footer-links a[href="/about.html"]').first()).toBeVisible();
   await expect(page.locator('footer .footer-block .footer-links a[href="/quote.html"]').first()).toBeVisible();

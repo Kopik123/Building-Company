@@ -185,3 +185,8 @@
 - Updated generated SEO pages by changing `scripts/generate-service-pages.js` and `scripts/generate-location-pages.js` to stop rendering the old `studio-board` variant and use the shared brochure renderer path (`hero + sections + contact + consultation`).
 - Regenerated public outputs via `npm run generate:public-pages` and verified generated-file sync with `npm run verify:generated`.
 - Updated Playwright expectations in `tests/playwright/public-redesign.spec.js` and `tests/playwright/mobile-smoke.spec.js` for the new homepage/shell/session behavior and reran `npm run test:ci` plus `npm run test:e2e:mobile` with all tests passing.
+- Updated `site.js` so desktop keeps navigation open by default, inline login placeholders are `E-mail` / `Password`, submit label is `Login`, and a runtime `Register` link is appended to the guest inline form without changing generated HTML.
+- Reworked `styles/public.css` so the new requested header layout applies on larger screens (`title` lockup + inline login row + always-visible horizontal nav), while mobile (`<=992px`) keeps the previous hamburger/dropdown behavior.
+- Added desktop/mobile-aware assertions in `tests/playwright/public-redesign.spec.js` and `tests/playwright/mobile-smoke.spec.js` so shell tests validate responsive defaults instead of one hardcoded nav state.
+- Re-ran `npm.cmd run test:ci` and `npm.cmd run test:e2e:mobile`; both suites passed after the responsive desktop/mobile split.
+- Logged and tracked a local environment issue where PowerShell execution policy blocks `npm.ps1`, using `npm.cmd` as the immediate workaround for command execution.

@@ -16,6 +16,10 @@
   const userOnlyNodes = Array.from(document.querySelectorAll('[data-auth-user-only]'));
   const accountSettingsLinks = Array.from(document.querySelectorAll('[data-account-settings-link]'));
   const inlineLoginForm = document.querySelector('[data-inline-login-form]');
+  const inlineLoginRow = inlineLoginForm?.querySelector('.public-inline-login-row') || null;
+  const inlineLoginEmailInput = inlineLoginForm?.querySelector('input[name="email"]') || null;
+  const inlineLoginPasswordInput = inlineLoginForm?.querySelector('input[name="password"]') || null;
+  const inlineLoginSubmitButton = inlineLoginForm?.querySelector('button[type="submit"]') || null;
   const inlineLoginStatus = document.querySelector('[data-inline-login-status]');
   const inlineAuthPanel = document.querySelector('[data-auth-panel]');
   const inlineSession = document.querySelector('[data-inline-session]');
@@ -401,6 +405,25 @@
     renderInlineAuthState(user);
   };
 
+  const ensureInlineAuthLabels = () => {
+    if (inlineLoginEmailInput) inlineLoginEmailInput.placeholder = 'E-mail';
+    if (inlineLoginPasswordInput) inlineLoginPasswordInput.placeholder = 'Password';
+    if (inlineLoginSubmitButton) inlineLoginSubmitButton.textContent = 'Login';
+  };
+
+  const ensureInlineRegisterLink = () => {
+    if (!inlineLoginRow) return;
+    const existing = inlineLoginRow.querySelector('[data-inline-register]');
+    if (existing) return;
+
+    const registerLink = document.createElement('a');
+    registerLink.href = '/auth.html';
+    registerLink.className = 'public-inline-login-submit public-inline-register-link';
+    registerLink.textContent = 'Register';
+    registerLink.setAttribute('data-inline-register', 'true');
+    inlineLoginRow.appendChild(registerLink);
+  };
+
   const fetchJson = async (url, options = {}) => {
     const response = await fetch(url, options);
     const payload = await response.json().catch(() => ({}));
@@ -514,25 +537,27 @@
 
   const setMenuState = (isOpen) => {
     if (!navMenu || !navToggle) return;
+    const desktopMode = !isMobileMenuMode();
+    const resolvedOpen = desktopMode ? true : Boolean(isOpen);
 
-    navMenu.classList.toggle('is-open', isOpen);
-    navMenu.toggleAttribute('hidden', !isOpen);
-    navMenu.setAttribute('aria-hidden', String(!isOpen));
-    navToggle.classList.toggle('is-open', isOpen);
-    navToggle.setAttribute('aria-expanded', String(isOpen));
-    body.classList.toggle('nav-open', isOpen);
+    navMenu.classList.toggle('is-open', resolvedOpen);
+    navMenu.toggleAttribute('hidden', !resolvedOpen);
+    navMenu.setAttribute('aria-hidden', String(!resolvedOpen));
+    navToggle.classList.toggle('is-open', resolvedOpen && !desktopMode);
+    navToggle.setAttribute('aria-expanded', String(resolvedOpen && !desktopMode));
+    body.classList.toggle('nav-open', resolvedOpen && !desktopMode);
 
     if (menuWrap) {
-      menuWrap.classList.toggle('is-open', isOpen);
+      menuWrap.classList.toggle('is-open', resolvedOpen);
     }
 
-    if (isOpen && isMobileMenuMode()) {
+    if (resolvedOpen && isMobileMenuMode()) {
       menuPreviouslyFocused = document.activeElement;
       const first = getMenuFocusable()[0];
       if (first) first.focus();
     }
 
-    if (!isOpen && menuPreviouslyFocused && typeof menuPreviouslyFocused.focus === 'function') {
+    if (!resolvedOpen && menuPreviouslyFocused && typeof menuPreviouslyFocused.focus === 'function') {
       menuPreviouslyFocused.focus();
       menuPreviouslyFocused = null;
     }
@@ -583,7 +608,7 @@
   }
 
   if (navMenu && navToggle) {
-    setMenuState(false);
+    setMenuState(!isMobileMenuMode());
 
     navToggle.addEventListener('click', () => {
       const willOpen = !navMenu.classList.contains('is-open');
@@ -634,9 +659,7 @@
     });
 
     window.addEventListener('resize', () => {
-      if (!isMobileMenuMode() && navMenu.classList.contains('is-open')) {
-        closeMenu();
-      }
+      setMenuState(!isMobileMenuMode());
       if (!isCompactAuthMode()) {
         closeAuthPanel();
       }
@@ -802,6 +825,8 @@
   };
 
   applyBrandContent();
+  ensureInlineAuthLabels();
+  ensureInlineRegisterLink();
   validateSession();
   window.addEventListener('ll:session-changed', validateSession);
 

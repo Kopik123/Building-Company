@@ -3,6 +3,7 @@
 ## Open
 
 - [x] Define and implement a brand-new visual direction from scratch after the full style wipe, including fresh design tokens, responsive header behavior and a single current source-of-truth for design decisions.
+- [ ] Resolve local PowerShell execution-policy blocking `npm.ps1`; until fixed, keep using `npm.cmd` for local validation commands.
 - [ ] Run live QA on the new vNext shell after droplet deploy (`/`, `/about.html`, `/services.html`, `/gallery.html`, `/quote.html`, `/contact.html`, `/auth.html`, dashboards, 2 service pages, 2 location pages), with explicit readability checks for all-gold typography on light cards.
 - [x] Ran `powershell -ExecutionPolicy Bypass -File .\scripts\setup-vscode.ps1` on the local machine and confirmed the VS Code workspace bootstrap completes with the current recommendations.
 - [x] Reviewed `ms-vscode.live-server` usage and removed it from the VS Code recommendations/bootstrap because the repo runs through the app server and Playwright instead.

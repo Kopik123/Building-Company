@@ -15,6 +15,18 @@ const expectNoHorizontalScroll = async (page) => {
   expect(hasOverflow).toBeFalsy();
 };
 
+const expectResponsiveShellDefaultNavState = async (page) => {
+  const toggle = page.locator('.site-header--public-shell .public-menu-toggle');
+  const navMenu = page.locator('.site-header--public-shell [data-nav-menu]');
+
+  if (await toggle.first().isVisible()) {
+    await expect(navMenu).toBeHidden();
+    return;
+  }
+
+  await expect(navMenu).toBeVisible();
+};
+
 const mockClientSession = async (page) => {
   await page.addInitScript(() => {
     localStorage.setItem('ll_auth_token', 'test-token');
@@ -349,7 +361,7 @@ test('homepage mobile shell keeps visible inline login and hamburger navigation'
   await page.goto('/index.html');
   await expect(page.locator('.site-header--public-shell .public-auth-toggle')).toBeHidden();
   await expect(page.locator('.site-header--public-shell [data-inline-login-form]')).toBeVisible();
-  await expect(page.locator('.site-header--public-shell [data-nav-menu]')).toBeHidden();
+  await expectResponsiveShellDefaultNavState(page);
   await openNavIfNeeded(page);
   await expect(page.locator('.site-header--public-shell .public-brand-title-image[src="/assets/optimized/brand/title.png"]')).toHaveCount(1);
   await expect(page.locator('[data-nav-menu] a[href="/index.html"]')).toBeVisible();
