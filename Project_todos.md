@@ -97,6 +97,6 @@
 - [x] Changed the public `title.png` shell so the main menu is hidden by default and opens only from a hamburger toggle instead of staying visible in the header.
 - [x] Switched the public brochure typography to gold across dark surfaces, light cards, footer links, form text and CTA labels so the live site now matches the requested black/light/gold color direction.
 - [x] Kept the newer, narrower `title.png` variant in the worktree and reduced its visual aggression through CSS only, shrinking the rendered brand width and restoring more breathing room in the sticky header without reverting the asset itself.
-- [ ] Continue the manager-route cleanup by extracting the remaining `quotes` and `projects/media` sections once the new subrouter split has baked in under tests.
-- [ ] Continue reducing `apps/mobile-v1/App.js` by extracting session/tab shell logic after the new `screens.js`/`styles.js` split stabilises.
+- [x] Finished the next manager-route cleanup wave by extracting the remaining `quotes` and `projects/media` endpoints into dedicated subrouters under `routes/manager/`.
+- [x] Reduced `apps/mobile-v1/App.js` again by extracting the poller scheduler and the session/tab shell UI into dedicated `src` modules, leaving the top-level app as a thinner orchestration layer.
 - [ ] Revisit SonarQube CPD exclusions once `about/contact/gallery/quote/legal` move further into the shared public renderer, so static HTML exclusions can be narrowed again.

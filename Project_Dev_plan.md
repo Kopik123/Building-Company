@@ -138,3 +138,6 @@
 - Added the missing audit-derived backlog items into `Project_todos.md`, including CRM lifecycle, project stages/tasks, durable activity feed, explicit estimate approval flow, shared web/mobile contracts and unifying the public content model.
 - Kept the current narrower `title.png` variant in place and tuned `styles/public.css` instead of reverting the asset, reducing the rendered brand width and adding breathing room so the sticky shell stays calmer even with the tighter crop.
 - Re-ran `npm run test:ci` after the non-destructive `title.png` shell-tuning pass; generated-page verification and the API suite both still passed.
+- Extracted the remaining manager `quotes` and `projects/media` endpoints into `routes/manager/quote-routes.js` and `routes/manager/project-routes.js`, reducing `routes/manager.js` to a thin composition layer around shared helpers and subrouters.
+- Continued slimming `apps/mobile-v1/App.js` by moving the poller scheduler into `apps/mobile-v1/src/usePollerScheduler.js` and the login/tab shell UI into `apps/mobile-v1/src/session-shell.js`.
+- Re-ran `npm run test:ci` after the route/mobile refactor and kept the suite green.

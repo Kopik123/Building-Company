@@ -1,5 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AppState, Pressable, SafeAreaView, ScrollView, Text, TextInput, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
 import { authRequest, request } from './src/api';
 import {
   AccountScreen,
@@ -11,7 +10,8 @@ import {
   QuotesScreen,
   ServiceCatalogueScreen
 } from './src/screens';
-import { styles } from './src/styles';
+import { getTabsForRole, LoggedInShell, LoggedOutScreen } from './src/session-shell';
+import { usePollerScheduler } from './src/usePollerScheduler';
 
 export default function App() {
   const [email, setEmail] = useState('');
@@ -21,99 +21,11 @@ export default function App() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [appState, setAppState] = useState(AppState.currentState);
-  const pollersRef = useRef(new Map());
-  const schedulerTimerRef = useRef(null);
-  const [pollerVersion, setPollerVersion] = useState(0);
 
   const role = String(session.user?.role || 'client').toLowerCase();
   const staffRole = ['employee', 'manager', 'admin'].includes(role);
-
-  const registerPoller = useCallback((baseKey, intervalMs, callback) => {
-    const id = `${baseKey}:${Math.random().toString(36).slice(2)}`;
-    const safeInterval = Math.max(1000, Number(intervalMs) || 1000);
-    pollersRef.current.set(id, {
-      intervalMs: safeInterval,
-      nextRunAt: Date.now() + safeInterval,
-      callback
-    });
-    setPollerVersion((value) => value + 1);
-
-    return () => {
-      pollersRef.current.delete(id);
-      setPollerVersion((value) => value + 1);
-    };
-  }, []);
-
-  const tabs = useMemo(() => {
-    const common = ['account', 'projects', 'quotes', 'inbox', 'notifications', 'services'];
-    if (!staffRole) return common;
-    return [...common, 'crm', 'inventory'];
-  }, [staffRole]);
-
-  useEffect(() => {
-    const subscription = AppState.addEventListener('change', (nextState) => {
-      setAppState(nextState);
-    });
-
-    return () => {
-      subscription.remove();
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!session.accessToken || appState !== 'active') return undefined;
-
-    const clearScheduledPoll = () => {
-      if (schedulerTimerRef.current) {
-        clearTimeout(schedulerTimerRef.current);
-        schedulerTimerRef.current = null;
-      }
-    };
-
-    const scheduleNextPoll = () => {
-      clearScheduledPoll();
-
-      const entries = Array.from(pollersRef.current.values()).filter(Boolean);
-      if (!entries.length) return;
-
-      const now = Date.now();
-      const nextRunAt = entries.reduce((soonest, entry) => {
-        const dueAt = Number(entry.nextRunAt) || now;
-        return Math.min(soonest, dueAt);
-      }, Number.POSITIVE_INFINITY);
-      const delay = Math.max(0, nextRunAt - now);
-
-      schedulerTimerRef.current = setTimeout(() => {
-        schedulerTimerRef.current = null;
-        const runStartedAt = Date.now();
-
-        pollersRef.current.forEach((entry) => {
-          if (!entry || runStartedAt < entry.nextRunAt) return;
-          entry.nextRunAt = runStartedAt + entry.intervalMs;
-          Promise.resolve(entry.callback()).catch(() => {});
-        });
-
-        scheduleNextPoll();
-      }, delay);
-    };
-
-    scheduleNextPoll();
-
-    return () => {
-      clearScheduledPoll();
-    };
-  }, [appState, session.accessToken, pollerVersion]);
-
-  useEffect(() => {
-    if (appState !== 'active') return;
-    const now = Date.now();
-    pollersRef.current.forEach((entry) => {
-      if (!entry) return;
-      entry.nextRunAt = now;
-    });
-    setPollerVersion((value) => value + 1);
-  }, [appState, session.accessToken]);
+  const tabs = getTabsForRole(staffRole);
+  const { registerPoller } = usePollerScheduler(Boolean(session.accessToken));
 
   useEffect(() => {
     if (!session.accessToken) return undefined;
@@ -165,67 +77,58 @@ export default function App() {
     setUnreadCount(0);
   };
 
+  const renderActiveTab = () => {
+    if (activeTab === 'account') {
+      return <AccountScreen user={session.user} unreadCount={unreadCount} />;
+    }
+    if (activeTab === 'projects') {
+      return <ProjectsScreen accessToken={session.accessToken} registerPoller={registerPoller} />;
+    }
+    if (activeTab === 'quotes') {
+      return <QuotesScreen accessToken={session.accessToken} registerPoller={registerPoller} />;
+    }
+    if (activeTab === 'inbox') {
+      return <InboxScreen accessToken={session.accessToken} registerPoller={registerPoller} />;
+    }
+    if (activeTab === 'notifications') {
+      return <NotificationsScreen accessToken={session.accessToken} registerPoller={registerPoller} />;
+    }
+    if (activeTab === 'services') {
+      return <ServiceCatalogueScreen accessToken={session.accessToken} registerPoller={registerPoller} />;
+    }
+    if (activeTab === 'crm' && staffRole) {
+      return <CrmScreen accessToken={session.accessToken} registerPoller={registerPoller} />;
+    }
+    if (activeTab === 'inventory' && staffRole) {
+      return <InventoryScreen accessToken={session.accessToken} registerPoller={registerPoller} />;
+    }
+    return null;
+  };
+
   if (!session.user) {
     return (
-      <SafeAreaView style={styles.screen}>
-        <View style={styles.card}>
-          <Text style={styles.title}>levels+lines Mobile v1</Text>
-          <Text style={styles.subtitle}>Unified mobile panel for all roles.</Text>
-          <TextInput
-            style={styles.input}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            placeholder="email"
-            value={email}
-            onChangeText={setEmail}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="password"
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-          />
-          <Pressable onPress={login} style={styles.button} disabled={loading}>
-            <Text style={styles.buttonText}>{loading ? 'Signing in...' : 'Sign in'}</Text>
-          </Pressable>
-          {error ? <Text style={styles.error}>{error}</Text> : null}
-        </View>
-      </SafeAreaView>
+      <LoggedOutScreen
+        email={email}
+        password={password}
+        loading={loading}
+        error={error}
+        onEmailChange={setEmail}
+        onPasswordChange={setPassword}
+        onLogin={login}
+      />
     );
   }
 
   return (
-    <SafeAreaView style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <View style={styles.card}>
-          <Text style={styles.title}>Role: {role}</Text>
-          <Text style={styles.subtitle}>{session.user.name || session.user.email}</Text>
-          <View style={styles.tabWrap}>
-            {tabs.map((tab) => (
-              <Pressable
-                key={tab}
-                style={[styles.tabBtn, activeTab === tab ? styles.tabBtnActive : null]}
-                onPress={() => setActiveTab(tab)}
-              >
-                <Text style={styles.tabText}>{tab}</Text>
-              </Pressable>
-            ))}
-          </View>
-          <Pressable onPress={logout} style={styles.buttonSecondary}>
-            <Text style={styles.buttonText}>Logout</Text>
-          </Pressable>
-        </View>
-
-        {activeTab === 'account' ? <AccountScreen user={session.user} unreadCount={unreadCount} /> : null}
-        {activeTab === 'projects' ? <ProjectsScreen accessToken={session.accessToken} registerPoller={registerPoller} /> : null}
-        {activeTab === 'quotes' ? <QuotesScreen accessToken={session.accessToken} registerPoller={registerPoller} /> : null}
-        {activeTab === 'inbox' ? <InboxScreen accessToken={session.accessToken} registerPoller={registerPoller} /> : null}
-        {activeTab === 'notifications' ? <NotificationsScreen accessToken={session.accessToken} registerPoller={registerPoller} /> : null}
-        {activeTab === 'services' ? <ServiceCatalogueScreen accessToken={session.accessToken} registerPoller={registerPoller} /> : null}
-        {activeTab === 'crm' && staffRole ? <CrmScreen accessToken={session.accessToken} registerPoller={registerPoller} /> : null}
-        {activeTab === 'inventory' && staffRole ? <InventoryScreen accessToken={session.accessToken} registerPoller={registerPoller} /> : null}
-      </ScrollView>
-    </SafeAreaView>
+    <LoggedInShell
+      role={role}
+      user={session.user}
+      tabs={tabs}
+      activeTab={activeTab}
+      onTabChange={setActiveTab}
+      onLogout={logout}
+    >
+      {renderActiveTab()}
+    </LoggedInShell>
   );
 }
