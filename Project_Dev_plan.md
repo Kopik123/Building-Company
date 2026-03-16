@@ -175,3 +175,5 @@
 - Extended `site.js` so homepage menu items and in-card buttons can switch the active homepage card in place through `data-home-card-target` / `data-home-card-trigger`, while keeping the real page routes as fallback links for non-home navigation.
 - Added new homepage-only styling in `styles/public.css` so the desktop header now reads like a large brand board plus stacked login/menu controls, while the new single-card stage stays responsive and collapses cleanly on tablets and phones.
 - Updated `tests/playwright/public-redesign.spec.js` to reflect the new homepage card-board behaviour instead of the older long-scroll section assumptions.
+- Tightened the single-card homepage after live/local review by widening the desktop centre card, narrowing both side rails, reducing the visible service/location item counts, and moving the active centre card ahead of the side rails on mobile so the first screen stays useful on phones.
+- Reworked the mobile homepage header so the `title.png` board takes a full row above the auth/menu controls, improving proportions and making the top of the page read more like the wireframe instead of a tiny compressed shell.

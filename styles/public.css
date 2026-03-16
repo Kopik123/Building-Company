@@ -2360,7 +2360,7 @@ body.public-site .site-footer a {
 
 .home-card-stage-grid {
   display: grid;
-  grid-template-columns: minmax(14rem, 0.88fr) minmax(0, 1.9fr) minmax(14rem, 0.88fr);
+  grid-template-columns: minmax(12.5rem, 0.74fr) minmax(0, 2.2fr) minmax(12.5rem, 0.74fr);
   gap: 1rem;
   align-items: stretch;
 }
@@ -2687,7 +2687,7 @@ body.public-site .site-footer a {
 
 @media (max-width: 1200px) {
   .home-card-stage-grid {
-    grid-template-columns: minmax(12rem, 0.8fr) minmax(0, 1.65fr) minmax(12rem, 0.8fr);
+    grid-template-columns: minmax(11rem, 0.7fr) minmax(0, 2fr) minmax(11rem, 0.7fr);
   }
 }
 
@@ -2704,12 +2704,64 @@ body.public-site .site-footer a {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .home-card-center {
+    order: 1;
+  }
+
+  .home-card-sidebar--services {
+    order: 2;
+  }
+
+  .home-card-sidebar--locations {
+    order: 3;
+  }
+
+  .home-card-rail,
+  .home-card-chip-rail {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .home-card-contact-strip {
     text-align: left;
   }
 }
 
 @media (max-width: 768px) {
+  .page-home .site-header--public-shell .public-shell-header {
+    grid-template-columns: 1fr;
+    gap: 0.65rem;
+  }
+
+  .page-home .site-header--public-shell .public-brand-board {
+    width: 100%;
+    border: 1px solid rgba(172, 135, 76, 0.54);
+    border-radius: 22px;
+    background: linear-gradient(180deg, #fbf5e8 0%, #efe5cf 100%);
+    box-shadow: var(--ll-shadow-premium), 0 10px 20px rgba(0, 0, 0, 0.18);
+  }
+
+  .page-home .site-header--public-shell .public-brand-link {
+    justify-content: center;
+    padding: 0.75rem 0.85rem;
+  }
+
+  .page-home .site-header--public-shell .public-brand-picture {
+    width: min(100%, 15rem);
+  }
+
+  .page-home .site-header--public-shell .public-shell-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+    gap: 0.55rem;
+  }
+
+  .page-home .public-auth-toggle,
+  .page-home .public-menu-toggle {
+    width: 100%;
+    justify-content: center;
+  }
+
   .home-card-stage {
     padding-top: 1.1rem;
   }
@@ -2720,6 +2772,11 @@ body.public-site .site-footer a {
   }
 
   .home-card-preview-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .home-card-rail,
+  .home-card-chip-rail {
     grid-template-columns: 1fr;
   }
 
