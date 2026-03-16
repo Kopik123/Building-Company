@@ -26,7 +26,7 @@
   <link rel="stylesheet" href="/styles/workspace.css" />
   <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"CollectionPage","name":"Gallery | Level Lines Studio","url":"https://levellines.co.uk/gallery.html","description":"Selected case studies and project imagery from Level Lines Studio."},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://levellines.co.uk/"},{"@type":"ListItem","position":2,"name":"Gallery","item":"https://levellines.co.uk/gallery.html"}]}]}</script>
 </head>
-<body class="public-site page-gallery">
+<body class="public-site page-gallery" data-gallery-source="services">
   <header class="site-header site-header--public-shell" id="top">
     <div class="container public-shell-header">
       <div class="public-brand-board">
@@ -84,13 +84,13 @@
       <div class="container page-intro-grid">
         <article class="content-card content-card--light">
           <p class="section-eyebrow">Gallery</p>
-          <h1>Selected projects, finish details and case-study viewing without homepage clutter.</h1>
-          <p class="section-lead">The gallery is now one dedicated route. That keeps the rest of the site cleaner while still making project quality visible for clients who need proof before sending a quote.</p>
+          <h1>Completed work grouped by service so clients can browse bathrooms, kitchens and interiors more clearly.</h1>
+          <p class="section-lead">The gallery now reads from service folders. That keeps browsing simpler, makes updates easier and gives each service its own image set without mixing everything into one flat stream.</p>
         </article>
         <aside class="content-card content-card--dark">
           <p class="section-eyebrow">Viewing logic</p>
-          <h2>Pick a project first, then read the image sequence.</h2>
-          <p class="hero-aside-copy">Bathrooms, kitchens and detail studies all sit inside one consistent gallery shell so the browsing experience feels calm and intentional.</p>
+          <h2>Pick a service first, then open any image fullscreen.</h2>
+          <p class="hero-aside-copy">Bathrooms, kitchens, interiors and exteriors now sit inside one clearer service-led gallery shell, with fullscreen viewing on every image.</p>
         </aside>
       </div>
     </section>
@@ -99,9 +99,9 @@
       <div class="container">
         <div class="gallery-layout">
           <article class="content-card content-card--light gallery-stage-shell" id="gallery">
-            <p class="section-eyebrow">Selected project</p>
+            <p class="section-eyebrow">Selected service</p>
             <h2 data-gallery-active-image-title>Selected image</h2>
-            <p class="section-lead">The gallery is framed as case-study viewing, not a random slider. Start with the project strip, then read the image sequence.</p>
+            <p class="section-lead">Start with the service rail, then click any image to view it fullscreen.</p>
             <div class="gallery-roller studio-gallery-roller" data-gallery-roller data-motion-profile="subtle">
               <button class="gallery-arrow studio-gallery-arrow" type="button" data-gallery-prev aria-label="Previous photo">&#10094;</button>
               <div class="gallery-stage studio-gallery-stage" data-gallery-stage aria-live="polite"></div>
@@ -110,16 +110,15 @@
             <div class="page-actions"><a class="btn-outline-gold" href="/quote.html">Request Private Consultation</a></div>
           </article>
           <aside class="content-card content-card--dark gallery-sidebar-shell" id="projects">
-            <p class="section-eyebrow">Project rail</p>
-            <h2 data-gallery-active-project-title>Bathrooms - Didsbury</h2>
-            <p class="page-aside-copy" data-gallery-active-project-meta>Move through each case study to compare geometry, palette and finishing discipline.</p>
-            <button class="project-rail-nav project-rail-nav--up" type="button" data-gallery-project-prev aria-label="Previous project">&#8593;</button>
-            <div class="gallery-project-strip studio-project-strip" data-gallery-projects aria-label="Project selection"></div>
-            <button class="project-rail-nav project-rail-nav--down" type="button" data-gallery-project-next aria-label="Next project">&#8595;</button>
+            <p class="section-eyebrow">Service rail</p>
+            <h2 data-gallery-active-project-title>Bathrooms</h2>
+            <p class="page-aside-copy" data-gallery-active-project-meta>Move through each service set to compare finish quality, detailing and installation discipline.</p>
+            <button class="project-rail-nav project-rail-nav--up" type="button" data-gallery-project-prev aria-label="Previous service">&#8593;</button>
+            <div class="gallery-project-strip studio-project-strip" data-gallery-projects aria-label="Service selection"></div>
+            <button class="project-rail-nav project-rail-nav--down" type="button" data-gallery-project-next aria-label="Next service">&#8595;</button>
             <p class="gallery-status studio-gallery-status" data-gallery-status aria-live="polite"></p>
           </aside>
         </div>
-        <script type="application/json" data-gallery-projects-json>[{"name":"Bathrooms - Didsbury","images":[{"src":"/Gallery/premium/bathroom-main.jpg","label":"Bathroom axis overview"},{"src":"/Gallery/premium/bathroom-bathtub.jpg","label":"Bath line and brass detail"},{"src":"/Gallery/premium/bathroom-tiles.jpg","label":"Wet-room tile geometry"}]},{"name":"Kitchens - Altrincham","images":[{"src":"/Gallery/premium/kitchen-panorama-main.jpg","label":"Kitchen run overview"},{"src":"/Gallery/premium/kitchen-panorama-left.jpg","label":"Left elevation and storage line"},{"src":"/Gallery/premium/kitchen-panorama-right.jpg","label":"Right elevation and finish line"}]},{"name":"Exterior Craft - Wilmslow","images":[{"src":"/Gallery/premium/exterior-front.jpg","label":"Facade alignment overview"},{"src":"/Gallery/premium/exterior-chimney.jpg","label":"Chimney stack detail"},{"src":"/Gallery/premium/exterior-wood-gables.jpg","label":"Timber gable rhythm"}]},{"name":"Stone Detail - Chorlton","images":[{"src":"/Gallery/premium/brick-dark-main.jpg","label":"Stone surface overview"},{"src":"/Gallery/premium/brick-detail-charcoal.jpg","label":"Charcoal bond detail"},{"src":"/Gallery/premium/brick-detail-red.jpg","label":"Red bond detail"}]}]</script>
       </div>
     </section>
 

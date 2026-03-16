@@ -1950,6 +1950,100 @@ body.public-site.page-home::before {
   min-height: 16rem;
 }
 
+body.gallery-lightbox-open {
+  overflow: hidden;
+}
+
+.gallery-stage .roller-card,
+.studio-gallery-stage .roller-card {
+  cursor: zoom-in;
+}
+
+.gallery-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  display: grid;
+  place-items: center;
+}
+
+.gallery-lightbox[hidden] {
+  display: none;
+}
+
+.gallery-lightbox-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.88);
+  backdrop-filter: blur(10px);
+}
+
+.gallery-lightbox-dialog {
+  position: relative;
+  z-index: 1;
+  width: min(92vw, 1100px);
+  max-height: 88vh;
+  padding: 1rem;
+  border: 1px solid rgba(172, 135, 76, 0.54);
+  border-radius: 24px;
+  background:
+    linear-gradient(180deg, rgba(14, 14, 14, 0.98), rgba(6, 6, 6, 0.99));
+  box-shadow: var(--ll-shadow-premium), 0 20px 48px rgba(0, 0, 0, 0.54);
+}
+
+.gallery-lightbox-close {
+  position: absolute;
+  top: 0.8rem;
+  right: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.8rem;
+  height: 2.8rem;
+  border: 1px solid rgba(172, 135, 76, 0.58);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--ll-text-on-dark);
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.gallery-lightbox-figure {
+  display: grid;
+  gap: 0.8rem;
+  margin: 0;
+}
+
+.gallery-lightbox-image,
+.gallery-lightbox-picture,
+.gallery-lightbox-photo {
+  width: 100%;
+}
+
+.gallery-lightbox-image {
+  display: grid;
+  place-items: center;
+}
+
+.gallery-lightbox-picture {
+  display: block;
+}
+
+.gallery-lightbox-photo {
+  display: block;
+  max-height: calc(88vh - 7rem);
+  object-fit: contain;
+  border-radius: 18px;
+}
+
+.gallery-lightbox-caption {
+  color: rgba(219, 201, 166, 0.88);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .cta-band {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -2105,6 +2199,28 @@ body.public-site.page-home::before {
   .content-card {
     border-radius: 22px;
     padding: 1rem;
+  }
+
+  .gallery-lightbox-dialog {
+    width: min(94vw, 1100px);
+    padding: 0.75rem;
+    border-radius: 18px;
+  }
+
+  .gallery-lightbox-close {
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 2.4rem;
+    height: 2.4rem;
+  }
+
+  .gallery-lightbox-photo {
+    max-height: calc(88vh - 6rem);
+  }
+
+  .gallery-lightbox-caption {
+    font-size: 0.7rem;
+    line-height: 1.45;
   }
 }
 

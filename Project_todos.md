@@ -40,6 +40,7 @@
 - [ ] Consolidate manual public pages and generated SEO pages onto one content model/source so brochure copy, metadata, FAQ and CTA logic stop drifting.
 - [ ] Create a shared web/mobile contract layer for auth/session, project summaries, thread summaries, notifications and estimate state before expanding mobile-v1 further.
 - [ ] Re-check live readability/contrast after the public-site all-gold typography pass; keep the black/light/gold direction, but verify the chosen gold remains readable on light cards and form surfaces.
+- [ ] Fold the new folder-based `Gallery/<service>/` image sets into the `sharp` asset pipeline later so fullscreen/service gallery views can use responsive AVIF/WebP variants instead of copied JPG-only source files.
 - [x] Consolidated the historical `Plans/` documents and `Plan History` into one root-level `todosv2.md` so planning no longer lives across many overlapping markdown files.
 - [x] Change `/api/manager/projects` so list responses default to `includeMedia=false`, returning counts or cover data instead of full media collections.
 - [x] Reduce the expensive manager project search path by narrowing or separating the current broad `LOWER(... LIKE %...%)` filters across joined tables.
@@ -52,6 +53,8 @@
 - [x] Remove the duplicated `Open Account` and `Auth Page` wording from the UI and standardise session-aware labels to `Login`, `Account`, `Account Settings` and `Log out`.
 - [x] Centralise guest/authenticated header logic in `site.js` so public pages, `auth.html` and both workspace dashboards now follow the same visibility rules for login, account and logout controls.
 - [x] Add consistent protected-route redirects so guests are sent to `/auth.html?next=...&reason=session` and wrong-role workspace visits route back to the correct dashboard.
+- [x] Reworked the public gallery model so homepage and `gallery.html` now read service-grouped image sets from `Gallery/<service>/` folders instead of one mixed inline project payload.
+- [x] Added fullscreen image viewing to the shared gallery runtime so clicking a gallery image opens a closable overlay without breaking the existing generated service/location case-study pages.
 
 ## Completed
 

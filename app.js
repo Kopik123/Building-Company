@@ -50,6 +50,7 @@ const setStaticCacheHeaders = (res, filePath) => {
 
 const createApp = () => {
   const app = express();
+  app.locals.galleryPath = path.join(__dirname, 'Gallery');
   const allowedOrigins = String(process.env.CORS_ORIGINS || '')
     .split(',')
     .map((origin) => origin.trim())
@@ -120,7 +121,7 @@ const createApp = () => {
   app.use('/api/v2', apiV2Routes);
   app.use('/api', publicRoutes);
   app.use('/api/gallery', legacyGalleryRoutes({
-    galleryPath: path.join(__dirname, 'Gallery')
+    galleryPath: app.locals.galleryPath
   }));
   app.use('/api/contact', contactRoutes());
 

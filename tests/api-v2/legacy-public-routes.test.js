@@ -112,6 +112,71 @@ test('legacy /api/gallery falls back to filesystem images when no managed projec
   });
 });
 
+test('legacy /api/gallery/services returns service folders grouped by service name', async () => {
+  mockModels(createGalleryModelsStub([]));
+  mock('fs', {
+    promises: {
+      async readdir(targetPath, options) {
+        if (String(targetPath).endsWith('\\Gallery') && options?.withFileTypes) {
+          return [
+            { name: 'premium', isDirectory: () => true },
+            { name: 'bathrooms', isDirectory: () => true },
+            { name: 'kitchens', isDirectory: () => true }
+          ];
+        }
+
+        if (String(targetPath).endsWith('\\Gallery\\bathrooms')) {
+          return ['primary-suite-overview.jpg', 'wet-room-tile-geometry.jpg'];
+        }
+
+        if (String(targetPath).endsWith('\\Gallery\\kitchens')) {
+          return ['finish-right-run.jpg'];
+        }
+
+        return [];
+      }
+    }
+  });
+
+  loadRoute('utils/publicGallery.js');
+  const createLegacyGalleryRouter = loadRoute('routes/gallery.js');
+  const app = buildExpressApp('/api/gallery', createLegacyGalleryRouter({ galleryPath: 'C:\\fake\\Gallery' }));
+
+  const response = await request(app)
+    .get('/api/gallery/services')
+    .expect(200);
+
+  assert.equal(response.headers['x-cache'], 'MISS');
+  assert.deepEqual(response.body, {
+    services: [
+      {
+        id: 'bathrooms',
+        name: 'Bathrooms',
+        images: [
+          {
+            src: '/Gallery/bathrooms/primary-suite-overview.jpg',
+            label: 'Primary Suite Overview'
+          },
+          {
+            src: '/Gallery/bathrooms/wet-room-tile-geometry.jpg',
+            label: 'Wet Room Tile Geometry'
+          }
+        ]
+      },
+      {
+        id: 'kitchens',
+        name: 'Kitchens',
+        images: [
+          {
+            src: '/Gallery/kitchens/finish-right-run.jpg',
+            label: 'Finish Right Run'
+          }
+        ]
+      }
+    ]
+  });
+});
+
 test('legacy /api/contact sends email for a valid enquiry', async () => {
   let transporterConfig = null;
   let sentMail = null;

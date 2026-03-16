@@ -55,46 +55,85 @@
   const imageTitleNode = document.querySelector('[data-gallery-active-image-title]');
   const projectTitleNode = document.querySelector('[data-gallery-active-project-title]');
   const projectMetaNode = document.querySelector('[data-gallery-active-project-meta]');
+  const gallerySource = String(document.body?.dataset?.gallerySource || 'projects').trim().toLowerCase() === 'services'
+    ? 'services'
+    : 'projects';
 
   if (!roller || !stage || !projectStrip || !prevButton || !nextButton) return;
   roller.setAttribute('tabindex', '0');
   projectStrip.setAttribute('tabindex', '0');
 
-  const defaultProjects = [
-    {
-      name: 'Bathrooms - Didsbury',
-      images: [
-        '/Gallery/premium/bathroom-main.jpg',
-        '/Gallery/premium/bathroom-bathtub.jpg',
-        '/Gallery/premium/bathroom-tiles.jpg'
-      ]
-    },
-    {
-      name: 'Kitchens - Altrincham',
-      images: [
-        '/Gallery/premium/kitchen-panorama-main.jpg',
-        '/Gallery/premium/kitchen-panorama-left.jpg',
-        '/Gallery/premium/kitchen-panorama-right.jpg'
-      ]
-    },
-    {
-      name: 'Exterior Craft - Wilmslow',
-      images: [
-        '/Gallery/premium/exterior-front.jpg',
-        '/Gallery/premium/exterior-chimney.jpg',
-        '/Gallery/premium/exterior-wood-gables.jpg'
-      ]
-    },
-    {
-      name: 'Stone Detail - Chorlton',
-      images: [
-        '/Gallery/premium/brick-dark-main.jpg',
-        '/Gallery/premium/brick-detail-charcoal.jpg',
-        '/Gallery/premium/brick-detail-red.jpg'
-      ]
-    }
-  ];
-  let projects = defaultProjects.slice();
+  const defaultCollectionsBySource = {
+    projects: [
+      {
+        name: 'Bathrooms - Didsbury',
+        images: [
+          '/Gallery/premium/bathroom-main.jpg',
+          '/Gallery/premium/bathroom-bathtub.jpg',
+          '/Gallery/premium/bathroom-tiles.jpg'
+        ]
+      },
+      {
+        name: 'Kitchens - Altrincham',
+        images: [
+          '/Gallery/premium/kitchen-panorama-main.jpg',
+          '/Gallery/premium/kitchen-panorama-left.jpg',
+          '/Gallery/premium/kitchen-panorama-right.jpg'
+        ]
+      },
+      {
+        name: 'Exterior Craft - Wilmslow',
+        images: [
+          '/Gallery/premium/exterior-front.jpg',
+          '/Gallery/premium/exterior-chimney.jpg',
+          '/Gallery/premium/exterior-wood-gables.jpg'
+        ]
+      },
+      {
+        name: 'Stone Detail - Chorlton',
+        images: [
+          '/Gallery/premium/brick-dark-main.jpg',
+          '/Gallery/premium/brick-detail-charcoal.jpg',
+          '/Gallery/premium/brick-detail-red.jpg'
+        ]
+      }
+    ],
+    services: [
+      {
+        name: 'Bathrooms',
+        images: [
+          { src: '/Gallery/bathrooms/primary-suite-overview.jpg', label: 'Primary suite overview' },
+          { src: '/Gallery/bathrooms/freestanding-bath-detail.jpg', label: 'Freestanding bath detail' },
+          { src: '/Gallery/bathrooms/wet-room-tile-geometry.jpg', label: 'Wet-room tile geometry' }
+        ]
+      },
+      {
+        name: 'Kitchens',
+        images: [
+          { src: '/Gallery/kitchens/island-overview.jpg', label: 'Island overview' },
+          { src: '/Gallery/kitchens/joinery-left-run.jpg', label: 'Joinery left run' },
+          { src: '/Gallery/kitchens/finish-right-run.jpg', label: 'Finish right run' }
+        ]
+      },
+      {
+        name: 'Interiors',
+        images: [
+          { src: '/Gallery/interiors/material-surface-overview.jpg', label: 'Material surface overview' },
+          { src: '/Gallery/interiors/charcoal-finish-detail.jpg', label: 'Charcoal finish detail' },
+          { src: '/Gallery/interiors/warm-finish-detail.jpg', label: 'Warm finish detail' }
+        ]
+      },
+      {
+        name: 'Exteriors',
+        images: [
+          { src: '/Gallery/exteriors/front-elevation-overview.jpg', label: 'Front elevation overview' },
+          { src: '/Gallery/exteriors/chimney-detail.jpg', label: 'Chimney detail' },
+          { src: '/Gallery/exteriors/timber-gable-detail.jpg', label: 'Timber gable detail' }
+        ]
+      }
+    ]
+  };
+  let projects = [];
 
   const MOTION_PROFILES = {
     subtle: {
@@ -174,6 +213,10 @@
     chips: []
   };
 
+  let lightboxRoot = null;
+  let lightboxImageHost = null;
+  let lightboxCaption = null;
+
   const toTitleCase = (value) =>
     String(value || '')
       .split(' ')
@@ -187,9 +230,16 @@
     return toTitleCase(base.replace(/[-_]+/g, ' ')) || 'Selected image';
   };
 
-  const levelLabel = (index) => `Level ${String(index + 1).padStart(2, '0')}`;
+  const levelLabel = (index) => `${gallerySource === 'services' ? 'Service' : 'Level'} ${String(index + 1).padStart(2, '0')}`;
 
   const splitProjectName = (value) => {
+    if (gallerySource === 'services') {
+      return {
+        title: String(value || 'Service'),
+        subtitle: 'Completed work gallery'
+      };
+    }
+
     const parts = String(value || '')
       .split(/\s+-\s+/)
       .map((part) => part.trim())
@@ -300,6 +350,22 @@
     }
   };
 
+  const loadServiceCollections = async () => {
+    try {
+      const response = await fetch('/api/gallery/services', { headers: { Accept: 'application/json' } });
+      if (!response.ok) return;
+
+      const payload = await response.json().catch(() => ({}));
+      const serviceCollections = normalizeProjects(payload.services);
+
+      if (serviceCollections.length) {
+        projects = serviceCollections;
+      }
+    } catch (error) {
+      // Keep static fallback when API is unavailable.
+    }
+  };
+
   const loadInlineProjects = () => {
     const node = document.querySelector('[data-gallery-projects-json]');
     if (!node) return false;
@@ -339,6 +405,68 @@
     if (statusNode) {
       statusNode.textContent = `${levelLabel(state.projectIndex)} / ${project.name} / ${imageItem?.label || `Photo ${centeredIndex + 1}`} / photo ${centeredIndex + 1} of ${total}`;
     }
+  };
+
+  const ensureLightbox = () => {
+    if (lightboxRoot) return lightboxRoot;
+
+    lightboxRoot = document.createElement('div');
+    lightboxRoot.className = 'gallery-lightbox';
+    lightboxRoot.hidden = true;
+    lightboxRoot.setAttribute('aria-hidden', 'true');
+    lightboxRoot.innerHTML = `
+      <div class="gallery-lightbox-backdrop" data-gallery-lightbox-close></div>
+      <div class="gallery-lightbox-dialog" role="dialog" aria-modal="true" aria-label="Gallery image fullscreen view">
+        <button class="gallery-lightbox-close" type="button" data-gallery-lightbox-close aria-label="Close fullscreen image">&times;</button>
+        <figure class="gallery-lightbox-figure">
+          <div class="gallery-lightbox-image" data-gallery-lightbox-image></div>
+          <figcaption class="gallery-lightbox-caption" data-gallery-lightbox-caption></figcaption>
+        </figure>
+      </div>
+    `;
+
+    document.body.appendChild(lightboxRoot);
+    lightboxImageHost = lightboxRoot.querySelector('[data-gallery-lightbox-image]');
+    lightboxCaption = lightboxRoot.querySelector('[data-gallery-lightbox-caption]');
+
+    lightboxRoot.querySelectorAll('[data-gallery-lightbox-close]').forEach((node) => {
+      node.addEventListener('click', () => closeLightbox());
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && lightboxRoot && !lightboxRoot.hidden) {
+        closeLightbox();
+      }
+    });
+
+    return lightboxRoot;
+  };
+
+  const closeLightbox = () => {
+    if (!lightboxRoot || lightboxRoot.hidden) return;
+    lightboxRoot.hidden = true;
+    lightboxRoot.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('gallery-lightbox-open');
+  };
+
+  const openLightbox = (imageItem, project, imageIndex) => {
+    if (!imageItem || !project) return;
+    ensureLightbox();
+
+    const picture = createResponsivePicture(imageItem.media, {
+      alt: `${project.name} - ${imageItem.label}`,
+      className: 'gallery-lightbox-picture',
+      imgClassName: 'gallery-lightbox-photo',
+      loading: 'eager'
+    });
+
+    lightboxImageHost.innerHTML = '';
+    lightboxImageHost.appendChild(picture);
+    lightboxCaption.textContent = `${project.name} | ${imageItem.label} | Photo ${imageIndex + 1} of ${project.images.length}`;
+
+    lightboxRoot.hidden = false;
+    lightboxRoot.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('gallery-lightbox-open');
   };
 
   const stopAnimation = () => {
@@ -467,6 +595,23 @@
       createNode: () => {
         const card = document.createElement('article');
         card.className = 'roller-card is-hidden';
+        card.tabIndex = 0;
+        card.setAttribute('role', 'button');
+        card.setAttribute('aria-label', 'Open image fullscreen');
+        const openCurrentCard = () => {
+          const project = currentProject();
+          if (!project) return;
+          const cardIndex = Number(card.dataset.index || 0);
+          const imageItem = project.images[cardIndex];
+          openLightbox(imageItem, project, cardIndex);
+        };
+        card.addEventListener('click', openCurrentCard);
+        card.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            openCurrentCard();
+          }
+        });
 
         const caption = document.createElement('p');
         caption.className = 'roller-caption';
@@ -475,6 +620,7 @@
       },
       updateNode: (card, imageItem, index) => {
         card.dataset.index = String(index);
+        card.setAttribute('aria-label', `Open ${imageItem.label} fullscreen`);
         const mediaKey = imageItem.src || imageItem.media?.fallback || `${project.name}-${index}`;
         const picture = createResponsivePicture(imageItem.media, {
           alt: `${project.name} - ${imageItem.label}`,
@@ -542,7 +688,7 @@
         const projectName = splitProjectName(project.name);
         const mediaKey = project.images[0]?.src || project.images[0]?.media?.fallback || `${project.name}-${index}`;
         button.dataset.projectIndex = String(index);
-        button.setAttribute('aria-label', `Show project ${project.name}`);
+        button.setAttribute('aria-label', `Show ${gallerySource === 'services' ? 'service' : 'project'} ${project.name}`);
 
         const picture = createResponsivePicture(project.images[0].media, {
           alt: `${project.name} thumbnail`,
@@ -628,11 +774,15 @@
   });
 
   const init = async () => {
-    projects = normalizeProjects(defaultProjects);
+    projects = normalizeProjects(defaultCollectionsBySource[gallerySource] || defaultCollectionsBySource.projects);
     const hasInlineProjects = loadInlineProjects();
 
     if (!hasInlineProjects) {
-      await loadManagedProjects();
+      if (gallerySource === 'services') {
+        await loadServiceCollections();
+      } else {
+        await loadManagedProjects();
+      }
     }
 
     if (!projects.length) {

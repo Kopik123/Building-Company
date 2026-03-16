@@ -32,7 +32,7 @@ router.use('/notifications', notificationsRoutes);
 router.use('/inventory', inventoryRoutes);
 
 // Public endpoints mounted on v2 root:
-// /api/v2/services, /api/v2/gallery/projects
+// /api/v2/services, /api/v2/gallery/projects, /api/v2/gallery/services
 router.use('/', publicRoutes);
 
 router.use((req, res) => fail(res, 404, 'route_not_found', 'API v2 route not found'));

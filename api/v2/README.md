@@ -19,6 +19,7 @@ Unified API contract for web v2 and mobile v1.
 - `DELETE /api/v2/devices/push-token/:id`
 - `GET /api/v2/services`
 - `GET /api/v2/gallery/projects`
+- `GET /api/v2/gallery/services`
 - `GET /api/v2/crm/clients`
 - `GET /api/v2/crm/staff`
 - `GET /api/v2/projects`
