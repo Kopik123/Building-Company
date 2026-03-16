@@ -612,14 +612,18 @@
 .public-site .section-shell,
 .public-site .detail-card,
 .public-site .faq-grid details {
-  background: linear-gradient(165deg, rgba(12, 12, 12, 0.98), rgba(5, 5, 5, 0.98));
+  background:
+    linear-gradient(165deg, rgba(12, 12, 12, 0.94), rgba(5, 5, 5, 0.98)),
+    url('/boxbackground.png') center center / cover no-repeat;
 }
 
 .page-home .content-card--light,
 .page-home .content-card--dark,
 .page-home .cta-band,
 .page-home .quote-form {
-  background: linear-gradient(165deg, rgba(12, 12, 12, 0.98), rgba(5, 5, 5, 0.98));
+  background:
+    linear-gradient(165deg, rgba(12, 12, 12, 0.94), rgba(5, 5, 5, 0.98)),
+    url('/boxbackground.png') center center / cover no-repeat;
 }
 
 .public-site .section-eyebrow,
