@@ -39,7 +39,7 @@ const mockPublicClientSession = async (page) => {
   });
 };
 
-test('homepage renders the quote-first shell, service hub and section flow', async ({ page }) => {
+test('homepage renders a single menu-driven card stage with side rails', async ({ page }) => {
   await page.goto('/index.html');
 
   await expect(page.locator('body.public-site.page-home')).toBeVisible();
@@ -47,13 +47,12 @@ test('homepage renders the quote-first shell, service hub and section flow', asy
   await expect(page.locator('.site-header--public-shell [data-inline-login-form]')).toBeVisible();
   await expect(page.locator('.site-header--public-shell .public-menu-toggle')).toBeVisible();
   await expect(page.locator('.site-header--public-shell [data-nav-menu]')).toBeHidden();
-  await expect(page.locator('main h1').first()).toContainText(/premium bathrooms, kitchens and interiors/i);
-  await expect(page.locator('#projects')).toBeVisible();
-  await expect(page.locator('#gallery')).toBeVisible();
-  await expect(page.locator('#services')).toBeVisible();
-  await expect(page.locator('#contact')).toBeVisible();
-  await expect(page.locator('#quote')).toBeVisible();
-  await expect(page.locator('.gallery-stage picture img').first()).toBeVisible();
+  await expect(page.locator('[data-home-card-shell]')).toBeVisible();
+  await expect(page.locator('[data-home-card-status]')).toContainText(/home/i);
+  await expect(page.locator('main h1').first()).toContainText(/one focused studio card at a time/i);
+  await expect(page.locator('.home-card-sidebar--services')).toBeVisible();
+  await expect(page.locator('.home-card-sidebar--locations')).toBeVisible();
+  await expect(page.locator('.home-card-contact-strip')).toBeVisible();
   await openNavIfNeeded(page);
   await expect(page.locator('[data-nav-menu] a[href="/index.html"]')).toBeVisible();
   await expect(page.locator('[data-nav-menu] a[href="/about.html"]')).toBeVisible();
@@ -62,6 +61,9 @@ test('homepage renders the quote-first shell, service hub and section flow', asy
   await expect(page.locator('[data-nav-menu] a[href="/quote.html"]')).toBeVisible();
   await expect(page.locator('[data-nav-menu] a[href="/contact.html"]')).toBeVisible();
   await expect(page.locator('[data-nav-menu] a[href="/auth.html"]')).toContainText(/^account$/i);
+  await page.locator('[data-nav-menu] a[href="/quote.html"]').click();
+  await expect(page.locator('[data-home-card-status]')).toContainText(/quote/i);
+  await expect(page.locator('.home-card-quote-form')).toBeVisible();
   await expect(page.locator('[data-inline-login-form] input[name="email"]')).toBeVisible();
   await expect(page.locator('[data-inline-login-form] input[name="password"]')).toBeVisible();
   await expectNoHorizontalScroll(page);
@@ -99,8 +101,9 @@ test('authenticated public shell hides login-only controls and keeps one account
   await expect(page.locator('[data-inline-session]')).toBeVisible();
   await expect(page.locator('[data-inline-logout]')).toBeVisible();
   await expect(page.locator('text=Open Account')).toHaveCount(0);
+  await openNavIfNeeded(page);
   await expect(page.locator('[data-nav-menu] [data-auth-link]')).toHaveAttribute('href', '/client-dashboard.html');
-  await expect(page.locator('a.btn-outline-gold[data-auth-link]').first()).toHaveText(/account/i);
+  await expect(page.locator('[data-nav-menu] [data-auth-link]')).toContainText(/^account$/i);
 });
 
 test('service, location and legal pages keep the same shell and SEO contact path', async ({ page }) => {

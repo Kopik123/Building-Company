@@ -171,3 +171,7 @@
 - Updated `index.html`, `gallery.html`, `styles/public.css`, `api/v2/README.md`, and the legacy/v2 gallery tests to reflect the new service-led gallery wording, overlay styling and API surface.
 - Re-ran `node --check` on the touched runtime/API/test files and `cmd /c npm run test:ci`; both the generated-page verification and API suite passed after the folder-based gallery/fullscreen rollout.
 - Removed `Project_Web_Design_Plan.md` to clear the previous visual-direction brief before planning the next site redesign from a clean baseline, and updated `Project_todos.md` to track the replacement source-of-truth document instead.
+- Rebuilt `index.html` from a stacked multi-section homepage into one menu-driven card stage: fixed service rail on the left, one central active card selected from the menu, fixed location rail on the right, and a lower studio contact strip inspired by the new wireframe direction.
+- Extended `site.js` so homepage menu items and in-card buttons can switch the active homepage card in place through `data-home-card-target` / `data-home-card-trigger`, while keeping the real page routes as fallback links for non-home navigation.
+- Added new homepage-only styling in `styles/public.css` so the desktop header now reads like a large brand board plus stacked login/menu controls, while the new single-card stage stays responsive and collapses cleanly on tablets and phones.
+- Updated `tests/playwright/public-redesign.spec.js` to reflect the new homepage card-board behaviour instead of the older long-scroll section assumptions.

@@ -26,7 +26,7 @@
   <link rel="stylesheet" href="/styles/workspace.css" />
   <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"LocalBusiness","@id":"https://levellines.co.uk/#business","name":"Level Lines Studio","url":"https://levellines.co.uk/","image":["https://levellines.co.uk/assets/optimized/brand/title.png","https://levellines.co.uk/Gallery/premium/brick-dark-main.jpg"],"telephone":["+44 7942 874 446","+44 7304 506 391"],"email":"LevelLineStudioMCR@gmail.com","areaServed":["North West - Lancashire","Manchester","Liverpool","Preston","Rochdale","Oldham","Macclesfield","Stockport","Northwich","Warrington"],"address":{"@type":"PostalAddress","addressRegion":"North West - Lancashire","addressCountry":"GB"}},{"@type":"WebSite","@id":"https://levellines.co.uk/#website","url":"https://levellines.co.uk/","name":"Level Lines Studio","publisher":{"@id":"https://levellines.co.uk/#business"}}]}</script>
 </head>
-<body class="public-site page-home" data-gallery-source="services">
+<body class="public-site page-home">
   <header class="site-header site-header--public-shell" id="top">
     <div class="container public-shell-header">
       <div class="public-brand-board">
@@ -66,12 +66,12 @@
             <span class="nav-toggle-line"></span>
           </button>
           <nav class="site-nav site-nav--public-shell" id="site-nav" data-nav-menu aria-label="Main navigation" hidden aria-hidden="true">
-            <a href="/index.html" data-nav-link>Home</a>
-            <a href="/about.html" data-nav-link>About</a>
-            <a href="/services.html" data-nav-link>Services</a>
-            <a href="/gallery.html" data-nav-link>Gallery</a>
-            <a href="/quote.html" data-nav-link>Quote</a>
-            <a href="/contact.html" data-nav-link>Contact</a>
+            <a href="/index.html" data-nav-link data-home-card-target="home">Home</a>
+            <a href="/about.html" data-nav-link data-home-card-target="about">About</a>
+            <a href="/services.html" data-nav-link data-home-card-target="services">Services</a>
+            <a href="/gallery.html" data-nav-link data-home-card-target="gallery">Gallery</a>
+            <a href="/quote.html" data-nav-link data-home-card-target="quote">Quote</a>
+            <a href="/contact.html" data-nav-link data-home-card-target="contact">Contact</a>
             <a href="/auth.html" data-nav-link data-auth-link data-auth-guest-label="Account">Account</a>
           </nav>
         </div>
@@ -79,182 +79,190 @@
     </div>
   </header>
 
-  <main class="public-page-main">
-    <section class="public-section public-section--dark">
-      <div class="container page-intro-grid">
-        <article class="content-card content-card--light">
-          <p class="section-eyebrow">Premium Renovation Studio</p>
-          <h1>Premium bathrooms, kitchens and interiors shaped around a clearer route from enquiry to delivery.</h1>
-          <p class="section-lead">Level Lines Studio is built for homeowners who want one composed public website, one private quote route and a professional finish standard without visual clutter or operational noise.</p>
-          <ul class="page-bullet-list">
-            <li>Quote-first intake for bathrooms, kitchens and interior renovation briefs.</li>
-            <li>One premium studio structure for tiling, carpentry, wall systems and flooring.</li>
-            <li>Calmer planning, quieter communication and controlled finish delivery.</li>
-          </ul>
-          <div class="page-actions">
-            <a class="btn btn-gold" href="/quote.html">Start Quote</a>
-            <a class="btn-outline-gold" href="/services.html">View Services</a>
-            <a class="btn-outline-gold" href="/gallery.html">View Gallery</a>
-          </div>
-        </article>
-        <aside class="content-card content-card--dark">
-          <p class="section-eyebrow">Private handover</p>
-          <h2>Move from public enquiry into project visibility only when the brief is ready.</h2>
-          <p class="hero-aside-copy">The public site stays clean and professional. When a brief becomes real, the same route opens into account access, quote visibility and controlled project communication.</p>
-          <ul class="page-micro-list">
-            <li>Use the quote route for scope, finish ambition and timing.</li>
-            <li>Use account access when a client needs private visibility.</li>
-            <li>Keep direct contact available from every public page.</li>
-          </ul>
-          <div class="page-actions">
-            <a class="btn-outline-gold" href="/auth.html" data-auth-link data-auth-guest-label="Account">Account</a>
-            <a class="btn-outline-gold" href="/contact.html">Contact Studio</a>
-          </div>
-        </aside>
-      </div>
-    </section>
-
-    <section class="public-section public-section--light" id="services">
+  <main class="public-page-main home-card-main">
+    <section class="public-section public-section--dark home-card-stage">
       <div class="container">
-        <div class="content-card content-card--light">
-          <p class="section-eyebrow">Services</p>
-          <h2>One service hub for the full premium renovation scope.</h2>
-          <p class="section-lead">Instead of scattering duplicate blocks around the homepage, the scope is organised clearly: bathrooms, kitchens, interior renovations and the specialist finish trades that support them.</p>
-        </div>
-        <div class="services-hub-grid">
-          <article class="content-card content-card--light">
-            <div class="service-card-heading"><h2>Bathrooms</h2><span>Wet rooms / suites</span></div>
-            <p class="service-card-copy">Full bathroom renovations with waterproofing discipline, premium tiling and a calmer finish language.</p>
-            <div class="page-actions"><a class="btn-outline-gold" href="/premium-bathrooms-manchester.html">View bathroom service</a></div>
-          </article>
-          <article class="content-card content-card--light">
-            <div class="service-card-heading"><h2>Kitchens</h2><span>Layout / joinery</span></div>
-            <p class="service-card-copy">Kitchen installation and refurbishment shaped around layout clarity, coordinated services and precise fitting.</p>
-            <div class="page-actions"><a class="btn-outline-gold" href="/premium-kitchens-manchester.html">View kitchen service</a></div>
-          </article>
-          <article class="content-card content-card--dark">
-            <div class="service-card-heading"><h2>Interior Renovations</h2><span>Multi-room scope</span></div>
-            <p class="service-card-copy">Interior upgrades, carpentry and wall-system work held inside one controlled design and delivery structure.</p>
-            <div class="page-actions"><a class="btn-outline-gold" href="/interior-renovations-manchester.html">View interior service</a></div>
-          </article>
-          <article class="content-card content-card--light">
-            <div class="service-card-heading"><h2>Large-format Tiling</h2><span>Precision setting out</span></div>
-            <p class="service-card-copy">Tile-led briefs for wet rooms, feature walls and premium surfaces where straight lines matter.</p>
-            <div class="page-actions"><a class="btn-outline-gold" href="/quote.html">Request tiling consultation</a></div>
-          </article>
-          <article class="content-card content-card--dark">
-            <div class="service-card-heading"><h2>Carpentry</h2><span>Storage / trims</span></div>
-            <p class="service-card-copy">Joinery and carpentry packages for concealed storage, clean reveals and a quieter architectural finish.</p>
-            <div class="page-actions"><a class="btn-outline-gold" href="/quote.html">Discuss carpentry</a></div>
-          </article>
-          <article class="content-card content-card--light">
-            <div class="service-card-heading"><h2>Wall Systems</h2><span>Interior / exterior</span></div>
-            <p class="service-card-copy">Interior and external wall systems scoped with correct build-ups, sequencing and finish consistency.</p>
-            <div class="page-actions"><a class="btn-outline-gold" href="/quote.html">Discuss wall systems</a></div>
-          </article>
-          <article class="content-card content-card--light">
-            <div class="service-card-heading"><h2>Flooring Installation</h2><span>Level / durable</span></div>
-            <p class="service-card-copy">Flooring installation with level preparation, cleaner transitions and durable finish control.</p>
-            <div class="page-actions"><a class="btn-outline-gold" href="/quote.html">Discuss flooring</a></div>
-          </article>
-        </div>
-      </div>
-    </section>
+        <article class="home-card-shell" data-home-card-shell data-home-default-card="home">
+          <div class="home-card-stage-label">
+            <p class="section-eyebrow">Selected card</p>
+            <p class="home-card-stage-status" data-home-card-status>Home</p>
+          </div>
 
-    <section class="public-section public-section--dark">
-      <div class="container">
-        <div class="content-card content-card--dark">
-          <p class="section-eyebrow">Gallery</p>
-          <h2>Completed work grouped by service instead of one mixed project stream.</h2>
-          <p class="section-lead">The homepage gallery now reads from service folders, so bathrooms, kitchens, interiors and exteriors stay easier to browse and easier to maintain.</p>
-        </div>
-        <div class="gallery-layout">
-          <article class="content-card content-card--light gallery-stage-shell" id="gallery">
-            <p class="section-eyebrow">Selected service</p>
-            <h2 data-gallery-active-image-title>Selected image</h2>
-            <p class="section-lead">Start with the service rail, then click any image to view it fullscreen.</p>
-            <div class="gallery-roller studio-gallery-roller" data-gallery-roller data-motion-profile="subtle">
-              <button class="gallery-arrow studio-gallery-arrow" type="button" data-gallery-prev aria-label="Previous photo">&#10094;</button>
-              <div class="gallery-stage studio-gallery-stage" data-gallery-stage aria-live="polite"></div>
-              <button class="gallery-arrow studio-gallery-arrow" type="button" data-gallery-next aria-label="Next photo">&#10095;</button>
+          <div class="home-card-stage-grid">
+            <aside class="content-card content-card--light home-card-sidebar home-card-sidebar--services">
+              <h2>Services</h2>
+              <p class="home-card-sidebar-copy">Keep the service list visible while the main card changes from menu selection.</p>
+              <div class="home-card-rail" data-brand-service-links data-link-class="home-card-rail-link" data-max-items="7"></div>
+              <button class="btn-outline-gold home-card-sidebar-action" type="button" data-home-card-trigger="services">Show services card</button>
+            </aside>
+
+            <div class="content-card content-card--light home-card-center">
+              <section class="home-card-panel is-active" data-home-card="home" data-home-card-label="Home">
+                <p class="section-eyebrow">Home</p>
+                <h1>One focused studio card at a time, with a clearer route from menu to quote.</h1>
+                <p class="section-lead">The homepage now behaves more like a controlled presentation board: one selected card in the centre, fixed service and location rails on the sides, and one calm route into quote, gallery or direct contact.</p>
+                <div class="home-card-highlight-grid">
+                  <article class="home-card-highlight home-card-highlight--dark">
+                    <h2>Premium direction</h2>
+                    <p>Bathrooms, kitchens and interiors sit under one studio structure, so the first view stays clean instead of fragmenting into many competing sections.</p>
+                  </article>
+                  <article class="home-card-highlight">
+                    <h2>Menu-led browsing</h2>
+                    <p>Use the menu to show one card at a time: About, Services, Gallery, Quote or Contact. The page stays shorter and easier to read.</p>
+                  </article>
+                </div>
+                <ul class="page-bullet-list">
+                  <li>Single active card instead of a long chain of homepage sections.</li>
+                  <li>Fixed services rail on the left and locations rail on the right.</li>
+                  <li>Direct path into quote, gallery and contact without clutter.</li>
+                </ul>
+                <div class="page-actions">
+                  <button class="btn btn-gold" type="button" data-home-card-trigger="quote">Start Quote</button>
+                  <button class="btn-outline-gold" type="button" data-home-card-trigger="services">Browse Services</button>
+                  <button class="btn-outline-gold" type="button" data-home-card-trigger="gallery">Open Gallery Card</button>
+                </div>
+              </section>
+
+              <section class="home-card-panel" data-home-card="about" data-home-card-label="About Us" hidden>
+                <p class="section-eyebrow">About Us</p>
+                <h2>About Us</h2>
+                <div class="home-card-copy-grid">
+                  <div>
+                    <p class="section-lead">Level Lines Studio is structured around restrained design, clean finish lines and a calmer client route from first enquiry into delivery.</p>
+                    <p>Instead of presenting the studio as a noisy collection of trades, the site now holds the brand in one main card and lets the visitor choose the next card intentionally from the menu.</p>
+                  </div>
+                  <div class="home-card-highlight">
+                    <h3>What stays visible</h3>
+                    <ul class="page-micro-list">
+                      <li>Service scope stays visible in the left rail.</li>
+                      <li>Studio coverage stays visible in the right rail.</li>
+                      <li>Phones and email remain available in the lower contact strip.</li>
+                    </ul>
+                  </div>
+                </div>
+                <div class="page-actions">
+                  <a class="btn-outline-gold" href="/about.html">Open About page</a>
+                  <button class="btn-outline-gold" type="button" data-home-card-trigger="contact">Show Contact card</button>
+                </div>
+              </section>
+
+              <section class="home-card-panel" data-home-card="services" data-home-card-label="Services" hidden>
+                <p class="section-eyebrow">Services</p>
+                <h2>Bathrooms, kitchens and specialist finish trades held in one studio structure.</h2>
+                <div class="home-card-service-grid">
+                  <article class="home-card-service-item">
+                    <h3>Bathrooms</h3>
+                    <p>Waterproofing, premium tiling and cleaner wet-room detailing.</p>
+                  </article>
+                  <article class="home-card-service-item">
+                    <h3>Kitchens</h3>
+                    <p>Layout logic, installation control and coordinated finish work.</p>
+                  </article>
+                  <article class="home-card-service-item">
+                    <h3>Interiors</h3>
+                    <p>Wall systems, carpentry and finish upgrades for multi-room scope.</p>
+                  </article>
+                  <article class="home-card-service-item">
+                    <h3>Finish Trades</h3>
+                    <p>Tiling, flooring and joinery kept aligned with the same final read.</p>
+                  </article>
+                </div>
+                <div class="page-actions">
+                  <a class="btn btn-gold" href="/services.html">Open services hub</a>
+                  <button class="btn-outline-gold" type="button" data-home-card-trigger="quote">Request a quote</button>
+                </div>
+              </section>
+
+              <section class="home-card-panel" data-home-card="gallery" data-home-card-label="Gallery" hidden>
+                <p class="section-eyebrow">Gallery</p>
+                <h2>Completed work grouped into one selected gallery card before the full-screen gallery route.</h2>
+                <div class="home-card-preview-grid">
+                  <figure class="home-card-preview">
+                    <img src="/Gallery/bathrooms/primary-suite-overview.jpg" alt="Primary suite overview" loading="lazy" decoding="async" width="1200" height="1600" />
+                    <figcaption>Bathrooms</figcaption>
+                  </figure>
+                  <figure class="home-card-preview">
+                    <img src="/Gallery/kitchens/island-overview.jpg" alt="Kitchen island overview" loading="lazy" decoding="async" width="1200" height="1600" />
+                    <figcaption>Kitchens</figcaption>
+                  </figure>
+                  <figure class="home-card-preview">
+                    <img src="/Gallery/interiors/material-surface-overview.jpg" alt="Interior material surface overview" loading="lazy" decoding="async" width="1200" height="1600" />
+                    <figcaption>Interiors</figcaption>
+                  </figure>
+                </div>
+                <p class="section-lead">Use the gallery card for a quick preview, then move into the full gallery page when you want fullscreen browsing by service.</p>
+                <div class="page-actions">
+                  <a class="btn btn-gold" href="/gallery.html">Open gallery page</a>
+                  <button class="btn-outline-gold" type="button" data-home-card-trigger="services">Back to services</button>
+                </div>
+              </section>
+
+              <section class="home-card-panel" data-home-card="quote" data-home-card-label="Quote" hidden>
+                <p class="section-eyebrow">Quote</p>
+                <h2>Send one focused renovation enquiry without leaving the homepage card stage.</h2>
+                <p class="section-lead">Keep the form short, mobile-safe and clear. The rest of the site can stay compact while the quote card takes over the main panel when it is needed.</p>
+                <form class="quote-form home-card-quote-form js-quote-form" data-form-context="Homepage Single Card Quote" novalidate>
+                  <input type="hidden" name="location" value="North West" />
+                  <div class="form-grid">
+                    <label>Name<input type="text" name="name" autocomplete="name" required /></label>
+                    <label>Phone<input type="tel" name="phone" autocomplete="tel" /></label>
+                    <label>Email<input type="email" name="email" autocomplete="email" required /></label>
+                    <label>Project type
+                      <select name="projectType" required data-brand-project-type-select data-default-label="Select"></select>
+                    </label>
+                    <label>Budget
+                      <select name="budget" data-brand-budget-select data-default-label="Select"></select>
+                    </label>
+                    <label>Project brief<textarea name="message" rows="6" required placeholder="Describe the rooms, timing and finish direction."></textarea></label>
+                  </div>
+                  <button class="btn btn-gold btn-block" type="submit">Send Enquiry</button>
+                  <p class="form-status" aria-live="polite"></p>
+                </form>
+              </section>
+
+              <section class="home-card-panel" data-home-card="contact" data-home-card-label="Contact" hidden>
+                <p class="section-eyebrow">Contact</p>
+                <h2>Direct studio contact stays available without turning the whole homepage into a contact section.</h2>
+                <div class="home-card-copy-grid">
+                  <div class="home-card-highlight home-card-highlight--dark">
+                    <h3>Studio lines</h3>
+                    <div class="home-card-contact-list">
+                      <a class="home-card-contact-list-link" data-brand-phone="0" href="tel:+447942874446">+44 7942 874 446</a>
+                      <a class="home-card-contact-list-link" data-brand-phone="1" href="tel:+447304506391">+44 7304 506 391</a>
+                    </div>
+                  </div>
+                  <div class="home-card-highlight">
+                    <h3>Email</h3>
+                    <div class="home-card-contact-list">
+                      <a class="home-card-contact-list-link" data-brand-email href="mailto:LevelLineStudioMCR@gmail.com">LevelLineStudioMCR@gmail.com</a>
+                    </div>
+                    <p>Use direct contact when the brief needs a measured answer before the full quote form.</p>
+                  </div>
+                </div>
+                <div class="page-actions">
+                  <a class="btn btn-gold" href="/contact.html">Open contact page</a>
+                  <button class="btn-outline-gold" type="button" data-home-card-trigger="quote">Go to quote card</button>
+                </div>
+              </section>
             </div>
-            <div class="page-actions"><a class="btn-outline-gold" href="/gallery.html">Open Full Gallery</a></div>
-          </article>
-          <aside class="content-card content-card--dark gallery-sidebar-shell" id="projects">
-            <p class="section-eyebrow">Service rail</p>
-            <h2 data-gallery-active-project-title>Bathrooms</h2>
-            <p class="page-aside-copy" data-gallery-active-project-meta>Move through each service set to compare finish quality, detailing and installation discipline.</p>
-            <button class="project-rail-nav project-rail-nav--up" type="button" data-gallery-project-prev aria-label="Previous service">&#8593;</button>
-            <div class="gallery-project-strip studio-project-strip" data-gallery-projects aria-label="Service selection"></div>
-            <button class="project-rail-nav project-rail-nav--down" type="button" data-gallery-project-next aria-label="Next service">&#8595;</button>
-            <p class="gallery-status studio-gallery-status" data-gallery-status aria-live="polite"></p>
-          </aside>
-        </div>
-      </div>
-    </section>
 
-    <section class="public-section public-section--light">
-      <div class="container case-card-grid">
-        <article class="content-card content-card--light">
-          <div class="case-card-heading"><h2>Plan</h2><span>Scope clarity</span></div>
-          <p class="case-card-copy">Rooms, materials, timing and budget direction are aligned before the build sequence starts.</p>
-        </article>
-        <article class="content-card content-card--dark">
-          <div class="case-card-heading"><h2>Design</h2><span>Material restraint</span></div>
-          <p class="case-card-copy">Stone, tile, joinery, trims and fittings are treated as one finish system rather than isolated trade decisions.</p>
-        </article>
-        <article class="content-card content-card--light">
-          <div class="case-card-heading"><h2>Craft</h2><span>Controlled delivery</span></div>
-          <p class="case-card-copy">The objective is a calm final read: cleaner cuts, quieter detailing and fewer visual compromises.</p>
-        </article>
-      </div>
-    </section>
+            <aside class="content-card content-card--light home-card-sidebar home-card-sidebar--locations">
+              <h2>Locations</h2>
+              <p class="home-card-sidebar-copy">Coverage stays visible as a fixed studio rail instead of another long homepage section.</p>
+              <div class="home-card-chip-rail" data-brand-area-list data-item-class="home-card-rail-chip" data-max-items="9"></div>
+              <button class="btn-outline-gold home-card-sidebar-action" type="button" data-home-card-trigger="contact">Show contact card</button>
+            </aside>
+          </div>
 
-    <section class="public-section public-section--dark" id="contact">
-      <div class="container">
-        <div class="content-card content-card--dark cta-band">
-          <div>
-            <p class="section-eyebrow">Direct Studio Contact</p>
-            <h2>Talk to the studio directly when the brief needs a measured answer.</h2>
-            <p class="section-lead">Phone and email remain visible because first conversations should feel clear, not hidden behind extra steps.</p>
+          <div class="content-card content-card--light home-card-contact-strip">
+            <a class="home-card-contact-link" data-brand-phone="0" href="tel:+447942874446">+44 7942 874 446</a>
+            <div class="home-card-contact-brand">
+              <span class="home-card-contact-title" data-brand-name>Level Lines Studio</span>
+              <span class="home-card-contact-claim" data-brand-claim>Plan | Design | Craft</span>
+            </div>
+            <a class="home-card-contact-link" data-brand-email href="mailto:LevelLineStudioMCR@gmail.com">LevelLineStudioMCR@gmail.com</a>
           </div>
-          <div class="page-actions">
-            <a class="btn-outline-gold" data-brand-phone="0" href="tel:+447942874446">+44 7942 874 446</a>
-            <a class="btn-outline-gold" href="/contact.html">Contact Page</a>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="public-section public-section--light" id="quote">
-      <div class="container quote-layout">
-        <article class="content-card content-card--dark">
-          <p class="section-eyebrow">Quote</p>
-          <h2>Send one private enquiry for the whole renovation brief.</h2>
-          <p class="page-aside-copy">Use the quote route for bathrooms, kitchens, interior works or a joined-up multi-room scope. The right first message covers rooms, finish ambition, timing and budget direction.</p>
-          <ul class="page-micro-list">
-            <li>Tell us which rooms or systems are involved.</li>
-            <li>Describe the finish ambition and design tone.</li>
-            <li>Share timing, occupancy constraints and budget direction.</li>
-          </ul>
         </article>
-        <form class="quote-form content-card content-card--light js-quote-form" data-form-context="Homepage Quote" novalidate>
-          <input type="hidden" name="location" value="North West" />
-          <div class="form-grid">
-            <label>Name<input type="text" name="name" autocomplete="name" required /></label>
-            <label>Phone<input type="tel" name="phone" autocomplete="tel" /></label>
-            <label>Email<input type="email" name="email" autocomplete="email" required /></label>
-            <label>Project type
-              <select name="projectType" required data-brand-project-type-select data-default-label="Select"></select>
-            </label>
-            <label>Budget
-              <select name="budget" data-brand-budget-select data-default-label="Select"></select>
-            </label>
-            <label class="span-2">Project brief<textarea name="message" rows="6" required placeholder="Tell us about the rooms, finish ambition and timing."></textarea></label>
-          </div>
-          <button class="btn btn-gold btn-block" type="submit">Send Enquiry</button>
-          <p class="form-status" aria-live="polite"></p>
-        </form>
       </div>
     </section>
   </main>
@@ -306,7 +314,6 @@
   <script src="/brand.js" defer></script>
   <script src="/runtime.js" defer></script>
   <script src="/site.js" defer></script>
-  <script src="/gallery.js" defer></script>
   <script src="/quote.js" defer></script>
 </body>
 </html>

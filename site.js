@@ -139,9 +139,13 @@
     if (!brand || !container || !Array.isArray(brand.serviceAreas)) return;
 
     const itemClass = container.getAttribute('data-item-class') || 'area-chip';
+    const maxItemsRaw = Number(container.getAttribute('data-max-items'));
+    const items = Number.isFinite(maxItemsRaw) && maxItemsRaw > 0
+      ? brand.serviceAreas.slice(0, maxItemsRaw)
+      : brand.serviceAreas;
     container.innerHTML = '';
 
-    brand.serviceAreas.forEach((area) => {
+    items.forEach((area) => {
       const item = document.createElement('span');
       item.className = itemClass;
       item.textContent = area;
@@ -153,9 +157,13 @@
     if (!brand || !container || !Array.isArray(brand.services)) return;
 
     const linkClass = container.getAttribute('data-link-class') || '';
+    const maxItemsRaw = Number(container.getAttribute('data-max-items'));
+    const services = Number.isFinite(maxItemsRaw) && maxItemsRaw > 0
+      ? brand.services.slice(0, maxItemsRaw)
+      : brand.services;
     container.innerHTML = '';
 
-    brand.services.forEach((service) => {
+    services.forEach((service) => {
       const link = document.createElement('a');
       link.href = service.href || '/quote.html';
       link.textContent = service.title || 'Service';
@@ -793,12 +801,89 @@
     sections.forEach((node) => observer.observe(node));
   };
 
+  const setupHomeCardStage = () => {
+    if (!body?.classList.contains('page-home')) return;
+
+    const shell = document.querySelector('[data-home-card-shell]');
+    const panels = Array.from(document.querySelectorAll('[data-home-card]'));
+    const triggers = Array.from(document.querySelectorAll('[data-home-card-target], [data-home-card-trigger]'));
+    const statusNode = document.querySelector('[data-home-card-status]');
+
+    if (!shell || !panels.length || !triggers.length) return;
+
+    const defaultCard = String(shell.getAttribute('data-home-default-card') || panels[0].dataset.homeCard || 'home').trim();
+    const panelByKey = new Map(
+      panels
+        .map((panel) => [String(panel.dataset.homeCard || '').trim(), panel])
+        .filter(([key]) => key)
+    );
+
+    const getActiveKeyFromHash = () => {
+      const hashKey = String(window.location.hash || '').replace(/^#/, '').trim().toLowerCase();
+      return panelByKey.has(hashKey) ? hashKey : defaultCard;
+    };
+
+    const setActiveCard = (requestedKey, { updateHash = false } = {}) => {
+      const nextKey = panelByKey.has(requestedKey) ? requestedKey : defaultCard;
+      const activePanel = panelByKey.get(nextKey);
+      if (!activePanel) return;
+
+      shell.dataset.activeCard = nextKey;
+      if (statusNode) {
+        statusNode.textContent = activePanel.getAttribute('data-home-card-label') || nextKey;
+      }
+
+      panels.forEach((panel) => {
+        const isActive = panel === activePanel;
+        panel.classList.toggle('is-active', isActive);
+        panel.toggleAttribute('hidden', !isActive);
+      });
+
+      triggers.forEach((trigger) => {
+        const triggerKey = String(trigger.getAttribute('data-home-card-target') || trigger.getAttribute('data-home-card-trigger') || '').trim();
+        const isActive = triggerKey === nextKey;
+        trigger.classList.toggle('is-card-active', isActive);
+        if (trigger.matches('button')) {
+          trigger.setAttribute('aria-pressed', String(isActive));
+        }
+      });
+
+      if (!updateHash) return;
+
+      const baseUrl = `${window.location.pathname}${window.location.search || ''}`;
+      const nextUrl = nextKey === defaultCard ? baseUrl : `${baseUrl}#${nextKey}`;
+      if (window.location.hash === `#${nextKey}` || (nextKey === defaultCard && !window.location.hash)) return;
+      window.history.replaceState({}, '', nextUrl);
+    };
+
+    document.addEventListener('click', (event) => {
+      const trigger = event.target.closest('[data-home-card-target], [data-home-card-trigger]');
+      if (!trigger) return;
+
+      const key = String(trigger.getAttribute('data-home-card-target') || trigger.getAttribute('data-home-card-trigger') || '').trim();
+      if (!panelByKey.has(key)) return;
+
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+      event.preventDefault();
+      setActiveCard(key, { updateHash: true });
+      shell.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    });
+
+    window.addEventListener('hashchange', () => {
+      setActiveCard(getActiveKeyFromHash());
+    });
+
+    setActiveCard(getActiveKeyFromHash());
+  };
+
   applyBrandContent();
   validateSession();
   window.addEventListener('ll:session-changed', validateSession);
 
   setupDashboardAccordions();
   setupHomePageMotion();
+  setupHomeCardStage();
 
   const yearEls = document.querySelectorAll('[data-current-year], [data-year]');
   if (yearEls.length) {

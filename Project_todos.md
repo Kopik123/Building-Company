@@ -8,6 +8,7 @@
 - [x] Reviewed the current CSS split and decided not to break `styles/public.css` / `styles/workspace.css` into smaller files yet; the bigger maintainability priority remains moving more responsibility out of `styles/base.css`.
 - [ ] Keep every new feature review aligned with future Android/iOS app readiness, especially API contracts, auth/session handling, messaging and media flows.
 - [ ] Re-check the new homepage header/account hierarchy on live desktop and mobile devices after deployment, because the account entry point moved out of the header and into the hero card.
+- [ ] Run live QA for the new single-card homepage board after deploy, checking menu-driven card switching, desktop header proportions, mobile stacking, and that the quote card stays usable without horizontal scroll.
 - [ ] Implement the planned `client_proposal_quote` structure on the public quote page with phased UX, richer project fields and mobile-safe validation.
 - [ ] Decide whether richer quote intake should be stored as structured quote metadata in phase 1 or temporarily mapped into the existing `description` field.
 - [ ] After deploy, restart PM2 with `--update-env` once so the new explicit `HOST` binding is applied on the droplet.
