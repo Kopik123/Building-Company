@@ -401,6 +401,9 @@ test('auth page shows account panel for logged session', async ({ page }) => {
   await expect(page.locator('#auth-account-panel')).toBeVisible();
   await expect(page.locator('#profile-form')).toBeVisible();
   await expect(page.locator('#password-form')).toBeVisible();
+  await expect(page.locator('#auth-guest-grid')).toBeHidden();
+  await expect(page.locator('[data-nav-menu] [data-auth-link]')).toBeHidden();
+  await expect(page.locator('[data-inline-session]')).toBeHidden();
 });
 
 test('client dashboard mobile menu opens', async ({ page }) => {
@@ -408,7 +411,9 @@ test('client dashboard mobile menu opens', async ({ page }) => {
   await page.goto('/client-dashboard.html');
   await expect(page.locator('body.public-site.workspace-site.page-client-dashboard')).toBeVisible();
   await openNavIfNeeded(page);
-  await expect(page.locator('[data-auth-link]').first()).toContainText(/account/i);
+  await expect(page.locator('[data-nav-menu] [data-auth-link]')).toBeHidden();
+  await expect(page.locator('[data-account-settings-link]')).toBeVisible();
+  await expect(page.locator('#client-logout')).toBeVisible();
   await expectNoHorizontalScroll(page);
 });
 
@@ -433,8 +438,15 @@ test('manager dashboard mobile menu opens', async ({ page }) => {
   await page.goto('/manager-dashboard.html');
   await expect(page.locator('body.public-site.workspace-site.page-manager-dashboard')).toBeVisible();
   await openNavIfNeeded(page);
-  await expect(page.locator('[data-auth-link]').first()).toContainText(/account/i);
+  await expect(page.locator('[data-nav-menu] [data-auth-link]')).toBeHidden();
+  await expect(page.locator('[data-account-settings-link]')).toBeVisible();
+  await expect(page.locator('#dashboard-logout')).toBeVisible();
   await expectNoHorizontalScroll(page);
+});
+
+test('guest is redirected away from client workspace to auth route with next param', async ({ page }) => {
+  await page.goto('/client-dashboard.html');
+  await expect(page).toHaveURL(/\/auth\.html\?next=%2Fclient-dashboard\.html&reason=session/);
 });
 
 test('manager dashboard exposes project controls for logged session on mobile', async ({ page }) => {

@@ -14,8 +14,6 @@
   const sessionState = document.getElementById('auth-session-state');
   const accountRole = document.getElementById('auth-account-role');
   const logoutButton = document.getElementById('auth-logout');
-  const clientLink = document.getElementById('auth-client-link');
-  const dashboardLink = document.getElementById('auth-dashboard-link');
   const accountPanel = document.getElementById('auth-account-panel');
   const guestGrid = document.getElementById('auth-guest-grid');
 
@@ -31,8 +29,6 @@
     !sessionState ||
     !accountRole ||
     !logoutButton ||
-    !clientLink ||
-    !dashboardLink ||
     !accountPanel ||
     !guestGrid
   ) {
@@ -124,8 +120,6 @@
       sessionState.textContent = `Logged in as: ${label}`;
       accountRole.textContent = `Role: ${humanRole(role)}`;
       logoutButton.hidden = false;
-      clientLink.hidden = role !== 'client';
-      dashboardLink.hidden = !['employee', 'manager', 'admin'].includes(role);
       guestGrid.hidden = true;
       accountPanel.hidden = false;
       fillProfileForm(user);
@@ -135,8 +129,6 @@
     sessionState.textContent = 'Not logged in.';
     accountRole.textContent = '';
     logoutButton.hidden = true;
-    clientLink.hidden = true;
-    dashboardLink.hidden = true;
     guestGrid.hidden = false;
     accountPanel.hidden = true;
   };

@@ -14,6 +14,31 @@ const expectNoHorizontalScroll = async (page) => {
   expect(hasOverflow).toBeFalsy();
 };
 
+const mockPublicClientSession = async (page) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('ll_auth_token', 'test-token');
+    localStorage.setItem('ll_auth_user', JSON.stringify({
+      id: 'client-1',
+      name: 'Marta Client',
+      email: 'client@example.com',
+      role: 'client'
+    }));
+  });
+
+  await page.route('**/api/auth/me', async (route) => {
+    await route.fulfill({
+      json: {
+        user: {
+          id: 'client-1',
+          name: 'Marta Client',
+          email: 'client@example.com',
+          role: 'client'
+        }
+      }
+    });
+  });
+};
+
 test('homepage renders the quote-first shell, service hub and section flow', async ({ page }) => {
   await page.goto('/index.html');
 
@@ -64,6 +89,18 @@ test('core brochure pages render about, services, gallery, contact and quote rou
   await expect(page.locator('body.public-site.page-quote')).toBeVisible();
   await expect(page.getByRole('heading', { name: /send one private enquiry for bathrooms, kitchens/i })).toBeVisible();
   await expect(page.locator('form.js-quote-form')).toBeVisible();
+});
+
+test('authenticated public shell hides login-only controls and keeps one account route', async ({ page }) => {
+  await mockPublicClientSession(page);
+  await page.goto('/index.html');
+
+  await expect(page.locator('[data-inline-login-form]')).toBeHidden();
+  await expect(page.locator('[data-inline-session]')).toBeVisible();
+  await expect(page.locator('[data-inline-logout]')).toBeVisible();
+  await expect(page.locator('text=Open Account')).toHaveCount(0);
+  await expect(page.locator('[data-nav-menu] [data-auth-link]')).toHaveAttribute('href', '/client-dashboard.html');
+  await expect(page.locator('a.btn-outline-gold[data-auth-link]').first()).toHaveText(/account/i);
 });
 
 test('service, location and legal pages keep the same shell and SEO contact path', async ({ page }) => {

@@ -144,3 +144,15 @@
 - Replaced the old workspace/auth header markup in `auth.html`, `client-dashboard.html` and `manager-dashboard.html` with the same sticky `title.png` public shell used on brochure pages, keeping session-aware account and hamburger menu behaviour consistent after login.
 - Scoped the legacy workspace-header overrides in `styles/workspace.css` to non-public-shell headers so the new shared shell is not visually distorted on logged-in pages.
 - Re-ran `npm run test:ci` after the header unification change and kept the suite green.
+
+## 2026-03-16
+
+- Saved `Plans/Spojnosc Logiki Sesji, Headera I Nawigacji Na Calej Stronie.md` and registered it in `Plans/Plan History.md` so the session/header consistency pass has its own tracked implementation plan.
+- Centralised session-state rendering in `site.js`, adding shared guest-only, user-only and account-settings hooks plus one visibility model for public pages, `auth.html` and both workspace dashboards.
+- Removed the inline `Open Account` action from the shared header shell and changed the authenticated public header state to one route label (`Account`) plus `Log out`, while hiding header auth controls on `auth.html` and workspace pages once a user is signed in.
+- Added protected-route handling in `site.js` so guest access to workspace pages redirects to `/auth.html?next=...&reason=session` and wrong-role visits redirect to the correct dashboard.
+- Simplified `auth.html` and `auth.js` so the signed-in state now behaves as account settings plus logout only, without extra dashboard launcher buttons.
+- Replaced the old `Auth Page` body action in `client-dashboard.html` and `manager-dashboard.html` with `Account Settings`, keeping only authenticated actions in workspace body controls.
+- Updated the shared public renderer and regenerated the service/location pages so the new session hooks and session-state shell rules stay aligned with manual pages.
+- Extended Playwright regression coverage to assert the new session-state behaviour: no `Open Account`, no header account duplicate on signed-in account/workspace pages, and redirect to auth for guest access to protected client workspace routes.
+- Re-ran `node --check` on the touched runtime/test files, then `npm run verify:generated` and `npm run test:ci`; all passed after the session/navigation consistency pass.

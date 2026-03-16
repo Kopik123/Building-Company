@@ -12,12 +12,14 @@
   const navMenu = document.querySelector('[data-nav-menu]');
   const authToggle = document.querySelector('[data-auth-toggle]');
   const authLinks = Array.from(document.querySelectorAll('[data-auth-link]'));
+  const guestOnlyNodes = Array.from(document.querySelectorAll('[data-auth-guest-only]'));
+  const userOnlyNodes = Array.from(document.querySelectorAll('[data-auth-user-only]'));
+  const accountSettingsLinks = Array.from(document.querySelectorAll('[data-account-settings-link]'));
   const inlineLoginForm = document.querySelector('[data-inline-login-form]');
   const inlineLoginStatus = document.querySelector('[data-inline-login-status]');
   const inlineAuthPanel = document.querySelector('[data-auth-panel]');
   const inlineSession = document.querySelector('[data-inline-session]');
   const inlineSessionCopy = document.querySelector('[data-inline-session-copy]');
-  const inlineAccountLink = document.querySelector('[data-inline-account-link]');
   const inlineLogoutButton = document.querySelector('[data-inline-logout]');
   const menuWrap =
     document.querySelector('[data-menu-wrap]') ||
@@ -26,6 +28,12 @@
 
   let menuPreviouslyFocused = null;
   let authPreviouslyFocused = null;
+
+  const isAuthPage = body.classList.contains('page-auth');
+  const isClientWorkspace = body.classList.contains('page-client-dashboard');
+  const isManagerWorkspace = body.classList.contains('page-manager-dashboard');
+  const isWorkspacePage = isClientWorkspace || isManagerWorkspace;
+  const isPublicPage = !isAuthPage && !isWorkspacePage;
 
   const readAuthMeCache = (token) => {
     if (!token || !window.sessionStorage) return null;
@@ -283,53 +291,105 @@
     return '/auth.html';
   };
 
+  const currentWorkspacePath = () => {
+    if (isClientWorkspace) return '/client-dashboard.html';
+    if (isManagerWorkspace) return '/manager-dashboard.html';
+    return '';
+  };
+
+  const buildAuthRedirectUrl = (nextPath = '') => {
+    const resolvedNext = nextPath || `${window.location.pathname}${window.location.search || ''}`;
+    return `/auth.html?next=${encodeURIComponent(resolvedNext)}&reason=session`;
+  };
+
+  const setHidden = (node, hidden) => {
+    if (!node) return;
+    node.toggleAttribute('hidden', hidden);
+  };
+
+  const syncProtectedRoute = (user) => {
+    if (!isWorkspacePage) return false;
+
+    const token = localStorage.getItem(TOKEN_KEY);
+    const expectedPath = currentWorkspacePath();
+
+    if (!token || !user?.role) {
+      window.location.assign(buildAuthRedirectUrl(expectedPath));
+      return true;
+    }
+
+    const rolePath = accountPathForRole(user.role);
+    if (rolePath !== expectedPath) {
+      window.location.assign(rolePath);
+      return true;
+    }
+
+    return false;
+  };
+
   const getGuestAuthLabel = (authLink) => {
     return String(authLink?.getAttribute('data-auth-guest-label') || '').trim() || brand?.publicAuthLabel || 'Account';
   };
 
   const renderInlineAuthState = (user) => {
-    if (!inlineSession) return;
-
     const loggedIn = Boolean(user && localStorage.getItem(TOKEN_KEY));
-    const accountHref = accountPathForRole(user?.role);
     const authToggleLabel = authToggle?.querySelector('.public-auth-toggle-label');
+    const showHeaderAuthPanel = (!loggedIn && !isWorkspacePage) || (loggedIn && isPublicPage);
+    const showHeaderLoginForm = !loggedIn && !isWorkspacePage;
+    const showHeaderSession = loggedIn && isPublicPage;
+    const hideHeaderAccountLink = loggedIn && (isAuthPage || isWorkspacePage);
+
+    if (!showHeaderAuthPanel) {
+      header?.classList.remove('is-auth-open');
+      authToggle?.setAttribute('aria-expanded', 'false');
+    }
 
     if (authToggleLabel) {
       authToggleLabel.textContent = loggedIn ? 'Account' : 'Login';
     }
 
-    inlineLoginForm?.toggleAttribute('hidden', loggedIn);
-    inlineSession.toggleAttribute('hidden', !loggedIn);
+    setHidden(authToggle, !showHeaderAuthPanel);
+    setHidden(inlineAuthPanel, !showHeaderAuthPanel);
+    setHidden(inlineLoginForm, !showHeaderLoginForm);
+    setHidden(inlineSession, !showHeaderSession);
+
+    guestOnlyNodes.forEach((node) => {
+      if (node === inlineLoginForm) return;
+      setHidden(node, loggedIn);
+    });
+    userOnlyNodes.forEach((node) => {
+      if (node === inlineSession) return;
+      setHidden(node, !loggedIn);
+    });
+
+    accountSettingsLinks.forEach((link) => {
+      link.setAttribute('href', '/auth.html');
+      link.textContent = 'Account Settings';
+      setHidden(link, !loggedIn);
+    });
+
+    authLinks.forEach((link) => {
+      const isHeaderAccountLink = Boolean(link.closest('[data-nav-menu]'));
+      link.textContent = loggedIn ? 'Account' : getGuestAuthLabel(link);
+      link.setAttribute('href', loggedIn ? accountPathForRole(user?.role) : '/auth.html');
+      link.classList.toggle('is-authenticated', loggedIn);
+      setHidden(link, hideHeaderAccountLink && isHeaderAccountLink);
+    });
 
     if (!loggedIn) {
       if (inlineSessionCopy) {
         inlineSessionCopy.textContent = 'Use the inline login to move into project visibility.';
-      }
-      if (inlineAccountLink) {
-        inlineAccountLink.setAttribute('href', '/auth.html');
       }
       return;
     }
 
     if (inlineSessionCopy) {
       const identity = user?.name || user?.email || 'Account ready';
-      inlineSessionCopy.textContent = `${identity} is signed in. Continue through the private account route.`;
-    }
-
-    if (inlineAccountLink) {
-      inlineAccountLink.setAttribute('href', accountHref);
-      inlineAccountLink.textContent = 'Open Account';
+      inlineSessionCopy.textContent = `${identity} is signed in. Use Account or Log out.`;
     }
   };
 
   const updateNavigationForSession = (user) => {
-    const loggedIn = Boolean(user && localStorage.getItem(TOKEN_KEY));
-    const accountHref = accountPathForRole(user?.role);
-    authLinks.forEach((link) => {
-      link.textContent = loggedIn ? 'Account' : getGuestAuthLabel(link);
-      link.setAttribute('href', loggedIn ? accountHref : '/auth.html');
-      link.classList.toggle('is-authenticated', loggedIn);
-    });
     renderInlineAuthState(user);
   };
 
@@ -349,15 +409,18 @@
     if (!token) {
       clearAuthMeCache();
       updateNavigationForSession(null);
+      syncProtectedRoute(null);
       return;
     }
 
-    updateNavigationForSession(getSavedUser());
+    const storedUser = getSavedUser();
+    updateNavigationForSession(storedUser);
 
     const cachedUser = readAuthMeCache(token);
     if (cachedUser) {
       localStorage.setItem(USER_KEY, JSON.stringify(cachedUser));
       updateNavigationForSession(cachedUser);
+      if (syncProtectedRoute(cachedUser)) return;
       return;
     }
 
@@ -375,9 +438,11 @@
       localStorage.setItem(USER_KEY, JSON.stringify(payload.user));
       writeAuthMeCache(token, payload.user);
       updateNavigationForSession(payload.user);
+      if (syncProtectedRoute(payload.user)) return;
     } catch {
       clearSession();
       updateNavigationForSession(null);
+      syncProtectedRoute(null);
     }
   };
 
@@ -574,15 +639,11 @@
     authToggle.setAttribute('aria-expanded', 'false');
 
     authToggle.addEventListener('click', () => {
-      const token = localStorage.getItem(TOKEN_KEY);
-      const user = getSavedUser();
-      if (token && user && isCompactAuthMode()) {
-        window.location.assign(accountPathForRole(user.role));
-        return;
-      }
+      if (authToggle.hasAttribute('hidden') || inlineAuthPanel?.hasAttribute('hidden')) return;
 
       if (!isCompactAuthMode()) {
-        inlineLoginForm?.querySelector('input[name="email"]')?.focus();
+        const focusTarget = inlineLoginForm?.querySelector('input[name="email"]') || inlineLogoutButton;
+        focusTarget?.focus();
         return;
       }
 

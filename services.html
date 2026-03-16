@@ -43,17 +43,16 @@
           <span class="public-auth-toggle-label">Login</span>
         </button>
         <section class="public-auth-panel" id="public-auth-panel" data-auth-panel aria-label="Studio login">
-          <form class="public-inline-login-form" data-inline-login-form novalidate>
+          <form class="public-inline-login-form" data-inline-login-form data-auth-guest-only novalidate>
             <div class="public-inline-login-row">
               <input type="email" name="email" autocomplete="username email" placeholder="Login" aria-label="Login" required />
               <input type="password" name="password" autocomplete="current-password" placeholder="Password" aria-label="Password" required />
               <button class="public-inline-login-submit" type="submit">Enter</button>
             </div>
           </form>
-          <div class="public-inline-session" data-inline-session hidden>
+          <div class="public-inline-session" data-inline-session data-auth-user-only hidden>
             <p class="public-inline-session-copy" data-inline-session-copy>Account ready.</p>
             <div class="public-inline-session-actions">
-              <a class="public-inline-session-link" href="/auth.html" data-inline-account-link>Open Account</a>
               <button class="public-inline-session-link public-inline-session-link--button" type="button" data-inline-logout>Log out</button>
             </div>
           </div>
@@ -223,3 +222,4 @@
   <script src="/site.js" defer></script>
 </body>
 </html>
+

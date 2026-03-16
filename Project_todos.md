@@ -30,6 +30,7 @@
 - [ ] Re-check the new shared `title.png` public shell on live desktop and mobile, especially the balance between the centered brand board and the inline login/navigation strip.
 - [ ] Re-check the slimmer `title.png` top bar and the lower quick-access login/menu strip on live desktop and mobile after the next deploy.
 - [ ] Verify the inline login strip state on all public pages for both guest and authenticated sessions after the next droplet deploy.
+- [ ] Run live QA for the new session-aware header/account/logout logic on `/`, `/auth.html`, `/client-dashboard.html` and `/manager-dashboard.html`, including guest redirects and role-based account routing after deploy.
 - [ ] Decide later whether `header.png` should remain only as a historical/supporting asset now that `title.png` is the shared public shell lockup.
 - [ ] Define one explicit CRM lifecycle for clients (`lead`, `quoted`, `approved`, `active project`, `completed`, `archived`) and use it consistently across manager flows and future mobile contracts.
 - [ ] Add a real project workflow model with `stage`, `milestone`, `task/work package`, `owner` and `due date` instead of relying mainly on broad project status and notes.
@@ -46,6 +47,9 @@
 - [x] Rework `gallery.js` so project changes update active state and transforms without rebuilding the whole stage and project strip.
 - [x] Replace the global 1-second polling loop in `apps/mobile-v1/App.js` with a scheduler keyed to the nearest due poll or screen-focus refreshes.
 - [x] Add a short TTL cache or deferred validation strategy for `/api/auth/me` in `site.js` so the shared public shell does not revalidate every public page load unnecessarily.
+- [x] Remove the duplicated `Open Account` and `Auth Page` wording from the UI and standardise session-aware labels to `Login`, `Account`, `Account Settings` and `Log out`.
+- [x] Centralise guest/authenticated header logic in `site.js` so public pages, `auth.html` and both workspace dashboards now follow the same visibility rules for login, account and logout controls.
+- [x] Add consistent protected-route redirects so guests are sent to `/auth.html?next=...&reason=session` and wrong-role workspace visits route back to the correct dashboard.
 
 ## Completed
 

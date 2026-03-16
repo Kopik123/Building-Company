@@ -32,17 +32,16 @@
           <span class="public-auth-toggle-label">Login</span>
         </button>
         <section class="public-auth-panel" id="public-auth-panel" data-auth-panel aria-label="Studio login">
-          <form class="public-inline-login-form" data-inline-login-form novalidate>
+          <form class="public-inline-login-form" data-inline-login-form data-auth-guest-only novalidate>
             <div class="public-inline-login-row">
               <input type="email" name="email" autocomplete="username email" placeholder="Login" aria-label="Login" required />
               <input type="password" name="password" autocomplete="current-password" placeholder="Password" aria-label="Password" required />
               <button class="public-inline-login-submit" type="submit">Enter</button>
             </div>
           </form>
-          <div class="public-inline-session" data-inline-session hidden>
+          <div class="public-inline-session" data-inline-session data-auth-user-only hidden>
             <p class="public-inline-session-copy" data-inline-session-copy>Account ready.</p>
             <div class="public-inline-session-actions">
-              <a class="public-inline-session-link" href="/auth.html" data-inline-account-link>Open Account</a>
               <button class="public-inline-session-link public-inline-session-link--button" type="button" data-inline-logout>Log out</button>
             </div>
           </div>
@@ -107,13 +106,11 @@
             <p class="muted" id="auth-session-state">Not logged in.</p>
           </div>
           <div class="dashboard-session-actions">
-            <a href="/client-dashboard.html" class="btn btn-outline" id="auth-client-link" hidden>Open Account</a>
-            <a href="/manager-dashboard.html" class="btn btn-outline" id="auth-dashboard-link" hidden>Open Account</a>
-            <button type="button" class="btn btn-outline" id="auth-logout" hidden>Log out</button>
+            <button type="button" class="btn btn-outline" id="auth-logout" data-auth-user-only hidden>Log out</button>
           </div>
         </div>
 
-        <section class="card auth-account-panel surface-card surface-card--light" id="auth-account-panel" hidden>
+        <section class="card auth-account-panel surface-card surface-card--light" id="auth-account-panel" data-auth-user-only hidden>
           <div class="auth-account-head">
             <div>
               <p class="workspace-card-label">Account Settings</p>
@@ -158,7 +155,7 @@
           </div>
         </section>
 
-        <div class="auth-grid" id="auth-guest-grid">
+        <div class="auth-grid" id="auth-guest-grid" data-auth-guest-only>
           <section class="card auth-card surface-card surface-card--light">
             <p class="workspace-card-label">Existing Account</p>
             <h2>Login</h2>
@@ -260,6 +257,7 @@
   <script src="/auth.js" defer></script>
 </body>
 </html>
+
 
 
 
