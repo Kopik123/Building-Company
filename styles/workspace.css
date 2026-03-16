@@ -1,17 +1,17 @@
-body.workspace-site .site-header .header-inner {
+body.workspace-site .site-header:not(.site-header--public-shell) .header-inner {
   grid-template-columns: var(--ll-header-logo-width) minmax(0, 1fr) minmax(220px, 320px);
 }
 
-body.workspace-site .header-utility-panel {
+body.workspace-site .site-header:not(.site-header--public-shell) .header-utility-panel {
   background: linear-gradient(180deg, rgba(18, 17, 15, 0.96), rgba(8, 8, 8, 0.98));
 }
 
-body.workspace-site .header-auth-link,
-body.workspace-site .site-nav a {
+body.workspace-site .site-header:not(.site-header--public-shell) .header-auth-link,
+body.workspace-site .site-header:not(.site-header--public-shell) .site-nav a {
   color: var(--ll-text-on-dark);
 }
 
-body.workspace-site .header-auth-link {
+body.workspace-site .site-header:not(.site-header--public-shell) .header-auth-link {
   border-bottom-color: rgba(216, 166, 30, 0.24);
 }
 
@@ -48,23 +48,23 @@ body.workspace-site {
   color: var(--ll-text-on-dark);
 }
 
-body.workspace-site .site-header {
+body.workspace-site .site-header:not(.site-header--public-shell) {
   border-bottom: 1px solid var(--ll-window-line);
   background: linear-gradient(180deg, rgba(8, 8, 8, 0.97), rgba(4, 4, 4, 0.95));
 }
 
-body.workspace-site .brand-mark-link,
-body.workspace-site .brand-title-link,
-body.workspace-site .header-utility-panel {
+body.workspace-site .site-header:not(.site-header--public-shell) .brand-mark-link,
+body.workspace-site .site-header:not(.site-header--public-shell) .brand-title-link,
+body.workspace-site .site-header:not(.site-header--public-shell) .header-utility-panel {
   background:
     linear-gradient(180deg, rgba(18, 17, 15, 0.98), rgba(8, 8, 8, 0.99));
   border-color: rgba(134, 100, 48, 0.54);
   box-shadow: var(--ll-shadow-premium), var(--ll-shadow-line);
 }
 
-body.workspace-site .brand-mark-link::before,
-body.workspace-site .brand-title-link::before,
-body.workspace-site .header-utility-panel::before,
+body.workspace-site .site-header:not(.site-header--public-shell) .brand-mark-link::before,
+body.workspace-site .site-header:not(.site-header--public-shell) .brand-title-link::before,
+body.workspace-site .site-header:not(.site-header--public-shell) .header-utility-panel::before,
 body.workspace-site .workspace-hero-copy::before,
 body.workspace-site .workspace-hero-panel::before,
 body.workspace-site .dashboard-shell .card::before,
@@ -142,8 +142,8 @@ body.workspace-site .dashboard-control-label {
   color: var(--ll-text-on-light-muted);
 }
 
-body.workspace-site .site-nav a,
-body.workspace-site .header-auth-link,
+body.workspace-site .site-header:not(.site-header--public-shell) .site-nav a,
+body.workspace-site .site-header:not(.site-header--public-shell) .header-auth-link,
 body.workspace-site .workspace-contact-link,
 body.workspace-site .footer-contact-link,
 body.workspace-site .footer-links a {
@@ -433,7 +433,7 @@ body.workspace-site .workspace-session-actions {
 }
 
 @media (max-width: 640px) {
-  body.workspace-site .site-header .header-inner {
+  body.workspace-site .site-header:not(.site-header--public-shell) .header-inner {
     gap: 0.45rem;
   }
 

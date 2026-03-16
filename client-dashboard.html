@@ -16,37 +16,55 @@
   <link rel="stylesheet" href="/styles/workspace.css" />
 </head>
 <body class="public-site workspace-site page-client-dashboard">
-    <header class="site-header" id="top">
-    <div class="container header-inner grid-12">
-      <a class="brand brand-mark-link" href="/index.html" aria-label="Level Lines Studio home">
-        <picture class="brand-picture brand-picture--icon">
-          <source type="image/avif" srcset="/assets/optimized/brand/logo.avif" />
-          <source type="image/webp" srcset="/assets/optimized/brand/logo.webp" />
-          <img src="/assets/optimized/brand/logo.png" alt="Level Lines Studio icon" class="brand-icon-image" width="420" height="330" decoding="async" />
-        </picture>
-      </a>
-      <a class="brand brand-title-link" href="/index.html" aria-label="Level Lines Studio home">
-        <picture class="brand-picture brand-picture--title">
-          <source type="image/avif" srcset="/assets/optimized/brand/title.avif" />
-          <source type="image/webp" srcset="/assets/optimized/brand/title.webp" />
-          <img src="/assets/optimized/brand/title.png" alt="Level Lines Studio" class="brand-lockup-image brand-title-image" width="1536" height="232" decoding="async" />
-        </picture>
-      </a>
-      <div class="header-utility-panel menu-wrap" data-menu-wrap>
-        <a class="header-auth-link" href="/auth.html" data-auth-link data-auth-guest-label="Account">Account</a>
-        <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation menu">
-          <span class="nav-toggle-line"></span>
-          <span class="nav-toggle-line"></span>
-          <span class="nav-toggle-line"></span>
+      <header class="site-header site-header--public-shell" id="top">
+    <div class="container public-shell-header">
+      <div class="public-brand-board">
+        <a class="public-brand-link" href="/index.html" aria-label="Level Lines Studio home">
+          <picture class="public-brand-picture">
+            <source type="image/avif" srcset="/assets/optimized/brand/title.avif" />
+            <source type="image/webp" srcset="/assets/optimized/brand/title.webp" />
+            <img src="/assets/optimized/brand/title.png" alt="Level Lines Studio" class="public-brand-title-image" width="1536" height="232" decoding="async" />
+          </picture>
+        </a>
+      </div>
+      <div class="public-shell-controls">
+        <button class="public-auth-toggle" type="button" data-auth-toggle aria-expanded="false" aria-controls="public-auth-panel">
+          <span class="public-auth-toggle-label">Login</span>
         </button>
-        <nav class="site-nav" id="site-nav" data-nav-menu aria-label="Main navigation">
-          <a href="/index.html" data-nav-link>Home</a>
-          <a href="/about.html" data-nav-link>About</a>
-          <a href="/services.html" data-nav-link>Services</a>
-          <a href="/gallery.html" data-nav-link>Gallery</a>
-          <a href="/quote.html" data-nav-link>Quote</a>
-          <a href="/contact.html" data-nav-link>Contact</a>
-        </nav>
+        <section class="public-auth-panel" id="public-auth-panel" data-auth-panel aria-label="Studio login">
+          <form class="public-inline-login-form" data-inline-login-form novalidate>
+            <div class="public-inline-login-row">
+              <input type="email" name="email" autocomplete="username email" placeholder="Login" aria-label="Login" required />
+              <input type="password" name="password" autocomplete="current-password" placeholder="Password" aria-label="Password" required />
+              <button class="public-inline-login-submit" type="submit">Enter</button>
+            </div>
+          </form>
+          <div class="public-inline-session" data-inline-session hidden>
+            <p class="public-inline-session-copy" data-inline-session-copy>Account ready.</p>
+            <div class="public-inline-session-actions">
+              <a class="public-inline-session-link" href="/auth.html" data-inline-account-link>Open Account</a>
+              <button class="public-inline-session-link public-inline-session-link--button" type="button" data-inline-logout>Log out</button>
+            </div>
+          </div>
+          <p class="form-status public-inline-login-status" data-inline-login-status aria-live="polite"></p>
+        </section>
+        <div class="public-shell-nav menu-wrap" data-menu-wrap>
+          <button class="nav-toggle public-menu-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation menu">
+            <span class="public-menu-toggle-label">Menu</span>
+            <span class="nav-toggle-line"></span>
+            <span class="nav-toggle-line"></span>
+            <span class="nav-toggle-line"></span>
+          </button>
+          <nav class="site-nav site-nav--public-shell" id="site-nav" data-nav-menu aria-label="Main navigation" hidden aria-hidden="true">
+            <a href="/index.html" data-nav-link>Home</a>
+            <a href="/about.html" data-nav-link>About</a>
+            <a href="/services.html" data-nav-link>Services</a>
+            <a href="/gallery.html" data-nav-link>Gallery</a>
+            <a href="/quote.html" data-nav-link>Quote</a>
+            <a href="/contact.html" data-nav-link>Contact</a>
+            <a href="/auth.html" data-nav-link data-auth-link data-auth-guest-label="Account">Account</a>
+          </nav>
+        </div>
       </div>
     </div>
   </header>

@@ -141,3 +141,6 @@
 - Extracted the remaining manager `quotes` and `projects/media` endpoints into `routes/manager/quote-routes.js` and `routes/manager/project-routes.js`, reducing `routes/manager.js` to a thin composition layer around shared helpers and subrouters.
 - Continued slimming `apps/mobile-v1/App.js` by moving the poller scheduler into `apps/mobile-v1/src/usePollerScheduler.js` and the login/tab shell UI into `apps/mobile-v1/src/session-shell.js`.
 - Re-ran `npm run test:ci` after the route/mobile refactor and kept the suite green.
+- Replaced the old workspace/auth header markup in `auth.html`, `client-dashboard.html` and `manager-dashboard.html` with the same sticky `title.png` public shell used on brochure pages, keeping session-aware account and hamburger menu behaviour consistent after login.
+- Scoped the legacy workspace-header overrides in `styles/workspace.css` to non-public-shell headers so the new shared shell is not visually distorted on logged-in pages.
+- Re-ran `npm run test:ci` after the header unification change and kept the suite green.
