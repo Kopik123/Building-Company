@@ -2,6 +2,7 @@
 
 ## Open
 
+- [ ] Define and implement a brand-new visual direction from scratch after the full style wipe, including fresh design tokens, responsive header behavior and a single current source-of-truth for design decisions.
 - [x] Ran `powershell -ExecutionPolicy Bypass -File .\scripts\setup-vscode.ps1` on the local machine and confirmed the VS Code workspace bootstrap completes with the current recommendations.
 - [x] Reviewed `ms-vscode.live-server` usage and removed it from the VS Code recommendations/bootstrap because the repo runs through the app server and Playwright instead.
 - [x] Planned a separate migration from `multer 1.x` to `multer 2.x` in `todosv2.md`, based on the real upload surface in `utils/upload.js`, `client`, `inbox`, `group` and manager project-media routes.
@@ -59,6 +60,8 @@
 
 ## Completed
 
+- [x] Removed the entire active website visual layer by resetting `styles/tokens.css`, `styles/base.css`, `styles/public.css`, `styles/workspace.css` and root `styles.css` to a neutral baseline, so the previous look/theme no longer renders.
+- [x] Removed design-related planning files tied to the previous visual direction (`DESIGNER_BRIEF_LEVELLINES.md`, `todosv2.md`, `dev_plan.md`, `todos.md`) before starting the next design cycle.
 - [x] Added a repeatable VS Code bootstrap script for extensions and workspace settings.
 - [x] Removed tracked `test-results/.last-run.json` from the repo path and added `test-results/` to `.gitignore` so Playwright artifacts no longer dirty the worktree after validation runs.
 - [x] Added shared workspace extension recommendations in `.vscode/extensions.json`.

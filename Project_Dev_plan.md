@@ -177,3 +177,5 @@
 - Updated `tests/playwright/public-redesign.spec.js` to reflect the new homepage card-board behaviour instead of the older long-scroll section assumptions.
 - Tightened the single-card homepage after live/local review by widening the desktop centre card, narrowing both side rails, reducing the visible service/location item counts, and moving the active centre card ahead of the side rails on mobile so the first screen stays useful on phones.
 - Reworked the mobile homepage header so the `title.png` board takes a full row above the auth/menu controls, improving proportions and making the top of the page read more like the wireframe instead of a tiny compressed shell.
+- Removed the entire active style layer on request by resetting `styles/tokens.css`, `styles/base.css`, `styles/public.css`, `styles/workspace.css` and root `styles.css` to a neutral no-theme baseline.
+- Removed legacy design/planning documents tied to the previous visual direction (`DESIGNER_BRIEF_LEVELLINES.md`, `todosv2.md`, `dev_plan.md`, `todos.md`) so the next site look can start from a clean planning baseline.
