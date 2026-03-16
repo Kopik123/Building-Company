@@ -4,8 +4,9 @@
   z-index: 120;
   border-bottom: 1px solid rgba(209, 164, 74, 0.35);
   background:
+    linear-gradient(180deg, rgba(8, 8, 8, 0.88), rgba(5, 5, 5, 0.94)),
     radial-gradient(90% 120% at 50% 0%, rgba(209, 164, 74, 0.16), rgba(0, 0, 0, 0)),
-    rgba(5, 5, 5, 0.96);
+    url('/mainbackground.png') center top / cover no-repeat;
   box-shadow: var(--shadow-header);
   backdrop-filter: blur(8px);
 }
