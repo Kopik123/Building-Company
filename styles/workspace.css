@@ -1,2 +1,383 @@
-/* Style reset by request: visual layer removed, pages now render unstyled baseline. */
+.workspace-site .site-header--public-shell {
+  border-bottom-color: rgba(209, 164, 74, 0.42);
+}
 
+.workspace-main {
+  padding-bottom: var(--space-8);
+}
+
+.workspace-shell .section {
+  padding: clamp(2rem, 5vw, 3.6rem) 0;
+}
+
+.workspace-operations-board,
+.workspace-stack {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.workspace-operations-heading {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: clamp(1rem, 2vw, 1.5rem);
+  background: linear-gradient(170deg, rgba(8, 8, 8, 0.95), rgba(3, 3, 3, 0.98));
+  box-shadow: var(--shadow-soft);
+}
+
+.workspace-operations-grid {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.workspace-operations-card {
+  padding: clamp(0.95rem, 1.8vw, 1.35rem);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: linear-gradient(165deg, rgba(10, 10, 10, 0.97), rgba(5, 5, 5, 0.97));
+  box-shadow: var(--shadow-soft);
+}
+
+.workspace-operations-card--wide {
+  grid-column: span 2;
+}
+
+.workspace-operations-card-top {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  align-items: baseline;
+  margin-bottom: var(--space-3);
+}
+
+.workspace-operations-card-top h2 {
+  margin-bottom: 0;
+  font-size: clamp(1.25rem, 2.5vw, 1.9rem);
+}
+
+.workspace-session-inline {
+  margin: 0;
+  color: var(--color-text-muted);
+  text-align: right;
+  font-size: 0.86rem;
+}
+
+.workspace-operations-copy {
+  color: var(--color-text-muted);
+}
+
+.workspace-operations-list,
+.workspace-operations-options,
+.workspace-mailbox-preview {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.workspace-overview-entry {
+  border: 1px solid rgba(209, 164, 74, 0.28);
+  border-radius: var(--radius-xs);
+  padding: 0.58rem 0.72rem;
+  background: rgba(6, 6, 6, 0.78);
+}
+
+.workspace-overview-entry h3 {
+  font-size: 1rem;
+  margin-bottom: 0.34rem;
+}
+
+.workspace-overview-entry p {
+  margin: 0;
+}
+
+.workspace-mailbox-metrics {
+  display: grid;
+  gap: var(--space-2);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: var(--space-3);
+}
+
+.workspace-mailbox-stat {
+  border: 1px solid rgba(209, 164, 74, 0.42);
+  border-radius: var(--radius-xs);
+  padding: 0.46rem 0.55rem;
+  background: rgba(8, 8, 8, 0.7);
+  display: grid;
+  gap: 0.15rem;
+}
+
+.workspace-mailbox-stat strong {
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.workspace-mailbox-stat-label {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.7rem;
+  color: var(--color-gold-2);
+}
+
+.workspace-mailbox-grid {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.workspace-mailbox-column {
+  border: 1px solid rgba(209, 164, 74, 0.32);
+  border-radius: var(--radius-xs);
+  padding: 0.6rem;
+  background: rgba(5, 5, 5, 0.73);
+}
+
+.workspace-session-actions,
+.dashboard-session-actions,
+.dashboard-actions-row {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.dashboard-session-actions .btn,
+.dashboard-actions-row .btn {
+  min-width: 140px;
+}
+
+.workspace-content-shell {
+  background: linear-gradient(180deg, rgba(26, 18, 8, 0.09), rgba(20, 15, 8, 0.04));
+}
+
+.dashboard-manager-top-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.card {
+  padding: clamp(0.95rem, 1.8vw, 1.4rem);
+  background: linear-gradient(160deg, var(--color-surface-light), var(--color-surface-light-2));
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.dashboard-filters {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.52rem;
+  margin-bottom: var(--space-4);
+}
+
+.dashboard-filters--compact {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.dashboard-pagination {
+  margin-top: var(--space-3);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.dashboard-divider {
+  margin: var(--space-5) 0;
+  border: 0;
+  border-top: 1px solid rgba(209, 164, 74, 0.24);
+}
+
+.dashboard-item,
+.dashboard-list-item,
+.dashboard-message,
+.dashboard-thread {
+  border: 1px solid rgba(209, 164, 74, 0.35);
+  border-radius: var(--radius-xs);
+  padding: 0.58rem 0.68rem;
+  background: rgba(7, 7, 7, 0.86);
+}
+
+.dashboard-item h3,
+.dashboard-list-item h3,
+.dashboard-thread h3 {
+  margin-bottom: 0.24rem;
+  font-size: 1.05rem;
+}
+
+.dashboard-item p,
+.dashboard-list-item p,
+.dashboard-message p,
+.dashboard-thread p {
+  margin: 0.18rem 0;
+}
+
+.dashboard-communication-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.dashboard-media-list {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.workspace-form-panel {
+  border: 1px solid rgba(209, 164, 74, 0.35);
+  border-radius: var(--radius-xs);
+  padding: 0.72rem;
+  background: rgba(8, 8, 8, 0.83);
+}
+
+.workspace-form-panel h3 {
+  margin-bottom: 0.5rem;
+}
+
+.auth-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.auth-card,
+.auth-account-panel,
+.auth-session {
+  background: linear-gradient(165deg, var(--color-surface-light), var(--color-surface-light-2));
+}
+
+.auth-session {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.auth-account-head {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  align-items: baseline;
+  margin-bottom: var(--space-3);
+}
+
+.auth-account-grid {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.dashboard-accordion-toggle {
+  width: 100%;
+  text-align: left;
+  border: 1px solid rgba(209, 164, 74, 0.5);
+  border-radius: var(--radius-xs);
+  background: rgba(8, 8, 8, 0.88);
+  padding: 0.5rem 0.65rem;
+  text-transform: uppercase;
+  font-size: 0.74rem;
+  letter-spacing: 0.09em;
+  margin-bottom: var(--space-3);
+}
+
+.dashboard-accordion-body {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.card.is-collapsed .dashboard-accordion-body {
+  display: none;
+}
+
+.workspace-shell input,
+.workspace-shell select,
+.workspace-shell textarea,
+.workspace-shell button,
+.workspace-shell .muted,
+.workspace-shell p,
+.workspace-shell li,
+.workspace-shell a,
+.workspace-shell label,
+.workspace-shell .card,
+.workspace-shell .surface-card--light,
+.workspace-shell .surface-card--dark {
+  color: var(--color-text);
+}
+
+.workspace-shell .card input,
+.workspace-shell .card select,
+.workspace-shell .card textarea,
+.workspace-shell .auth-card input,
+.workspace-shell .auth-card select,
+.workspace-shell .auth-card textarea {
+  background: rgba(10, 10, 10, 0.9);
+  border-color: rgba(209, 164, 74, 0.65);
+}
+
+.workspace-shell .muted {
+  color: var(--color-text-muted);
+}
+
+@media (max-width: 1200px) {
+  .dashboard-filters {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 992px) {
+  .workspace-operations-grid,
+  .dashboard-manager-top-grid,
+  .dashboard-communication-grid,
+  .auth-grid,
+  .auth-account-grid,
+  .workspace-mailbox-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .workspace-operations-card--wide {
+    grid-column: span 1;
+  }
+
+  .dashboard-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .workspace-shell .section {
+    padding: var(--space-5) 0;
+  }
+
+  .workspace-operations-heading,
+  .workspace-operations-card,
+  .card {
+    padding: 0.8rem;
+  }
+
+  .workspace-operations-card-top {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .workspace-session-inline {
+    text-align: left;
+  }
+
+  .dashboard-filters,
+  .dashboard-filters--compact {
+    grid-template-columns: 1fr;
+  }
+
+  .workspace-mailbox-metrics {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .dashboard-session-actions,
+  .workspace-session-actions,
+  .dashboard-actions-row {
+    flex-direction: column;
+  }
+
+  .dashboard-session-actions .btn,
+  .workspace-session-actions .btn,
+  .dashboard-actions-row .btn {
+    width: 100%;
+  }
+}

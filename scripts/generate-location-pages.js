@@ -308,7 +308,17 @@ const buildLocationPages = () =>
         },
         buildFaqJsonLd(`${shared.siteUrl}/${page.fileName}`, page.faq)
       ],
-      board: buildLocationBoard(page),
+      hero: {
+        image: page.heroImage,
+        eyebrow: `Renovations | ${page.location}`,
+        title: page.heroTitle,
+        lead: page.heroLead,
+        chips: [
+          { label: page.location },
+          { label: shared.region, isBrandRegion: true },
+          { label: shared.claim, isBrandClaim: true }
+        ]
+      },
       sections: [
         renderIntroSection({
           eyebrow: 'Location Focus',
@@ -334,7 +344,18 @@ const buildLocationPages = () =>
           title: `Questions we usually answer before a ${page.location} brief starts.`,
           items: page.faq
         })
-      ]
+      ],
+      contact: {
+        title: `Discuss premium renovations in ${page.location} directly with the studio.`,
+        lead: 'Every local brief keeps the same direct contact route so scope, finish ambition and sequencing can be clarified without delay.'
+      },
+      consultation: {
+        title: shared.enquiryTitle,
+        lead: shared.enquiryLead,
+        formContext: `Location | ${page.location}`,
+        locationValue: page.location,
+        selectedProjectType: ''
+      }
     })
   }));
 

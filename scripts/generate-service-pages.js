@@ -222,7 +222,7 @@ const buildServicePages = () =>
         },
         buildFaqJsonLd(`${shared.siteUrl}/${page.fileName}`, page.faq.items)
       ],
-      board: buildServiceBoard(page),
+      hero: page.hero,
       sections: [
         renderIntroSection({
           eyebrow: page.intro.eyebrow,
@@ -249,7 +249,9 @@ const buildServicePages = () =>
           images: page.mediaStrip.images
         }),
         renderFaqSection(page.faq)
-      ]
+      ],
+      contact: page.contact,
+      consultation: page.consultation
     })
   }));
 

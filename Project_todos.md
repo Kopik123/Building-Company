@@ -2,7 +2,8 @@
 
 ## Open
 
-- [ ] Define and implement a brand-new visual direction from scratch after the full style wipe, including fresh design tokens, responsive header behavior and a single current source-of-truth for design decisions.
+- [x] Define and implement a brand-new visual direction from scratch after the full style wipe, including fresh design tokens, responsive header behavior and a single current source-of-truth for design decisions.
+- [ ] Run live QA on the new vNext shell after droplet deploy (`/`, `/about.html`, `/services.html`, `/gallery.html`, `/quote.html`, `/contact.html`, `/auth.html`, dashboards, 2 service pages, 2 location pages), with explicit readability checks for all-gold typography on light cards.
 - [x] Ran `powershell -ExecutionPolicy Bypass -File .\scripts\setup-vscode.ps1` on the local machine and confirmed the VS Code workspace bootstrap completes with the current recommendations.
 - [x] Reviewed `ms-vscode.live-server` usage and removed it from the VS Code recommendations/bootstrap because the repo runs through the app server and Playwright instead.
 - [x] Planned a separate migration from `multer 1.x` to `multer 2.x` in `todosv2.md`, based on the real upload surface in `utils/upload.js`, `client`, `inbox`, `group` and manager project-media routes.
@@ -60,6 +61,10 @@
 
 ## Completed
 
+- [x] Implemented the vNext full rebuild after the style wipe: restored `tokens/base/public/workspace` styles, sticky `title.png` shell, always-visible inline login fields on mobile/desktop for guests, hamburger-driven vertical menu and one-dominant-card homepage flow.
+- [x] Removed legacy homepage card-switch logic from `site.js` and switched homepage navigation back to dedicated page routing (`Home/About/Services/Gallery/Quote/Contact/Account`).
+- [x] Reworked generated service/location pages to stop using the old `studio-board` variant and render through the shared multipage brochure structure with one consultation route.
+- [x] Updated Playwright public/mobile specs to the new shell/session behavior and multi-page homepage routing, then re-ran `verify:generated`, `test:ci` and `test:e2e:mobile` successfully.
 - [x] Removed the entire active website visual layer by resetting `styles/tokens.css`, `styles/base.css`, `styles/public.css`, `styles/workspace.css` and root `styles.css` to a neutral baseline, so the previous look/theme no longer renders.
 - [x] Removed design-related planning files tied to the previous visual direction (`DESIGNER_BRIEF_LEVELLINES.md`, `todosv2.md`, `dev_plan.md`, `todos.md`) before starting the next design cycle.
 - [x] Added a repeatable VS Code bootstrap script for extensions and workspace settings.

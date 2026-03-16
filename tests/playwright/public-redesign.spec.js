@@ -39,7 +39,7 @@ const mockPublicClientSession = async (page) => {
   });
 };
 
-test('homepage renders a single menu-driven card stage with side rails', async ({ page }) => {
+test('homepage renders one dominant card and routes navigation to dedicated pages', async ({ page }) => {
   await page.goto('/index.html');
 
   await expect(page.locator('body.public-site.page-home')).toBeVisible();
@@ -47,12 +47,7 @@ test('homepage renders a single menu-driven card stage with side rails', async (
   await expect(page.locator('.site-header--public-shell [data-inline-login-form]')).toBeVisible();
   await expect(page.locator('.site-header--public-shell .public-menu-toggle')).toBeVisible();
   await expect(page.locator('.site-header--public-shell [data-nav-menu]')).toBeHidden();
-  await expect(page.locator('[data-home-card-shell]')).toBeVisible();
-  await expect(page.locator('[data-home-card-status]')).toContainText(/home/i);
-  await expect(page.locator('main h1').first()).toContainText(/one focused studio card at a time/i);
-  await expect(page.locator('.home-card-sidebar--services')).toBeVisible();
-  await expect(page.locator('.home-card-sidebar--locations')).toBeVisible();
-  await expect(page.locator('.home-card-contact-strip')).toBeVisible();
+  await expect(page.locator('main h1').first()).toContainText(/premium bathrooms, kitchens and interiors delivered/i);
   await openNavIfNeeded(page);
   await expect(page.locator('[data-nav-menu] a[href="/index.html"]')).toBeVisible();
   await expect(page.locator('[data-nav-menu] a[href="/about.html"]')).toBeVisible();
@@ -62,8 +57,8 @@ test('homepage renders a single menu-driven card stage with side rails', async (
   await expect(page.locator('[data-nav-menu] a[href="/contact.html"]')).toBeVisible();
   await expect(page.locator('[data-nav-menu] a[href="/auth.html"]')).toContainText(/^account$/i);
   await page.locator('[data-nav-menu] a[href="/quote.html"]').click();
-  await expect(page.locator('[data-home-card-status]')).toContainText(/quote/i);
-  await expect(page.locator('.home-card-quote-form')).toBeVisible();
+  await expect(page).toHaveURL(/\/quote\.html$/);
+  await expect(page.locator('form.js-quote-form')).toBeVisible();
   await expect(page.locator('[data-inline-login-form] input[name="email"]')).toBeVisible();
   await expect(page.locator('[data-inline-login-form] input[name="password"]')).toBeVisible();
   await expectNoHorizontalScroll(page);
@@ -106,7 +101,7 @@ test('authenticated public shell hides login-only controls and keeps one account
   await expect(page.locator('[data-nav-menu] [data-auth-link]')).toContainText(/^account$/i);
 });
 
-test('service, location and legal pages keep the same shell and SEO contact path', async ({ page }) => {
+test('service, location and legal pages keep the same shell and single primary consultation route', async ({ page }) => {
   await page.goto('/premium-bathrooms-manchester.html');
   await expect(page.locator('body.public-site.page-service')).toBeVisible();
   await expect(page.locator('.site-header--public-shell .public-brand-title-image[src="/assets/optimized/brand/title.png"]')).toHaveCount(1);
@@ -119,7 +114,7 @@ test('service, location and legal pages keep the same shell and SEO contact path
   await expect(page.locator('[data-nav-menu] a[href="/contact.html"]')).toBeVisible();
   await expect(page.locator('[data-nav-menu] a[href="/quote.html"]')).toBeVisible();
   await expect(page.locator('[data-nav-menu] a[href="/auth.html"]')).toBeVisible();
-  await expect(page.locator('#consultation form, form.js-quote-form')).toHaveCount(1);
+  await expect(page.locator('form.js-quote-form')).toHaveCount(1);
 
   await page.goto('/premium-renovations-chorlton.html');
   await expect(page.locator('body.public-site.page-location')).toBeVisible();

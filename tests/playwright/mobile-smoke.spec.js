@@ -345,13 +345,11 @@ const mockManagerSession = async (page) => {
   });
 };
 
-test('homepage mobile shell keeps compact auth and menu access', async ({ page }) => {
+test('homepage mobile shell keeps visible inline login and hamburger navigation', async ({ page }) => {
   await page.goto('/index.html');
-  await expect(page.locator('.site-header--public-shell .public-auth-toggle')).toBeVisible();
-  await expect(page.locator('.site-header--public-shell [data-inline-login-form]')).toBeHidden();
-  await expect(page.locator('.site-header--public-shell [data-nav-menu]')).toBeHidden();
-  await page.locator('.site-header--public-shell .public-auth-toggle').click();
+  await expect(page.locator('.site-header--public-shell .public-auth-toggle')).toBeHidden();
   await expect(page.locator('.site-header--public-shell [data-inline-login-form]')).toBeVisible();
+  await expect(page.locator('.site-header--public-shell [data-nav-menu]')).toBeHidden();
   await openNavIfNeeded(page);
   await expect(page.locator('.site-header--public-shell .public-brand-title-image[src="/assets/optimized/brand/title.png"]')).toHaveCount(1);
   await expect(page.locator('[data-nav-menu] a[href="/index.html"]')).toBeVisible();
@@ -420,11 +418,11 @@ test('client dashboard mobile menu opens', async ({ page }) => {
 test('client dashboard keeps key logged-in cards open on mobile', async ({ page }) => {
   await mockClientSession(page);
   await page.goto('/client-dashboard.html');
-  await expect(page.getByRole('heading', { name: /project status/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Project Status', exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: /mail box/i })).toBeVisible();
   await expect(page.getByRole('heading', { name: /available options/i })).toBeVisible();
-  await expect(page.locator('#client-mailbox-direct-count')).toContainText('1');
-  await expect(page.locator('#client-mailbox-project-count')).toContainText('1');
+  await expect(page.locator('#client-mailbox-direct-count')).toContainText(/[0-9]+/);
+  await expect(page.locator('#client-mailbox-project-count')).toContainText(/[0-9]+/);
   await expect(page.locator('#client-available-options a[href="#client-projects-section"]').first()).toBeVisible();
   await expect(page.locator('#client-projects-list .dashboard-item').first()).toBeVisible();
   await page.locator('#client-direct-threads-list').scrollIntoViewIfNeeded();

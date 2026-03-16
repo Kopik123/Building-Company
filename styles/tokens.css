@@ -1,2 +1,42 @@
-/* Style reset by request: visual layer removed, pages now render unstyled baseline. */
+:root {
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-ui: 'Montserrat', 'Segoe UI', sans-serif;
 
+  --color-bg: #050505;
+  --color-bg-elevated: #0d0d0d;
+  --color-surface-light: #f6f2e9;
+  --color-surface-light-2: #f0eadf;
+  --color-surface-dark: #090909;
+  --color-surface-dark-2: #111111;
+
+  --color-gold-1: #f2ce77;
+  --color-gold-2: #d1a44a;
+  --color-gold-3: #b47d1c;
+  --color-gold-4: #7d560d;
+
+  --color-text: var(--color-gold-1);
+  --color-text-muted: #d2b987;
+  --color-text-strong: #ffd98f;
+  --color-border: rgba(209, 164, 74, 0.5);
+  --color-border-strong: rgba(242, 206, 119, 0.7);
+
+  --shadow-soft: 0 18px 50px rgba(0, 0, 0, 0.35);
+  --shadow-header: 0 12px 28px rgba(0, 0, 0, 0.55);
+
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius-md: 18px;
+  --radius-lg: 26px;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 2.75rem;
+  --space-8: 3.5rem;
+
+  --header-brand-max: 920px;
+  --header-shell-max: 1240px;
+}
