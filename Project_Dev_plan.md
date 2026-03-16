@@ -190,3 +190,5 @@
 - Added desktop/mobile-aware assertions in `tests/playwright/public-redesign.spec.js` and `tests/playwright/mobile-smoke.spec.js` so shell tests validate responsive defaults instead of one hardcoded nav state.
 - Re-ran `npm.cmd run test:ci` and `npm.cmd run test:e2e:mobile`; both suites passed after the responsive desktop/mobile split.
 - Logged and tracked a local environment issue where PowerShell execution policy blocks `npm.ps1`, using `npm.cmd` as the immediate workaround for command execution.
+- Refined `styles/public.css` again so the public brochure keeps a light section backdrop, renders both left/right cards on the same dark card treatment, uses one gold text color across the visible public content, and visually merges the desktop login strip with the nav into one connected shell block.
+- Re-ran `npm.cmd run test:ci` and the focused public Playwright regression (`tests/playwright/public-redesign.spec.js`) after the shell/background merge; both stayed green.
