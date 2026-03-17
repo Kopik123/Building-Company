@@ -84,7 +84,9 @@ test('core brochure pages render about, services, gallery, contact and quote rou
 
   await page.goto('/services.html');
   await expect(page.locator('body.public-site.page-services')).toBeVisible();
-  await expect(page.getByRole('heading', { name: /one service hub/i })).toBeVisible();
+  await expect(page.locator('main h1').first()).toHaveText(/^Services$/i);
+  await expect(page.locator('.service-summary-list')).toContainText(/Bathrooms/i);
+  await expect(page.locator('.service-summary-list')).toContainText(/Wall Systems/i);
 
   await page.goto('/gallery.html');
   await expect(page.locator('body.public-site.page-gallery')).toBeVisible();
