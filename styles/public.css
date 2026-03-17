@@ -626,6 +626,30 @@
     url('/boxbackground.png') center center / cover no-repeat;
 }
 
+.public-site .surface-card--light,
+.public-site .content-card--light,
+.public-site .surface-card--dark,
+.public-site .content-card--dark,
+.public-site .section-shell,
+.public-site .detail-card,
+.public-site .faq-grid details,
+.page-home .cta-band,
+.page-home .quote-form {
+  --box-text-shadow: 0 1px 2px rgba(0, 0, 0, 0.78), 0 0 18px rgba(0, 0, 0, 0.28);
+}
+
+.public-site .surface-card--light :is(h1, h2, h3, h4, h5, h6, p, li, a, span, strong, small, label, summary),
+.public-site .content-card--light :is(h1, h2, h3, h4, h5, h6, p, li, a, span, strong, small, label, summary),
+.public-site .surface-card--dark :is(h1, h2, h3, h4, h5, h6, p, li, a, span, strong, small, label, summary),
+.public-site .content-card--dark :is(h1, h2, h3, h4, h5, h6, p, li, a, span, strong, small, label, summary),
+.public-site .section-shell :is(h1, h2, h3, h4, h5, h6, p, li, a, span, strong, small, label, summary),
+.public-site .detail-card :is(h1, h2, h3, h4, h5, h6, p, li, a, span, strong, small, label, summary),
+.public-site .faq-grid details :is(h1, h2, h3, h4, h5, h6, p, li, a, span, strong, small, label, summary),
+.page-home .cta-band :is(h1, h2, h3, h4, h5, h6, p, li, a, span, strong, small, label, summary),
+.page-home .quote-form :is(h1, h2, h3, h4, h5, h6, p, li, a, span, strong, small, label, summary) {
+  text-shadow: var(--box-text-shadow);
+}
+
 .public-site .section-eyebrow,
 .public-site .workspace-card-label,
 .public-site .service-card-heading span,

@@ -9,16 +9,16 @@
   --color-surface-dark: #090909;
   --color-surface-dark-2: #111111;
 
-  --color-gold-1: #f2ce77;
-  --color-gold-2: #d1a44a;
-  --color-gold-3: #b47d1c;
-  --color-gold-4: #7d560d;
+  --color-gold-1: #e7bc62;
+  --color-gold-2: #c8963b;
+  --color-gold-3: #a46b15;
+  --color-gold-4: #6f4709;
 
   --color-text: var(--color-gold-1);
-  --color-text-muted: #d2b987;
-  --color-text-strong: #ffd98f;
-  --color-border: rgba(209, 164, 74, 0.5);
-  --color-border-strong: rgba(242, 206, 119, 0.7);
+  --color-text-muted: #cca05a;
+  --color-text-strong: #ffd489;
+  --color-border: rgba(200, 150, 59, 0.52);
+  --color-border-strong: rgba(255, 212, 137, 0.72);
 
   --shadow-soft: 0 18px 50px rgba(0, 0, 0, 0.35);
   --shadow-header: 0 12px 28px rgba(0, 0, 0, 0.55);

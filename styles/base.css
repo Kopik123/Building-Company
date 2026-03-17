@@ -107,7 +107,7 @@ textarea {
 
 input::placeholder,
 textarea::placeholder {
-  color: rgba(242, 206, 119, 0.78);
+  color: rgba(231, 188, 98, 0.8);
 }
 
 textarea {
