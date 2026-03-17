@@ -25,7 +25,7 @@ window.LEVEL_LINES_BRAND = {
       href: 'tel:+447304506391'
     }
   ],
-  budgetRanges: ['£8,000-£12,000', '£12,000-£20,000', '£20,000-£30,000', '£30,000+'],
+  budgetRanges: ['\u00A38,000-\u00A312,000', '\u00A312,000-\u00A320,000', '\u00A320,000-\u00A330,000', '\u00A330,000+'],
   copy: {
     home: {
       heroLead: 'Level Lines Studio shapes premium bathroom, kitchen and interior renovation briefs for homeowners who expect strong line quality, quieter luxury and a controlled building process.',
@@ -52,7 +52,9 @@ window.LEVEL_LINES_BRAND = {
     'Manchester',
     'Liverpool',
     'Preston',
+    'Sheffield',
     'Rochdale',
+    'Leeds',
     'Oldham',
     'Macclesfield',
     'Stockport',
