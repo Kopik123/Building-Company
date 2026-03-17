@@ -135,3 +135,4 @@
 - [x] Reduced `apps/mobile-v1/App.js` again by extracting the poller scheduler and the session/tab shell UI into dedicated `src` modules, leaving the top-level app as a thinner orchestration layer.
 - [ ] Revisit SonarQube CPD exclusions once `about/contact/gallery/quote/legal` move further into the shared public renderer, so static HTML exclusions can be narrowed again.
 - [ ] Run live QA on `/gallery.html` after deploy to confirm the service-led grouping, service descriptions and fullscreen flow all read naturally on desktop and mobile.
+- [ ] Run live QA on public pages after the card-surface change to confirm `mainbackground.png` reads well inside all cards and does not reduce text contrast on smaller screens.
