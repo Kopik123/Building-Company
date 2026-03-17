@@ -8,6 +8,11 @@ const {
   renderFeatureSection,
   renderFaqSection
 } = require('./publicPageRenderer');
+const {
+  buildAreaItems,
+  buildFaqJsonLd,
+  buildLinksByLabel
+} = require('./publicPageBuild.shared');
 
 const projectRoot = path.resolve(__dirname, '..');
 
@@ -194,16 +199,6 @@ const CORE_SERVICE_LABELS = [
   'Interior Wall Systems'
 ];
 
-const buildLinksByLabel = (labels) =>
-  labels
-    .map((label) => shared.serviceLinks.find((link) => link.label === label))
-    .filter(Boolean);
-
-const buildAreaItems = (location) => [
-  location,
-  ...shared.serviceAreas.filter((area) => area !== location)
-];
-
 const buildLocationBoard = (page) => {
   const config = LOCATION_BOARD_CONFIG[page.fileName];
 
@@ -226,13 +221,13 @@ const buildLocationBoard = (page) => {
         eyebrow: 'Coverage',
         title: 'The local brief sits inside the same direct North West coverage pattern.',
         region: shared.region,
-        items: buildAreaItems(page.location)
+        items: buildAreaItems(shared.serviceAreas, page.location)
       },
       {
         type: 'links',
         eyebrow: 'Services',
         title: 'Bathroom, kitchen and interior scopes stay inside one refined studio offer.',
-        links: buildLinksByLabel(CORE_SERVICE_LABELS)
+        links: buildLinksByLabel(shared.serviceLinks, CORE_SERVICE_LABELS)
       },
       {
         type: 'contact',
@@ -258,20 +253,6 @@ const buildLocationBoard = (page) => {
     motionProfile: 'subtle'
   };
 };
-
-const buildFaqJsonLd = (pageUrl, items) => ({
-  '@context': 'https://schema.org',
-  '@type': 'FAQPage',
-  mainEntity: items.map((item) => ({
-    '@type': 'Question',
-    name: item.q,
-    acceptedAnswer: {
-      '@type': 'Answer',
-      text: item.a
-    }
-  })),
-  url: pageUrl
-});
 
 const buildLocationPages = () =>
   pages.map((page) => ({

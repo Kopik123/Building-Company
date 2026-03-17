@@ -9,6 +9,11 @@ const {
   renderMediaStripSection,
   renderFaqSection
 } = require('./publicPageRenderer');
+const {
+  buildAreaItems,
+  buildFaqJsonLd,
+  buildLinksByLabel
+} = require('./publicPageBuild.shared');
 
 const projectRoot = path.resolve(__dirname, '..');
 
@@ -120,16 +125,6 @@ const SERVICE_BOARD_CONFIG = {
   }
 };
 
-const buildLinksByLabel = (labels) =>
-  labels
-    .map((label) => shared.serviceLinks.find((link) => link.label === label))
-    .filter(Boolean);
-
-const buildAreaItems = (primaryArea) => [
-  primaryArea,
-  ...shared.serviceAreas.filter((area) => area !== primaryArea)
-];
-
 const buildServiceBoard = (page) => {
   const config = SERVICE_BOARD_CONFIG[page.fileName];
 
@@ -152,13 +147,13 @@ const buildServiceBoard = (page) => {
         eyebrow: 'Coverage',
         title: 'North West coverage kept close enough for direct studio oversight.',
         region: shared.region,
-        items: buildAreaItems(page.consultation.locationValue)
+        items: buildAreaItems(shared.serviceAreas, page.consultation.locationValue)
       },
       {
         type: 'links',
         eyebrow: 'Services',
         title: 'Connected scopes handled inside the same premium studio offer.',
-        links: buildLinksByLabel(config.relatedLabels)
+        links: buildLinksByLabel(shared.serviceLinks, config.relatedLabels)
       },
       {
         type: 'contact',
@@ -184,20 +179,6 @@ const buildServiceBoard = (page) => {
     motionProfile: 'subtle'
   };
 };
-
-const buildFaqJsonLd = (pageUrl, items) => ({
-  '@context': 'https://schema.org',
-  '@type': 'FAQPage',
-  mainEntity: items.map((item) => ({
-    '@type': 'Question',
-    name: item.q,
-    acceptedAnswer: {
-      '@type': 'Answer',
-      text: item.a
-    }
-  })),
-  url: pageUrl
-});
 
 const buildServicePages = () =>
   pages.map((page) => ({
