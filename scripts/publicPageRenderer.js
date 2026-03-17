@@ -604,9 +604,8 @@ ${renderPublicShell(shared)}
 
 ${board
     ? renderStudioBoard({ shared, board })
-    : `    <section class="public-hero public-hero--inner" style="--hero-image: url('${escapeHtml(hero.image)}');">
-      <div class="hero-backdrop"></div>
-      <div class="container inner-hero-shell">
+    : `    <section class="public-hero public-hero--inner">
+      <div class="container inner-hero-shell content-card content-card--dark" style="--hero-image: url('${escapeHtml(hero.image)}');">
         <p class="section-eyebrow">${escapeHtml(hero.eyebrow)}</p>
         <h1>${escapeHtml(hero.title)}</h1>
         <p class="section-lead">${escapeHtml(hero.lead)}</p>

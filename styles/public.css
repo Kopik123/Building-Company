@@ -243,6 +243,35 @@
   padding-bottom: var(--space-8);
 }
 
+.public-hero--inner {
+  padding: clamp(1.8rem, 4vw, 3rem) 0 clamp(1.1rem, 2.8vw, 2rem);
+}
+
+.inner-hero-shell {
+  display: grid;
+  gap: 0.9rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.public-hero--inner .inner-hero-shell {
+  background:
+    linear-gradient(160deg, rgba(10, 10, 10, 0.88), rgba(4, 4, 4, 0.94)),
+    var(--hero-image) center center / cover no-repeat,
+    linear-gradient(165deg, rgba(12, 12, 12, 0.9), rgba(5, 5, 5, 0.96));
+}
+
+.public-hero--inner h1,
+.public-hero--inner .section-lead {
+  max-width: 62rem;
+}
+
+.hero-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.52rem;
+}
+
 .public-section {
   padding: clamp(2.2rem, 6.4vw, 4rem) 0;
 }

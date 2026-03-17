@@ -119,6 +119,7 @@ test('service, location and legal pages keep the same shell and single primary c
   await expect(page.locator('body.public-site.page-service')).toBeVisible();
   await expect(page.locator('.site-header--public-shell .public-brand-title-image[src="/assets/optimized/brand/title.png"]')).toHaveCount(1);
   await expect(page.locator('.site-header--public-shell [data-inline-login-form]')).toBeVisible();
+  await expect(page.locator('.public-hero--inner .inner-hero-shell.content-card--dark')).toBeVisible();
   await expectShellNavigationDefaultState(page);
   await expect(page.locator('main h1').first()).toContainText(/Bathrooms/i);
   await openNavIfNeeded(page);
