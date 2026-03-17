@@ -1,6 +1,7 @@
 (() => {
   const runtime = window.LevelLinesRuntime || {};
   const dashboardShared = window.LevelLinesDashboardShared || {};
+  const managerProjects = window.LevelLinesManagerProjects || {};
   const TOKEN_KEY = runtime.TOKEN_KEY || 'll_auth_token';
   const USER_KEY = runtime.USER_KEY || 'll_auth_user';
   const DEFAULT_PAGE_SIZE = 25;
@@ -155,6 +156,8 @@
   const userSearchCache = new Map();
   const managerDomainSections = Array.from(document.querySelectorAll('[data-manager-domain-section]'));
   const managerDomainButtons = Array.from(document.querySelectorAll('[data-manager-domain-choice]'));
+  let renderManagerWorkflow = () => {};
+  let projectsController = null;
 
   const parseError = runtime.parseError || ((payload) => payload?.error || 'Request failed.');
   const escapeHtml = runtime.escapeHtml || ((value) => String(value ?? ''));
@@ -256,40 +259,6 @@
     node.textContent = message;
     return node;
   });
-
-  const createProjectListCard = () => {
-    const card = document.createElement('article');
-    card.className = 'dashboard-item';
-    const heading = document.createElement('h3');
-    heading.className = 'dashboard-item-title';
-    const meta = document.createElement('p');
-    meta.className = 'muted';
-    const row = document.createElement('div');
-    row.className = 'dashboard-actions-row';
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'btn btn-outline';
-    btn.textContent = 'Select';
-    btn.addEventListener('click', async () => {
-      const projectId = card.dataset.projectId || '';
-      if (!projectId) return;
-      state.selectedProjectId = projectId;
-      if (!state.projectDetailsById.has(projectId)) {
-        try {
-          await loadProjectDetail(projectId, true);
-        } catch (error) {
-          window.alert(error.message || 'Could not load project details');
-        }
-      }
-      fillProjectEditor();
-      renderProjects();
-    });
-    row.appendChild(btn);
-    card.appendChild(heading);
-    card.appendChild(meta);
-    card.appendChild(row);
-    return card;
-  };
 
   const createThreadCard = dashboardShared.createThreadCard || (({ onOpen }) => {
     const card = document.createElement('article');
@@ -397,18 +366,6 @@
     }
   };
 
-  const openProjectEditor = () => {
-    if (!state.selectedProjectId) {
-      setStatus(el.projectEditStatus, 'Select a project from the list first, then edit it here.', 'error');
-      scrollToSection('manager-projects-section', el.projectsFilterQ);
-      return;
-    }
-
-    fillProjectEditor();
-    if (el.projectEditorCard.hidden) el.projectEditorCard.hidden = false;
-    scrollToSection('project-editor-card', el.projectEditForm?.elements?.title);
-  };
-
   const MANAGER_DOMAIN_CONFIG = {
     projects: {
       description: 'Choose the project route first, then create a new project or edit the selected one.',
@@ -463,7 +420,7 @@
     }
   };
 
-  const renderManagerWorkflow = () => {
+  renderManagerWorkflow = () => {
     const selectedDomain = MANAGER_DOMAIN_CONFIG[state.selectedManagerDomain] ? state.selectedManagerDomain : 'projects';
     state.selectedManagerDomain = selectedDomain;
 
@@ -564,10 +521,8 @@
     return payload;
   });
 
-  const selectedProject = () =>
-    state.projectDetailsById.get(state.selectedProjectId)
-    || state.projects.find((p) => p.id === state.selectedProjectId)
-    || null;
+  const loadProjects = (...args) => projectsController?.loadProjects(...args);
+  const openProjectEditor = (...args) => projectsController?.openProjectEditor(...args);
 
   const selectedEstimate = () =>
     state.estimates.find((estimate) => estimate.id === state.selectedEstimateId)
@@ -866,108 +821,26 @@
     renderAvailableOptions();
   };
 
-  const renderProjects = () => {
-    if (!state.projects.length) {
-      syncKeyedList(el.projectsList, [], {
-        getKey: () => '',
-        createNode: createProjectListCard,
-        updateNode: () => {},
-        createEmptyNode: () => createMutedNode('No projects found for current filters.')
-      });
-      el.projectEditorCard.hidden = true;
-      renderOperationsShell();
-      renderManagerWorkflow();
-      return;
-    }
-    syncKeyedList(el.projectsList, state.projects, {
-      getKey: (project) => project.id,
-      createNode: createProjectListCard,
-      updateNode: (card, project) => {
-        card.dataset.projectId = project.id;
-        card.className = `dashboard-item ${project.id === state.selectedProjectId ? 'is-active' : ''}`;
-        card.children[0].textContent = project.title || 'Project';
-        card.children[1].textContent = `${project.status || '-'} | ${project.location || 'No location'} | ${project.imageCount || 0} images/${project.documentCount || 0} docs | Client: ${project.client?.email || 'No client'} | Staff: ${project.assignedManager?.email || 'No staff'}`;
-      },
-      createEmptyNode: () => createMutedNode('No projects found for current filters.')
-    });
-    renderPagination(el.projectsPagination, el.projectsPrev, el.projectsNext, state.projectsPagination);
-    renderOperationsShell();
-    renderManagerWorkflow();
-  };
-
-  const renderMedia = () => {
-    el.mediaList.innerHTML = '';
-    const project = selectedProject();
-    if (!project) return;
-    const media = Array.isArray(project.media) ? project.media : [];
-    if (!media.length) {
-      el.mediaList.innerHTML = '<p class=\"muted\">No media uploaded for this project.</p>';
-      return;
-    }
-    const frag = document.createDocumentFragment();
-    media.forEach((item) => {
-      const card = document.createElement('article');
-      card.className = 'dashboard-media-item';
-      card.innerHTML = `<div class=\"dashboard-media-top\"><strong>${escapeHtml(item.filename)}</strong><span class=\"muted\">${escapeHtml(item.mediaType)}</span></div>`;
-      const row = document.createElement('div');
-      row.className = 'dashboard-actions-row';
-      const openLink = document.createElement('a');
-      openLink.href = item.url;
-      openLink.target = '_blank';
-      openLink.rel = 'noopener noreferrer';
-      openLink.className = 'btn btn-outline';
-      openLink.textContent = 'Open';
-      const del = document.createElement('button');
-      del.type = 'button';
-      del.className = 'btn btn-outline';
-      del.textContent = 'Delete';
-      del.addEventListener('click', async () => {
-        if (!window.confirm(`Delete file \"${item.filename}\"?`)) return;
-        try {
-          await api(`/api/manager/projects/${project.id}/media/${item.id}`, { method: 'DELETE' });
-          await loadProjects(project.id);
-          setStatus(el.mediaUploadStatus, 'Media deleted.', 'success');
-        } catch (error) {
-          setStatus(el.mediaUploadStatus, error.message || 'Failed to delete media.', 'error');
-        }
-      });
-      row.appendChild(openLink);
-      row.appendChild(del);
-      card.appendChild(row);
-      frag.appendChild(card);
-    });
-    el.mediaList.appendChild(frag);
-  };
-
-  const fillProjectEditor = () => {
-    const project = selectedProject();
-    if (!project) {
-      el.projectEditorCard.hidden = true;
-      requestAccordionRefresh();
-      return;
-    }
-    const f = el.projectEditForm.elements;
-    el.projectEditorCard.hidden = false;
-    f.id.value = project.id;
-    f.title.value = project.title || '';
-    f.location.value = project.location || '';
-    f.status.value = project.status || 'planning';
-    f.quoteId.value = project.quoteId || '';
-    f.clientEmail.value = project.client?.email || '';
-    f.assignedManagerEmail.value = project.assignedManager?.email || '';
-    f.galleryOrder.value = Number.isFinite(project.galleryOrder) ? project.galleryOrder : 0;
-    f.budgetEstimate.value = project.budgetEstimate || '';
-    f.startDate.value = toDateInputValue(project.startDate);
-    f.endDate.value = toDateInputValue(project.endDate);
-    f.showInGallery.checked = Boolean(project.showInGallery);
-    f.isActive.checked = Boolean(project.isActive);
-    f.description.value = project.description || '';
-    setSmallStatus(el.projectEditClientLookupStatus, '', '');
-    setSmallStatus(el.projectEditManagerLookupStatus, '', '');
-    renderMedia();
-    renderManagerWorkflow();
-    requestAccordionRefresh();
-  };
+  projectsController = (managerProjects.createManagerProjectsController || (() => null))({
+    state,
+    el,
+    api,
+    buildQuery,
+    syncKeyedList,
+    createMutedNode,
+    renderPagination,
+    setStatus,
+    setSmallStatus,
+    requestAccordionRefresh,
+    escapeHtml,
+    normUuid,
+    normEmail,
+    toDateInputValue,
+    renderOperationsShell,
+    requestManagerWorkflowRender: () => renderManagerWorkflow(),
+    syncEstimateReferenceOptions,
+    scrollToSection
+  });
 
   const renderQuotes = () => {
     el.quotesList.innerHTML = '';
@@ -1408,54 +1281,6 @@
     });
   };
 
-  const loadProjectDetail = async (projectId, force = false) => {
-    const id = String(projectId || '').trim();
-    if (!id) return null;
-    if (!force && state.projectDetailsById.has(id)) {
-      return state.projectDetailsById.get(id);
-    }
-
-    const payload = await api(`/api/manager/projects/${id}`);
-    const project = payload?.project || null;
-    if (project && project.id) {
-      state.projectDetailsById.set(project.id, project);
-      return project;
-    }
-
-    state.projectDetailsById.delete(id);
-    return null;
-  };
-
-  const loadProjects = async (selectedId) => {
-    const payload = await api(`/api/manager/projects?${buildQuery({
-      includeMedia: false,
-      page: state.projectsQuery.page,
-      pageSize: state.projectsQuery.pageSize,
-      q: state.projectsQuery.q,
-      status: state.projectsQuery.status,
-      showInGallery: state.projectsQuery.showInGallery
-    })}`);
-    state.projects = Array.isArray(payload.projects) ? payload.projects : [];
-    state.projectsPagination = payload.pagination || state.projectsPagination;
-    if (selectedId) state.selectedProjectId = selectedId;
-    if (!state.projects.some((item) => item.id === state.selectedProjectId)) state.selectedProjectId = state.projects[0]?.id || '';
-
-    const visibleProjectIds = new Set(state.projects.map((item) => item.id));
-    Array.from(state.projectDetailsById.keys()).forEach((projectId) => {
-      if (!visibleProjectIds.has(projectId)) {
-        state.projectDetailsById.delete(projectId);
-      }
-    });
-
-    if (state.selectedProjectId) {
-      await loadProjectDetail(state.selectedProjectId, Boolean(selectedId));
-    }
-
-    renderProjects();
-    fillProjectEditor();
-    syncEstimateReferenceOptions();
-  };
-
   const loadQuotes = async () => {
     const payload = await api(`/api/manager/quotes?${buildQuery({
       page: state.quotesQuery.page,
@@ -1679,14 +1504,6 @@
     });
   };
 
-  const applyProjectsFiltersFromUI = () => {
-    state.projectsQuery.q = String(el.projectsFilterQ.value || '').trim();
-    state.projectsQuery.status = String(el.projectsFilterStatus.value || '').trim();
-    state.projectsQuery.showInGallery = String(el.projectsFilterGallery.value || '').trim();
-    state.projectsQuery.pageSize = Number.parseInt(el.projectsPageSize.value, 10) || DEFAULT_PAGE_SIZE;
-    state.projectsQuery.page = 1;
-  };
-
   const applyQuotesFiltersFromUI = () => {
     state.quotesQuery.q = String(el.quotesFilterQ.value || '').trim();
     state.quotesQuery.status = String(el.quotesFilterStatus.value || '').trim();
@@ -1894,6 +1711,8 @@
     statusNode: el.projectEditManagerLookupStatus
   });
 
+  projectsController?.bindEvents();
+
   const syncEstimateLineMode = () => {
     const form = el.estimateLineForm?.elements;
     if (!form) return;
@@ -1911,105 +1730,6 @@
 
   el.estimateLineForm.elements.lineType.addEventListener('change', syncEstimateLineMode);
   syncEstimateLineMode();
-
-  el.projectCreateForm.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    setStatus(el.projectCreateStatus, 'Creating project...');
-    const f = el.projectCreateForm.elements;
-    const payload = {
-      title: String(f.title.value || '').trim(),
-      location: String(f.location.value || '').trim(),
-      status: String(f.status.value || 'planning'),
-      quoteId: normUuid(f.quoteId.value),
-      clientEmail: normEmail(f.clientEmail.value),
-      assignedManagerEmail: normEmail(f.assignedManagerEmail.value),
-      galleryOrder: Number.parseInt(f.galleryOrder.value, 10) || 0,
-      description: String(f.description.value || '').trim(),
-      showInGallery: Boolean(f.showInGallery.checked)
-    };
-    if (!payload.title) return setStatus(el.projectCreateStatus, 'Title is required.', 'error');
-    try {
-      const result = await api('/api/manager/projects', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-      setStatus(el.projectCreateStatus, 'Project created.', 'success');
-      el.projectCreateForm.reset();
-      f.status.value = 'planning';
-      f.galleryOrder.value = '0';
-      applyProjectsFiltersFromUI();
-      await loadProjects(result.project?.id);
-    } catch (error) {
-      setStatus(el.projectCreateStatus, error.message || 'Failed to create project.', 'error');
-    }
-  });
-
-  el.projectEditForm.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const projectId = String(el.projectEditForm.elements.id.value || '');
-    if (!projectId) return;
-    setStatus(el.projectEditStatus, 'Saving project...');
-    const f = el.projectEditForm.elements;
-    const payload = {
-      title: String(f.title.value || '').trim(),
-      location: String(f.location.value || '').trim(),
-      status: String(f.status.value || 'planning'),
-      quoteId: normUuid(f.quoteId.value),
-      clientEmail: normEmail(f.clientEmail.value),
-      assignedManagerEmail: normEmail(f.assignedManagerEmail.value),
-      galleryOrder: Number.parseInt(f.galleryOrder.value, 10) || 0,
-      budgetEstimate: String(f.budgetEstimate.value || '').trim(),
-      startDate: f.startDate.value || null,
-      endDate: f.endDate.value || null,
-      showInGallery: Boolean(f.showInGallery.checked),
-      isActive: Boolean(f.isActive.checked),
-      description: String(f.description.value || '').trim()
-    };
-    if (!payload.title) return setStatus(el.projectEditStatus, 'Title is required.', 'error');
-    try {
-      await api(`/api/manager/projects/${projectId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-      setStatus(el.projectEditStatus, 'Project saved.', 'success');
-      await loadProjects(projectId);
-    } catch (error) {
-      setStatus(el.projectEditStatus, error.message || 'Failed to save project.', 'error');
-    }
-  });
-
-  el.projectDelete.addEventListener('click', async () => {
-    const project = selectedProject();
-    if (!project) return;
-    if (!window.confirm(`Delete project \"${project.title}\" and all related media?`)) return;
-    setStatus(el.projectEditStatus, 'Deleting project...');
-    try {
-      await api(`/api/manager/projects/${project.id}`, { method: 'DELETE' });
-      setStatus(el.projectEditStatus, 'Project deleted.', 'success');
-      await loadProjects();
-    } catch (error) {
-      setStatus(el.projectEditStatus, error.message || 'Failed to delete project.', 'error');
-    }
-  });
-
-  el.mediaUploadForm.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const project = selectedProject();
-    if (!project) return;
-    const files = el.mediaUploadForm.elements.files.files;
-    if (!files || !files.length) return setStatus(el.mediaUploadStatus, 'Select at least one file.', 'error');
-    const fd = new FormData();
-    Array.from(files).forEach((file) => fd.append('files', file));
-    const mediaType = String(el.mediaUploadForm.elements.mediaType.value || '').trim();
-    if (mediaType) fd.append('mediaType', mediaType);
-    fd.append('galleryOrderStart', String(Number.parseInt(el.mediaUploadForm.elements.galleryOrderStart.value, 10) || 0));
-    fd.append('caption', String(el.mediaUploadForm.elements.caption.value || '').trim());
-    fd.append('showInGallery', String(Boolean(el.mediaUploadForm.elements.showInGallery.checked)));
-    fd.append('isCover', String(Boolean(el.mediaUploadForm.elements.isCover.checked)));
-    try {
-      await api(`/api/manager/projects/${project.id}/media/upload`, { method: 'POST', body: fd });
-      setStatus(el.mediaUploadStatus, 'Upload finished.', 'success');
-      el.mediaUploadForm.reset();
-      el.mediaUploadForm.elements.galleryOrderStart.value = '0';
-      await loadProjects(project.id);
-    } catch (error) {
-      setStatus(el.mediaUploadStatus, error.message || 'Upload failed.', 'error');
-    }
-  });
 
   el.serviceCreateForm.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -2284,9 +2004,6 @@
     }
   });
 
-  el.projectsFilterApply.addEventListener('click', () => { applyProjectsFiltersFromUI(); loadProjects().catch((e) => window.alert(e.message || 'Could not load projects')); });
-  el.projectsPrev.addEventListener('click', () => { if (state.projectsQuery.page <= 1) return; state.projectsQuery.page -= 1; loadProjects().catch((e) => window.alert(e.message || 'Could not load projects')); });
-  el.projectsNext.addEventListener('click', () => { if (state.projectsQuery.page >= Number(state.projectsPagination.totalPages || 1)) return; state.projectsQuery.page += 1; loadProjects().catch((e) => window.alert(e.message || 'Could not load projects')); });
   el.quotesRefresh.addEventListener('click', () => { applyQuotesFiltersFromUI(); loadQuotes().catch((e) => window.alert(e.message || 'Could not load quotes')); });
   el.quotesPrev.addEventListener('click', () => { if (state.quotesQuery.page <= 1) return; state.quotesQuery.page -= 1; loadQuotes().catch((e) => window.alert(e.message || 'Could not load quotes')); });
   el.quotesNext.addEventListener('click', () => { if (state.quotesQuery.page >= Number(state.quotesPagination.totalPages || 1)) return; state.quotesQuery.page += 1; loadQuotes().catch((e) => window.alert(e.message || 'Could not load quotes')); });

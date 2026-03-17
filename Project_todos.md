@@ -14,7 +14,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 
 ## Next Engineering
 
-- [ ] Split `manager-dashboard.js` into feature modules: `projects`, `quotes`, `services`, `materials`, `clients`, `staff`, `estimates`, `messages`.
+- [ ] Continue splitting `manager-dashboard.js` into feature modules: `quotes`, `services`, `materials`, `clients`, `staff`, `estimates`, `messages` after the `projects` domain extraction.
 - [ ] Split `client-dashboard.js` into feature modules: `overview`, `projects/documents`, `quotes/services`, `direct manager`, `project chat`.
 - [ ] Move more responsive/layout ownership out of `styles/base.css` into `styles/public.css` and `styles/workspace.css`.
 - [ ] Consider splitting `npm run generate:public-pages` into lighter `optimize:assets` and `generate:*` workflows for cases that do not need image work on every run.
