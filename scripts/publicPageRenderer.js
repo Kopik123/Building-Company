@@ -87,7 +87,7 @@ const renderPublicNavLinks = (shared) =>
       const authAttrs = link.isAuthLink
         ? ` data-auth-link data-auth-guest-label="${escapeHtml(shared.publicAuthLabel || 'Account')}"`
         : '';
-      return `          <a href="${escapeHtml(link.href)}" data-nav-link${authAttrs}>${escapeHtml(link.label)}</a>`;
+      return `          <a href="${escapeHtml(link.href)}" data-nav-link${authAttrs}><span>${escapeHtml(link.label)}</span></a>`;
     })
     .join('\n');
 

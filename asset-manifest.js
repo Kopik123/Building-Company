@@ -12,7 +12,7 @@ const manifest = {
       "webp": "/assets/optimized/brand/title.webp",
       "avif": "/assets/optimized/brand/title.avif",
       "width": 988,
-      "height": 229
+      "height": 232
     },
     "workspace": {
       "fallback": "/assets/optimized/brand/logo4.png",

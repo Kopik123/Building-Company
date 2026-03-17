@@ -208,6 +208,9 @@
 - Re-ran `npm.cmd run test:ci` and the focused public Playwright regression (`tests/playwright/public-redesign.spec.js`) after the typography/color pass; both stayed green.
 - Updated `styles/public.css` so the public menu buttons now animate with a light `scale(1.2)` hover/focus zoom and return to normal size when the cursor leaves, using CSS transitions only.
 - Re-ran `npm.cmd run test:ci` and the focused public Playwright regression (`tests/playwright/public-redesign.spec.js`) after the menu-hover pass; both stayed green.
+- Updated `scripts/publicPageRenderer.js` and `styles/public.css` so each public nav link now wraps its label in a `span`, allowing only the text to scale on hover/focus while the `|` separators remain fixed.
+- Regenerated the service/location public pages plus refreshed the title asset manifest outputs so the committed HTML stays in sync with the updated public-nav markup and current optimized title dimensions.
+- Re-ran `npm.cmd run test:ci` and the focused public Playwright regression (`tests/playwright/public-redesign.spec.js`) after the menu-text-hover refinement; both stayed green.
 - Updated `styles/base.css` and `styles/public.css` so `boxbackground.png` now stretches with each rendered box instead of being cropped with `cover`, and the image's own gold frame can read as the visible box border.
 - Removed the extra public card inset border overlay so the `boxbackground.png` frame is not visually competing with a second synthetic border.
 - Re-ran `npm.cmd run test:ci` and the focused public Playwright regression (`tests/playwright/public-redesign.spec.js`) after the box-frame pass; both stayed green.
