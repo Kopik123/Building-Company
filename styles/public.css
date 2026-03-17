@@ -317,6 +317,15 @@
   pointer-events: none;
 }
 
+.public-site .content-card::before,
+.public-site .surface-card::before,
+.public-site .card::before,
+.page-home .content-card::before,
+.page-home .surface-card::before,
+.page-home .card::before {
+  display: none;
+}
+
 .content-card > *:last-child,
 .surface-card > *:last-child,
 .card > *:last-child {
@@ -625,7 +634,9 @@
 .public-site .faq-grid details {
   background:
     linear-gradient(165deg, rgba(12, 12, 12, 0.94), rgba(5, 5, 5, 0.98)),
-    url('/boxbackground.png') center center / cover no-repeat;
+    url('/boxbackground.png') center center / 100% 100% no-repeat;
+  background-origin: border-box;
+  background-clip: border-box;
 }
 
 .page-home .content-card--light,
@@ -634,7 +645,9 @@
 .page-home .quote-form {
   background:
     linear-gradient(165deg, rgba(12, 12, 12, 0.94), rgba(5, 5, 5, 0.98)),
-    url('/boxbackground.png') center center / cover no-repeat;
+    url('/boxbackground.png') center center / 100% 100% no-repeat;
+  background-origin: border-box;
+  background-clip: border-box;
 }
 
 .public-site .surface-card--light,

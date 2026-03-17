@@ -286,7 +286,7 @@ small,
 .card,
 .surface-card,
 .content-card {
-  border: 1px solid var(--color-border);
+  border: 1px solid transparent;
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-soft);
 }
@@ -303,7 +303,9 @@ small,
 .content-card--dark {
   background:
     linear-gradient(165deg, rgba(12, 12, 12, 0.94), rgba(5, 5, 5, 0.98)),
-    url('/boxbackground.png') center center / cover no-repeat;
+    url('/boxbackground.png') center center / 100% 100% no-repeat;
+  background-origin: border-box;
+  background-clip: border-box;
 }
 
 .site-footer {
