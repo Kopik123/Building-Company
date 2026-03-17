@@ -224,3 +224,4 @@
 - Updated `app.js` static asset cache headers so HTML plus all frequently changed frontend assets (`CSS`, `JS`, `png/jpg/webp/avif/svg`) now use `Cache-Control: no-cache`, while fonts keep long immutable caching.
 - Added an API regression in `tests/api-v2/app-legacy-routes.test.js` to lock in the new revalidation behavior for `/styles/base.css` and `/mainbackground.png`.
 - Re-ran `npm.cmd run test:ci` after the cache-header change so future deploys should show frontend updates on normal refresh without manual browser-history clearing.
+- Updated `gallery.html` and `gallery.js` so the public gallery now presents itself fully as a service-led experience: SEO copy, headings, sidebar defaults, status text and service descriptions now frame the gallery around bathrooms, kitchens, interiors and exteriors instead of project case studies.

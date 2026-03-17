@@ -55,7 +55,7 @@
   const imageTitleNode = document.querySelector('[data-gallery-active-image-title]');
   const projectTitleNode = document.querySelector('[data-gallery-active-project-title]');
   const projectMetaNode = document.querySelector('[data-gallery-active-project-meta]');
-  const gallerySource = String(document.body?.dataset?.gallerySource || 'projects').trim().toLowerCase() === 'services'
+  const gallerySource = String(document.body?.dataset?.gallerySource || 'services').trim().toLowerCase() === 'services'
     ? 'services'
     : 'projects';
 
@@ -132,6 +132,13 @@
         ]
       }
     ]
+  };
+  const SERVICE_DESCRIPTIONS = {
+    Bathrooms: 'Wet rooms, bathing layouts and bathroom finish details.',
+    Kitchens: 'Joinery runs, worktops and kitchen installation sequences.',
+    Interiors: 'Interior fit-out details, material transitions and room finishing.',
+    Exteriors: 'Exterior details, elevations and weather-facing finish work.',
+    Finishes: 'Trim, surface and finishing studies across specialist trades.'
   };
   let projects = [];
 
@@ -234,9 +241,10 @@
 
   const splitProjectName = (value) => {
     if (gallerySource === 'services') {
+      const normalizedValue = String(value || 'Service').trim() || 'Service';
       return {
-        title: String(value || 'Service'),
-        subtitle: 'Completed work gallery'
+        title: normalizedValue,
+        subtitle: SERVICE_DESCRIPTIONS[normalizedValue] || 'Completed service gallery'
       };
     }
 
@@ -277,7 +285,7 @@
   const normalizeProjects = (rawProjects) =>
     (Array.isArray(rawProjects) ? rawProjects : [])
       .map((project) => ({
-        name: String(project?.name || '').trim() || 'Project',
+        name: String(project?.name || '').trim() || (gallerySource === 'services' ? 'Service' : 'Project'),
         images: (Array.isArray(project?.images) ? project.images : []).map(normalizeImageItem).filter(Boolean)
       }))
       .filter((project) => project.images.length);
@@ -389,21 +397,26 @@
     const total = project.images.length;
     const centeredIndex = normalizeIndex(Math.round(state.position), total);
     const imageItem = project.images[centeredIndex];
+    const projectName = splitProjectName(project.name);
 
     if (imageTitleNode) {
       imageTitleNode.textContent = imageItem?.label || 'Selected image';
     }
 
     if (projectTitleNode) {
-      projectTitleNode.textContent = project.name;
+      projectTitleNode.textContent = gallerySource === 'services' ? `${project.name} Service` : project.name;
     }
 
     if (projectMetaNode) {
-      projectMetaNode.textContent = `${levelLabel(state.projectIndex)} | ${total} image sequence | photo ${centeredIndex + 1} of ${total}`;
+      projectMetaNode.textContent = gallerySource === 'services'
+        ? `${projectName.subtitle} | ${total} completed-work images | photo ${centeredIndex + 1} of ${total}`
+        : `${levelLabel(state.projectIndex)} | ${total} image sequence | photo ${centeredIndex + 1} of ${total}`;
     }
 
     if (statusNode) {
-      statusNode.textContent = `${levelLabel(state.projectIndex)} / ${project.name} / ${imageItem?.label || `Photo ${centeredIndex + 1}`} / photo ${centeredIndex + 1} of ${total}`;
+      statusNode.textContent = gallerySource === 'services'
+        ? `${project.name} service / ${imageItem?.label || `Photo ${centeredIndex + 1}`} / photo ${centeredIndex + 1} of ${total}`
+        : `${levelLabel(state.projectIndex)} / ${project.name} / ${imageItem?.label || `Photo ${centeredIndex + 1}`} / photo ${centeredIndex + 1} of ${total}`;
     }
   };
 
