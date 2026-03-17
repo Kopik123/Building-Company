@@ -257,7 +257,7 @@
 .public-hero--inner .inner-hero-shell {
   background:
     linear-gradient(160deg, rgba(10, 10, 10, 0.88), rgba(4, 4, 4, 0.94)),
-    var(--hero-image) center center / cover no-repeat,
+    url('/mainbackground.png') center center / cover no-repeat,
     linear-gradient(165deg, rgba(12, 12, 12, 0.9), rgba(5, 5, 5, 0.96));
 }
 
@@ -574,7 +574,9 @@
   border: 1px solid rgba(209, 164, 74, 0.46);
   border-radius: var(--radius-sm);
   overflow: hidden;
-  background: rgba(10, 10, 10, 0.96);
+  background:
+    linear-gradient(165deg, rgba(10, 10, 10, 0.86), rgba(4, 4, 4, 0.92)),
+    url('/boxbackground.png') center center / 100% 100% no-repeat;
 }
 
 .media-picture img,
@@ -590,7 +592,9 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   padding: 0.65rem 0.8rem;
-  background: rgba(9, 9, 9, 0.84);
+  background:
+    linear-gradient(165deg, rgba(10, 10, 10, 0.86), rgba(4, 4, 4, 0.92)),
+    url('/boxbackground.png') center center / 100% 100% no-repeat;
 }
 
 .faq-list summary {
@@ -633,7 +637,9 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   overflow: hidden;
-  background: rgba(10, 10, 10, 0.93);
+  background:
+    linear-gradient(165deg, rgba(10, 10, 10, 0.86), rgba(4, 4, 4, 0.92)),
+    url('/boxbackground.png') center center / 100% 100% no-repeat;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -646,7 +652,9 @@
   min-height: 44px;
   border-radius: 50%;
   border: 1px solid var(--color-border);
-  background: rgba(9, 9, 9, 0.92);
+  background:
+    linear-gradient(165deg, rgba(10, 10, 10, 0.86), rgba(4, 4, 4, 0.92)),
+    url('/boxbackground.png') center center / 100% 100% no-repeat;
   color: var(--color-text);
   display: inline-flex;
   align-items: center;
@@ -667,13 +675,17 @@
   border-radius: var(--radius-xs);
   padding: 0.45rem 0.58rem;
   text-align: left;
-  background: rgba(9, 9, 9, 0.75);
+  background:
+    linear-gradient(165deg, rgba(10, 10, 10, 0.86), rgba(4, 4, 4, 0.92)),
+    url('/boxbackground.png') center center / 100% 100% no-repeat;
   color: var(--color-text);
 }
 
 .gallery-project-chip.is-active {
   border-color: var(--color-gold-2);
-  background: rgba(48, 36, 12, 0.42);
+  background:
+    linear-gradient(165deg, rgba(46, 33, 10, 0.72), rgba(12, 8, 2, 0.88)),
+    url('/boxbackground.png') center center / 100% 100% no-repeat;
 }
 
 .gallery-status {
@@ -706,7 +718,9 @@
   padding: 0.8rem;
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-sm);
-  background: rgba(6, 6, 6, 0.97);
+  background:
+    linear-gradient(165deg, rgba(10, 10, 10, 0.9), rgba(4, 4, 4, 0.96)),
+    url('/boxbackground.png') center center / 100% 100% no-repeat;
   display: grid;
   gap: 0.52rem;
 }
@@ -717,7 +731,9 @@
   height: 44px;
   border-radius: 50%;
   border: 1px solid var(--color-border);
-  background: rgba(10, 10, 10, 0.95);
+  background:
+    linear-gradient(165deg, rgba(10, 10, 10, 0.9), rgba(4, 4, 4, 0.96)),
+    url('/boxbackground.png') center center / 100% 100% no-repeat;
   font-size: 1.5rem;
   line-height: 1;
 }
@@ -737,7 +753,9 @@
   border: 1px solid var(--color-border);
   display: grid;
   place-items: center;
-  background: #060606;
+  background:
+    linear-gradient(165deg, rgba(10, 10, 10, 0.9), rgba(4, 4, 4, 0.96)),
+    url('/boxbackground.png') center center / 100% 100% no-repeat;
 }
 
 .gallery-lightbox-image img {
@@ -851,7 +869,9 @@
 .public-site .surface-card--light input,
 .public-site .surface-card--light select,
 .public-site .surface-card--light textarea {
-  background: rgba(8, 8, 8, 0.88);
+  background:
+    linear-gradient(165deg, rgba(10, 10, 10, 0.86), rgba(4, 4, 4, 0.92)),
+    url('/boxbackground.png') center center / 100% 100% no-repeat;
   border-color: rgba(209, 164, 74, 0.6);
 }
 

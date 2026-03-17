@@ -100,7 +100,9 @@ textarea {
   min-height: 44px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-xs);
-  background: rgba(9, 9, 9, 0.84);
+  background:
+    linear-gradient(165deg, rgba(10, 10, 10, 0.86), rgba(4, 4, 4, 0.92)),
+    url('/boxbackground.png') center center / 100% 100% no-repeat;
   color: var(--color-text);
   padding: 0.66rem 0.75rem;
 }
