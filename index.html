@@ -66,13 +66,13 @@
             <span class="nav-toggle-line"></span>
           </button>
           <nav class="site-nav site-nav--public-shell" id="site-nav" data-nav-menu aria-label="Main navigation" hidden aria-hidden="true">
-            <a href="/index.html" data-nav-link>Home</a>
-            <a href="/about.html" data-nav-link>About</a>
-            <a href="/services.html" data-nav-link>Services</a>
-            <a href="/gallery.html" data-nav-link>Gallery</a>
-            <a href="/quote.html" data-nav-link>Quote</a>
-            <a href="/contact.html" data-nav-link>Contact</a>
-            <a href="/auth.html" data-nav-link data-auth-link data-auth-guest-label="Account">Account</a>
+            <a href="/index.html" data-nav-link><span>Home</span></a>
+            <a href="/about.html" data-nav-link><span>About</span></a>
+            <a href="/services.html" data-nav-link><span>Services</span></a>
+            <a href="/gallery.html" data-nav-link><span>Gallery</span></a>
+            <a href="/quote.html" data-nav-link><span>Quote</span></a>
+            <a href="/contact.html" data-nav-link><span>Contact</span></a>
+            <a href="/auth.html" data-nav-link data-auth-link data-auth-guest-label="Account"><span>Account</span></a>
           </nav>
         </div>
       </div>
@@ -80,66 +80,41 @@
   </header>
 
   <main class="public-page-main">
-    <section class="public-section public-section--dark">
-      <div class="container page-intro-grid">
-        <article class="content-card content-card--light">
-          <p class="section-eyebrow">Home</p>
-          <h1>Premium bathrooms, kitchens and interiors delivered through one calm quote-first studio route.</h1>
-          <p class="section-lead">Level Lines Studio keeps the public website simple: one clear route into quote, one coherent service structure, and one private account path when the brief is ready to move forward.</p>
-          <ul class="page-bullet-list">
-            <li>Single dominant homepage card with no duplicate top-level clutter.</li>
-            <li>Service and location context visible without competing with conversion.</li>
-            <li>Fast route to quote, gallery and direct contact from every page.</li>
-          </ul>
-          <div class="page-actions">
-            <a class="btn btn-gold" href="/quote.html">Start Quote</a>
-            <a class="btn-outline-gold" href="/services.html">View Services</a>
-            <a class="btn-outline-gold" href="/gallery.html">View Gallery</a>
-          </div>
-        </article>
-        <aside class="content-card content-card--dark">
-          <p class="section-eyebrow">Quick Scope</p>
-          <h2>One studio structure for rooms, finishes and communication.</h2>
-          <p class="hero-aside-copy">The same shell handles public browsing, quote intake and session-aware account routing. No duplicated headers, no mixed account labels, no parallel menu systems.</p>
-          <div class="metric-list">
-            <span class="metric-chip">Bathrooms</span>
-            <span class="metric-chip">Kitchens</span>
-            <span class="metric-chip">Interiors</span>
-            <span class="metric-chip" data-brand-region>North West - Lancashire</span>
-          </div>
-          <div class="page-actions">
-            <a class="btn-outline-gold" href="/about.html">About Studio</a>
-            <a class="btn-outline-gold" href="/contact.html">Contact</a>
-          </div>
-        </aside>
-      </div>
-    </section>
+    <section class="public-section public-section--dark home-board-section">
+      <div class="container home-board-shell">
+        <div class="home-board-grid">
+          <article class="content-card content-card--dark home-side-card home-coverage-card">
+            <p class="section-eyebrow">Coverage</p>
+            <h2>Coverage</h2>
+            <p class="page-aside-copy">Coverage stays explicit, selective and easy to scan for homeowners across the North West footprint.</p>
+            <div class="footer-area-list" data-brand-area-list data-item-class="footer-area-chip" data-max-items="6"></div>
+          </article>
 
-    <section class="public-section public-section--light">
-      <div class="container page-grid-3">
-        <article class="content-card content-card--light">
-          <h2>Services</h2>
-          <p class="page-aside-copy">Bathrooms, kitchens, interiors and finish trades are organised in one service hub instead of fragmented brochure blocks.</p>
-          <div class="footer-links" data-brand-service-links data-link-class="footer-service-link" data-max-items="4"></div>
-        </article>
-        <article class="content-card content-card--dark">
-          <h2>Coverage</h2>
-          <p class="page-aside-copy">Coverage stays explicit, selective and easy to scan for homeowners across the North West footprint.</p>
-          <div class="footer-area-list" data-brand-area-list data-item-class="footer-area-chip" data-max-items="6"></div>
-        </article>
-        <article class="content-card content-card--light">
-          <h2>Account</h2>
-          <p class="page-aside-copy">Guest users see login/account entry. Signed-in users route directly to the correct dashboard by role.</p>
-          <div class="page-actions">
-            <a class="btn-outline-gold" href="/auth.html" data-auth-link data-auth-guest-label="Account">Account</a>
-          </div>
-        </article>
-      </div>
-    </section>
+          <article class="content-card content-card--dark home-main-card">
+            <p class="section-eyebrow">Home</p>
+            <h1>Premium bathrooms, kitchens and interiors delivered through one calm quote-first studio route.</h1>
+            <p class="section-lead">Level Lines Studio keeps the public website simple: one clear route into quote, one coherent service structure, and one private account path when the brief is ready to move forward.</p>
+            <ul class="page-bullet-list">
+              <li>Single dominant homepage card with no duplicate top-level clutter.</li>
+              <li>Service and location context visible without competing with conversion.</li>
+              <li>Fast route to quote, gallery and direct contact from every page.</li>
+            </ul>
+            <div class="page-actions">
+              <a class="btn btn-gold" href="/quote.html">Start Quote</a>
+              <a class="btn-outline-gold" href="/services.html">View Services</a>
+              <a class="btn-outline-gold" href="/gallery.html">View Gallery</a>
+            </div>
+          </article>
 
-    <section class="public-section public-section--dark">
-      <div class="container">
-        <div class="content-card content-card--dark cta-band">
+          <article class="content-card content-card--dark home-side-card home-services-card">
+            <p class="section-eyebrow">Services</p>
+            <h2>Services</h2>
+            <p class="page-aside-copy">Bathrooms, kitchens, interiors and finish trades are organised in one service hub instead of fragmented brochure blocks.</p>
+            <div class="footer-links" data-brand-service-links data-link-class="footer-service-link" data-max-items="5"></div>
+          </article>
+        </div>
+
+        <div class="content-card content-card--dark cta-band home-quote-band">
           <div>
             <p class="section-eyebrow">Private Consultation</p>
             <h2>Send one focused renovation enquiry with clear scope and timing.</h2>

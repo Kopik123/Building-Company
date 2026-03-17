@@ -15,6 +15,7 @@
 - [ ] Run live QA on the menu-hover pass after deploy, checking that public menu buttons now zoom to `1.2x` on hover/focus and return cleanly to normal size without overlapping awkwardly on desktop or mobile dropdown layouts.
 - [ ] Run live QA on the menu-text-hover refinement after deploy, checking that only the menu labels zoom while the `|` separators stay fixed and correctly spaced on desktop.
 - [ ] Run live QA on the box-frame pass after deploy, checking that `boxbackground.png` now scales with each visible box, the gold frame from the image is clearly visible as the box border, and no extra inner border is fighting it on homepage or inner public pages.
+- [ ] Run live QA on the homepage board-layout pass after deploy, checking that homepage now matches the reference structure: left stacked `Coverage` + `Services`, one dominant main card on the right, and the quote panel spanning the full width below.
 - [x] Ran `powershell -ExecutionPolicy Bypass -File .\scripts\setup-vscode.ps1` on the local machine and confirmed the VS Code workspace bootstrap completes with the current recommendations.
 - [x] Reviewed `ms-vscode.live-server` usage and removed it from the VS Code recommendations/bootstrap because the repo runs through the app server and Playwright instead.
 - [x] Planned a separate migration from `multer 1.x` to `multer 2.x` in `todosv2.md`, based on the real upload surface in `utils/upload.js`, `client`, `inbox`, `group` and manager project-media routes.
