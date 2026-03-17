@@ -12,6 +12,7 @@
 - [ ] Run live QA on the header-background pass after deploy, checking that `mainbackground.png` is now also visible behind the sticky header while the darker overlay still keeps `title + login + menu` readable.
 - [ ] Run live QA on the box-background pass after deploy, checking that all non-header boxes now use `boxbackground.png` consistently on homepage and inner public pages without making gold text harder to read.
 - [ ] Run live QA on the typography pass after deploy, checking that the warmer gold text and new card text-shadow now fit `boxbackground.png` better across homepage cards, quote panels and inner public-page boxes.
+- [ ] Run live QA on the menu-hover pass after deploy, checking that public menu buttons now zoom to `1.2x` on hover/focus and return cleanly to normal size without overlapping awkwardly on desktop or mobile dropdown layouts.
 - [x] Ran `powershell -ExecutionPolicy Bypass -File .\scripts\setup-vscode.ps1` on the local machine and confirmed the VS Code workspace bootstrap completes with the current recommendations.
 - [x] Reviewed `ms-vscode.live-server` usage and removed it from the VS Code recommendations/bootstrap because the repo runs through the app server and Playwright instead.
 - [x] Planned a separate migration from `multer 1.x` to `multer 2.x` in `todosv2.md`, based on the real upload surface in `utils/upload.js`, `client`, `inbox`, `group` and manager project-media routes.

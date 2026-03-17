@@ -206,6 +206,8 @@
 - Tuned `styles/tokens.css` to a warmer, slightly deeper gold palette so the site typography reads more naturally against `boxbackground.png` instead of the earlier paler yellow.
 - Updated `styles/base.css` placeholder color plus `styles/public.css` card typography styling so non-header boxes now use a subtle dark text-shadow over `boxbackground.png`, improving legibility without flattening the marble texture.
 - Re-ran `npm.cmd run test:ci` and the focused public Playwright regression (`tests/playwright/public-redesign.spec.js`) after the typography/color pass; both stayed green.
+- Updated `styles/public.css` so the public menu buttons now animate with a light `scale(1.2)` hover/focus zoom and return to normal size when the cursor leaves, using CSS transitions only.
+- Re-ran `npm.cmd run test:ci` and the focused public Playwright regression (`tests/playwright/public-redesign.spec.js`) after the menu-hover pass; both stayed green.
 - Updated `app.js` static asset cache headers so HTML plus all frequently changed frontend assets (`CSS`, `JS`, `png/jpg/webp/avif/svg`) now use `Cache-Control: no-cache`, while fonts keep long immutable caching.
 - Added an API regression in `tests/api-v2/app-legacy-routes.test.js` to lock in the new revalidation behavior for `/styles/base.css` and `/mainbackground.png`.
 - Re-ran `npm.cmd run test:ci` after the cache-header change so future deploys should show frontend updates on normal refresh without manual browser-history clearing.

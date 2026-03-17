@@ -190,6 +190,9 @@
 
 .site-nav--public-shell a {
   position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 0.12rem 0.36rem;
   border-radius: 0;
   border: 0;
@@ -199,6 +202,12 @@
   font-size: clamp(1.14rem, 1.28vw, 1.42rem);
   font-weight: 700;
   color: var(--color-text);
+  transform-origin: center;
+  transition:
+    transform 180ms ease,
+    color 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease;
 }
 
 .site-nav--public-shell a + a {
@@ -219,6 +228,8 @@
   text-decoration: none;
   color: var(--color-text-strong);
   background: transparent;
+  transform: scale(1.2);
+  z-index: 2;
 }
 
 .public-page-main {
