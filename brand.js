@@ -109,7 +109,7 @@ window.LEVEL_LINES_BRAND = {
       category: 'rendering',
       aliases: ['rendering', 'outdoor', 'external wall systems', 'external wall system', 'external walls', 'facade enhancement'],
       image: '/Gallery/premium/exterior-front.jpg',
-      href: '/quote.html',
+      href: '/quote.html?projectType=rendering#quote-card',
       cta: 'Discuss exterior scope',
       description: 'External wall systems delivered with envelope awareness, finish consistency and disciplined site sequencing.'
     },
@@ -119,7 +119,7 @@ window.LEVEL_LINES_BRAND = {
       category: 'interior',
       aliases: ['interior', 'interior wall systems', 'interior wall system', 'internal wall systems', 'internal wall system', 'internal walls', 'full interior refurbishment', 'full-interior-refurbishment'],
       image: '/Gallery/premium/brick-detail-charcoal.jpg',
-      href: '/quote.html',
+      href: '/quote.html?projectType=interior#quote-card',
       cta: 'Discuss wall systems',
       description: 'Interior wall systems planned for clean lines, correct build-ups, service coordination and durable performance.'
     },

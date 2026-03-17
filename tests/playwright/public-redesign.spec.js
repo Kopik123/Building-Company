@@ -101,6 +101,15 @@ test('core brochure pages render about, services, gallery, contact and quote rou
   await expect(page.locator('form.js-quote-form')).toBeVisible();
 });
 
+test('wall systems service CTA opens quote with wall-systems context preselected', async ({ page }) => {
+  await page.goto('/services.html');
+  await page.getByRole('link', { name: /discuss wall systems/i }).click();
+
+  await expect(page).toHaveURL(/\/quote\.html\?projectType=interior#quote-card$/);
+  await expect(page.locator('#quote-card form.js-quote-form')).toBeVisible();
+  await expect(page.locator('#quote-card select[name="projectType"]')).toHaveValue('interior');
+});
+
 test('authenticated public shell hides login-only controls and keeps one account route', async ({ page }) => {
   await mockPublicClientSession(page);
   await page.goto('/index.html');

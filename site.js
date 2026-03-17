@@ -211,7 +211,11 @@
 
     if (select.hasAttribute('data-brand-project-type-select') && Array.isArray(brand?.services)) {
       const defaultLabel = select.getAttribute('data-default-label') || 'Select';
-      const selectedValue = String(select.getAttribute('data-selected-value') || '').trim().toLowerCase();
+      const selectedValue = String(
+        select.getAttribute('data-selected-value')
+        || new URLSearchParams(window.location.search).get('projectType')
+        || ''
+      ).trim().toLowerCase();
       select.innerHTML = '';
 
       const emptyOption = document.createElement('option');
@@ -223,7 +227,12 @@
         const option = document.createElement('option');
         option.value = service.category || service.key || 'other';
         option.textContent = service.title || 'Service';
-        if (selectedValue && option.value.toLowerCase() === selectedValue) {
+        const matchesSelectedValue = selectedValue && [
+          option.value,
+          service.key,
+          ...(Array.isArray(service.aliases) ? service.aliases : [])
+        ].some((candidate) => String(candidate || '').trim().toLowerCase() === selectedValue);
+        if (matchesSelectedValue) {
           option.selected = true;
         }
         select.appendChild(option);

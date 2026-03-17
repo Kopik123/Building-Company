@@ -41,10 +41,33 @@
     return 'other';
   };
 
+  const applyProjectTypeContext = (form) => {
+    if (!form) return;
+
+    const selectedRaw = new URLSearchParams(window.location.search).get('projectType');
+    if (!selectedRaw) return;
+
+    const select = form.querySelector('select[name="projectType"], select[name="project-type"]');
+    if (!select) return;
+
+    const selectedLower = String(selectedRaw).trim().toLowerCase();
+    const normalized = normalizeProjectType(selectedRaw);
+    const matchedOption = Array.from(select.options).find((option) => {
+      const optionValue = String(option.value || '').trim().toLowerCase();
+      return optionValue === selectedLower || optionValue === normalized;
+    });
+
+    if (matchedOption) {
+      select.value = matchedOption.value;
+    }
+  };
+
   forms.forEach((form) => {
     const submitButton = form.querySelector('button[type="submit"]');
     const status = form.querySelector('.form-status');
     if (!submitButton || !status) return;
+
+    applyProjectTypeContext(form);
 
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
@@ -98,6 +121,7 @@
           ? `Request sent. Reference: ${payload.quoteId}.`
           : 'Request sent.';
         form.reset();
+        applyProjectTypeContext(form);
       } catch (error) {
         status.className = 'form-status is-error';
         status.textContent = error.message || 'Could not submit your consultation request.';

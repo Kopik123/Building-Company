@@ -55,8 +55,8 @@ module.exports = {
     { href: '/premium-kitchens-manchester.html', label: 'Kitchen Installation and Refurbishment' },
     { href: '/quote.html', label: 'Tiling incl. Large Format / Wet Showers' },
     { href: '/quote.html', label: 'Carpentry' },
-    { href: '/quote.html', label: 'External Wall Systems' },
-    { href: '/quote.html', label: 'Interior Wall Systems' },
+    { href: '/quote.html?projectType=rendering#quote-card', label: 'External Wall Systems' },
+    { href: '/quote.html?projectType=interior#quote-card', label: 'Interior Wall Systems' },
     { href: '/quote.html', label: 'Flooring Installation' }
   ],
   studioLinks: [

@@ -9,6 +9,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [ ] In that QA pass, explicitly check: `mainbackground.png` inside cards, gold-text readability, desktop header proportions, mobile stacking, login/account/logout/session state and no horizontal scroll on phone breakpoints.
 - [ ] On live `manager-dashboard.html`, verify the new manager flow starts with area choice (`Projects`, `Materials / Stock`, `Services`) and then exposes the right create/edit actions without leaving stale sections visible.
 - [ ] Confirm on live `/gallery.html` that the gallery now reads fully service-led, with correct service descriptions, service rail labels and fullscreen image flow on desktop and mobile.
+- [ ] Confirm on live `/services.html` that `Discuss wall systems` opens `/quote.html` with the wall-systems context already selected in the quote form.
 - [ ] Capture fresh screenshot evidence for homepage, gallery, quote/contact forms, auth state and both dashboards after the consolidated live QA pass.
 - [ ] Resolve the local PowerShell execution-policy issue blocking `npm.ps1`; until fixed, keep using `npm.cmd` for local validation commands.
 
