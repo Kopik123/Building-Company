@@ -1,138 +1,47 @@
 # Project Todos
 
-## Open
+Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 
-- [x] Define and implement a brand-new visual direction from scratch after the full style wipe, including fresh design tokens, responsive header behavior and a single current source-of-truth for design decisions.
-- [ ] Resolve local PowerShell execution-policy blocking `npm.ps1`; until fixed, keep using `npm.cmd` for local validation commands.
-- [ ] After the next droplet deploy, verify in DevTools that `CSS`, `JS` and image assets now return `Cache-Control: no-cache`, so browser refreshes pick up changes without manual history clearing.
-- [ ] Run live QA on the new vNext shell after droplet deploy (`/`, `/about.html`, `/services.html`, `/gallery.html`, `/quote.html`, `/contact.html`, `/auth.html`, dashboards, 2 service pages, 2 location pages), with explicit readability checks for all-gold typography on light cards.
-- [ ] Run live QA on the latest desktop shell merge after deploy, checking that the login strip and nav now read as one connected module, the section backdrop stays light, and the dark-card/gold-text treatment still feels readable.
-- [ ] Run live QA on the latest homepage-specific shell merge after deploy, checking that homepage sections now keep a light backdrop, every homepage box stays dark, and the combined desktop `login + menu` module matches the title board height without a divider line.
-- [ ] Run live QA on the desktop background/menu pass after deploy, checking that `mainbackground.png` reads correctly as the site backdrop, homepage sections no longer flatten it out, and the larger desktop menu text now sits visually higher between the login row and the bottom of the combined shell box.
-- [ ] Run live QA on the header-background revert after deploy, checking that the sticky header is back on its own dark background, while `mainbackground.png` remains visible only behind the page body outside `title + login + menu`.
-- [ ] Run live QA on the box-background pass after deploy, checking that all non-header boxes now use `boxbackground.png` consistently on homepage and inner public pages without making gold text harder to read.
-- [ ] Run live QA on the typography pass after deploy, checking that the warmer gold text and new card text-shadow now fit `boxbackground.png` better across homepage cards, quote panels and inner public-page boxes.
-- [ ] Run live QA on the menu-hover pass after deploy, checking that public menu buttons now zoom to `1.2x` on hover/focus and return cleanly to normal size without overlapping awkwardly on desktop or mobile dropdown layouts.
-- [ ] Run live QA on the menu-text-hover refinement after deploy, checking that only the menu labels zoom while the `|` separators stay fixed and correctly spaced on desktop.
-- [ ] Run live QA on the box-frame pass after deploy, checking that `boxbackground.png` now scales with each visible box, the gold frame from the image is clearly visible as the box border, and no extra inner border is fighting it on homepage or inner public pages.
-- [ ] Run live QA on the homepage board-layout pass after deploy, checking that homepage now matches the reference structure: left stacked `Coverage` + `Services`, one dominant main card on the right, and the quote panel spanning the full width below.
-- [ ] Extract shared offset/cursor pagination helpers from `routes/inbox.js`, `routes/group.js`, `routes/notifications.js`, `routes/client.js` and `routes/manager.js`; current duplicated request-parsing logic increases maintenance cost and risks subtle behavior drift.
-- [ ] Break down `manager-dashboard.js` and `client-dashboard.js` further into smaller domain modules; both remain large enough that rerender/performance fixes are slower to verify and duplication is harder to spot.
-- [ ] Consider splitting `npm run generate:public-pages` into `optimize:assets` and `generate:*` paths for CI/developer workflows that do not need image work on every run, even with the new reuse guard.
-- [x] Ran `powershell -ExecutionPolicy Bypass -File .\scripts\setup-vscode.ps1` on the local machine and confirmed the VS Code workspace bootstrap completes with the current recommendations.
-- [x] Reviewed `ms-vscode.live-server` usage and removed it from the VS Code recommendations/bootstrap because the repo runs through the app server and Playwright instead.
-- [x] Planned a separate migration from `multer 1.x` to `multer 2.x` in `todosv2.md`, based on the real upload surface in `utils/upload.js`, `client`, `inbox`, `group` and manager project-media routes.
-- [x] Reviewed the current CSS split and decided not to break `styles/public.css` / `styles/workspace.css` into smaller files yet; the bigger maintainability priority remains moving more responsibility out of `styles/base.css`.
-- [ ] Keep every new feature review aligned with future Android/iOS app readiness, especially API contracts, auth/session handling, messaging and media flows.
-- [ ] Re-check the new homepage header/account hierarchy on live desktop and mobile devices after deployment, because the account entry point moved out of the header and into the hero card.
-- [ ] Run live QA for the new single-card homepage board after deploy, checking menu-driven card switching, desktop header proportions, mobile stacking, and that the quote card stays usable without horizontal scroll.
+## Now
+
+- [ ] Verify in DevTools on the live site that `CSS`, `JS` and image assets return `Cache-Control: no-cache`, so normal refreshes pick up frontend changes without manual history clearing.
+- [ ] Run one consolidated live QA pass on `/`, `/about.html`, `/services.html`, `/gallery.html`, `/quote.html`, `/contact.html`, `/auth.html`, both dashboards, two service pages and two location pages.
+- [ ] In that QA pass, explicitly check: `mainbackground.png` inside cards, gold-text readability, desktop header proportions, mobile stacking, login/account/logout/session state and no horizontal scroll on phone breakpoints.
+- [ ] Confirm on live `/gallery.html` that the gallery now reads fully service-led, with correct service descriptions, service rail labels and fullscreen image flow on desktop and mobile.
+- [ ] Capture fresh screenshot evidence for homepage, gallery, quote/contact forms, auth state and both dashboards after the consolidated live QA pass.
+- [ ] Resolve the local PowerShell execution-policy issue blocking `npm.ps1`; until fixed, keep using `npm.cmd` for local validation commands.
+
+## Next Engineering
+
+- [ ] Extract shared cursor/pagination helpers from `routes/inbox.js`, `routes/group.js`, `routes/notifications.js`, `routes/client.js` and `routes/manager.js`.
+- [ ] Split `manager-dashboard.js` into feature modules: `projects`, `quotes`, `services`, `materials`, `clients`, `staff`, `estimates`, `messages`.
+- [ ] Split `client-dashboard.js` into feature modules: `overview`, `projects/documents`, `quotes/services`, `direct manager`, `project chat`.
+- [ ] Move more responsive/layout ownership out of `styles/base.css` into `styles/public.css` and `styles/workspace.css`.
+- [ ] Consider splitting `npm run generate:public-pages` into lighter `optimize:assets` and `generate:*` workflows for cases that do not need image work on every run.
+
+## Product And Workflow
+
 - [ ] Implement the planned `client_proposal_quote` structure on the public quote page with phased UX, richer project fields and mobile-safe validation.
 - [ ] Decide whether richer quote intake should be stored as structured quote metadata in phase 1 or temporarily mapped into the existing `description` field.
-- [ ] After deploy, restart PM2 with `--update-env` once so the new explicit `HOST` binding is applied on the droplet.
-- [ ] Re-check the new global `logo | title | account/nav` header proportions on live desktop and mobile, especially the title image width versus the account box width.
-- [ ] Update the live Nginx site file only if it still points to `localhost` or `::1`; keep `127.0.0.1:3000` if the current upstream already matches the real listener.
-- [ ] If exact chronology becomes important, replace the new derived `Company Events` overview in `manager-dashboard` with a persisted audit/event timeline instead of summarising current operational data.
-- [ ] Resolve the remaining workstation child-process policy that still raises `spawn EPERM` for Playwright worker/browser launch, even after moving to managed Chromium and removing the internal static-server spawn.
-- [ ] Re-run `npm run test:e2e:mobile` on a machine where Node can launch Playwright workers and browsers, then record the first green local pass.
-- [ ] Export the real issue list from SonarQube for branch `vscode`, then map every `Bug` and `Vulnerability` to `real fix`, `false positive` or `accepted tradeoff`.
-- [ ] Run `scripts/sonar-export.sh` with `SONAR_URL` and `SONAR_TOKEN`, then attach `sonar-issues-full.json`, `sonar-quality-gate.json` and `sonar-measures.json` to the Sonar cleanup workflow.
-- [ ] Start the SonarQube cleanup with the biggest maintainability hotspots: `manager-dashboard.js`, `routes/manager.js`, `client-dashboard.js`, `styles/base.css` and `apps/mobile-v1/App.js`.
-- [x] Scoped the `multer 1.x -> 2.x` move as a dedicated dependency-hardening task instead of using `npm audit fix --force`.
-- [ ] Split `manager-dashboard.js` into feature modules (`projects`, `quotes`, `services`, `materials`, `clients`, `staff`, `estimates`, `messages`) once the new overview shell settles.
-- [ ] Split `client-dashboard.js` into feature modules (`overview`, `projects/documents`, `quotes/services`, `direct manager`, `project chat`) once the new top board settles.
-- [ ] Move more responsive layout ownership out of `styles/base.css` into `styles/public.css` and `styles/workspace.css` after the current contrast/mobile pass is validated live.
-- [x] Removed the obsolete shared `brand-mark-link` / `brand-title-link` header lockup block from `styles/base.css` after the runtime moved fully to the newer public-shell markup.
-- [ ] Run the new live QA checklist on desktop and a phone-sized viewport after the next droplet deploy, then capture screenshots for homepage, gallery interaction, dashboards and the quote/contact form.
-- [ ] Revisit whether a CDN/media platform is worth introducing later if the runtime gallery set grows beyond the current `sharp` pipeline.
-- [ ] Create a new design source-of-truth markdown for the next site redesign, replacing the removed `Project_Web_Design_Plan.md` with one cleaner current-direction brief.
-- [ ] Run live QA for the new quote-first brochure IA across `/`, `/about.html`, `/services.html`, `/gallery.html`, `/quote.html`, `/contact.html`, the legal pages and at least two generated service/location pages, checking sticky shell behaviour, compact mobile auth/menu flow and CTA clarity.
-- [ ] Re-check the new shared `title.png` public shell on live desktop and mobile, especially the balance between the centered brand board and the inline login/navigation strip.
-- [ ] Re-check the slimmer `title.png` top bar and the lower quick-access login/menu strip on live desktop and mobile after the next deploy.
-- [ ] Verify the inline login strip state on all public pages for both guest and authenticated sessions after the next droplet deploy.
-- [ ] Run live QA for the new session-aware header/account/logout logic on `/`, `/auth.html`, `/client-dashboard.html` and `/manager-dashboard.html`, including guest redirects and role-based account routing after deploy.
-- [ ] Decide later whether `header.png` should remain only as a historical/supporting asset now that `title.png` is the shared public shell lockup.
-- [ ] Define one explicit CRM lifecycle for clients (`lead`, `quoted`, `approved`, `active project`, `completed`, `archived`) and use it consistently across manager flows and future mobile contracts.
-- [ ] Add a real project workflow model with `stage`, `milestone`, `task/work package`, `owner` and `due date` instead of relying mainly on broad project status and notes.
-- [ ] Design and implement a durable activity/audit feed for company, client and project timelines instead of relying only on derived summary boards.
+- [ ] Define one explicit CRM lifecycle for clients: `lead`, `quoted`, `approved`, `active project`, `completed`, `archived`.
+- [ ] Add a real project workflow model with `stage`, `milestone`, `task/work package`, `owner` and `due date`.
+- [ ] Design and implement a durable activity/audit feed for company, client and project timelines.
 - [ ] Close the operational gap in `quote -> estimate -> approval -> project` so estimate approvals are explicit, versioned and portable to mobile clients.
 - [ ] Consolidate manual public pages and generated SEO pages onto one content model/source so brochure copy, metadata, FAQ and CTA logic stop drifting.
-- [ ] Create a shared web/mobile contract layer for auth/session, project summaries, thread summaries, notifications and estimate state before expanding mobile-v1 further.
-- [ ] Re-check live readability/contrast after the public-site all-gold typography pass; keep the black/light/gold direction, but verify the chosen gold remains readable on light cards and form surfaces.
-- [ ] Fold the new folder-based `Gallery/<service>/` image sets into the `sharp` asset pipeline later so fullscreen/service gallery views can use responsive AVIF/WebP variants instead of copied JPG-only source files.
-- [x] Consolidated the historical `Plans/` documents and `Plan History` into one root-level `todosv2.md` so planning no longer lives across many overlapping markdown files.
-- [x] Change `/api/manager/projects` so list responses default to `includeMedia=false`, returning counts or cover data instead of full media collections.
-- [x] Reduce the expensive manager project search path by narrowing or separating the current broad `LOWER(... LIKE %...%)` filters across joined tables.
-- [x] Remove eager thread-summary preload from `client-dashboard.js` bootstrap and keep mailbox/thread summaries truly lazy.
-- [x] Stop reloading `projects + services + materials` together after the manager seed action unless the seed result actually changed all three domains.
-- [x] Replace the heaviest full-container rerenders in `manager-dashboard.js` and `client-dashboard.js` with keyed per-item updates, starting with projects, threads and messages.
-- [x] Rework `gallery.js` so project changes update active state and transforms without rebuilding the whole stage and project strip.
-- [x] Replace the global 1-second polling loop in `apps/mobile-v1/App.js` with a scheduler keyed to the nearest due poll or screen-focus refreshes.
-- [x] Add a short TTL cache or deferred validation strategy for `/api/auth/me` in `site.js` so the shared public shell does not revalidate every public page load unnecessarily.
-- [x] Remove the duplicated `Open Account` and `Auth Page` wording from the UI and standardise session-aware labels to `Login`, `Account`, `Account Settings` and `Log out`.
-- [x] Centralise guest/authenticated header logic in `site.js` so public pages, `auth.html` and both workspace dashboards now follow the same visibility rules for login, account and logout controls.
-- [x] Add consistent protected-route redirects so guests are sent to `/auth.html?next=...&reason=session` and wrong-role workspace visits route back to the correct dashboard.
-- [x] Reworked the public gallery model so homepage and `gallery.html` now read service-grouped image sets from `Gallery/<service>/` folders instead of one mixed inline project payload.
-- [x] Added fullscreen image viewing to the shared gallery runtime so clicking a gallery image opens a closable overlay without breaking the existing generated service/location case-study pages.
+- [ ] Create a shared web/mobile contract layer for auth/session, project summaries, thread summaries, notifications and estimate state before expanding `mobile-v1` further.
+- [ ] Keep every new feature review aligned with future Android/iOS app readiness, especially API contracts, auth/session handling, messaging and media flows.
 
-## Completed
+## Tooling And Quality
 
-- [x] Implemented the vNext full rebuild after the style wipe: restored `tokens/base/public/workspace` styles, sticky `title.png` shell, always-visible inline login fields on mobile/desktop for guests, hamburger-driven vertical menu and one-dominant-card homepage flow.
-- [x] Removed legacy homepage card-switch logic from `site.js` and switched homepage navigation back to dedicated page routing (`Home/About/Services/Gallery/Quote/Contact/Account`).
-- [x] Reworked generated service/location pages to stop using the old `studio-board` variant and render through the shared multipage brochure structure with one consultation route.
-- [x] Updated Playwright public/mobile specs to the new shell/session behavior and multi-page homepage routing, then re-ran `verify:generated`, `test:ci` and `test:e2e:mobile` successfully.
-- [x] Removed the entire active website visual layer by resetting `styles/tokens.css`, `styles/base.css`, `styles/public.css`, `styles/workspace.css` and root `styles.css` to a neutral baseline, so the previous look/theme no longer renders.
-- [x] Removed design-related planning files tied to the previous visual direction (`DESIGNER_BRIEF_LEVELLINES.md`, `todosv2.md`, `dev_plan.md`, `todos.md`) before starting the next design cycle.
-- [x] Added a repeatable VS Code bootstrap script for extensions and workspace settings.
-- [x] Removed tracked `test-results/.last-run.json` from the repo path and added `test-results/` to `.gitignore` so Playwright artifacts no longer dirty the worktree after validation runs.
-- [x] Added shared workspace extension recommendations in `.vscode/extensions.json`.
-- [x] Merged project-wide VS Code defaults into `.vscode/settings.json` without removing existing SonarLint and chat tool settings.
-- [x] Implemented the premium black / marble / dark-gold theme across public pages and workspace shells.
-- [x] Added a consistent dark-gold line and window-frame motif to headers, cards, forms and footers.
-- [x] Verified the premium shell regression with API tests, generated-page verification and Playwright coverage.
-- [x] Recorded the standing rule that current web work must stay ready for future Android/iOS app rollout.
-- [x] Moved the homepage account entry and public links from the header utility panel into the dedicated `Account` card.
-- [x] Documented a professional `client_proposal_quote` plan for the quote page, manager triage and future Android/iOS portability.
-- [x] Added explicit `HOST` binding so PM2 on Ubuntu and Docker environments use predictable listen addresses.
-- [x] Unified the whole site around one shared header shell with `logo`, responsive `title.png`, and the right-side `Account / About Us / Gallery / Contact / Quote` block.
-- [x] Added a simple `/healthz` endpoint so local and production process checks do not depend on full-page HTML responses.
-- [x] Rebuilt the top of `manager-dashboard.html` into a three-part operational board with `Company Events`, `Mail Box` and `Available Options`.
-- [x] Added lightweight manager mailbox summary loading plus overview rendering so the top dashboard shows real project/chat state without pulling full communication history on bootstrap.
-- [x] Extended mobile Playwright coverage so the manager dashboard now asserts the new operational overview cards and mailbox counts.
-- [x] Saved the full stabilization/mobile/performance plan in `Plans/Full Stabilization, Mobile Sizing, Performance And Growth Plan For The Site.md` and registered it in `Plans/Plan History.md`.
-- [x] Added semantic `text-on-light` and `text-on-dark` theme tokens so the contrast rule can be enforced consistently.
-- [x] Tightened mobile header, hero and workspace board sizing for `640px` and `390px` breakpoints.
-- [x] Rebuilt the top of `client-dashboard.html` into `Project Status`, `Mail Box` and `Available Options`, matching the manager workspace shell.
-- [x] Kept the client top board lightweight by loading direct/project thread summaries before full thread message histories.
-- [x] Switched Playwright desktop coverage to managed Chromium instead of relying on a locally installed Chrome channel.
-- [x] Updated deploy and cutover documentation to use `ecosystem.config.js --update-env`, `/healthz` and a short post-restart delay.
-- [x] Shifted dark-surface typography tokens to a deeper dark-gold range so text on black surfaces reads as darker premium gold instead of pale gold.
-- [x] Added a repeatable `sharp`-based asset pipeline that generates optimized brand and runtime gallery variants in AVIF, WebP and fallback formats.
-- [x] Switched manual and generated public/workspace shell headers to `<picture>` markup backed by optimized brand assets with intrinsic dimensions.
-- [x] Restored real runtime `Gallery/premium/*` files from generated outputs so public pages and gallery flows no longer reference missing alias files.
-- [x] Updated gallery and generated public sections to read optimized media variants instead of a single heavy JPG/PNG path.
-- [x] Tuned shared dark-surface gold tokens from bronze-leaning values toward a richer premium gold and aligned borders/accents with the new hue.
-- [x] Added a dedicated live QA checklist for desktop and phone verification after deploy, including screenshot evidence requirements.
-- [x] Replaced the obsolete `RELEASE_NOTES_design-lock-v1.md` with `Project_Web_Design_Plan.md` as the active design source-of-truth document working alongside `Project_todos.md` and `Project_Dev_plan.md`.
-- [x] Replaced the failing `node --test` worker flow with an in-process sequential API test runner so `npm run test:api:v2` and `npm run test:ci` are reliable again on the local workstation.
-- [x] Confirmed the remaining local `spawn EPERM` blocker is isolated to Playwright worker/browser launch, not the API test suite or app code itself.
-- [x] Moved shared `titleCase`, `formatDateTime`, overview entry and mailbox preview helpers into `runtime.js` so client and manager dashboards stop duplicating the same shell logic.
-- [x] Started reducing `apps/mobile-v1/App.js` by extracting reusable API and list-loading helpers into `apps/mobile-v1/src/api.js` and `apps/mobile-v1/src/useApiList.js`.
-- [x] Saved `Plans/Plan Naprawy Bledow Znalezionych Przez SonarQube.md` and registered it in `Plans/Plan History.md` as the tracked cleanup plan for SonarQube findings.
-- [x] Added `scripts/sonar-export.sh` as the repeatable Linux/DigitalOcean export path for full SonarQube issue, quality gate and measure snapshots.
-- [x] Split `routes/manager.js` so `staff/search/seed`, `services/materials` and `estimates` now live in dedicated subrouters under `routes/manager/`, reducing the main route monolith without changing endpoint shapes.
-- [x] Reduced `apps/mobile-v1/App.js` further by extracting screen components into `apps/mobile-v1/src/screens.js` and shared React Native styles into `apps/mobile-v1/src/styles.js`.
-- [x] Rebuilt the homepage around a `header.png` board with a left account panel, central artwork panel and right menu panel, then moved the homepage flow into alternating light/dark background bands.
-- [x] Saved `Plans/Redesign Publicznego Shellu Pod title.png.md` and registered it in `Plans/Plan History.md` as the tracked redesign plan for the new shared public shell.
-- [x] Replaced the temporary homepage-only `header.png` board with one shared public shell based on `title.png`, using the same top structure across homepage, brand pages, legal pages and generated service/location pages.
-- [x] Added a real inline public login strip wired to the existing auth/session flow in `site.js`, including guest login/register controls and a session-aware account state.
-- [x] Updated `scripts/publicPages.shared.js` and `scripts/publicPageRenderer.js` so generated pages now use the same `title.png` shell and the fixed nav order `About Us | Gallery | Quote | Contact | Account`.
-- [x] Updated Playwright public/mobile expectations so regression coverage validates the new shared `title.png` shell and inline login instead of the old homepage-only header layout.
-- [x] Changed the public `title.png` shell so the main menu is hidden by default and opens only from a hamburger toggle instead of staying visible in the header.
-- [x] Switched the public brochure typography to gold across dark surfaces, light cards, footer links, form text and CTA labels so the live site now matches the requested black/light/gold color direction.
-- [x] Kept the newer, narrower `title.png` variant in the worktree and reduced its visual aggression through CSS only, shrinking the rendered brand width and restoring more breathing room in the sticky header without reverting the asset itself.
-- [x] Unified the logged-in workspace and auth pages around the same sticky `title.png` public shell, so header structure, account state and menu behaviour no longer diverge after login.
-- [x] Finished the next manager-route cleanup wave by extracting the remaining `quotes` and `projects/media` endpoints into dedicated subrouters under `routes/manager/`.
-- [x] Reduced `apps/mobile-v1/App.js` again by extracting the poller scheduler and the session/tab shell UI into dedicated `src` modules, leaving the top-level app as a thinner orchestration layer.
-- [ ] Revisit SonarQube CPD exclusions once `about/contact/gallery/quote/legal` move further into the shared public renderer, so static HTML exclusions can be narrowed again.
-- [ ] Run live QA on `/gallery.html` after deploy to confirm the service-led grouping, service descriptions and fullscreen flow all read naturally on desktop and mobile.
-- [ ] Run live QA on public pages after the card-surface change to confirm `mainbackground.png` reads well inside all cards and does not reduce text contrast on smaller screens.
+- [ ] Resolve the remaining local Playwright `spawn EPERM` issue and record the first green local `npm run test:e2e:mobile` pass.
+- [ ] Export the real issue list from SonarQube for branch `vscode`, classify each `Bug` and `Vulnerability`, and start cleanup with `manager-dashboard.js`, `routes/manager.js`, `client-dashboard.js`, `styles/base.css` and `apps/mobile-v1/App.js`.
+- [ ] Run `scripts/sonar-export.sh` with `SONAR_URL` and `SONAR_TOKEN`, then attach `sonar-issues-full.json`, `sonar-quality-gate.json` and `sonar-measures.json` to the Sonar cleanup workflow.
+- [ ] Revisit SonarQube CPD exclusions once more public HTML moves into the shared renderer and fewer static outputs need to stay excluded.
+- [ ] Create a new current design source-of-truth markdown to replace the removed `Project_Web_Design_Plan.md`.
+
+## Later
+
+- [ ] Fold the folder-based `Gallery/<service>/` image sets into the `sharp` asset pipeline so fullscreen and service-gallery views can use responsive AVIF/WebP variants instead of copied JPG-only source files.
+- [ ] Revisit whether a CDN/media platform is worth introducing later if the runtime gallery/media set grows beyond the current `sharp` pipeline.
+- [ ] If exact chronology becomes important, replace the derived `Company Events` overview in `manager-dashboard` with a persisted audit/event timeline.
+- [ ] Decide later whether `header.png` should remain only as a historical/supporting asset now that `title.png` is the shared public shell lockup.

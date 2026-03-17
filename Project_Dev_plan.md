@@ -226,3 +226,4 @@
 - Re-ran `npm.cmd run test:ci` after the cache-header change so future deploys should show frontend updates on normal refresh without manual browser-history clearing.
 - Updated `gallery.html` and `gallery.js` so the public gallery now presents itself fully as a service-led experience: SEO copy, headings, sidebar defaults, status text and service descriptions now frame the gallery around bathrooms, kitchens, interiors and exteriors instead of project case studies.
 - Switched the shared public card surfaces from `boxbackground.png` to `mainbackground.png`, keeping the header shell on its separate dark background while making the main background image visible inside all content cards.
+- Consolidated `Project_todos.md` into one shorter active backlog with `Now`, `Next Engineering`, `Product And Workflow`, `Tooling And Quality` and `Later` sections, removing obsolete per-deploy duplicates and moving completed-history responsibility fully into `Project_Dev_plan.md`.
