@@ -1,5 +1,6 @@
 (() => {
   const runtime = window.LevelLinesRuntime || {};
+  const dashboardShared = window.LevelLinesDashboardShared || {};
   const TOKEN_KEY = runtime.TOKEN_KEY || 'll_auth_token';
   const USER_KEY = runtime.USER_KEY || 'll_auth_user';
 
@@ -73,47 +74,40 @@
     if (Number.isNaN(parsed.getTime())) return '';
     return parsed.toLocaleString('en-GB');
   });
-  const createOverviewEntry = runtime.createOverviewEntry || (({ title, detail, meta }) => {
+  const createOverviewEntry = dashboardShared.createOverviewEntry || runtime.createOverviewEntry || (({ title, detail, meta }) => {
     const item = document.createElement('article');
     item.className = 'workspace-overview-entry';
-
     const heading = document.createElement('h3');
     heading.textContent = title;
     item.appendChild(heading);
-
     if (detail) {
       const text = document.createElement('p');
       text.textContent = detail;
       item.appendChild(text);
     }
-
     if (meta) {
       const metaLine = document.createElement('p');
       metaLine.className = 'muted';
       metaLine.textContent = meta;
       item.appendChild(metaLine);
     }
-
     return item;
   });
-  const renderMailboxPreviewList = runtime.renderMailboxPreviewList || ((node, items, { loaded, loadingText, emptyText, mapItem }) => {
+  const renderMailboxPreviewList = dashboardShared.renderMailboxPreviewList || runtime.renderMailboxPreviewList || ((node, items, { loaded, loadingText, emptyText, mapItem }) => {
     node.innerHTML = '';
-
     if (!loaded) {
       node.innerHTML = `<p class="muted">${escapeHtml(loadingText)}</p>`;
       return;
     }
-
     if (!items.length) {
       node.innerHTML = `<p class="muted">${escapeHtml(emptyText)}</p>`;
       return;
     }
-
     const frag = document.createDocumentFragment();
     items.slice(0, 2).forEach((item) => frag.appendChild(createOverviewEntry(mapItem(item))));
     node.appendChild(frag);
   });
-  const syncKeyedList = runtime.syncKeyedList || ((container, items, { getKey, createNode, updateNode, createEmptyNode } = {}) => {
+  const syncKeyedList = dashboardShared.syncKeyedList || runtime.syncKeyedList || ((container, items, { getKey, createNode, updateNode, createEmptyNode } = {}) => {
     if (!container) return;
     const existingByKey = new Map();
     let emptyNode = null;
@@ -160,12 +154,12 @@
     existingByKey.forEach((node) => node.remove());
   });
 
-  const createMutedNode = (message) => {
+  const createMutedNode = dashboardShared.createMutedNode || ((message) => {
     const node = document.createElement('p');
     node.className = 'muted';
     node.textContent = message;
     return node;
-  };
+  });
 
   const syncProjectSelectOptions = () => {
     const select = el.uploadForm.elements.projectId;
@@ -227,7 +221,7 @@
     });
   };
 
-  const createThreadCard = ({ onOpen }) => {
+  const createThreadCard = dashboardShared.createThreadCard || (({ onOpen }) => {
     const card = document.createElement('article');
     card.className = 'dashboard-item';
     const heading = document.createElement('h3');
@@ -247,9 +241,9 @@
     card.appendChild(meta);
     card.appendChild(btn);
     return card;
-  };
+  });
 
-  const createMessageCard = () => {
+  const createMessageCard = dashboardShared.createMessageCard || (() => {
     const card = document.createElement('article');
     card.className = 'dashboard-item';
     const meta = document.createElement('p');
@@ -258,7 +252,7 @@
     card.appendChild(meta);
     card.appendChild(body);
     return card;
-  };
+  });
 
   const clearSession = () => {
     (runtime.clearSession || (() => {

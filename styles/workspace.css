@@ -143,6 +143,37 @@
   min-width: 140px;
 }
 
+.manager-workflow-card {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.manager-workflow-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: var(--space-4);
+}
+
+.manager-workflow-head h2 {
+  margin-bottom: 0;
+}
+
+.manager-workflow-choices,
+.manager-workflow-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.manager-workflow-choice.is-active {
+  box-shadow: 0 0 0 1px rgba(209, 164, 74, 0.45), 0 12px 30px rgba(0, 0, 0, 0.24);
+}
+
+.manager-domain-hidden {
+  display: none !important;
+}
+
 .workspace-content-shell {
   background: linear-gradient(180deg, rgba(26, 18, 8, 0.09), rgba(20, 15, 8, 0.04));
 }
@@ -335,6 +366,11 @@
     grid-column: span 1;
   }
 
+  .manager-workflow-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
   .dashboard-filters {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -371,13 +407,17 @@
 
   .dashboard-session-actions,
   .workspace-session-actions,
-  .dashboard-actions-row {
+  .dashboard-actions-row,
+  .manager-workflow-choices,
+  .manager-workflow-actions {
     flex-direction: column;
   }
 
   .dashboard-session-actions .btn,
   .workspace-session-actions .btn,
-  .dashboard-actions-row .btn {
+  .dashboard-actions-row .btn,
+  .manager-workflow-choices .btn,
+  .manager-workflow-actions .btn {
     width: 100%;
   }
 }

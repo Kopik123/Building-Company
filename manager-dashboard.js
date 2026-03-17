@@ -1,5 +1,6 @@
 (() => {
   const runtime = window.LevelLinesRuntime || {};
+  const dashboardShared = window.LevelLinesDashboardShared || {};
   const TOKEN_KEY = runtime.TOKEN_KEY || 'll_auth_token';
   const USER_KEY = runtime.USER_KEY || 'll_auth_user';
   const DEFAULT_PAGE_SIZE = 25;
@@ -9,6 +10,8 @@
     logout: document.getElementById('dashboard-logout'),
     seedBtn: document.getElementById('dashboard-seed-btn'),
     seedStatus: document.getElementById('dashboard-seed-status'),
+    managerWorkflowDescription: document.getElementById('manager-workflow-description'),
+    managerWorkflowActions: document.getElementById('manager-workflow-actions'),
     managerCompanyEventsList: document.getElementById('manager-company-events-list'),
     managerMailboxPrivateCount: document.getElementById('manager-mailbox-private-count'),
     managerMailboxProjectCount: document.getElementById('manager-mailbox-project-count'),
@@ -122,6 +125,7 @@
     groupThreads: [],
     selectedGroupThreadId: '',
     groupMessages: [],
+    selectedManagerDomain: 'projects',
     projectsQuery: { page: 1, pageSize: DEFAULT_PAGE_SIZE, q: '', status: '', showInGallery: '' },
     projectsPagination: { page: 1, totalPages: 1, total: 0, pageSize: DEFAULT_PAGE_SIZE },
     quotesQuery: { page: 1, pageSize: DEFAULT_PAGE_SIZE, q: '', status: '' },
@@ -149,6 +153,8 @@
   };
   const USER_SEARCH_CACHE_TTL_MS = 30 * 1000;
   const userSearchCache = new Map();
+  const managerDomainSections = Array.from(document.querySelectorAll('[data-manager-domain-section]'));
+  const managerDomainButtons = Array.from(document.querySelectorAll('[data-manager-domain-choice]'));
 
   const parseError = runtime.parseError || ((payload) => payload?.error || 'Request failed.');
   const escapeHtml = runtime.escapeHtml || ((value) => String(value ?? ''));
@@ -178,30 +184,26 @@
     if (Number.isNaN(parsed.getTime())) return '';
     return parsed.toLocaleString('en-GB');
   });
-  const createOverviewEntry = runtime.createOverviewEntry || (({ title, detail, meta }) => {
+  const createOverviewEntry = dashboardShared.createOverviewEntry || runtime.createOverviewEntry || (({ title, detail, meta }) => {
     const item = document.createElement('article');
     item.className = 'workspace-overview-entry';
-
     const heading = document.createElement('h3');
     heading.textContent = title;
     item.appendChild(heading);
-
     if (detail) {
       const text = document.createElement('p');
       text.textContent = detail;
       item.appendChild(text);
     }
-
     if (meta) {
       const metaLine = document.createElement('p');
       metaLine.className = 'muted';
       metaLine.textContent = meta;
       item.appendChild(metaLine);
     }
-
     return item;
   });
-  const syncKeyedList = runtime.syncKeyedList || ((container, items, { getKey, createNode, updateNode, createEmptyNode } = {}) => {
+  const syncKeyedList = dashboardShared.syncKeyedList || runtime.syncKeyedList || ((container, items, { getKey, createNode, updateNode, createEmptyNode } = {}) => {
     if (!container) return;
     const existingByKey = new Map();
     let emptyNode = null;
@@ -248,12 +250,12 @@
     existingByKey.forEach((node) => node.remove());
   });
 
-  const createMutedNode = (message) => {
+  const createMutedNode = dashboardShared.createMutedNode || ((message) => {
     const node = document.createElement('p');
     node.className = 'muted';
     node.textContent = message;
     return node;
-  };
+  });
 
   const createProjectListCard = () => {
     const card = document.createElement('article');
@@ -289,7 +291,7 @@
     return card;
   };
 
-  const createThreadCard = ({ onOpen }) => {
+  const createThreadCard = dashboardShared.createThreadCard || (({ onOpen }) => {
     const card = document.createElement('article');
     card.className = 'dashboard-item';
     const heading = document.createElement('h3');
@@ -309,9 +311,9 @@
     card.appendChild(meta);
     card.appendChild(btn);
     return card;
-  };
+  });
 
-  const createMessageCard = () => {
+  const createMessageCard = dashboardShared.createMessageCard || (() => {
     const card = document.createElement('article');
     card.className = 'dashboard-item';
     const meta = document.createElement('p');
@@ -320,10 +322,9 @@
     card.appendChild(meta);
     card.appendChild(body);
     return card;
-  };
-  const renderMailboxPreviewList = runtime.renderMailboxPreviewList || ((node, items, { loaded, loadingText, emptyText, mapItem }) => {
+  });
+  const renderMailboxPreviewList = dashboardShared.renderMailboxPreviewList || runtime.renderMailboxPreviewList || ((node, items, { loaded, loadingText, emptyText, mapItem }) => {
     node.innerHTML = '';
-
     if (!loaded) {
       const text = document.createElement('p');
       text.className = 'muted';
@@ -331,7 +332,6 @@
       node.appendChild(text);
       return;
     }
-
     if (!items.length) {
       const text = document.createElement('p');
       text.className = 'muted';
@@ -339,7 +339,6 @@
       node.appendChild(text);
       return;
     }
-
     const frag = document.createDocumentFragment();
     items.slice(0, 2).forEach((item) => frag.appendChild(createOverviewEntry(mapItem(item))));
     node.appendChild(frag);
@@ -387,6 +386,118 @@
     node.textContent = `Page ${page} / ${totalPages} (${total} items)`;
     prevBtn.disabled = page <= 1;
     nextBtn.disabled = page >= totalPages;
+  };
+
+  const scrollToSection = (sectionId, focusNode) => {
+    const section = document.getElementById(sectionId);
+    if (!section) return;
+    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (focusNode && typeof focusNode.focus === 'function') {
+      window.setTimeout(() => focusNode.focus({ preventScroll: true }), 180);
+    }
+  };
+
+  const openProjectEditor = () => {
+    if (!state.selectedProjectId) {
+      setStatus(el.projectEditStatus, 'Select a project from the list first, then edit it here.', 'error');
+      scrollToSection('manager-projects-section', el.projectsFilterQ);
+      return;
+    }
+
+    fillProjectEditor();
+    if (el.projectEditorCard.hidden) el.projectEditorCard.hidden = false;
+    scrollToSection('project-editor-card', el.projectEditForm?.elements?.title);
+  };
+
+  const MANAGER_DOMAIN_CONFIG = {
+    projects: {
+      description: 'Choose the project route first, then create a new project or edit the selected one.',
+      actions: [
+        {
+          label: 'Create project',
+          variant: 'gold',
+          run: () => scrollToSection('manager-project-create', el.projectCreateForm?.elements?.title)
+        },
+        {
+          label: 'Browse projects',
+          variant: 'outline',
+          run: () => scrollToSection('manager-projects-section', el.projectsFilterQ)
+        },
+        {
+          label: 'Edit selected',
+          variant: 'outline',
+          disabled: () => !state.selectedProjectId,
+          run: () => openProjectEditor()
+        }
+      ]
+    },
+    materials: {
+      description: 'Choose stock first, then add new materials or edit the current inventory list.',
+      actions: [
+        {
+          label: 'Add material',
+          variant: 'gold',
+          run: () => scrollToSection('manager-materials-section', el.materialCreateForm?.elements?.name)
+        },
+        {
+          label: 'Edit stock',
+          variant: 'outline',
+          run: () => scrollToSection('manager-materials-section', el.materialsFilterQ)
+        }
+      ]
+    },
+    services: {
+      description: 'Choose services first, then add a new website offer or edit the current service catalogue.',
+      actions: [
+        {
+          label: 'Add service',
+          variant: 'gold',
+          run: () => scrollToSection('manager-services-section', el.serviceCreateForm?.elements?.title)
+        },
+        {
+          label: 'Edit services',
+          variant: 'outline',
+          run: () => scrollToSection('manager-services-section', el.servicesFilterQ)
+        }
+      ]
+    }
+  };
+
+  const renderManagerWorkflow = () => {
+    const selectedDomain = MANAGER_DOMAIN_CONFIG[state.selectedManagerDomain] ? state.selectedManagerDomain : 'projects';
+    state.selectedManagerDomain = selectedDomain;
+
+    managerDomainButtons.forEach((button) => {
+      const isActive = button.dataset.managerDomainChoice === selectedDomain;
+      button.classList.toggle('btn-gold', isActive);
+      button.classList.toggle('btn-outline', !isActive);
+      button.classList.toggle('is-active', isActive);
+      button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    });
+
+    managerDomainSections.forEach((section) => {
+      section.classList.toggle('manager-domain-hidden', section.dataset.managerDomainSection !== selectedDomain);
+    });
+
+    const config = MANAGER_DOMAIN_CONFIG[selectedDomain];
+    if (el.managerWorkflowDescription) {
+      el.managerWorkflowDescription.textContent = config.description;
+    }
+    if (!el.managerWorkflowActions) return;
+
+    el.managerWorkflowActions.replaceChildren();
+    config.actions.forEach((action) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = action.variant === 'gold' ? 'btn btn-gold manager-workflow-action' : 'btn btn-outline manager-workflow-action';
+      button.textContent = action.label;
+      button.disabled = typeof action.disabled === 'function' ? action.disabled() : false;
+      button.addEventListener('click', () => {
+        action.run();
+        renderManagerWorkflow();
+      });
+      el.managerWorkflowActions.appendChild(button);
+    });
   };
 
   const normUuid = (value) => {
@@ -765,6 +876,7 @@
       });
       el.projectEditorCard.hidden = true;
       renderOperationsShell();
+      renderManagerWorkflow();
       return;
     }
     syncKeyedList(el.projectsList, state.projects, {
@@ -780,6 +892,7 @@
     });
     renderPagination(el.projectsPagination, el.projectsPrev, el.projectsNext, state.projectsPagination);
     renderOperationsShell();
+    renderManagerWorkflow();
   };
 
   const renderMedia = () => {
@@ -852,6 +965,7 @@
     setSmallStatus(el.projectEditClientLookupStatus, '', '');
     setSmallStatus(el.projectEditManagerLookupStatus, '', '');
     renderMedia();
+    renderManagerWorkflow();
     requestAccordionRefresh();
   };
 
@@ -1005,6 +1119,7 @@
     el.servicesList.appendChild(frag);
     renderPagination(el.servicesPagination, el.servicesPrev, el.servicesNext, state.servicesPagination);
     renderOperationsShell();
+    renderManagerWorkflow();
   };
 
   const renderMaterials = () => {
@@ -1086,6 +1201,7 @@
     el.materialsList.appendChild(frag);
     renderPagination(el.materialsPagination, el.materialsPrev, el.materialsNext, state.materialsPagination);
     renderOperationsShell();
+    renderManagerWorkflow();
   };
 
   const renderClients = () => {
@@ -1724,6 +1840,7 @@
         return;
       }
       renderSession();
+      renderManagerWorkflow();
       if (!['manager', 'admin'].includes(role)) {
         el.seedBtn.disabled = true;
         el.seedBtn.title = 'Only manager/admin can run seed';
@@ -1784,6 +1901,14 @@
     form.serviceId.disabled = lineType !== 'service';
     form.materialId.disabled = lineType !== 'material';
   };
+
+  managerDomainButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      state.selectedManagerDomain = button.dataset.managerDomainChoice || 'projects';
+      renderManagerWorkflow();
+    });
+  });
+
   el.estimateLineForm.elements.lineType.addEventListener('change', syncEstimateLineMode);
   syncEstimateLineMode();
 
