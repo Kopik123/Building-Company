@@ -479,3 +479,44 @@ test('manager dashboard exposes project controls for logged session on mobile', 
   await page.locator('#manager-group-threads-list').scrollIntoViewIfNeeded();
   await expect(page.locator('#manager-group-threads-list .dashboard-item').first()).toBeVisible();
 });
+
+test('manager dashboard workflow chooser switches between projects materials and services', async ({ page }) => {
+  await mockManagerSession(page);
+  await page.goto('/manager-dashboard.html');
+
+  const projectsChoice = page.locator('[data-manager-domain-choice="projects"]');
+  const materialsChoice = page.locator('[data-manager-domain-choice="materials"]');
+  const servicesChoice = page.locator('[data-manager-domain-choice="services"]');
+  const workflowActions = page.locator('#manager-workflow-actions');
+
+  await expect(projectsChoice).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#manager-project-create')).toBeVisible();
+  await expect(page.locator('#manager-projects-section')).toBeVisible();
+  await expect(page.locator('#manager-services-section')).toBeHidden();
+  await expect(page.locator('#manager-materials-section')).toBeHidden();
+  await expect(workflowActions.getByRole('button', { name: 'Create project' })).toBeVisible();
+  await expect(workflowActions.getByRole('button', { name: 'Edit selected' })).toBeEnabled();
+
+  await materialsChoice.click();
+  await expect(materialsChoice).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#manager-materials-section')).toBeVisible();
+  await expect(page.locator('#manager-project-create')).toBeHidden();
+  await expect(page.locator('#manager-projects-section')).toBeHidden();
+  await expect(page.locator('#manager-services-section')).toBeHidden();
+  await expect(workflowActions.getByRole('button', { name: 'Add material' })).toBeVisible();
+  await expect(workflowActions.getByRole('button', { name: 'Edit stock' })).toBeVisible();
+
+  await servicesChoice.click();
+  await expect(servicesChoice).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#manager-services-section')).toBeVisible();
+  await expect(page.locator('#manager-project-create')).toBeHidden();
+  await expect(page.locator('#manager-projects-section')).toBeHidden();
+  await expect(page.locator('#manager-materials-section')).toBeHidden();
+  await expect(workflowActions.getByRole('button', { name: 'Add service' })).toBeVisible();
+  await expect(workflowActions.getByRole('button', { name: 'Edit services' })).toBeVisible();
+
+  await projectsChoice.click();
+  await expect(projectsChoice).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#manager-project-create')).toBeVisible();
+  await expect(page.locator('#manager-projects-section')).toBeVisible();
+});
