@@ -21,6 +21,7 @@ const { auth, roleCheck } = require('../middleware/auth');
 const asyncHandler = require('../utils/asyncHandler');
 const { upload } = require('../utils/upload');
 const { clearServicesCache, clearGalleryCache } = require('../utils/publicCache');
+const { createPaginationHelpers } = require('../utils/pagination');
 const createStaffSearchSeedRoutes = require('./manager/staff-search-seed');
 const createCatalogRoutes = require('./manager/catalog-routes');
 const createEstimateRoutes = require('./manager/estimate-routes');
@@ -32,8 +33,11 @@ const router = express.Router();
 
 const managerGuard = [auth, roleCheck('manager', 'admin')];
 const staffGuard = [auth, roleCheck('employee', 'manager', 'admin')];
-const DEFAULT_PAGE_SIZE = 25;
 const MAX_PAGE_SIZE = 100;
+const { getPagination, paginationDto } = createPaginationHelpers({
+  defaultPageSize: 25,
+  maxPageSize: MAX_PAGE_SIZE
+});
 const PROJECT_STATUSES = ['planning', 'in_progress', 'completed', 'on_hold'];
 const SERVICE_CATEGORIES = ['bathroom', 'kitchen', 'interior', 'outdoor', 'other'];
 const MATERIAL_CATEGORIES = ['tiles', 'plumbing', 'electrical', 'joinery', 'paint', 'hardware', 'other'];
@@ -120,16 +124,6 @@ const STARTER_PROJECT_SEED = [
     media: ['exterior-front.jpg', 'exterior-chimney.jpg', 'brick-detail-charcoal.jpg']
   }
 ];
-
-const getPagination = (req) => {
-  const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
-  const pageSize = Math.min(MAX_PAGE_SIZE, Math.max(1, Number.parseInt(req.query.pageSize, 10) || DEFAULT_PAGE_SIZE));
-  return {
-    page,
-    pageSize,
-    offset: (page - 1) * pageSize
-  };
-};
 
 const parseBoolean = (value, fallback = false) => {
   if (typeof value === 'boolean') return value;
@@ -239,13 +233,6 @@ const resolveManagerByIdentity = async ({ assignedManagerId, assignedManagerEmai
 
   return undefined;
 };
-
-const paginationDto = (page, pageSize, total) => ({
-  page,
-  pageSize,
-  total,
-  totalPages: Math.max(1, Math.ceil(total / pageSize))
-});
 
 const buildProjectMediaCountMap = async (projectIds) => {
   const uniqueProjectIds = Array.from(new Set((projectIds || []).filter(Boolean)));

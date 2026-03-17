@@ -5,52 +5,15 @@ const { GroupThread, GroupMember, GroupMessage, User } = require('../models');
 const { auth } = require('../middleware/auth');
 const { upload, DEFAULT_ATTACHMENT_BODY } = require('../utils/upload');
 const asyncHandler = require('../utils/asyncHandler');
+const { createPaginationHelpers } = require('../utils/pagination');
 
 const router = express.Router();
 const senderAttributes = ['id', 'name', 'email', 'role'];
-const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
-
-const getPagination = (req) => {
-  const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
-  const pageSize = Math.min(MAX_PAGE_SIZE, Math.max(1, Number.parseInt(req.query.pageSize, 10) || DEFAULT_PAGE_SIZE));
-  return {
-    page,
-    pageSize,
-    offset: (page - 1) * pageSize
-  };
-};
-
-const encodeCursor = (message) =>
-  Buffer.from(`${new Date(message.createdAt).toISOString()}|${message.id}`, 'utf8').toString('base64url');
-
-const decodeCursor = (rawCursor) => {
-  if (!rawCursor) return null;
-
-  try {
-    const decoded = Buffer.from(String(rawCursor), 'base64url').toString('utf8');
-    const [createdAtRaw, id] = decoded.split('|');
-    const createdAt = new Date(createdAtRaw);
-    if (!id || Number.isNaN(createdAt.getTime())) return null;
-    return { createdAt, id };
-  } catch (_error) {
-    return null;
-  }
-};
-
-const getCursorPagination = (req) => {
-  const limit = Math.min(MAX_PAGE_SIZE, Math.max(1, Number.parseInt(req.query.limit, 10) || DEFAULT_PAGE_SIZE));
-  const cursor = decodeCursor(req.query.cursor);
-  if (req.query.cursor && !cursor) {
-    return { error: 'Invalid cursor' };
-  }
-
-  return {
-    mode: req.query.cursor || typeof req.query.limit !== 'undefined' ? 'cursor' : 'legacy',
-    limit,
-    cursor
-  };
-};
+const { getPagination, encodeCursor, getCursorPagination } = createPaginationHelpers({
+  defaultPageSize: 20,
+  maxPageSize: MAX_PAGE_SIZE
+});
 
 const formatMessageWithSender = (message, user) => ({
   ...message.toJSON(),

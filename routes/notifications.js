@@ -3,20 +3,14 @@ const { param, query, validationResult } = require('express-validator');
 const { Notification } = require('../models');
 const { auth } = require('../middleware/auth');
 const asyncHandler = require('../utils/asyncHandler');
+const { createPaginationHelpers } = require('../utils/pagination');
 
 const router = express.Router();
-const DEFAULT_PAGE_SIZE = 25;
 const MAX_PAGE_SIZE = 100;
-
-const getPagination = (req) => {
-  const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
-  const pageSize = Math.min(MAX_PAGE_SIZE, Math.max(1, Number.parseInt(req.query.pageSize, 10) || DEFAULT_PAGE_SIZE));
-  return {
-    page,
-    pageSize,
-    offset: (page - 1) * pageSize
-  };
-};
+const { getPagination, paginationDto } = createPaginationHelpers({
+  defaultPageSize: 25,
+  maxPageSize: MAX_PAGE_SIZE
+});
 
 router.get(
   '/',
@@ -45,12 +39,7 @@ router.get(
 
     return res.json({
       notifications,
-      pagination: {
-        page,
-        pageSize,
-        total,
-        totalPages: Math.max(1, Math.ceil(total / pageSize))
-      }
+      pagination: paginationDto(page, pageSize, total)
     });
   })
 );

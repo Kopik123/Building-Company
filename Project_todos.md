@@ -13,7 +13,6 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 
 ## Next Engineering
 
-- [ ] Extract shared cursor/pagination helpers from `routes/inbox.js`, `routes/group.js`, `routes/notifications.js`, `routes/client.js` and `routes/manager.js`.
 - [ ] Split `manager-dashboard.js` into feature modules: `projects`, `quotes`, `services`, `materials`, `clients`, `staff`, `estimates`, `messages`.
 - [ ] Split `client-dashboard.js` into feature modules: `overview`, `projects/documents`, `quotes/services`, `direct manager`, `project chat`.
 - [ ] Move more responsive/layout ownership out of `styles/base.css` into `styles/public.css` and `styles/workspace.css`.
