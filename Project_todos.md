@@ -15,6 +15,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [ ] On live `manager-dashboard.html`, verify project chat creation works from the new form: pick a project, auto-seed the client/assigned staff, optionally add an extra participant, and confirm the thread opens selected after creation.
 - [ ] On live `manager-dashboard.html`, verify project-chat participant management works end-to-end: current member list renders, admins can add/remove participants, and non-admin thread members do not see admin-only controls.
 - [ ] Confirm on live `/gallery.html` that the gallery now reads fully service-led, with correct service descriptions, service rail labels and fullscreen image flow on desktop and mobile.
+- [x] Align the gallery Playwright regression with the new service-switcher contract so it checks active service title/meta/status instead of the removed image-title node.
 - [ ] Confirm on live `/services.html` that `Discuss wall systems` opens `/quote.html` with the wall-systems context already selected in the quote form.
 - [ ] Capture fresh screenshot evidence for homepage, gallery, quote/contact forms, auth state and both dashboards after the consolidated live QA pass.
 - [ ] Resolve the local PowerShell execution-policy issue blocking `npm.ps1`; until fixed, keep using `npm.cmd` for local validation commands.

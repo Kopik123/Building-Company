@@ -91,8 +91,11 @@ test('core brochure pages render about, services, gallery, contact and quote rou
 
   await page.goto('/gallery.html');
   await expect(page.locator('body.public-site.page-gallery')).toBeVisible();
-  await expect(page.locator('[data-gallery-active-image-title]')).toBeVisible();
+  await expect(page.locator('.gallery-service-switcher .gallery-service-button')).toHaveCount(5);
+  await expect(page.locator('.gallery-service-switcher .gallery-service-button').first()).toContainText(/full bathroom renovations/i);
   await expect(page.locator('[data-gallery-active-project-title]')).toBeVisible();
+  await expect(page.locator('[data-gallery-active-project-meta]')).toBeVisible();
+  await expect(page.locator('[data-gallery-status]')).toBeVisible();
 
   await page.goto('/contact.html');
   await expect(page.locator('body.public-site.page-contact')).toBeVisible();

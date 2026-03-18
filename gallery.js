@@ -133,13 +133,38 @@
       }
     ]
   };
-  const SERVICE_DESCRIPTIONS = {
-    Bathrooms: 'Wet rooms, bathing layouts and bathroom finish details.',
-    Kitchens: 'Joinery runs, worktops and kitchen installation sequences.',
-    Interiors: 'Interior fit-out details, material transitions and room finishing.',
-    Exteriors: 'Exterior details, elevations and weather-facing finish work.',
-    Finishes: 'Trim, surface and finishing studies across specialist trades.'
-  };
+  const SERVICE_COLLECTION_DEFINITIONS = [
+    {
+      key: 'full-bathroom-renovations',
+      title: 'Full Bathroom Renovations',
+      description: 'Wet rooms, bathing layouts and bathroom finish details.',
+      sources: ['bathrooms']
+    },
+    {
+      key: 'kitchen-installation-and-refurbishment',
+      title: 'Kitchen Installation and Refurbishment',
+      description: 'Joinery runs, worktops and kitchen installation sequences.',
+      sources: ['kitchens']
+    },
+    {
+      key: 'tiling-large-format-wet-showers-exterior',
+      title: 'Tiling incl. Large Format / Wet Showers / Exterior',
+      description: 'Large-format tiling, wet-shower geometry and exterior finish details.',
+      sources: ['bathrooms', 'exteriors']
+    },
+    {
+      key: 'carpentry',
+      title: 'Carpentry',
+      description: 'Joinery, timber detailing and trim-led carpentry work.',
+      sources: ['kitchens', 'exteriors']
+    },
+    {
+      key: 'interior-and-exterior-wall',
+      title: 'Interior and Exterior Wall',
+      description: 'Interior wall work, external surfaces and finish consistency across both.',
+      sources: ['interiors', 'exteriors']
+    }
+  ];
   let projects = [];
 
   const MOTION_PROFILES = {
@@ -244,7 +269,7 @@
       const normalizedValue = String(value || 'Service').trim() || 'Service';
       return {
         title: normalizedValue,
-        subtitle: SERVICE_DESCRIPTIONS[normalizedValue] || 'Completed service gallery'
+        subtitle: 'Completed service gallery'
       };
     }
 
@@ -285,10 +310,47 @@
   const normalizeProjects = (rawProjects) =>
     (Array.isArray(rawProjects) ? rawProjects : [])
       .map((project) => ({
+        id: String(project?.id || project?.name || '').trim().toLowerCase(),
         name: String(project?.name || '').trim() || (gallerySource === 'services' ? 'Service' : 'Project'),
         images: (Array.isArray(project?.images) ? project.images : []).map(normalizeImageItem).filter(Boolean)
       }))
       .filter((project) => project.images.length);
+
+  const buildCuratedServiceCollections = (collections) => {
+    const normalizedCollections = normalizeProjects(collections);
+    const collectionsById = new Map();
+
+    normalizedCollections.forEach((collection) => {
+      const normalizedId = String(collection.id || collection.name || '').trim().toLowerCase();
+      if (!normalizedId) return;
+      collectionsById.set(normalizedId, collection);
+    });
+
+    const curated = SERVICE_COLLECTION_DEFINITIONS.map((definition) => {
+      const images = [];
+      const seenSources = new Set();
+
+      definition.sources.forEach((sourceKey) => {
+        const source = collectionsById.get(String(sourceKey || '').trim().toLowerCase());
+        if (!source) return;
+        source.images.forEach((image) => {
+          const imageKey = String(image.src || image.media?.fallback || '').trim();
+          if (!imageKey || seenSources.has(imageKey)) return;
+          seenSources.add(imageKey);
+          images.push(image);
+        });
+      });
+
+      return {
+        id: definition.key,
+        name: definition.title,
+        description: definition.description,
+        images
+      };
+    }).filter((collection) => collection.images.length);
+
+    return curated.length ? curated : normalizedCollections;
+  };
 
   const normalizeIndex = (value, size) => {
     if (size <= 0) return 0;
@@ -404,18 +466,18 @@
     }
 
     if (projectTitleNode) {
-      projectTitleNode.textContent = gallerySource === 'services' ? `${project.name} Service` : project.name;
+      projectTitleNode.textContent = project.name;
     }
 
     if (projectMetaNode) {
       projectMetaNode.textContent = gallerySource === 'services'
-        ? `${projectName.subtitle} | ${total} completed-work images | photo ${centeredIndex + 1} of ${total}`
+        ? `${project.description || projectName.subtitle} | ${total} completed-work images | photo ${centeredIndex + 1} of ${total}`
         : `${levelLabel(state.projectIndex)} | ${total} image sequence | photo ${centeredIndex + 1} of ${total}`;
     }
 
     if (statusNode) {
       statusNode.textContent = gallerySource === 'services'
-        ? `${project.name} service / ${imageItem?.label || `Photo ${centeredIndex + 1}`} / photo ${centeredIndex + 1} of ${total}`
+        ? `${project.name} / ${imageItem?.label || `Photo ${centeredIndex + 1}`} / photo ${centeredIndex + 1} of ${total}`
         : `${levelLabel(state.projectIndex)} / ${project.name} / ${imageItem?.label || `Photo ${centeredIndex + 1}`} / photo ${centeredIndex + 1} of ${total}`;
     }
   };
@@ -672,64 +734,28 @@
       createNode: () => {
         const button = document.createElement('button');
         button.type = 'button';
-        button.className = 'project-chip';
+        button.className = 'gallery-service-button';
         button.setAttribute('aria-pressed', 'false');
         button.addEventListener('click', () => {
           const nextIndex = Number(button.dataset.projectIndex || 0);
           selectProject(nextIndex);
         });
-
-        const copy = document.createElement('div');
-        copy.className = 'project-chip-copy';
-
-        const level = document.createElement('small');
-        level.className = 'project-chip-level';
-
-        const title = document.createElement('strong');
-        title.className = 'project-chip-title';
-
-        const subtitle = document.createElement('span');
-        subtitle.className = 'project-chip-subtitle';
-
-        copy.appendChild(level);
-        copy.appendChild(title);
-        copy.appendChild(subtitle);
-        button.appendChild(copy);
+        const label = document.createElement('span');
+        label.className = 'gallery-service-button-label';
+        button.appendChild(label);
         return button;
       },
       updateNode: (button, project, index) => {
-        const projectName = splitProjectName(project.name);
-        const mediaKey = project.images[0]?.src || project.images[0]?.media?.fallback || `${project.name}-${index}`;
         button.dataset.projectIndex = String(index);
         button.setAttribute('aria-label', `Show ${gallerySource === 'services' ? 'service' : 'project'} ${project.name}`);
-
-        const picture = createResponsivePicture(project.images[0].media, {
-          alt: `${project.name} thumbnail`,
-          className: 'project-chip-picture',
-          imgClassName: 'project-chip-image',
-          loading: 'lazy',
-          sizes: project.images[0].media?.thumbnailSizes || project.images[0].media?.sizes
-        });
-        syncPictureNode(button, picture, mediaKey);
-
-        const level = button.querySelector('.project-chip-level');
-        if (level && level.textContent !== levelLabel(index)) {
-          level.textContent = levelLabel(index);
-        }
-
-        const title = button.querySelector('.project-chip-title');
-        if (title && title.textContent !== projectName.title) {
-          title.textContent = projectName.title;
-        }
-
-        const subtitle = button.querySelector('.project-chip-subtitle');
-        if (subtitle && subtitle.textContent !== projectName.subtitle) {
-          subtitle.textContent = projectName.subtitle;
+        const label = button.querySelector('.gallery-service-button-label');
+        if (label && label.textContent !== project.name) {
+          label.textContent = project.name;
         }
       }
     });
 
-    state.chips = Array.from(projectStrip.querySelectorAll('.project-chip'));
+    state.chips = Array.from(projectStrip.querySelectorAll('.gallery-service-button'));
 
     updateProjectStripState();
   };
@@ -787,7 +813,9 @@
   });
 
   const init = async () => {
-    projects = normalizeProjects(defaultCollectionsBySource[gallerySource] || defaultCollectionsBySource.projects);
+    projects = gallerySource === 'services'
+      ? buildCuratedServiceCollections(defaultCollectionsBySource.services)
+      : normalizeProjects(defaultCollectionsBySource[gallerySource] || defaultCollectionsBySource.projects);
     const hasInlineProjects = loadInlineProjects();
 
     if (!hasInlineProjects) {
@@ -796,6 +824,10 @@
       } else {
         await loadManagedProjects();
       }
+    }
+
+    if (gallerySource === 'services') {
+      projects = buildCuratedServiceCollections(projects);
     }
 
     if (!projects.length) {

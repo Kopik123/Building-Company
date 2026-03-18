@@ -603,9 +603,36 @@
   align-items: start;
 }
 
-.gallery-stage-shell,
-.gallery-sidebar-shell {
+.gallery-stage-shell {
   min-height: min(62vh, 620px);
+  display: grid;
+  gap: var(--space-4);
+}
+
+.gallery-top-shell {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.gallery-top-shell h1 {
+  margin-bottom: 0;
+}
+
+.gallery-service-title {
+  margin: 0;
+  font-size: clamp(1.3rem, 2vw, 1.9rem);
+}
+
+.gallery-service-meta {
+  margin: 0;
+  max-width: 72ch;
+}
+
+.gallery-service-switcher {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: center;
 }
 
 .gallery-roller {
@@ -646,33 +673,49 @@
 }
 
 .gallery-project-strip {
-  display: grid;
-  gap: 0.45rem;
-  max-height: 340px;
-  overflow: auto;
-  padding-right: 0.3rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+  overflow: visible;
+  padding-right: 0;
 }
 
-.gallery-project-chip {
+.gallery-service-button {
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-xs);
-  padding: 0.45rem 0.58rem;
-  text-align: left;
+  border-radius: 999px;
+  padding: 0.58rem 0.92rem;
+  text-align: center;
   background:
     linear-gradient(165deg, rgba(10, 10, 10, 0.86), rgba(4, 4, 4, 0.92)),
     url('/boxbackground.png') center center / 100% 100% no-repeat;
   color: var(--color-text);
+  font: inherit;
+  line-height: 1.25;
+  transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
 }
 
-.gallery-project-chip.is-active {
+.gallery-service-button:hover,
+.gallery-service-button:focus-visible {
+  transform: translateY(-1px);
+  border-color: var(--color-gold-2);
+}
+
+.gallery-service-button.is-active {
   border-color: var(--color-gold-2);
   background:
     linear-gradient(165deg, rgba(46, 33, 10, 0.72), rgba(12, 8, 2, 0.88)),
     url('/boxbackground.png') center center / 100% 100% no-repeat;
 }
 
+.gallery-service-button-label {
+  display: inline-block;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
 .gallery-status {
-  margin-top: var(--space-3);
+  margin-top: 0;
   font-size: 0.84rem;
   color: var(--color-text-muted);
 }
@@ -1003,8 +1046,7 @@
     grid-template-columns: 1fr;
   }
 
-  .gallery-stage-shell,
-  .gallery-sidebar-shell {
+  .gallery-stage-shell {
     min-height: auto;
   }
 }
@@ -1043,13 +1085,19 @@
     width: 100%;
   }
 
+  .gallery-service-switcher,
   .gallery-roller {
     grid-template-columns: 1fr;
   }
 
+  .project-rail-nav--side,
   .gallery-arrow {
     width: 100%;
     border-radius: var(--radius-xs);
+  }
+
+  .gallery-project-strip {
+    justify-content: center;
   }
 
   .gallery-stage {

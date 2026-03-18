@@ -97,28 +97,29 @@
 
     <section class="public-section public-section--light">
       <div class="container">
-        <div class="gallery-layout">
-          <article class="content-card content-card--light gallery-stage-shell" id="gallery">
-            <p class="section-eyebrow">Selected Service</p>
-            <h2 data-gallery-active-image-title>Selected image</h2>
-            <p class="section-lead">Start with the service rail, then click any image to view that service work fullscreen.</p>
-            <div class="gallery-roller studio-gallery-roller" data-gallery-roller data-motion-profile="subtle">
-              <button class="gallery-arrow studio-gallery-arrow" type="button" data-gallery-prev aria-label="Previous photo">&#10094;</button>
-              <div class="gallery-stage studio-gallery-stage" data-gallery-stage aria-live="polite"></div>
-              <button class="gallery-arrow studio-gallery-arrow" type="button" data-gallery-next aria-label="Next photo">&#10095;</button>
-            </div>
-            <div class="page-actions"><a class="btn-outline-gold" href="/quote.html">Request Private Consultation</a></div>
-          </article>
-          <aside class="content-card content-card--dark gallery-sidebar-shell" id="projects">
+        <article class="content-card content-card--dark gallery-stage-shell" id="gallery">
+          <div class="gallery-top-shell">
             <p class="section-eyebrow">Service Rail</p>
-            <h2 data-gallery-active-project-title>Bathrooms Service</h2>
-            <p class="page-aside-copy" data-gallery-active-project-meta>Move through each service set to compare finish quality, detailing and installation discipline.</p>
-            <button class="project-rail-nav project-rail-nav--up" type="button" data-gallery-project-prev aria-label="Previous service">&#8593;</button>
+            <h1>Gallery</h1>
+            <h2 class="gallery-service-title" data-gallery-active-project-title>Full Bathroom Renovations</h2>
+            <p class="page-aside-copy gallery-service-meta" data-gallery-active-project-meta>Move through each service set to compare finish quality, detailing and installation discipline.</p>
+          </div>
+
+          <div class="gallery-service-switcher" aria-label="Service selection">
+            <button class="project-rail-nav project-rail-nav--side" type="button" data-gallery-project-prev aria-label="Previous service">&#10094;</button>
             <div class="gallery-project-strip studio-project-strip" data-gallery-projects aria-label="Service selection"></div>
-            <button class="project-rail-nav project-rail-nav--down" type="button" data-gallery-project-next aria-label="Next service">&#8595;</button>
-            <p class="gallery-status studio-gallery-status" data-gallery-status aria-live="polite"></p>
-          </aside>
-        </div>
+            <button class="project-rail-nav project-rail-nav--side" type="button" data-gallery-project-next aria-label="Next service">&#10095;</button>
+          </div>
+
+          <div class="gallery-roller studio-gallery-roller" data-gallery-roller data-motion-profile="subtle">
+            <button class="gallery-arrow studio-gallery-arrow" type="button" data-gallery-prev aria-label="Previous photo">&#10094;</button>
+            <div class="gallery-stage studio-gallery-stage" data-gallery-stage aria-live="polite"></div>
+            <button class="gallery-arrow studio-gallery-arrow" type="button" data-gallery-next aria-label="Next photo">&#10095;</button>
+          </div>
+
+          <p class="gallery-status studio-gallery-status" data-gallery-status aria-live="polite"></p>
+          <div class="page-actions"><a class="btn-outline-gold" href="/quote.html">Request Private Consultation</a></div>
+        </article>
       </div>
     </section>
 
