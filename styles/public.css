@@ -516,30 +516,6 @@
   align-items: baseline;
 }
 
-.service-summary-list {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.68rem;
-  margin: 0 0 var(--space-4);
-}
-
-.service-summary-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 52px;
-  padding: 0.7rem 0.85rem;
-  border: 1px solid rgba(209, 164, 74, 0.34);
-  border-radius: var(--radius-sm);
-  background: rgba(12, 10, 8, 0.88);
-  color: var(--color-text);
-  font-family: var(--font-heading);
-  font-size: clamp(1.1rem, 2vw, 1.42rem);
-  font-weight: 600;
-  line-height: 1.08;
-  letter-spacing: 0.03em;
-}
-
 .service-card-heading span,
 .case-card-heading span,
 .metric-chip,
@@ -1017,10 +993,6 @@
   }
 
   .home-coverage-card .footer-area-list {
-    grid-template-columns: 1fr;
-  }
-
-  .service-summary-list {
     grid-template-columns: 1fr;
   }
 
