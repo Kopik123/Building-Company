@@ -2,6 +2,7 @@
   const runtime = window.LevelLinesRuntime || {};
   const dashboardShared = window.LevelLinesDashboardShared || {};
   const managerProjects = window.LevelLinesManagerProjects || {};
+  const managerQuotes = window.LevelLinesManagerQuotes || {};
   const TOKEN_KEY = runtime.TOKEN_KEY || 'll_auth_token';
   const USER_KEY = runtime.USER_KEY || 'll_auth_user';
   const DEFAULT_PAGE_SIZE = 25;
@@ -171,6 +172,7 @@
   const managerDomainButtons = Array.from(document.querySelectorAll('[data-manager-domain-choice]'));
   let renderManagerWorkflow = () => {};
   let projectsController = null;
+  let quotesController = null;
 
   const parseError = runtime.parseError || ((payload) => payload?.error || 'Request failed.');
   const escapeHtml = runtime.escapeHtml || ((value) => String(value ?? ''));
@@ -864,82 +866,19 @@
     onProjectsChanged: () => syncProjectChatProjectOptions()
   });
 
-  const renderQuotes = () => {
-    el.quotesList.innerHTML = '';
-    if (!state.quotes.length) {
-      el.quotesList.innerHTML = '<p class=\"muted\">No quotes found for current filters.</p>';
-      renderPagination(el.quotesPagination, el.quotesPrev, el.quotesNext, state.quotesPagination);
-      renderOperationsShell();
-      return;
-    }
-
-    const canManage = ['manager', 'admin'].includes(String(state.user?.role || '').toLowerCase());
-    const frag = document.createDocumentFragment();
-    state.quotes.forEach((quote) => {
-      const owner = quote.guestName || quote.client?.name || quote.client?.email || 'Unknown client';
-      const card = document.createElement('article');
-      card.className = 'dashboard-item';
-      card.innerHTML = `<h3>${escapeHtml(quote.projectType)} | ${escapeHtml(owner)}</h3><p class=\"muted\">${escapeHtml(quote.status)} | priority ${escapeHtml(quote.priority)} | ${escapeHtml(quote.location || '-')} ${escapeHtml(quote.postcode || '')}</p><p>${escapeHtml(quote.description || '')}</p>`;
-      const row = document.createElement('div');
-      row.className = 'dashboard-edit-grid';
-      const statusSelect = document.createElement('select');
-      ['pending', 'in_progress', 'responded', 'closed'].forEach((value) => {
-        const option = document.createElement('option');
-        option.value = value;
-        option.textContent = value;
-        option.selected = quote.status === value;
-        statusSelect.appendChild(option);
-      });
-      const prioritySelect = document.createElement('select');
-      ['low', 'medium', 'high'].forEach((value) => {
-        const option = document.createElement('option');
-        option.value = value;
-        option.textContent = value;
-        option.selected = quote.priority === value;
-        prioritySelect.appendChild(option);
-      });
-      const saveBtn = document.createElement('button');
-      saveBtn.type = 'button';
-      saveBtn.className = 'btn btn-gold';
-      saveBtn.textContent = 'Save';
-      saveBtn.disabled = !canManage;
-      saveBtn.addEventListener('click', async () => {
-        try {
-          await api(`/api/manager/quotes/${quote.id}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: statusSelect.value, priority: prioritySelect.value })
-          });
-          await loadQuotes();
-        } catch (error) {
-          window.alert(error.message || 'Failed to update quote');
-        }
-      });
-      row.appendChild(createControlField('Status', statusSelect));
-      row.appendChild(createControlField('Priority', prioritySelect));
-      let acceptBtn = null;
-      if (!quote.assignedManagerId && quote.status === 'pending' && canManage) {
-        acceptBtn = document.createElement('button');
-        acceptBtn.type = 'button';
-        acceptBtn.className = 'btn btn-outline';
-        acceptBtn.textContent = 'Accept';
-        acceptBtn.addEventListener('click', async () => {
-          try {
-            await api(`/api/manager/quotes/${quote.id}/accept`, { method: 'POST' });
-            await loadQuotes();
-          } catch (error) {
-            window.alert(error.message || 'Failed to accept quote');
-          }
-        });
-      }
-      row.appendChild(createEditActions([acceptBtn, saveBtn]));
-      card.appendChild(row);
-      frag.appendChild(card);
-    });
-    el.quotesList.appendChild(frag);
-    renderPagination(el.quotesPagination, el.quotesPrev, el.quotesNext, state.quotesPagination);
-    renderOperationsShell();
-  };
+  quotesController = (managerQuotes.createManagerQuotesController || (() => null))({
+    state,
+    el,
+    api,
+    buildQuery,
+    syncKeyedList,
+    createMutedNode,
+    renderPagination,
+    createControlField,
+    createEditActions,
+    escapeHtml,
+    renderOperationsShell
+  });
 
   const renderServices = () => {
     el.servicesList.innerHTML = '';
@@ -1394,18 +1333,6 @@
     }
   };
 
-  const loadQuotes = async () => {
-    const payload = await api(`/api/manager/quotes?${buildQuery({
-      page: state.quotesQuery.page,
-      pageSize: state.quotesQuery.pageSize,
-      q: state.quotesQuery.q,
-      status: state.quotesQuery.status
-    })}`);
-    state.quotes = Array.isArray(payload.quotes) ? payload.quotes : [];
-    state.quotesPagination = payload.pagination || state.quotesPagination;
-    renderQuotes();
-  };
-
   const loadServices = async () => {
     const payload = await api(`/api/manager/services?${buildQuery({
       page: state.servicesQuery.page,
@@ -1661,13 +1588,6 @@
     });
   };
 
-  const applyQuotesFiltersFromUI = () => {
-    state.quotesQuery.q = String(el.quotesFilterQ.value || '').trim();
-    state.quotesQuery.status = String(el.quotesFilterStatus.value || '').trim();
-    state.quotesQuery.pageSize = Number.parseInt(el.quotesPageSize.value, 10) || DEFAULT_PAGE_SIZE;
-    state.quotesQuery.page = 1;
-  };
-
   const applyServicesFiltersFromUI = () => {
     state.servicesQuery.q = String(el.servicesFilterQ.value || '').trim();
     state.servicesQuery.category = String(el.servicesFilterCategory.value || '').trim();
@@ -1698,19 +1618,7 @@
         key: 'quotes',
         target: el.quotesList.closest('section'),
         load: async () => {
-          if (state.lazyLoaded.quotes) return;
-          state.lazyLoaded.quotes = true;
-          if (['manager', 'admin'].includes(role)) {
-            await loadQuotes();
-            return;
-          }
-          el.quotesFilterQ.disabled = true;
-          el.quotesFilterStatus.disabled = true;
-          el.quotesRefresh.disabled = true;
-          el.quotesPageSize.disabled = true;
-          el.quotesPrev.disabled = true;
-          el.quotesNext.disabled = true;
-          el.quotesList.innerHTML = '<p class="muted">Quote management is available for manager/admin roles.</p>';
+          await quotesController?.loadQuotesForRole(role);
         }
       },
       {
@@ -1894,6 +1802,7 @@
   });
 
   projectsController?.bindEvents();
+  quotesController?.bindEvents();
 
   const syncEstimateLineMode = () => {
     const form = el.estimateLineForm?.elements;
@@ -2304,9 +2213,6 @@
     }
   });
 
-  el.quotesRefresh.addEventListener('click', () => { applyQuotesFiltersFromUI(); loadQuotes().catch((e) => window.alert(e.message || 'Could not load quotes')); });
-  el.quotesPrev.addEventListener('click', () => { if (state.quotesQuery.page <= 1) return; state.quotesQuery.page -= 1; loadQuotes().catch((e) => window.alert(e.message || 'Could not load quotes')); });
-  el.quotesNext.addEventListener('click', () => { if (state.quotesQuery.page >= Number(state.quotesPagination.totalPages || 1)) return; state.quotesQuery.page += 1; loadQuotes().catch((e) => window.alert(e.message || 'Could not load quotes')); });
   el.servicesRefresh.addEventListener('click', () => { applyServicesFiltersFromUI(); loadServices().catch((e) => window.alert(e.message || 'Could not load services')); });
   el.servicesPrev.addEventListener('click', () => { if (state.servicesQuery.page <= 1) return; state.servicesQuery.page -= 1; loadServices().catch((e) => window.alert(e.message || 'Could not load services')); });
   el.servicesNext.addEventListener('click', () => { if (state.servicesQuery.page >= Number(state.servicesPagination.totalPages || 1)) return; state.servicesQuery.page += 1; loadServices().catch((e) => window.alert(e.message || 'Could not load services')); });

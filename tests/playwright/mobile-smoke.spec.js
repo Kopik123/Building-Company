@@ -27,6 +27,16 @@ const expectResponsiveShellDefaultNavState = async (page) => {
   await expect(navMenu).toBeVisible();
 };
 
+const expandDashboardSectionIfCollapsed = async (page, sectionSelector) => {
+  const toggle = page.locator(`${sectionSelector} .dashboard-accordion-toggle`);
+  if (!await toggle.count()) return;
+  if (!await toggle.first().isVisible()) return;
+  const expanded = await toggle.first().getAttribute('aria-expanded');
+  if (expanded === 'false') {
+    await toggle.first().click();
+  }
+};
+
 const mockClientSession = async (page) => {
   await page.addInitScript(() => {
     localStorage.setItem('ll_auth_token', 'test-token');
@@ -519,6 +529,68 @@ test('manager dashboard workflow chooser switches between projects materials and
   await expect(projectsChoice).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('#manager-project-create')).toBeVisible();
   await expect(page.locator('#manager-projects-section')).toBeVisible();
+});
+
+test('manager dashboard quote controls can accept and update a quote', async ({ page }) => {
+  await mockManagerSession(page);
+
+  const quoteState = {
+    id: 'quote-1',
+    projectType: 'Kitchen remodel',
+    guestName: 'Olivia Reed',
+    status: 'pending',
+    priority: 'high',
+    location: 'Manchester',
+    postcode: 'M1',
+    description: 'Client requests detailed joinery allowance.',
+    assignedManagerId: null
+  };
+
+  await page.route('**/api/manager/quotes?*', async (route) => {
+    await route.fulfill({
+      json: {
+        quotes: [{ ...quoteState }],
+        pagination: { page: 1, totalPages: 1, total: 1 }
+      }
+    });
+  });
+
+  await page.route('**/api/manager/quotes/quote-1/accept', async (route) => {
+    quoteState.assignedManagerId = 'manager-1';
+    quoteState.status = 'in_progress';
+    await route.fulfill({ json: { quote: { ...quoteState } } });
+  });
+
+  await page.route('**/api/manager/quotes/quote-1', async (route) => {
+    if (route.request().method() !== 'PATCH') {
+      await route.fallback();
+      return;
+    }
+
+    const payload = route.request().postDataJSON();
+    quoteState.status = payload.status;
+    quoteState.priority = payload.priority;
+    await route.fulfill({ json: { quote: { ...quoteState } } });
+  });
+
+  await page.goto('/manager-dashboard.html');
+  await page.locator('#manager-quotes-section').scrollIntoViewIfNeeded();
+  await expandDashboardSectionIfCollapsed(page, '#manager-quotes-section');
+
+  const quoteCard = page.locator('#quotes-list .dashboard-item').first();
+  await expect(quoteCard).toBeVisible();
+  await expect(quoteCard.getByRole('button', { name: 'Accept' })).toBeVisible();
+
+  await quoteCard.getByRole('button', { name: 'Accept' }).click();
+  await expect(quoteCard).toContainText(/in_progress/i);
+  await expect(quoteCard.getByRole('button', { name: 'Accept' })).toHaveCount(0);
+
+  await quoteCard.locator('select').nth(0).selectOption('responded');
+  await quoteCard.locator('select').nth(1).selectOption('low');
+  await quoteCard.getByRole('button', { name: 'Save' }).click();
+
+  await expect(quoteCard).toContainText(/responded/i);
+  await expect(quoteCard).toContainText(/priority low/i);
 });
 
 test('manager dashboard can create private threads and manage project chat participants', async ({ page }) => {
