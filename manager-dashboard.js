@@ -4,6 +4,7 @@
   const managerProjects = window.LevelLinesManagerProjects || {};
   const managerQuotes = window.LevelLinesManagerQuotes || {};
   const managerCatalog = window.LevelLinesManagerCatalog || {};
+  const managerPeople = window.LevelLinesManagerPeople || {};
   const TOKEN_KEY = runtime.TOKEN_KEY || 'll_auth_token';
   const USER_KEY = runtime.USER_KEY || 'll_auth_user';
   const DEFAULT_PAGE_SIZE = 25;
@@ -175,6 +176,7 @@
   let projectsController = null;
   let quotesController = null;
   let catalogController = null;
+  let peopleController = null;
 
   const parseError = runtime.parseError || ((payload) => payload?.error || 'Request failed.');
   const escapeHtml = runtime.escapeHtml || ((value) => String(value ?? ''));
@@ -900,43 +902,16 @@
     syncEstimateReferenceOptions
   });
 
-  const renderClients = () => {
-    el.clientsList.innerHTML = '';
-    if (!state.clients.length) {
-      el.clientsList.innerHTML = '<p class="muted">No clients found for the current search.</p>';
-      renderOperationsShell();
-      return;
-    }
-
-    const frag = document.createDocumentFragment();
-    state.clients.forEach((client) => {
-      const card = document.createElement('article');
-      card.className = 'dashboard-item';
-      card.innerHTML = `<h3>${escapeHtml(client.name || client.email || 'Client')}</h3><p class="muted">${escapeHtml(client.email || '-')} ${client.phone ? `| ${escapeHtml(client.phone)}` : ''}</p>`;
-      frag.appendChild(card);
-    });
-    el.clientsList.appendChild(frag);
-    renderOperationsShell();
-  };
-
-  const renderStaff = () => {
-    el.staffList.innerHTML = '';
-    if (!state.staff.length) {
-      el.staffList.innerHTML = '<p class="muted">No staff found for the current search.</p>';
-      renderOperationsShell();
-      return;
-    }
-
-    const frag = document.createDocumentFragment();
-    state.staff.forEach((member) => {
-      const card = document.createElement('article');
-      card.className = 'dashboard-item';
-      card.innerHTML = `<h3>${escapeHtml(member.name || member.email || 'Staff member')}</h3><p class="muted">${escapeHtml(member.email || '-')} | ${escapeHtml(member.role || 'employee')}</p>`;
-      frag.appendChild(card);
-    });
-    el.staffList.appendChild(frag);
-    renderOperationsShell();
-  };
+  peopleController = (managerPeople.createManagerPeopleController || (() => null))({
+    state,
+    el,
+    api,
+    buildQuery,
+    createMutedNode,
+    setStatus,
+    escapeHtml,
+    renderOperationsShell
+  });
 
   const renderEstimates = () => {
     el.estimatesList.innerHTML = '';
@@ -1195,24 +1170,6 @@
     }
   };
 
-  const loadClients = async () => {
-    const payload = await api(`/api/manager/clients/search?${buildQuery({
-      q: state.clientsQuery.q,
-      pageSize: 25
-    })}`);
-    state.clients = Array.isArray(payload.clients) ? payload.clients : [];
-    renderClients();
-  };
-
-  const loadStaff = async () => {
-    const payload = await api(`/api/manager/staff/search?${buildQuery({
-      q: state.staffQuery.q,
-      pageSize: 25
-    })}`);
-    state.staff = Array.isArray(payload.staff) ? payload.staff : [];
-    renderStaff();
-  };
-
   const loadEstimates = async (selectedId) => {
     const payload = await api('/api/manager/estimates?pageSize=100');
     state.estimates = Array.isArray(payload.estimates) ? payload.estimates : [];
@@ -1422,14 +1379,6 @@
     });
   };
 
-  const applyClientsFiltersFromUI = () => {
-    state.clientsQuery.q = String(el.clientsFilterQ.value || '').trim();
-  };
-
-  const applyStaffFiltersFromUI = () => {
-    state.staffQuery.q = String(el.staffFilterQ.value || '').trim();
-  };
-
   const setupLazySections = (role) => {
     const tasks = [
       {
@@ -1457,18 +1406,14 @@
         key: 'clients',
         target: el.clientsList.closest('section'),
         load: async () => {
-          if (state.lazyLoaded.clients) return;
-          state.lazyLoaded.clients = true;
-          await loadClients();
+          await peopleController?.loadClientsIfNeeded();
         }
       },
       {
         key: 'staff',
         target: el.staffList.closest('section'),
         load: async () => {
-          if (state.lazyLoaded.staff) return;
-          state.lazyLoaded.staff = true;
-          await loadStaff();
+          await peopleController?.loadStaffIfNeeded();
         }
       },
       {
@@ -1611,6 +1556,7 @@
   projectsController?.bindEvents();
   quotesController?.bindEvents();
   catalogController?.bindEvents();
+  peopleController?.bindEvents();
 
   const syncEstimateLineMode = () => {
     const form = el.estimateLineForm?.elements;
@@ -1629,35 +1575,6 @@
 
   el.estimateLineForm.elements.lineType.addEventListener('change', syncEstimateLineMode);
   syncEstimateLineMode();
-
-  el.staffCreateForm.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    setStatus(el.staffCreateStatus, 'Creating staff member...');
-    const f = el.staffCreateForm.elements;
-    const payload = {
-      name: String(f.name.value || '').trim(),
-      email: normEmail(f.email.value),
-      password: String(f.password.value || ''),
-      role: String(f.role.value || 'employee'),
-      phone: String(f.phone.value || '').trim()
-    };
-    if (!payload.name || !payload.email || !payload.password) {
-      return setStatus(el.staffCreateStatus, 'Name, email and password are required.', 'error');
-    }
-    try {
-      await api('/api/manager/staff', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      setStatus(el.staffCreateStatus, 'Staff member created.', 'success');
-      el.staffCreateForm.reset();
-      f.role.value = 'employee';
-      await loadStaff();
-    } catch (error) {
-      setStatus(el.staffCreateStatus, error.message || 'Failed to create staff member.', 'error');
-    }
-  });
 
   el.estimateCreateForm.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -1950,8 +1867,6 @@
     }
   });
 
-  el.clientsRefresh.addEventListener('click', () => { applyClientsFiltersFromUI(); loadClients().catch((e) => window.alert(e.message || 'Could not load clients')); });
-  el.staffRefresh.addEventListener('click', () => { applyStaffFiltersFromUI(); loadStaff().catch((e) => window.alert(e.message || 'Could not load staff')); });
   el.logout.addEventListener('click', () => { clearSession(); window.location.href = '/auth.html'; });
 
   bootstrap();

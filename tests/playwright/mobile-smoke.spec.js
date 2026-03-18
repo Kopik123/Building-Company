@@ -685,6 +685,64 @@ test('manager dashboard services and materials controls can update catalog items
   await expect(materialCard).toContainText(/low stock/i);
 });
 
+test('manager dashboard clients and staff controls can load people sections and create staff', async ({ page }) => {
+  await mockManagerSession(page);
+
+  const clientsState = [
+    { id: 'client-1', name: 'Marta Client', email: 'client@example.com', phone: '+44 7000 000 000' },
+    { id: 'client-2', name: 'Olivia Reed', email: 'olivia@example.com', phone: '+44 7111 222 333' }
+  ];
+  let staffState = [
+    { id: 'manager-1', name: 'Daniel Manager', email: 'manager@example.com', role: 'manager' }
+  ];
+
+  await page.route('**/api/manager/clients/search?*', async (route) => {
+    await route.fulfill({ json: { clients: clientsState } });
+  });
+
+  await page.route('**/api/manager/staff/search?*', async (route) => {
+    await route.fulfill({ json: { staff: staffState } });
+  });
+
+  await page.route('**/api/manager/staff', async (route) => {
+    if (route.request().method() !== 'POST') {
+      await route.fallback();
+      return;
+    }
+    const payload = route.request().postDataJSON();
+    const created = {
+      id: `staff-${staffState.length + 1}`,
+      name: payload.name,
+      email: payload.email,
+      role: payload.role || 'employee'
+    };
+    staffState = [...staffState, created];
+    await route.fulfill({ json: { staff: created } });
+  });
+
+  await page.goto('/manager-dashboard.html');
+
+  await page.locator('#manager-clients-section').scrollIntoViewIfNeeded();
+  await expandDashboardSectionIfCollapsed(page, '#manager-clients-section');
+  const clientCard = page.locator('#clients-list .dashboard-item').first();
+  await expect(clientCard).toBeVisible();
+  await expect(clientCard).toContainText('Marta Client');
+
+  await page.locator('#manager-staff-section').scrollIntoViewIfNeeded();
+  await expandDashboardSectionIfCollapsed(page, '#manager-staff-section');
+  await expect(page.locator('#staff-list .dashboard-item').first()).toContainText('Daniel Manager');
+
+  await page.locator('#staff-create-form input[name="name"]').fill('Leah Builder');
+  await page.locator('#staff-create-form input[name="email"]').fill('leah@example.com');
+  await page.locator('#staff-create-form input[name="password"]').fill('StrongPassword123!');
+  await page.locator('#staff-create-form select[name="role"]').selectOption('employee');
+  await page.getByRole('button', { name: 'Create staff member' }).click();
+
+  await expect(page.locator('#staff-create-status')).toContainText(/staff member created/i);
+  await expect(page.locator('#staff-list')).toContainText('Leah Builder');
+  await expect(page.locator('#staff-list')).toContainText('employee');
+});
+
 test('manager dashboard can create private threads and manage project chat participants', async ({ page }) => {
   await mockManagerSession(page);
 
