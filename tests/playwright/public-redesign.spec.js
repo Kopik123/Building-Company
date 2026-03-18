@@ -124,6 +124,13 @@ test('authenticated public shell hides login-only controls and keeps one account
   await openNavIfNeeded(page);
   await expect(page.locator('[data-nav-menu] [data-auth-link]')).toHaveAttribute('href', '/client-dashboard.html');
   await expect(page.locator('[data-nav-menu] [data-auth-link]')).toContainText(/^account$/i);
+
+  await page.goto('/premium-kitchens-manchester.html');
+  await expect(page.locator('[data-inline-login-form]')).toBeHidden();
+  await expect(page.locator('[data-inline-session]')).toBeVisible();
+  await expect(page.locator('[data-inline-logout]')).toBeVisible();
+  await expect(page.locator('[data-inline-login-form] input[name="email"]')).toBeHidden();
+  await expect(page.locator('[data-inline-login-form] input[name="password"]')).toBeHidden();
 });
 
 test('service, location and legal pages keep the same shell and single primary consultation route', async ({ page }) => {

@@ -82,6 +82,13 @@
   margin: 0;
 }
 
+.site-header--public-shell[data-auth-view="session"] [data-inline-login-form],
+.site-header--public-shell[data-auth-view="hidden"] [data-inline-login-form],
+.site-header--public-shell[data-auth-view="guest"] [data-inline-session],
+.site-header--public-shell[data-auth-view="hidden"] [data-inline-session] {
+  display: none !important;
+}
+
 .public-inline-login-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto auto;

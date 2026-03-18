@@ -4,6 +4,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 
 ## Now
 
+- [x] Fix the public-header regression where authenticated brochure pages could still show autofilled inline login inputs alongside session controls.
 - [ ] Verify in DevTools on the live site that `CSS`, `JS` and image assets return `Cache-Control: no-cache`, so normal refreshes pick up frontend changes without manual history clearing.
 - [ ] Run one consolidated live QA pass on `/`, `/about.html`, `/services.html`, `/gallery.html`, `/quote.html`, `/contact.html`, `/auth.html`, both dashboards, two service pages and two location pages.
 - [ ] In that QA pass, explicitly check: `mainbackground.png` inside cards, gold-text readability, desktop header proportions, mobile stacking, login/account/logout/session state and no horizontal scroll on phone breakpoints.

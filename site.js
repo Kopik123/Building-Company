@@ -359,6 +359,16 @@
     const showHeaderLoginForm = !loggedIn && !isWorkspacePage;
     const showHeaderSession = loggedIn && isPublicPage;
     const hideHeaderAccountLink = loggedIn && (isAuthPage || isWorkspacePage);
+    const authView = showHeaderSession ? 'session' : showHeaderLoginForm ? 'guest' : 'hidden';
+
+    body.classList.toggle('has-auth-session', loggedIn);
+    body.classList.toggle('is-auth-guest', !loggedIn);
+    if (header) {
+      header.setAttribute('data-auth-view', authView);
+    }
+    if (inlineAuthPanel) {
+      inlineAuthPanel.setAttribute('data-auth-view', authView);
+    }
 
     if (!showHeaderAuthPanel) {
       header?.classList.remove('is-auth-open');
