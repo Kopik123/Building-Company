@@ -593,6 +593,98 @@ test('manager dashboard quote controls can accept and update a quote', async ({ 
   await expect(quoteCard).toContainText(/priority low/i);
 });
 
+test('manager dashboard services and materials controls can update catalog items', async ({ page }) => {
+  await mockManagerSession(page);
+
+  const serviceState = {
+    id: 'service-1',
+    title: 'Bathrooms',
+    slug: 'bathrooms',
+    category: 'bathroom',
+    displayOrder: 1,
+    showOnWebsite: true,
+    shortDescription: 'Marble-led bathroom design and build.'
+  };
+
+  const materialState = {
+    id: 'material-1',
+    name: 'Calacatta Slab',
+    sku: 'MAR-001',
+    category: 'tiles',
+    stockQty: 6,
+    minStockQty: 4,
+    unitCost: 480,
+    supplier: 'Stone House'
+  };
+
+  await page.route('**/api/manager/services?*', async (route) => {
+    await route.fulfill({
+      json: {
+        services: [{ ...serviceState }],
+        pagination: { page: 1, totalPages: 1, total: 1 }
+      }
+    });
+  });
+
+  await page.route('**/api/manager/materials?*', async (route) => {
+    await route.fulfill({
+      json: {
+        materials: [{ ...materialState }],
+        pagination: { page: 1, totalPages: 1, total: 1 }
+      }
+    });
+  });
+
+  await page.route('**/api/manager/services/service-1', async (route) => {
+    if (route.request().method() !== 'PATCH') {
+      await route.fallback();
+      return;
+    }
+    const payload = route.request().postDataJSON();
+    serviceState.title = payload.title;
+    serviceState.shortDescription = payload.shortDescription;
+    serviceState.displayOrder = payload.displayOrder;
+    serviceState.showOnWebsite = payload.showOnWebsite;
+    await route.fulfill({ json: { service: { ...serviceState } } });
+  });
+
+  await page.route('**/api/manager/materials/material-1', async (route) => {
+    if (route.request().method() !== 'PATCH') {
+      await route.fallback();
+      return;
+    }
+    const payload = route.request().postDataJSON();
+    materialState.stockQty = payload.stockQty;
+    materialState.minStockQty = payload.minStockQty;
+    materialState.unitCost = payload.unitCost;
+    materialState.supplier = payload.supplier;
+    await route.fulfill({ json: { material: { ...materialState } } });
+  });
+
+  await page.goto('/manager-dashboard.html');
+
+  await page.getByRole('button', { name: 'Services' }).click();
+  await page.locator('#manager-services-section').scrollIntoViewIfNeeded();
+  await expandDashboardSectionIfCollapsed(page, '#manager-services-section');
+
+  const serviceCard = page.locator('#services-list .dashboard-item').first();
+  await expect(serviceCard).toBeVisible();
+  await serviceCard.locator('input[type="text"]').first().fill('Bathrooms Premium');
+  await serviceCard.getByRole('button', { name: 'Save' }).click();
+  await expect(serviceCard.getByRole('heading', { name: 'Bathrooms Premium' })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Materials / Stock' }).click();
+  await page.locator('#manager-materials-section').scrollIntoViewIfNeeded();
+  await expandDashboardSectionIfCollapsed(page, '#manager-materials-section');
+
+  const materialCard = page.locator('#materials-list .dashboard-item').first();
+  await expect(materialCard).toBeVisible();
+  await materialCard.locator('input[type="number"]').first().fill('2');
+  await materialCard.getByRole('button', { name: 'Save' }).click();
+  await expect(materialCard).toContainText(/stock 2\/4/i);
+  await expect(materialCard).toContainText(/low stock/i);
+});
+
 test('manager dashboard can create private threads and manage project chat participants', async ({ page }) => {
   await mockManagerSession(page);
 
