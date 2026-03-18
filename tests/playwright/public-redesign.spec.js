@@ -102,6 +102,9 @@ test('core brochure pages render about, services, gallery, contact and quote rou
   await expect(page.locator('body.public-site.page-quote')).toBeVisible();
   await expect(page.getByRole('heading', { name: /send one private enquiry for bathrooms, kitchens/i })).toBeVisible();
   await expect(page.locator('form.js-quote-form')).toBeVisible();
+  const quoteCardTop = await page.locator('#quote-card').evaluate((node) => node.getBoundingClientRect().top);
+  const quoteIntroTop = await page.locator('main h1').first().evaluate((node) => node.getBoundingClientRect().top);
+  expect(quoteCardTop).toBeLessThan(quoteIntroTop);
 });
 
 test('wall systems service CTA opens quote with wall-systems context preselected', async ({ page }) => {

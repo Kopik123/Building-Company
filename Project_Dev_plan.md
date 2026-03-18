@@ -261,3 +261,5 @@
 - Hardened the public header session-state rendering in `site.js` by adding an explicit `data-auth-view` state on the sticky shell, so authenticated brochure pages cannot render the guest inline login form at the same time as the session/logout controls.
 - Added CSS guard rails in `styles/public.css` for `guest/session/hidden` header states and styled browser autofill in `styles/base.css` so Chrome no longer paints public-shell login fields white against the dark brand shell.
 - Extended `tests/playwright/public-redesign.spec.js` so authenticated state is now checked on both the homepage and a generated service page, covering the regression where service pages could still show the inline email/password inputs while logged in.
+- Reordered `quote.html` so the practical quote row (`Before you send` + form) now appears above the descriptive row (`Quote` + `How to brief`), while keeping `#quote-card` attached to the form section for CTA deep-linking.
+- Added a Playwright assertion on `/quote.html` that locks in this section order by checking the `#quote-card` block renders above the main quote-intro heading.
