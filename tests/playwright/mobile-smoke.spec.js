@@ -593,6 +593,127 @@ test('manager dashboard quote controls can accept and update a quote', async ({ 
   await expect(quoteCard).toContainText(/priority low/i);
 });
 
+test('manager dashboard estimate controls can update an estimate and add custom lines', async ({ page }) => {
+  await mockManagerSession(page);
+
+  const estimateState = {
+    id: 'estimate-1',
+    title: 'Prestige Kitchen Estimate',
+    status: 'draft',
+    total: 14800,
+    subtotal: 14800,
+    projectId: 'project-1',
+    quoteId: 'quote-1',
+    notes: 'Initial kitchen draft.',
+    project: { id: 'project-1', title: 'Prestige Kitchen', location: 'Stockport' },
+    lines: [{
+      id: 'estimate-line-1',
+      description: 'Kitchen installation and refurbishment',
+      lineType: 'service',
+      quantity: 1,
+      unit: 'scope',
+      lineTotal: 14800
+    }]
+  };
+  let lineCounter = 2;
+
+  const recomputeEstimateTotals = () => {
+    estimateState.total = estimateState.lines.reduce((sum, line) => sum + Number(line.lineTotal || 0), 0);
+    estimateState.subtotal = estimateState.total;
+  };
+
+  const toEstimateSummary = () => ({
+    id: estimateState.id,
+    title: estimateState.title,
+    status: estimateState.status,
+    total: estimateState.total,
+    projectId: estimateState.projectId,
+    project: estimateState.project
+  });
+
+  const toEstimateDetail = () => ({
+    ...toEstimateSummary(),
+    subtotal: estimateState.subtotal,
+    quoteId: estimateState.quoteId,
+    notes: estimateState.notes,
+    lines: estimateState.lines.map((line) => ({ ...line }))
+  });
+
+  await page.route('**/api/manager/estimates?pageSize=100', async (route) => {
+    await route.fulfill({ json: { estimates: [toEstimateSummary()] } });
+  });
+
+  await page.route('**/api/manager/estimates/estimate-1', async (route) => {
+    if (route.request().method() === 'PATCH') {
+      const payload = route.request().postDataJSON();
+      estimateState.title = payload.title;
+      estimateState.status = payload.status;
+      estimateState.projectId = payload.projectId || estimateState.projectId;
+      estimateState.quoteId = payload.quoteId || '';
+      estimateState.notes = payload.notes || '';
+      await route.fulfill({ json: { estimate: toEstimateDetail() } });
+      return;
+    }
+
+    await route.fulfill({ json: { estimate: toEstimateDetail() } });
+  });
+
+  await page.route('**/api/manager/estimates/estimate-1/lines', async (route) => {
+    if (route.request().method() !== 'POST') {
+      await route.fallback();
+      return;
+    }
+
+    const payload = route.request().postDataJSON();
+    const quantity = Number(payload.quantity || 0);
+    const unitCost = payload.lineTotalOverride != null
+      ? Number(payload.lineTotalOverride)
+      : Number(payload.unitCost || 0) * quantity;
+
+    estimateState.lines.push({
+      id: `estimate-line-${lineCounter++}`,
+      description: payload.description,
+      lineType: payload.lineType,
+      quantity,
+      unit: payload.unit || '',
+      lineTotal: unitCost,
+      notes: payload.notes || ''
+    });
+    recomputeEstimateTotals();
+
+    await route.fulfill({ json: { ok: true } });
+  });
+
+  await page.goto('/manager-dashboard.html');
+  await page.locator('#manager-estimates-section').scrollIntoViewIfNeeded();
+  await expandDashboardSectionIfCollapsed(page, '#manager-estimates-section');
+
+  const estimateCard = page.locator('#estimates-list .dashboard-item').first();
+  await expect(estimateCard).toBeVisible();
+  await estimateCard.getByRole('button', { name: 'Select' }).click();
+
+  await page.locator('#estimate-update-form input[name="title"]').fill('Prestige Kitchen Estimate v2');
+  await page.locator('#estimate-update-form select[name="status"]').selectOption('sent');
+  await page.locator('#estimate-update-form textarea[name="notes"]').fill('Issued to client for review.');
+  await page.getByRole('button', { name: 'Save estimate' }).click();
+
+  await expect(page.locator('#estimate-update-status')).toContainText(/estimate saved/i);
+  await expect(page.locator('#estimate-editor-title')).toContainText('Prestige Kitchen Estimate v2');
+  await expect(page.locator('#estimates-list .dashboard-item').first()).toContainText(/sent/i);
+
+  const estimateLineForm = page.locator('#estimate-line-form');
+  await estimateLineForm.locator('select[name="lineType"]').selectOption('custom');
+  await estimateLineForm.locator('input[name="description"]').fill('Bespoke extractor boxing');
+  await estimateLineForm.locator('input[name="unit"]').fill('item');
+  await estimateLineForm.locator('input[name="quantity"]').fill('2');
+  await estimateLineForm.locator('input[name="unitCost"]').fill('350');
+  await estimateLineForm.getByRole('button', { name: 'Add line' }).click();
+
+  await expect(page.locator('#estimate-line-status')).toContainText(/estimate line added/i);
+  await expect(page.locator('#estimate-lines-list')).toContainText('Bespoke extractor boxing');
+  await expect(page.locator('#estimate-editor-total')).toContainText('15,500.00');
+});
+
 test('manager dashboard services and materials controls can update catalog items', async ({ page }) => {
   await mockManagerSession(page);
 
