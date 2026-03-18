@@ -527,6 +527,7 @@ router.use(createProjectRoutes({
   upload,
   Project,
   ProjectMedia,
+  GroupThread,
   User,
   Quote,
   Op,

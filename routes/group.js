@@ -1,7 +1,7 @@
 const express = require('express');
 const { Op } = require('sequelize');
 const { body, param, query, validationResult } = require('express-validator');
-const { GroupThread, GroupMember, GroupMessage, User } = require('../models');
+const { GroupThread, GroupMember, GroupMessage, User, Project, Quote } = require('../models');
 const { auth } = require('../middleware/auth');
 const { upload, DEFAULT_ATTACHMENT_BODY } = require('../utils/upload');
 const asyncHandler = require('../utils/asyncHandler');
@@ -9,11 +9,25 @@ const { createPaginationHelpers } = require('../utils/pagination');
 
 const router = express.Router();
 const senderAttributes = ['id', 'name', 'email', 'role'];
+const threadUserAttributes = ['id', 'name', 'email', 'role'];
+const projectThreadAttributes = ['id', 'title', 'location', 'status', 'quoteId', 'clientId', 'assignedManagerId'];
+const quoteThreadAttributes = ['id', 'projectType', 'location', 'status', 'clientId', 'assignedManagerId'];
 const MAX_PAGE_SIZE = 100;
 const { getPagination, encodeCursor, getCursorPagination } = createPaginationHelpers({
   defaultPageSize: 20,
   maxPageSize: MAX_PAGE_SIZE
 });
+
+const threadIncludes = [
+  { model: User, as: 'creator', attributes: ['id', 'name', 'email'] },
+  { model: Quote, as: 'quote', attributes: quoteThreadAttributes },
+  { model: Project, as: 'project', attributes: projectThreadAttributes },
+  {
+    model: GroupMember,
+    as: 'members',
+    include: [{ model: User, as: 'user', attributes: threadUserAttributes }]
+  }
+];
 
 const formatMessageWithSender = (message, user) => ({
   ...message.toJSON(),
@@ -24,6 +38,22 @@ const formatMessageWithSender = (message, user) => ({
     role: user.role
   }
 });
+
+const STAFF_ROLES = new Set(['employee', 'manager', 'admin']);
+
+const isStaffUser = (user) => STAFF_ROLES.has(String(user?.role || '').toLowerCase());
+
+const getCurrentMembershipRole = (thread, userId) =>
+  thread?.members?.find((member) => member.userId === userId)?.role || null;
+
+const serializeThread = (thread, userId) => {
+  const payload = thread?.toJSON ? thread.toJSON() : thread;
+  return {
+    ...payload,
+    memberCount: Array.isArray(payload?.members) ? payload.members.length : 0,
+    currentUserMembershipRole: getCurrentMembershipRole(payload, userId)
+  };
+};
 
 // List group threads the current user is a member of
 router.get(
@@ -48,10 +78,7 @@ router.get(
           {
             model: GroupThread,
             as: 'thread',
-            include: [
-              { model: User, as: 'creator', attributes: ['id', 'name', 'email'] },
-              { model: GroupMember, as: 'members', include: [{ model: User, as: 'user', attributes: ['id', 'name', 'email', 'role'] }] }
-            ]
+            include: threadIncludes
           }
         ],
         order: [[{ model: GroupThread, as: 'thread' }, 'updatedAt', 'DESC']],
@@ -61,7 +88,9 @@ router.get(
       GroupMember.count({ where })
     ]);
 
-    const threads = memberships.map((m) => m.thread).filter(Boolean);
+    const threads = memberships
+      .map((membership) => (membership.thread ? serializeThread(membership.thread, req.user.id) : null))
+      .filter(Boolean);
     return res.json({
       threads,
       pagination: {
@@ -71,6 +100,99 @@ router.get(
         totalPages: Math.max(1, Math.ceil(total / pageSize))
       }
     });
+  })
+);
+
+// Create a new project chat thread and optionally seed members
+router.post(
+  '/threads',
+  [
+    auth,
+    body('projectId').isUUID(),
+    body('name').optional({ checkFalsy: true }).trim().isLength({ min: 2, max: 160 }),
+    body('participantUserIds').optional().isArray({ max: 12 }),
+    body('participantUserIds.*').optional().isUUID(),
+    body('includeProjectClient').optional().isBoolean(),
+    body('includeAssignedStaff').optional().isBoolean()
+  ],
+  asyncHandler(async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    if (!isStaffUser(req.user)) {
+      return res.status(403).json({ error: 'Only staff can create project chat threads' });
+    }
+
+    const project = await Project.findByPk(req.body.projectId, {
+      include: [{ model: Quote, as: 'quote', attributes: quoteThreadAttributes }]
+    });
+
+    if (!project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+
+    const includeProjectClient = Object.prototype.hasOwnProperty.call(req.body, 'includeProjectClient')
+      ? Boolean(req.body.includeProjectClient)
+      : true;
+    const includeAssignedStaff = Object.prototype.hasOwnProperty.call(req.body, 'includeAssignedStaff')
+      ? Boolean(req.body.includeAssignedStaff)
+      : true;
+
+    const seedMemberIds = new Set();
+    if (includeProjectClient && project.clientId) seedMemberIds.add(project.clientId);
+    if (includeAssignedStaff && project.assignedManagerId) seedMemberIds.add(project.assignedManagerId);
+    for (const userId of req.body.participantUserIds || []) {
+      if (userId) seedMemberIds.add(userId);
+    }
+    seedMemberIds.delete(req.user.id);
+
+    const memberCandidates = Array.from(seedMemberIds);
+    let users = [];
+    if (memberCandidates.length) {
+      users = await User.findAll({
+        where: {
+          id: { [Op.in]: memberCandidates },
+          isActive: true
+        },
+        attributes: threadUserAttributes
+      });
+      const foundIds = new Set(users.map((user) => user.id));
+      const missingIds = memberCandidates.filter((userId) => !foundIds.has(userId));
+      if (missingIds.length) {
+        return res.status(404).json({ error: 'One or more invited users were not found' });
+      }
+    }
+
+    const thread = await GroupThread.create({
+      name: String(req.body.name || '').trim() || `${project.title} Project Chat`,
+      quoteId: project.quoteId || null,
+      projectId: project.id,
+      createdBy: req.user.id
+    });
+
+    await GroupMember.create({
+      groupThreadId: thread.id,
+      userId: req.user.id,
+      role: 'admin'
+    });
+
+    if (users.length) {
+      await GroupMember.bulkCreate(
+        users.map((user) => ({
+          groupThreadId: thread.id,
+          userId: user.id,
+          role: 'member'
+        }))
+      );
+    }
+
+    const createdThread = await GroupThread.findByPk(thread.id, {
+      include: threadIncludes
+    });
+
+    return res.status(201).json({ thread: serializeThread(createdThread, req.user.id) });
   })
 );
 
@@ -279,6 +401,49 @@ router.post(
     });
 
     return res.status(201).json({ member });
+  })
+);
+
+router.delete(
+  '/threads/:id/members/:userId',
+  [auth, param('id').isUUID(), param('userId').isUUID()],
+  asyncHandler(async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const membership = await GroupMember.findOne({
+      where: { groupThreadId: req.params.id, userId: req.user.id }
+    });
+
+    if (!membership || membership.role !== 'admin') {
+      return res.status(403).json({ error: 'Only group admins can remove members' });
+    }
+
+    const targetMembership = await GroupMember.findOne({
+      where: { groupThreadId: req.params.id, userId: req.params.userId }
+    });
+
+    if (!targetMembership) {
+      return res.status(404).json({ error: 'Member not found in this thread' });
+    }
+
+    if (targetMembership.role === 'admin') {
+      const adminCount = await GroupMember.count({
+        where: {
+          groupThreadId: req.params.id,
+          role: 'admin'
+        }
+      });
+
+      if (adminCount <= 1) {
+        return res.status(409).json({ error: 'Thread must keep at least one admin' });
+      }
+    }
+
+    await targetMembership.destroy();
+    return res.json({ message: 'Member removed' });
   })
 );
 

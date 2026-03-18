@@ -9,10 +9,14 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [ ] In that QA pass, explicitly check: `mainbackground.png` inside cards, gold-text readability, desktop header proportions, mobile stacking, login/account/logout/session state and no horizontal scroll on phone breakpoints.
 - [ ] In that same live QA pass, verify the background split stays consistent: `mainbackground.png` on cards/sections, `boxbackground.png` on fields and smaller input-style panels, with no leftover legacy dark fills covering the card background.
 - [ ] On live `manager-dashboard.html`, verify the new manager flow starts with area choice (`Projects`, `Materials / Stock`, `Services`) and then exposes the right create/edit actions without leaving stale sections visible.
+- [ ] On live `manager-dashboard.html`, verify the new private messenger flow can create a direct thread with a client and with a staff member from the new email-based composer.
+- [ ] On live `manager-dashboard.html`, verify project chat creation works from the new form: pick a project, auto-seed the client/assigned staff, optionally add an extra participant, and confirm the thread opens selected after creation.
+- [ ] On live `manager-dashboard.html`, verify project-chat participant management works end-to-end: current member list renders, admins can add/remove participants, and non-admin thread members do not see admin-only controls.
 - [ ] Confirm on live `/gallery.html` that the gallery now reads fully service-led, with correct service descriptions, service rail labels and fullscreen image flow on desktop and mobile.
 - [ ] Confirm on live `/services.html` that `Discuss wall systems` opens `/quote.html` with the wall-systems context already selected in the quote form.
 - [ ] Capture fresh screenshot evidence for homepage, gallery, quote/contact forms, auth state and both dashboards after the consolidated live QA pass.
 - [ ] Resolve the local PowerShell execution-policy issue blocking `npm.ps1`; until fixed, keep using `npm.cmd` for local validation commands.
+- [ ] Standardise local shell snippets for Windows PowerShell 5.1 (`;` or `cmd /c`) because `&&` chaining is not supported in the current local shell.
 
 ## Next Engineering
 

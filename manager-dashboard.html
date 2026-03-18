@@ -697,6 +697,32 @@
         <div class="dashboard-grid dashboard-manager-top-grid">
           <section class="card surface-card surface-card--light" id="manager-private-inbox" data-dashboard-mobile-open="true">
             <h2>Private Inbox</h2>
+            <div class="workspace-form-panel">
+              <h3>Start private thread</h3>
+              <form id="manager-direct-thread-form" novalidate>
+                <div class="form-grid">
+                  <label>Recipient type
+                    <select name="recipientType">
+                      <option value="client">Client</option>
+                      <option value="staff">Staff</option>
+                    </select>
+                  </label>
+                  <label>Recipient email
+                    <input type="email" name="recipientEmail" list="manager-direct-recipient-suggestions" placeholder="client@email.com" autocomplete="off" required />
+                  </label>
+                  <datalist id="manager-direct-recipient-suggestions"></datalist>
+                  <small class="muted span-2" id="manager-direct-recipient-lookup-status"></small>
+                  <label class="span-2">Subject
+                    <input type="text" name="subject" placeholder="Private studio thread" required />
+                  </label>
+                  <label class="span-2">Opening message
+                    <textarea name="body" rows="3" required></textarea>
+                  </label>
+                </div>
+                <button type="submit" class="btn btn-gold">Create private thread</button>
+                <p class="form-status" id="manager-direct-thread-status" aria-live="polite"></p>
+              </form>
+            </div>
             <div class="dashboard-grid dashboard-communication-grid">
               <div>
                 <h3>Threads</h3>
@@ -720,12 +746,67 @@
 
           <section class="card surface-card surface-card--light" id="manager-project-chat" data-dashboard-mobile-open="true">
             <h2>Project Chat</h2>
+            <div class="workspace-form-panel">
+              <h3>Create project chat</h3>
+              <form id="manager-group-thread-form" novalidate>
+                <div class="form-grid">
+                  <label>Chat name
+                    <input type="text" name="name" placeholder="Kitchen delivery thread" />
+                  </label>
+                  <label>Project
+                    <select name="projectId" required>
+                      <option value="">Select project</option>
+                    </select>
+                  </label>
+                  <label class="dashboard-inline-check span-2">
+                    <input type="checkbox" name="includeProjectClient" checked />
+                    <span>Invite linked client automatically</span>
+                  </label>
+                  <label class="dashboard-inline-check span-2">
+                    <input type="checkbox" name="includeAssignedStaff" checked />
+                    <span>Invite assigned staff automatically</span>
+                  </label>
+                  <label>Extra participant type
+                    <select name="participantType">
+                      <option value="client">Client</option>
+                      <option value="staff">Staff</option>
+                    </select>
+                  </label>
+                  <label>Extra participant email
+                    <input type="email" name="participantEmail" list="manager-group-create-participant-suggestions" placeholder="Optional extra invite" autocomplete="off" />
+                  </label>
+                  <datalist id="manager-group-create-participant-suggestions"></datalist>
+                  <small class="muted span-2" id="manager-group-create-participant-lookup-status"></small>
+                </div>
+                <button type="submit" class="btn btn-gold">Create project chat</button>
+                <p class="form-status" id="manager-group-thread-status" aria-live="polite"></p>
+              </form>
+            </div>
             <div class="dashboard-grid dashboard-communication-grid">
               <div>
                 <h3>Threads</h3>
                 <div id="manager-group-threads-list" class="dashboard-list"></div>
               </div>
               <div>
+                <h3>Participants</h3>
+                <div id="manager-group-members-list" class="dashboard-list"></div>
+                <form id="manager-group-member-form" novalidate>
+                  <div class="form-grid">
+                    <label>Participant type
+                      <select name="participantType">
+                        <option value="client">Client</option>
+                        <option value="staff">Staff</option>
+                      </select>
+                    </label>
+                    <label>Participant email
+                      <input type="email" name="participantEmail" list="manager-group-member-suggestions" placeholder="client@email.com" autocomplete="off" required />
+                    </label>
+                    <datalist id="manager-group-member-suggestions"></datalist>
+                    <small class="muted span-2" id="manager-group-member-lookup-status"></small>
+                  </div>
+                  <button type="submit" class="btn btn-outline">Add participant</button>
+                  <p class="form-status" id="manager-group-member-status" aria-live="polite"></p>
+                </form>
                 <h3>Messages</h3>
                 <div id="manager-group-messages-list" class="dashboard-list"></div>
                 <form id="manager-group-message-form" novalidate>

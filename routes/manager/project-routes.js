@@ -10,6 +10,7 @@ module.exports = function createProjectRoutes({
   upload,
   Project,
   ProjectMedia,
+  GroupThread,
   User,
   Quote,
   Op,
@@ -32,6 +33,20 @@ module.exports = function createProjectRoutes({
   normalizeStoragePath
 }) {
   const router = express.Router();
+
+  const syncProjectChatLinks = async (project) => {
+    if (!project?.id || !project.quoteId) return;
+
+    await GroupThread.update(
+      { projectId: project.id },
+      {
+        where: {
+          projectId: null,
+          quoteId: project.quoteId
+        }
+      }
+    );
+  };
 
   router.get(
     '/projects',
@@ -191,6 +206,7 @@ module.exports = function createProjectRoutes({
       }
 
       const project = await Project.create(payload);
+      await syncProjectChatLinks(project);
       clearGalleryCache();
       return res.status(201).json({ project });
     })
@@ -278,6 +294,7 @@ module.exports = function createProjectRoutes({
       }
 
       await project.update(payload);
+      await syncProjectChatLinks(project);
       clearGalleryCache();
       return res.json({ project });
     })

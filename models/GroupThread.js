@@ -15,6 +15,10 @@ const GroupThread = sequelize.define('GroupThread', {
     type: DataTypes.UUID,
     allowNull: true
   },
+  projectId: {
+    type: DataTypes.UUID,
+    allowNull: true
+  },
   createdBy: {
     type: DataTypes.UUID,
     allowNull: false

@@ -226,6 +226,11 @@
   background: rgba(7, 7, 7, 0.86);
 }
 
+.dashboard-item.is-active {
+  border-color: rgba(209, 164, 74, 0.72);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.22);
+}
+
 .dashboard-item h3,
 .dashboard-list-item h3,
 .dashboard-thread h3 {
@@ -244,6 +249,12 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-4);
+}
+
+.dashboard-communication-grid > div {
+  display: grid;
+  gap: var(--space-3);
+  align-content: start;
 }
 
 .dashboard-media-list {

@@ -520,3 +520,260 @@ test('manager dashboard workflow chooser switches between projects materials and
   await expect(page.locator('#manager-project-create')).toBeVisible();
   await expect(page.locator('#manager-projects-section')).toBeVisible();
 });
+
+test('manager dashboard can create private threads and manage project chat participants', async ({ page }) => {
+  await mockManagerSession(page);
+
+  const clients = [
+    { id: 'client-1', name: 'Marta Client', email: 'client@example.com', role: 'client' },
+    { id: 'client-2', name: 'Nina Client', email: 'nina@example.com', role: 'client' }
+  ];
+  const staff = [
+    { id: 'manager-1', name: 'Daniel Manager', email: 'manager@example.com', role: 'manager' },
+    { id: 'staff-2', name: 'Leah Builder', email: 'leah@example.com', role: 'employee' },
+    { id: 'staff-3', name: 'Site Foreman', email: 'foreman@example.com', role: 'employee' }
+  ];
+  const project = {
+    id: 'project-1',
+    title: 'Prestige Kitchen',
+    location: 'Stockport',
+    status: 'in_progress',
+    clientId: 'client-1',
+    assignedManagerId: 'manager-1'
+  };
+  const directThreads = [];
+  const directMessagesByThreadId = {};
+  const groupThreads = [];
+  const groupMessagesByThreadId = {};
+  let directThreadCounter = 1;
+  let directMessageCounter = 1;
+  let groupThreadCounter = 1;
+  let groupMemberCounter = 1;
+
+  const toDirectThreadPayload = (thread) => ({
+    ...thread,
+    participantA: staff[0],
+    participantB: clients.find((item) => item.id === thread.participantBId) || staff.find((item) => item.id === thread.participantBId) || null
+  });
+
+  const toGroupThreadPayload = (thread) => ({
+    ...thread,
+    project,
+    memberCount: thread.members.length,
+    currentUserMembershipRole: 'admin'
+  });
+
+  await page.route('**/api/manager/clients/search?*', async (route) => {
+    const query = new URL(route.request().url()).searchParams.get('q') || '';
+    const needle = query.toLowerCase();
+    const matches = clients.filter((item) => item.email.toLowerCase().includes(needle) || item.name.toLowerCase().includes(needle));
+    await route.fulfill({ json: { clients: matches } });
+  });
+
+  await page.route('**/api/manager/staff/search?*', async (route) => {
+    const query = new URL(route.request().url()).searchParams.get('q') || '';
+    const needle = query.toLowerCase();
+    const matches = staff.filter((item) => item.email.toLowerCase().includes(needle) || item.name.toLowerCase().includes(needle));
+    await route.fulfill({ json: { staff: matches } });
+  });
+
+  await page.route('**/api/inbox/threads?*', async (route) => {
+    await route.fulfill({
+      json: {
+        threads: directThreads.map(toDirectThreadPayload)
+      }
+    });
+  });
+
+  await page.route('**/api/inbox/threads', async (route) => {
+    if (route.request().method() !== 'POST') {
+      await route.fallback();
+      return;
+    }
+
+    const payload = route.request().postDataJSON();
+    const threadId = `manager-direct-thread-${directThreadCounter++}`;
+    const recipient = clients.find((item) => item.id === payload.recipientUserId) || staff.find((item) => item.id === payload.recipientUserId);
+    const message = {
+      id: `manager-direct-message-${directMessageCounter++}`,
+      body: payload.body,
+      createdAt: '2026-03-17T18:00:00Z',
+      sender: { name: 'Daniel Manager' }
+    };
+    const thread = {
+      id: threadId,
+      subject: payload.subject,
+      updatedAt: '2026-03-17T18:00:00Z',
+      participantAId: 'manager-1',
+      participantBId: recipient.id
+    };
+    directThreads.unshift(thread);
+    directMessagesByThreadId[threadId] = [message];
+    await route.fulfill({
+      json: {
+        thread: toDirectThreadPayload(thread),
+        message
+      }
+    });
+  });
+
+  await page.route('**/api/inbox/threads/*/messages?pageSize=100', async (route) => {
+    const threadId = route.request().url().match(/threads\/([^/]+)\/messages/)?.[1] || '';
+    await route.fulfill({
+      json: {
+        messages: directMessagesByThreadId[threadId] || []
+      }
+    });
+  });
+
+  await page.route('**/api/group/threads?*', async (route) => {
+    await route.fulfill({
+      json: {
+        threads: groupThreads.map(toGroupThreadPayload)
+      }
+    });
+  });
+
+  await page.route('**/api/group/threads', async (route) => {
+    if (route.request().method() !== 'POST') {
+      await route.fallback();
+      return;
+    }
+
+    const payload = route.request().postDataJSON();
+    const members = [
+      {
+        id: `group-member-${groupMemberCounter++}`,
+        groupThreadId: `manager-group-thread-${groupThreadCounter}`,
+        userId: 'manager-1',
+        role: 'admin',
+        user: staff[0]
+      }
+    ];
+
+    if (payload.includeProjectClient) {
+      members.push({
+        id: `group-member-${groupMemberCounter++}`,
+        groupThreadId: `manager-group-thread-${groupThreadCounter}`,
+        userId: project.clientId,
+        role: 'member',
+        user: clients[0]
+      });
+    }
+
+    for (const userId of payload.participantUserIds || []) {
+      const user = clients.find((item) => item.id === userId) || staff.find((item) => item.id === userId);
+      if (user && !members.some((member) => member.userId === userId)) {
+        members.push({
+          id: `group-member-${groupMemberCounter++}`,
+          groupThreadId: `manager-group-thread-${groupThreadCounter}`,
+          userId,
+          role: 'member',
+          user
+        });
+      }
+    }
+
+    const thread = {
+      id: `manager-group-thread-${groupThreadCounter++}`,
+      name: payload.name,
+      projectId: payload.projectId,
+      updatedAt: '2026-03-17T18:05:00Z',
+      members
+    };
+    groupThreads.unshift(thread);
+    groupMessagesByThreadId[thread.id] = [];
+
+    await route.fulfill({
+      json: {
+        thread: toGroupThreadPayload(thread)
+      }
+    });
+  });
+
+  await page.route('**/api/group/threads/*/messages?pageSize=100', async (route) => {
+    const threadId = route.request().url().match(/threads\/([^/]+)\/messages/)?.[1] || '';
+    await route.fulfill({
+      json: {
+        messages: groupMessagesByThreadId[threadId] || []
+      }
+    });
+  });
+
+  await page.route('**/api/group/threads/*/members', async (route) => {
+    if (route.request().method() !== 'POST') {
+      await route.fallback();
+      return;
+    }
+    const threadId = route.request().url().match(/threads\/([^/]+)\/members/)?.[1] || '';
+    const payload = route.request().postDataJSON();
+    const thread = groupThreads.find((item) => item.id === threadId);
+    const user = clients.find((item) => item.id === payload.userId) || staff.find((item) => item.id === payload.userId);
+    if (thread && user && !thread.members.some((member) => member.userId === payload.userId)) {
+      thread.members.push({
+        id: `group-member-${groupMemberCounter++}`,
+        groupThreadId: threadId,
+        userId: payload.userId,
+        role: 'member',
+        user
+      });
+      thread.updatedAt = '2026-03-17T18:06:00Z';
+    }
+    await route.fulfill({ json: { member: { userId: payload.userId } } });
+  });
+
+  await page.route('**/api/group/threads/*/members/*', async (route) => {
+    if (route.request().method() !== 'DELETE') {
+      await route.fallback();
+      return;
+    }
+    const match = route.request().url().match(/threads\/([^/]+)\/members\/([^/?]+)/);
+    const threadId = match?.[1] || '';
+    const userId = match?.[2] || '';
+    const thread = groupThreads.find((item) => item.id === threadId);
+    if (thread) {
+      thread.members = thread.members.filter((member) => member.userId !== userId);
+      thread.updatedAt = '2026-03-17T18:07:00Z';
+    }
+    await route.fulfill({ json: { message: 'Member removed' } });
+  });
+
+  await page.goto('/manager-dashboard.html');
+
+  await page.locator('#manager-private-inbox').scrollIntoViewIfNeeded();
+  await page.locator('#manager-direct-thread-form select[name="recipientType"]').selectOption('client');
+  await page.locator('#manager-direct-thread-form input[name="recipientEmail"]').fill('client@example.com');
+  await page.locator('#manager-direct-thread-form input[name="subject"]').fill('Kick-off thread');
+  await page.locator('#manager-direct-thread-form textarea[name="body"]').fill('Let us confirm the next site visit window.');
+  await page.locator('#manager-direct-thread-form button[type="submit"]').click();
+
+  await expect(page.locator('#manager-direct-thread-status')).toContainText(/private thread created/i);
+  await expect(page.locator('#manager-direct-threads-list')).toContainText('Marta Client');
+  await expect(page.locator('#manager-direct-messages-list')).toContainText('Let us confirm the next site visit window.');
+
+  await page.locator('#manager-project-chat').scrollIntoViewIfNeeded();
+  await page.locator('#manager-group-thread-form input[name="name"]').fill('Kitchen delivery thread');
+  await page.locator('#manager-group-thread-form select[name="projectId"]').selectOption('project-1');
+  await page.locator('#manager-group-thread-form select[name="participantType"]').selectOption('staff');
+  await page.locator('#manager-group-thread-form input[name="participantEmail"]').fill('leah@example.com');
+  await page.locator('#manager-group-thread-form button[type="submit"]').click();
+
+  await expect(page.locator('#manager-group-thread-status')).toContainText(/project chat created/i);
+  await expect(page.locator('#manager-group-threads-list')).toContainText('Kitchen delivery thread');
+  await expect(page.locator('#manager-group-members-list')).toContainText('Daniel Manager');
+  await expect(page.locator('#manager-group-members-list')).toContainText('Marta Client');
+  await expect(page.locator('#manager-group-members-list')).toContainText('Leah Builder');
+
+  await page.locator('#manager-group-member-form select[name="participantType"]').selectOption('staff');
+  await page.locator('#manager-group-member-form input[name="participantEmail"]').fill('foreman@example.com');
+  await page.locator('#manager-group-member-form button[type="submit"]').click();
+
+  await expect(page.locator('#manager-group-member-status')).toContainText(/participant added/i);
+  await expect(page.locator('#manager-group-members-list')).toContainText('Site Foreman');
+
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.locator('#manager-group-members-list .dashboard-item', { hasText: 'Site Foreman' }).getByRole('button', { name: 'Remove' }).click();
+
+  await expect(page.locator('#manager-group-member-status')).toContainText(/participant removed/i);
+  await expect(page.locator('#manager-group-members-list')).not.toContainText('Site Foreman');
+});

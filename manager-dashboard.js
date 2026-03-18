@@ -97,9 +97,22 @@
     estimateLinesList: document.getElementById('estimate-lines-list'),
     managerDirectThreadsList: document.getElementById('manager-direct-threads-list'),
     managerDirectMessagesList: document.getElementById('manager-direct-messages-list'),
+    managerDirectThreadForm: document.getElementById('manager-direct-thread-form'),
+    managerDirectThreadStatus: document.getElementById('manager-direct-thread-status'),
+    managerDirectRecipientSuggestions: document.getElementById('manager-direct-recipient-suggestions'),
+    managerDirectRecipientLookupStatus: document.getElementById('manager-direct-recipient-lookup-status'),
     managerDirectMessageForm: document.getElementById('manager-direct-message-form'),
     managerDirectMessageStatus: document.getElementById('manager-direct-message-status'),
     managerGroupThreadsList: document.getElementById('manager-group-threads-list'),
+    managerGroupThreadForm: document.getElementById('manager-group-thread-form'),
+    managerGroupThreadStatus: document.getElementById('manager-group-thread-status'),
+    managerGroupMembersList: document.getElementById('manager-group-members-list'),
+    managerGroupMemberForm: document.getElementById('manager-group-member-form'),
+    managerGroupMemberStatus: document.getElementById('manager-group-member-status'),
+    managerGroupMemberSuggestions: document.getElementById('manager-group-member-suggestions'),
+    managerGroupMemberLookupStatus: document.getElementById('manager-group-member-lookup-status'),
+    managerGroupCreateParticipantSuggestions: document.getElementById('manager-group-create-participant-suggestions'),
+    managerGroupCreateParticipantLookupStatus: document.getElementById('manager-group-create-participant-lookup-status'),
     managerGroupMessagesList: document.getElementById('manager-group-messages-list'),
     managerGroupMessageForm: document.getElementById('manager-group-message-form'),
     managerGroupMessageStatus: document.getElementById('manager-group-message-status')
@@ -521,11 +534,19 @@
     return payload;
   });
 
-  const loadProjects = (...args) => projectsController?.loadProjects(...args);
+  const loadProjects = async (...args) => {
+    const result = await projectsController?.loadProjects(...args);
+    syncProjectChatProjectOptions();
+    return result;
+  };
   const openProjectEditor = (...args) => projectsController?.openProjectEditor(...args);
 
   const selectedEstimate = () =>
     state.estimates.find((estimate) => estimate.id === state.selectedEstimateId)
+    || null;
+
+  const selectedGroupThread = () =>
+    state.groupThreads.find((thread) => thread.id === state.selectedGroupThreadId)
     || null;
 
   const getInboxCounterparty = (thread) => {
@@ -839,7 +860,8 @@
     renderOperationsShell,
     requestManagerWorkflowRender: () => renderManagerWorkflow(),
     syncEstimateReferenceOptions,
-    scrollToSection
+    scrollToSection,
+    onProjectsChanged: () => syncProjectChatProjectOptions()
   });
 
   const renderQuotes = () => {
@@ -1231,6 +1253,7 @@
       },
       createEmptyNode: () => createMutedNode('No private threads yet.')
     });
+    syncMessagingComposerState();
     renderOperationsShell();
   };
 
@@ -1261,11 +1284,74 @@
         card.dataset.threadId = thread.id;
         card.className = `dashboard-item ${thread.id === state.selectedGroupThreadId ? 'is-active' : ''}`;
         card.children[0].textContent = thread.name || thread.subject || 'Project thread';
-        card.children[1].textContent = `Updated: ${formatDateTime(thread.updatedAt) || '-'}`;
+        const contextParts = [];
+        if (thread.project?.title) contextParts.push(thread.project.title);
+        if (thread.memberCount) contextParts.push(`${thread.memberCount} members`);
+        contextParts.push(`Updated: ${formatDateTime(thread.updatedAt) || '-'}`);
+        card.children[1].textContent = contextParts.join(' | ');
       },
       createEmptyNode: () => createMutedNode('No project chat threads available.')
     });
+    renderGroupMembers();
+    syncMessagingComposerState();
     renderOperationsShell();
+  };
+
+  const renderGroupMembers = () => {
+    const thread = selectedGroupThread();
+    const members = Array.isArray(thread?.members)
+      ? [...thread.members].sort((a, b) => {
+        if ((a.role || '') !== (b.role || '')) return a.role === 'admin' ? -1 : 1;
+        const aName = String(a.user?.name || a.user?.email || '').toLowerCase();
+        const bName = String(b.user?.name || b.user?.email || '').toLowerCase();
+        return aName.localeCompare(bName);
+      })
+      : [];
+    syncKeyedList(el.managerGroupMembersList, members, {
+      getKey: (member) => member.id || `${member.groupThreadId}:${member.userId}`,
+      createNode: () => {
+        const card = document.createElement('article');
+        card.className = 'dashboard-item';
+        const heading = document.createElement('h3');
+        heading.className = 'dashboard-item-title';
+        const meta = document.createElement('p');
+        meta.className = 'muted';
+        const row = document.createElement('div');
+        row.className = 'dashboard-actions-row';
+        card.appendChild(heading);
+        card.appendChild(meta);
+        card.appendChild(row);
+        return card;
+      },
+      updateNode: (card, member) => {
+        const memberUser = member.user || {};
+        const currentRole = thread?.currentUserMembershipRole || null;
+        const canRemove = currentRole === 'admin' && member.userId !== state.user?.id;
+        card.children[0].textContent = memberUser.name || memberUser.email || 'Participant';
+        card.children[1].textContent = `${member.role || 'member'} | ${memberUser.email || '-'}${memberUser.role ? ` | ${memberUser.role}` : ''}`;
+        const actionsRow = card.children[2];
+        actionsRow.innerHTML = '';
+        if (canRemove) {
+          const removeBtn = document.createElement('button');
+          removeBtn.type = 'button';
+          removeBtn.className = 'btn btn-outline';
+          removeBtn.textContent = 'Remove';
+          removeBtn.addEventListener('click', async () => {
+            if (!window.confirm(`Remove ${memberUser.name || memberUser.email || 'this participant'} from the chat?`)) return;
+            setStatus(el.managerGroupMemberStatus, 'Removing participant...');
+            try {
+              await api(`/api/group/threads/${thread.id}/members/${member.userId}`, { method: 'DELETE' });
+              setStatus(el.managerGroupMemberStatus, 'Participant removed.', 'success');
+              await loadGroupThreads(thread.id);
+            } catch (error) {
+              setStatus(el.managerGroupMemberStatus, error.message || 'Failed to remove participant.', 'error');
+            }
+          });
+          actionsRow.appendChild(removeBtn);
+        }
+      },
+      createEmptyNode: () => createMutedNode(thread ? 'No participants found in this project chat.' : 'Select a project chat thread to manage participants.')
+    });
   };
 
   const renderGroupMessages = () => {
@@ -1279,6 +1365,33 @@
       },
       createEmptyNode: () => createMutedNode(state.selectedGroupThreadId ? 'No project messages in this thread.' : 'Select a project chat thread to view messages.')
     });
+  };
+
+  const syncMessagingComposerState = () => {
+    const directMessageField = el.managerDirectMessageForm?.elements?.body;
+    const groupMessageField = el.managerGroupMessageForm?.elements?.body;
+    const groupMemberField = el.managerGroupMemberForm?.elements?.participantEmail;
+    const selectedThread = selectedGroupThread();
+    const canManageMembers = selectedThread?.currentUserMembershipRole === 'admin';
+
+    if (directMessageField) {
+      const disabled = !state.selectedDirectThreadId;
+      directMessageField.disabled = disabled;
+      el.managerDirectMessageForm.querySelector('button[type="submit"]').disabled = disabled;
+    }
+
+    if (groupMessageField) {
+      const disabled = !state.selectedGroupThreadId;
+      groupMessageField.disabled = disabled;
+      el.managerGroupMessageForm.querySelector('button[type="submit"]').disabled = disabled;
+    }
+
+    if (groupMemberField) {
+      const disabled = !selectedThread || !canManageMembers;
+      groupMemberField.disabled = disabled;
+      el.managerGroupMemberForm.elements.participantType.disabled = disabled;
+      el.managerGroupMemberForm.querySelector('button[type="submit"]').disabled = disabled;
+    }
   };
 
   const loadQuotes = async () => {
@@ -1458,7 +1571,33 @@
     });
   };
 
-  const setupLiveEmailAutocomplete = ({ input, datalist, type, statusNode }) => {
+  const resolveUserByEmail = async (type, queryText) => {
+    const normalized = normEmail(queryText);
+    if (!normalized) return null;
+    const users = await searchUsersByEmail(type, normalized);
+    return users.find((user) => normEmail(user.email) === normalized) || null;
+  };
+
+  const syncProjectChatProjectOptions = () => {
+    const select = el.managerGroupThreadForm?.elements?.projectId;
+    if (!select) return;
+    const options = state.projects.map((project) => ({
+      value: project.id,
+      label: `${project.title || 'Project'}${project.location ? ` | ${project.location}` : ''}`
+    }));
+    setSelectOptions(select, options, 'Select project');
+    if (!select.value && state.selectedProjectId && options.some((option) => option.value === state.selectedProjectId)) {
+      select.value = state.selectedProjectId;
+    }
+  };
+
+  const deriveProjectChatName = (projectId) => {
+    const project = state.projects.find((item) => item.id === projectId);
+    if (!project) return '';
+    return `${project.title || 'Project'} Chat`;
+  };
+
+  const setupLiveEmailAutocomplete = ({ input, datalist, type, getType, statusNode, onResolved }) => {
     let debounceTimer = null;
     let requestCounter = 0;
 
@@ -1468,38 +1607,56 @@
       if (value.length < 2) {
         fillDatalist(datalist, []);
         if (!value) setSmallStatus(statusNode, '', '');
+        if (typeof onResolved === 'function') onResolved(null);
         return;
       }
 
       debounceTimer = setTimeout(async () => {
         const requestId = ++requestCounter;
         try {
-          const users = await searchUsersByEmail(type, value);
+          const resolvedType = typeof getType === 'function' ? getType() : type;
+          const users = await searchUsersByEmail(resolvedType, value);
           if (requestId !== requestCounter) return;
           fillDatalist(datalist, users);
           if (!users.length) {
             setSmallStatus(statusNode, 'No matches.', 'error');
+            if (typeof onResolved === 'function') onResolved(null);
             return;
           }
           const exact = users.find((user) => normEmail(user.email) === value);
           if (exact) {
             setSmallStatus(statusNode, `Matched: ${exact.name || exact.email} (${exact.email})`, '');
+            if (typeof onResolved === 'function') onResolved(exact);
           } else {
             setSmallStatus(statusNode, `${users.length} suggestion(s). Keep typing or pick from list.`, '');
+            if (typeof onResolved === 'function') onResolved(null);
           }
         } catch (error) {
           if (requestId !== requestCounter) return;
           fillDatalist(datalist, []);
           setSmallStatus(statusNode, error.message || 'Lookup failed.', 'error');
+          if (typeof onResolved === 'function') onResolved(null);
         }
       }, 260);
     };
 
     input.addEventListener('input', runSearch);
+    if (typeof getType === 'function') {
+      const updateForTypeChange = () => {
+        fillDatalist(datalist, []);
+        runSearch();
+      };
+      input.form?.addEventListener('change', (event) => {
+        if (event.target === input.form?.elements?.recipientType || event.target === input.form?.elements?.participantType) {
+          updateForTypeChange();
+        }
+      });
+    }
     input.addEventListener('blur', () => {
       const value = normEmail(input.value);
       if (!value) {
         setSmallStatus(statusNode, '', '');
+        if (typeof onResolved === 'function') onResolved(null);
       }
     });
   };
@@ -1709,6 +1866,31 @@
     datalist: el.projectEditManagerSuggestions,
     type: 'staff',
     statusNode: el.projectEditManagerLookupStatus
+  });
+  setupLiveEmailAutocomplete({
+    input: el.managerDirectThreadForm.elements.recipientEmail,
+    datalist: el.managerDirectRecipientSuggestions,
+    getType: () => String(el.managerDirectThreadForm.elements.recipientType.value || 'client'),
+    statusNode: el.managerDirectRecipientLookupStatus
+  });
+  setupLiveEmailAutocomplete({
+    input: el.managerGroupThreadForm.elements.participantEmail,
+    datalist: el.managerGroupCreateParticipantSuggestions,
+    getType: () => String(el.managerGroupThreadForm.elements.participantType.value || 'client'),
+    statusNode: el.managerGroupCreateParticipantLookupStatus
+  });
+  setupLiveEmailAutocomplete({
+    input: el.managerGroupMemberForm.elements.participantEmail,
+    datalist: el.managerGroupMemberSuggestions,
+    getType: () => String(el.managerGroupMemberForm.elements.participantType.value || 'client'),
+    statusNode: el.managerGroupMemberLookupStatus
+  });
+
+  el.managerGroupThreadForm.elements.projectId.addEventListener('change', (event) => {
+    const nameField = el.managerGroupThreadForm.elements.name;
+    if (!String(nameField.value || '').trim()) {
+      nameField.value = deriveProjectChatName(String(event.target.value || ''));
+    }
   });
 
   projectsController?.bindEvents();
@@ -1925,6 +2107,124 @@
       await loadEstimates(estimate.id);
     } catch (error) {
       setStatus(el.estimateLineStatus, error.message || 'Failed to add estimate line.', 'error');
+    }
+  });
+
+  el.managerDirectThreadForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const form = el.managerDirectThreadForm.elements;
+    const recipientType = String(form.recipientType.value || 'client');
+    const recipientEmail = normEmail(form.recipientEmail.value);
+    const subject = String(form.subject.value || '').trim();
+    const body = String(form.body.value || '').trim();
+
+    if (!recipientEmail || !subject || !body) {
+      return setStatus(el.managerDirectThreadStatus, 'Recipient, subject and opening message are required.', 'error');
+    }
+
+    setStatus(el.managerDirectThreadStatus, 'Creating private thread...');
+    try {
+      const recipient = await resolveUserByEmail(recipientType, recipientEmail);
+      if (!recipient?.id) {
+        return setStatus(el.managerDirectThreadStatus, 'Pick an existing client or staff member from the suggestions.', 'error');
+      }
+
+      const payload = await api('/api/inbox/threads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          recipientUserId: recipient.id,
+          subject,
+          body
+        })
+      });
+
+      setStatus(el.managerDirectThreadStatus, 'Private thread created.', 'success');
+      el.managerDirectThreadForm.reset();
+      await loadDirectThreads(payload.thread?.id || '');
+    } catch (error) {
+      setStatus(el.managerDirectThreadStatus, error.message || 'Failed to create private thread.', 'error');
+    }
+  });
+
+  el.managerGroupThreadForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const form = el.managerGroupThreadForm.elements;
+    const projectId = normUuid(form.projectId.value);
+    const name = String(form.name.value || '').trim();
+    const participantEmail = normEmail(form.participantEmail.value);
+    const participantType = String(form.participantType.value || 'client');
+    const payload = {
+      projectId,
+      name,
+      includeProjectClient: Boolean(form.includeProjectClient.checked),
+      includeAssignedStaff: Boolean(form.includeAssignedStaff.checked),
+      participantUserIds: []
+    };
+
+    if (!projectId) {
+      return setStatus(el.managerGroupThreadStatus, 'Choose a project before creating the chat.', 'error');
+    }
+
+    setStatus(el.managerGroupThreadStatus, 'Creating project chat...');
+    try {
+      if (participantEmail) {
+        const participant = await resolveUserByEmail(participantType, participantEmail);
+        if (!participant?.id) {
+          return setStatus(el.managerGroupThreadStatus, 'Pick an existing client or staff member from the suggestions.', 'error');
+        }
+        payload.participantUserIds = [participant.id];
+      }
+
+      const result = await api('/api/group/threads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      setStatus(el.managerGroupThreadStatus, 'Project chat created.', 'success');
+      el.managerGroupThreadForm.reset();
+      form.includeProjectClient.checked = true;
+      form.includeAssignedStaff.checked = true;
+      syncProjectChatProjectOptions();
+      await loadGroupThreads(result.thread?.id || '');
+    } catch (error) {
+      setStatus(el.managerGroupThreadStatus, error.message || 'Failed to create project chat.', 'error');
+    }
+  });
+
+  el.managerGroupMemberForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const thread = selectedGroupThread();
+    if (!thread?.id) {
+      return setStatus(el.managerGroupMemberStatus, 'Select a project chat thread first.', 'error');
+    }
+
+    const form = el.managerGroupMemberForm.elements;
+    const participantEmail = normEmail(form.participantEmail.value);
+    const participantType = String(form.participantType.value || 'client');
+    if (!participantEmail) {
+      return setStatus(el.managerGroupMemberStatus, 'Participant email is required.', 'error');
+    }
+
+    setStatus(el.managerGroupMemberStatus, 'Adding participant...');
+    try {
+      const participant = await resolveUserByEmail(participantType, participantEmail);
+      if (!participant?.id) {
+        return setStatus(el.managerGroupMemberStatus, 'Pick an existing client or staff member from the suggestions.', 'error');
+      }
+
+      await api(`/api/group/threads/${thread.id}/members`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: participant.id })
+      });
+
+      setStatus(el.managerGroupMemberStatus, 'Participant added.', 'success');
+      el.managerGroupMemberForm.reset();
+      await loadGroupThreads(thread.id);
+    } catch (error) {
+      setStatus(el.managerGroupMemberStatus, error.message || 'Failed to add participant.', 'error');
     }
   });
 

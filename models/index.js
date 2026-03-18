@@ -40,6 +40,10 @@ Notification.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 User.hasMany(Notification, { foreignKey: 'userId', as: 'notifications' });
 
 GroupThread.belongsTo(User, { foreignKey: 'createdBy', as: 'creator' });
+GroupThread.belongsTo(Quote, { foreignKey: 'quoteId', as: 'quote' });
+Quote.hasMany(GroupThread, { foreignKey: 'quoteId', as: 'groupThreads' });
+GroupThread.belongsTo(Project, { foreignKey: 'projectId', as: 'project' });
+Project.hasMany(GroupThread, { foreignKey: 'projectId', as: 'groupThreads' });
 GroupThread.hasMany(GroupMember, { foreignKey: 'groupThreadId', as: 'members' });
 GroupThread.hasMany(GroupMessage, { foreignKey: 'groupThreadId', as: 'messages' });
 GroupMember.belongsTo(GroupThread, { foreignKey: 'groupThreadId', as: 'thread' });
@@ -141,6 +145,7 @@ const ensureIndexes = async () => {
     { table: GroupMember.getTableName(), name: 'group_members_thread_user_idx', fields: ['groupThreadId', 'userId'] },
     { table: GroupMessage.getTableName(), name: 'group_messages_thread_created_idx', fields: ['groupThreadId', 'createdAt'] },
     { table: GroupThread.getTableName(), name: 'group_threads_quote_idx', fields: ['quoteId'] },
+    { table: GroupThread.getTableName(), name: 'group_threads_project_idx', fields: ['projectId'] },
     { table: QuoteClaimToken.getTableName(), name: 'quote_claim_tokens_quote_used_expires_idx', fields: ['quoteId', 'usedAt', 'expiresAt'] },
     { table: Project.getTableName(), name: 'projects_gallery_visible_order_idx', fields: ['showInGallery', 'galleryOrder'] },
     { table: Project.getTableName(), name: 'projects_status_created_idx', fields: ['status', 'createdAt'] },

@@ -17,7 +17,8 @@
     renderOperationsShell,
     requestManagerWorkflowRender,
     syncEstimateReferenceOptions,
-    scrollToSection
+    scrollToSection,
+    onProjectsChanged
   }) => {
     const selectedProject = () =>
       state.projectDetailsById.get(state.selectedProjectId)
@@ -186,6 +187,7 @@
       renderProjects();
       fillProjectEditor();
       syncEstimateReferenceOptions();
+      if (typeof onProjectsChanged === 'function') onProjectsChanged(state.projects);
     };
 
     const applyProjectsFiltersFromUI = () => {
