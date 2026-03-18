@@ -17,9 +17,9 @@ module.exports = {
   enquiryLead:
     'Share the rooms involved, the finish ambition and your timing. The studio replies with a measured next step.',
   coreServiceOffer:
-    'full bathroom renovations, kitchen installation and refurbishment, large-format tiling, carpentry, wall systems and flooring installation',
+    'full bathroom renovations, kitchen installation and refurbishment, tiling including large format, wet showers and exterior areas, carpentry, and interior and exterior wall systems',
   joinedUpOfferLead:
-    'Bathrooms, kitchens and interior upgrades are handled as one refined studio scope, with planning, detailing and finish control staying aligned from the first survey.',
+    'Bathrooms, kitchens, tiling, carpentry and wall systems are handled as one refined studio scope, with planning, detailing and finish control staying aligned from the first survey.',
   serviceLineLabel: 'Curated premium scope',
   privateConsultationLabel: 'Private consultation',
   footerCopy:
@@ -53,11 +53,9 @@ module.exports = {
   serviceLinks: [
     { href: '/premium-bathrooms-manchester.html', label: 'Full Bathroom Renovations' },
     { href: '/premium-kitchens-manchester.html', label: 'Kitchen Installation and Refurbishment' },
-    { href: '/quote.html', label: 'Tiling incl. Large Format / Wet Showers' },
+    { href: '/quote.html', label: 'Tiling incl. Large Format / Wet Showers / Exterior' },
     { href: '/quote.html', label: 'Carpentry' },
-    { href: '/quote.html?projectType=rendering#quote-card', label: 'External Wall Systems' },
-    { href: '/quote.html?projectType=interior#quote-card', label: 'Interior Wall Systems' },
-    { href: '/quote.html', label: 'Flooring Installation' }
+    { href: '/quote.html?projectType=interior#quote-card', label: 'Interior and Exterior Wall' }
   ],
   studioLinks: [
     { href: '/index.html', label: 'Home' },

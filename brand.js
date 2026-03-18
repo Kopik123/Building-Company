@@ -30,7 +30,7 @@ window.LEVEL_LINES_BRAND = {
     home: {
       heroLead: 'Level Lines Studio shapes premium bathroom, kitchen and interior renovation briefs for homeowners who expect strong line quality, quieter luxury and a controlled building process.',
       servicesTitle: 'A curated renovation scope held in one premium studio structure.',
-      servicesLead: 'Bathrooms, kitchens, large-format tiling, carpentry, wall systems and flooring are held in one composed scope, so layout logic, detailing and finish control stay aligned.',
+      servicesLead: 'Full bathroom renovations, kitchen installation and refurbishment, tiling, carpentry and wall works are held in one composed scope, so layout logic, detailing and finish control stay aligned.',
       processLead: 'Plan, design and craft are treated as one disciplined sequence: define the brief properly, shape the material language and execute without noise.',
       areasLead: 'The studio keeps its footprint close enough for direct oversight, tighter sequencing and more controlled communication.',
       contactLead: 'Direct studio numbers and email remain visible because first conversations should feel precise, calm and uncomplicated.',
@@ -85,13 +85,13 @@ window.LEVEL_LINES_BRAND = {
     },
     {
       key: 'tiling',
-      title: 'Tiling incl. Large Format / Wet Showers',
+      title: 'Tiling incl. Large Format / Wet Showers / Exterior',
       category: 'tiling',
-      aliases: ['tiling', 'tiles', 'tile setting', 'tile installation', 'large format tiling', 'wet showers'],
+      aliases: ['tiling', 'tiles', 'tile setting', 'tile installation', 'large format tiling', 'wet showers', 'exterior tiling', 'external tiling'],
       image: '/Gallery/premium/bathroom-tiles.jpg',
       href: '/quote.html',
       cta: 'Request consultation',
-      description: 'Tiling for large-format surfaces and wet showers delivered with straight setting-out, aligned cuts and disciplined trims.'
+      description: 'Tiling for large-format surfaces, wet showers and exterior areas delivered with straight setting-out, aligned cuts and disciplined trims.'
     },
     {
       key: 'carpentry',
@@ -104,34 +104,14 @@ window.LEVEL_LINES_BRAND = {
       description: 'Carpentry and joinery delivered with clean reveals, storage detailing, trim precision and a finish standard that matches the wider brief.'
     },
     {
-      key: 'external-wall-systems',
-      title: 'External Wall Systems',
-      category: 'rendering',
-      aliases: ['rendering', 'outdoor', 'external wall systems', 'external wall system', 'external walls', 'facade enhancement'],
-      image: '/Gallery/premium/exterior-front.jpg',
-      href: '/quote.html?projectType=rendering#quote-card',
-      cta: 'Discuss exterior scope',
-      description: 'External wall systems delivered with envelope awareness, finish consistency and disciplined site sequencing.'
-    },
-    {
-      key: 'interior-wall-systems',
-      title: 'Interior Wall Systems',
+      key: 'interior-exterior-wall',
+      title: 'Interior and Exterior Wall',
       category: 'interior',
-      aliases: ['interior', 'interior wall systems', 'interior wall system', 'internal wall systems', 'internal wall system', 'internal walls', 'full interior refurbishment', 'full-interior-refurbishment'],
+      aliases: ['interior', 'rendering', 'outdoor', 'interior wall systems', 'interior wall system', 'external wall systems', 'external wall system', 'internal wall systems', 'internal wall system', 'internal walls', 'external walls', 'wall systems', 'wall system', 'full interior refurbishment', 'full-interior-refurbishment'],
       image: '/Gallery/premium/brick-detail-charcoal.jpg',
       href: '/quote.html?projectType=interior#quote-card',
       cta: 'Discuss wall systems',
-      description: 'Interior wall systems planned for clean lines, correct build-ups, service coordination and durable performance.'
-    },
-    {
-      key: 'flooring-installation',
-      title: 'Flooring Installation',
-      category: 'other',
-      aliases: ['flooring', 'flooring installation', 'floor installation', 'floor fit-out'],
-      image: '/Gallery/premium/brick-dark-main.jpg',
-      href: '/quote.html',
-      cta: 'Discuss flooring',
-      description: 'Flooring installation delivered with level preparation, careful setting-out and a finish standard that matches the wider brief.'
+      description: 'Interior and external wall systems scoped with correct build-ups, sequencing and finish consistency.'
     }
   ]
 };

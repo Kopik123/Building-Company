@@ -86,8 +86,8 @@ test('core brochure pages render about, services, gallery, contact and quote rou
   await expect(page.locator('body.public-site.page-services')).toBeVisible();
   await expect(page.locator('main h1').first()).toHaveText(/^Services$/i);
   await expect(page.locator('.service-summary-list')).toHaveCount(0);
-  await expect(page.getByRole('heading', { name: /^Bathrooms$/i })).toBeVisible();
-  await expect(page.getByRole('heading', { name: /^Wall Systems$/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /^Full Bathroom Renovations$/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /^Interior and Exterior Wall$/i })).toBeVisible();
 
   await page.goto('/gallery.html');
   await expect(page.locator('body.public-site.page-gallery')).toBeVisible();
