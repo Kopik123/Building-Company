@@ -269,3 +269,5 @@
 - Extracted the `clients` and `staff` domain from `manager-dashboard.js` into the new `manager-dashboard.people.js` controller, moving people-list rendering, people search filters, lazy loading and staff-create flow behind one dedicated module.
 - Updated `manager-dashboard.html` to load `manager-dashboard.people.js` before the main manager runtime, then rewired `manager-dashboard.js` so clients/staff lazy loading and event binding now go through the new controller instead of the monolith.
 - Added a focused Playwright regression that loads manager `Clients` / `Staff` sections and creates a new staff member, keeping the extracted people controller covered across browser projects.
+- Tightened `app.js` static cache headers for active iteration so HTML plus frequently changed frontend assets (`CSS`, `JS`, `png/jpg/webp/avif/svg`) now return `Cache-Control: no-store`, removing the need to clear browser history/cache after each deploy while this UI-heavy phase is in progress.
+- Updated `tests/api-v2/app-legacy-routes.test.js` to lock in the stronger `no-store` behavior for `/index.html`, `/styles/base.css` and `/mainbackground.png`.

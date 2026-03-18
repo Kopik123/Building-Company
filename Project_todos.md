@@ -6,7 +6,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 
 - [x] Swap the quote-page top and lower card rows so `Before you send + form` sits above `Quote + How to brief`, matching the requested layout while keeping `#quote-card` on the form section.
 - [x] Fix the public-header regression where authenticated brochure pages could still show autofilled inline login inputs alongside session controls.
-- [ ] Verify in DevTools on the live site that `CSS`, `JS` and image assets return `Cache-Control: no-cache`, so normal refreshes pick up frontend changes without manual history clearing.
+- [ ] Verify in DevTools on the live site that `HTML`, `CSS`, `JS` and image assets return `Cache-Control: no-store`, so normal refreshes pick up frontend changes without manual history clearing.
 - [ ] Run one consolidated live QA pass on `/`, `/about.html`, `/services.html`, `/gallery.html`, `/quote.html`, `/contact.html`, `/auth.html`, both dashboards, two service pages and two location pages.
 - [ ] In that QA pass, explicitly check: `mainbackground.png` inside cards, gold-text readability, desktop header proportions, mobile stacking, login/account/logout/session state and no horizontal scroll on phone breakpoints.
 - [ ] In that same live QA pass, verify the background split stays consistent: `mainbackground.png` on cards/sections, `boxbackground.png` on fields and smaller input-style panels, with no leftover legacy dark fills covering the card background.
@@ -49,6 +49,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 
 ## Later
 
+- [ ] Replace the current iteration-friendly `no-store` frontend caching with hashed asset filenames or manifest-driven cache busting once the public shell/design iteration stabilises and performance caching matters more than instant refresh behavior.
 - [ ] Fold the folder-based `Gallery/<service>/` image sets into the `sharp` asset pipeline so fullscreen and service-gallery views can use responsive AVIF/WebP variants instead of copied JPG-only source files.
 - [ ] Revisit whether a CDN/media platform is worth introducing later if the runtime gallery/media set grows beyond the current `sharp` pipeline.
 - [ ] If exact chronology becomes important, replace the derived `Company Events` overview in `manager-dashboard` with a persisted audit/event timeline.

@@ -120,7 +120,7 @@ test('createApp exposes a simple healthz endpoint for process checks', async () 
   assert.equal(typeof response.body?.uptimeSeconds, 'number');
 });
 
-test('createApp forces css and image assets to revalidate after deploys', async () => {
+test('createApp disables browser storage for iterated frontend assets after deploys', async () => {
   mockModels(createModelsStub());
 
   const { createApp } = loadRoute('app.js');
@@ -134,6 +134,11 @@ test('createApp forces css and image assets to revalidate after deploys', async 
     .get('/mainbackground.png')
     .expect(200);
 
-  assert.equal(cssResponse.headers['cache-control'], 'no-cache');
-  assert.equal(imageResponse.headers['cache-control'], 'no-cache');
+  const htmlResponse = await request(app)
+    .get('/index.html')
+    .expect(200);
+
+  assert.equal(cssResponse.headers['cache-control'], 'no-store');
+  assert.equal(imageResponse.headers['cache-control'], 'no-store');
+  assert.equal(htmlResponse.headers['cache-control'], 'no-store');
 });

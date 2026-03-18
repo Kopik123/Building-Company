@@ -29,14 +29,14 @@ const setStaticCacheHeaders = (res, filePath) => {
   const ext = String(path.extname(filePath) || '').toLowerCase();
 
   if (ext === '.html') {
-    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Cache-Control', 'no-store');
     return;
   }
 
-  // During active site iteration we want browsers to revalidate assets automatically
+  // During active site iteration we want browsers to fetch fresh frontend assets
   // so deploys show up without manual history/cache clearing.
   if (['.css', '.js', '.png', '.jpg', '.jpeg', '.webp', '.avif', '.svg'].includes(ext)) {
-    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Cache-Control', 'no-store');
     return;
   }
 
