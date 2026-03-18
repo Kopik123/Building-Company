@@ -643,16 +643,76 @@
 }
 
 .gallery-stage {
-  min-height: 370px;
+  position: relative;
+  min-height: clamp(420px, 54vw, 660px);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   overflow: hidden;
   background:
     linear-gradient(165deg, rgba(10, 10, 10, 0.86), rgba(4, 4, 4, 0.92)),
     url('/boxbackground.png') center center / 100% 100% no-repeat;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: block;
+  padding: clamp(0.9rem, 2.4vw, 1.3rem) clamp(3.2rem, 7vw, 5.2rem);
+  perspective: 1800px;
+  transform-style: preserve-3d;
+  isolation: isolate;
+}
+
+.roller-card {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(32vw, 30rem);
+  max-width: calc(100% - clamp(6rem, 12vw, 8.6rem));
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
+  border: 1px solid rgba(209, 164, 74, 0.42);
+  border-radius: var(--radius-sm);
+  background:
+    linear-gradient(165deg, rgba(10, 10, 10, 0.92), rgba(4, 4, 4, 0.96)),
+    url('/boxbackground.png') center center / 100% 100% no-repeat;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.44);
+  cursor: pointer;
+  transform-origin: center center;
+  transition: box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.roller-card.is-center {
+  border-color: rgba(242, 206, 119, 0.72);
+  box-shadow: 0 24px 52px rgba(0, 0, 0, 0.56);
+}
+
+.roller-card.is-hidden {
+  pointer-events: none;
+}
+
+.roller-picture {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.roller-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  background: rgba(0, 0, 0, 0.32);
+}
+
+.roller-caption {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  margin: 0;
+  padding: 0.82rem 0.9rem 0.76rem;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.82) 42%, rgba(0, 0, 0, 0.94));
+  font-size: 0.88rem;
+  line-height: 1.34;
+  color: var(--color-text);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.82);
+  pointer-events: none;
 }
 
 .gallery-arrow,
@@ -1092,7 +1152,13 @@
   }
 
   .gallery-stage {
-    min-height: 270px;
+    min-height: 320px;
+    padding: 0.78rem;
+  }
+
+  .roller-card {
+    width: min(82vw, 25rem);
+    max-width: calc(100% - 1.4rem);
   }
 
   .gallery-lightbox-dialog {

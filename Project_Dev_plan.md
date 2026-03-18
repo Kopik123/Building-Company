@@ -285,3 +285,6 @@
 - Added a focused Playwright regression that loads manager `Clients` / `Staff` sections and creates a new staff member, keeping the extracted people controller covered across browser projects.
 - Tightened `app.js` static cache headers for active iteration so HTML plus frequently changed frontend assets (`CSS`, `JS`, `png/jpg/webp/avif/svg`) now return `Cache-Control: no-store`, removing the need to clear browser history/cache after each deploy while this UI-heavy phase is in progress.
 - Updated `tests/api-v2/app-legacy-routes.test.js` to lock in the stronger `no-store` behavior for `/index.html`, `/styles/base.css` and `/mainbackground.png`.
+- Added the missing gallery stage-card CSS in `styles/public.css`: the side previews are now positioned as absolute roller cards inside a perspective stage, with stable aspect ratios, visible frames, contained images and caption overlays instead of rendering as overlapping static-flow blocks.
+- Increased the gallery stage minimum height and padding so left/right preview cards have room to render cleanly on desktop while still collapsing to a tighter single-card layout on mobile.
+- Re-ran the focused public Playwright regression and `npm.cmd run test:ci`, then spot-checked the local gallery in a real browser against a temporary static server after the side-preview fix; the gallery contract stayed green.
