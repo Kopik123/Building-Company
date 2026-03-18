@@ -835,20 +835,11 @@
 
 .public-site .surface-card--light,
 .public-site .content-card--light,
+.public-site .surface-card--dark,
+.public-site .content-card--dark,
 .public-site .section-shell,
 .public-site .detail-card,
 .public-site .faq-grid details {
-  background:
-    linear-gradient(165deg, rgba(12, 12, 12, 0.9), rgba(5, 5, 5, 0.96)),
-    url('/mainbackground.png') center center / cover no-repeat;
-  background-origin: border-box;
-  background-clip: border-box;
-}
-
-.page-home .content-card--light,
-.page-home .content-card--dark,
-.page-home .cta-band,
-.page-home .quote-form {
   background:
     linear-gradient(165deg, rgba(12, 12, 12, 0.9), rgba(5, 5, 5, 0.96)),
     url('/mainbackground.png') center center / cover no-repeat;

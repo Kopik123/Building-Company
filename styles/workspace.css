@@ -266,7 +266,11 @@
   border: 1px solid rgba(209, 164, 74, 0.35);
   border-radius: var(--radius-xs);
   padding: 0.72rem;
-  background: rgba(8, 8, 8, 0.83);
+  background:
+    linear-gradient(165deg, rgba(12, 12, 12, 0.9), rgba(5, 5, 5, 0.96)),
+    url('/mainbackground.png') center center / cover no-repeat;
+  background-origin: border-box;
+  background-clip: border-box;
 }
 
 .workspace-form-panel h3 {
@@ -282,7 +286,11 @@
 .auth-card,
 .auth-account-panel,
 .auth-session {
-  background: linear-gradient(165deg, var(--color-surface-light), var(--color-surface-light-2));
+  background:
+    linear-gradient(165deg, rgba(12, 12, 12, 0.9), rgba(5, 5, 5, 0.96)),
+    url('/mainbackground.png') center center / cover no-repeat;
+  background-origin: border-box;
+  background-clip: border-box;
 }
 
 .auth-session {

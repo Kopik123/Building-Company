@@ -23,7 +23,8 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 
 ## Next Engineering
 
-- [ ] Continue splitting `manager-dashboard.js` into feature modules: `messages` after the `projects`, `quotes`, `services`, `materials`, `clients`, `staff` and `estimates` domain extraction.
+- [x] Continue splitting `manager-dashboard.js` into feature modules: `messages` after the `projects`, `quotes`, `services`, `materials`, `clients`, `staff` and `estimates` domain extraction.
+- [ ] Trim `manager-dashboard.js` down to a thin orchestration shell now that `projects`, `quotes`, `services/materials`, `clients/staff`, `estimates` and `messages` all live in dedicated controllers.
 - [ ] Split `client-dashboard.js` into feature modules: `overview`, `projects/documents`, `quotes/services`, `direct manager`, `project chat`.
 - [ ] Move more responsive/layout ownership out of `styles/base.css` into `styles/public.css` and `styles/workspace.css`.
 - [ ] Consider splitting `npm run generate:public-pages` into lighter `optimize:assets` and `generate:*` workflows for cases that do not need image work on every run.
@@ -43,6 +44,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 ## Tooling And Quality
 
 - [ ] Resolve the remaining local Playwright `spawn EPERM` issue and record the first green local `npm run test:e2e:mobile` pass.
+- [ ] Make `scripts/run-playwright.js` resilient to parallel local runs; today the static server binds fixed port `4173`, so concurrent Playwright commands can fail with `EADDRINUSE`.
 - [ ] Export the real issue list from SonarQube for branch `vscode`, classify each `Bug` and `Vulnerability`, and start cleanup with `manager-dashboard.js`, `routes/manager.js`, `client-dashboard.js`, `styles/base.css` and `apps/mobile-v1/App.js`.
 - [ ] Run `scripts/sonar-export.sh` with `SONAR_URL` and `SONAR_TOKEN`, then attach `sonar-issues-full.json`, `sonar-quality-gate.json` and `sonar-measures.json` to the Sonar cleanup workflow.
 - [ ] Revisit SonarQube CPD exclusions once more public HTML moves into the shared renderer and fewer static outputs need to stay excluded.
