@@ -352,23 +352,78 @@
     return String(authLink?.getAttribute('data-auth-guest-label') || '').trim() || brand?.publicAuthLabel || 'Account';
   };
 
-  const renderInlineAuthState = (user) => {
-    const loggedIn = Boolean(user && localStorage.getItem(TOKEN_KEY));
-    const authToggleLabel = authToggle?.querySelector('.public-auth-toggle-label');
+  const getPublicAuthState = (loggedIn) => {
     const showHeaderAuthPanel = (!loggedIn && !isWorkspacePage) || (loggedIn && isPublicPage);
     const showHeaderLoginForm = !loggedIn && !isWorkspacePage;
     const showHeaderSession = loggedIn && isPublicPage;
     const hideHeaderAccountLink = loggedIn && (isAuthPage || isWorkspacePage);
-    const authView = showHeaderSession ? 'session' : showHeaderLoginForm ? 'guest' : 'hidden';
+
+    let authView = 'hidden';
+    if (showHeaderSession) {
+      authView = 'session';
+    } else if (showHeaderLoginForm) {
+      authView = 'guest';
+    }
+
+    return {
+      authView,
+      showHeaderAuthPanel,
+      showHeaderLoginForm,
+      showHeaderSession,
+      hideHeaderAccountLink
+    };
+  };
+
+  const applyAuthView = (node, authView) => {
+    if (!node) return;
+    node.dataset.authView = authView;
+  };
+
+  const syncAccountSettingsLinks = (loggedIn) => {
+    accountSettingsLinks.forEach((link) => {
+      link.setAttribute('href', '/auth.html');
+      link.textContent = 'Account Settings';
+      setHidden(link, !loggedIn);
+    });
+  };
+
+  const syncAuthLinks = (loggedIn, user, hideHeaderAccountLink) => {
+    authLinks.forEach((link) => {
+      const isHeaderAccountLink = Boolean(link.closest('[data-nav-menu]'));
+      link.textContent = loggedIn ? 'Account' : getGuestAuthLabel(link);
+      link.setAttribute('href', loggedIn ? accountPathForRole(user?.role) : '/auth.html');
+      link.classList.toggle('is-authenticated', loggedIn);
+      setHidden(link, hideHeaderAccountLink && isHeaderAccountLink);
+    });
+  };
+
+  const syncInlineSessionCopy = (loggedIn, user) => {
+    if (!inlineSessionCopy) {
+      return;
+    }
+    if (!loggedIn) {
+      inlineSessionCopy.textContent = 'Use the inline login to move into project visibility.';
+      return;
+    }
+    const identity = user?.name || user?.email || 'Account ready';
+    inlineSessionCopy.textContent = `${identity} is signed in. Use Account or Log out.`;
+  };
+
+  const renderInlineAuthState = (user) => {
+    const loggedIn = Boolean(user && localStorage.getItem(TOKEN_KEY));
+    const authToggleLabel = authToggle?.querySelector('.public-auth-toggle-label');
+    const {
+      authView,
+      showHeaderAuthPanel,
+      showHeaderLoginForm,
+      showHeaderSession,
+      hideHeaderAccountLink
+    } = getPublicAuthState(loggedIn);
 
     body.classList.toggle('has-auth-session', loggedIn);
     body.classList.toggle('is-auth-guest', !loggedIn);
-    if (header) {
-      header.setAttribute('data-auth-view', authView);
-    }
-    if (inlineAuthPanel) {
-      inlineAuthPanel.setAttribute('data-auth-view', authView);
-    }
+    applyAuthView(header, authView);
+    applyAuthView(inlineAuthPanel, authView);
 
     if (!showHeaderAuthPanel) {
       header?.classList.remove('is-auth-open');
@@ -393,31 +448,9 @@
       setHidden(node, !loggedIn);
     });
 
-    accountSettingsLinks.forEach((link) => {
-      link.setAttribute('href', '/auth.html');
-      link.textContent = 'Account Settings';
-      setHidden(link, !loggedIn);
-    });
-
-    authLinks.forEach((link) => {
-      const isHeaderAccountLink = Boolean(link.closest('[data-nav-menu]'));
-      link.textContent = loggedIn ? 'Account' : getGuestAuthLabel(link);
-      link.setAttribute('href', loggedIn ? accountPathForRole(user?.role) : '/auth.html');
-      link.classList.toggle('is-authenticated', loggedIn);
-      setHidden(link, hideHeaderAccountLink && isHeaderAccountLink);
-    });
-
-    if (!loggedIn) {
-      if (inlineSessionCopy) {
-        inlineSessionCopy.textContent = 'Use the inline login to move into project visibility.';
-      }
-      return;
-    }
-
-    if (inlineSessionCopy) {
-      const identity = user?.name || user?.email || 'Account ready';
-      inlineSessionCopy.textContent = `${identity} is signed in. Use Account or Log out.`;
-    }
+    syncAccountSettingsLinks(loggedIn);
+    syncAuthLinks(loggedIn, user, hideHeaderAccountLink);
+    syncInlineSessionCopy(loggedIn, user);
   };
 
   const updateNavigationForSession = (user) => {
@@ -733,11 +766,26 @@
       toggle.setAttribute('aria-expanded', String(expanded));
     };
 
-    cards.forEach((card, index) => {
-      if (card.dataset.accordionReady === '1') return;
-      const heading = card.querySelector(':scope > h2');
-      if (!heading) return;
+    const createAccordionBody = (card, toggle, index) => {
+      const accordionBody = document.createElement('div');
+      accordionBody.className = 'dashboard-accordion-body';
+      accordionBody.id = `dashboard-panel-${index + 1}`;
+      accordionBody.setAttribute('role', 'region');
+      accordionBody.setAttribute('aria-labelledby', toggle.id);
 
+      let sibling = toggle.nextSibling;
+      while (sibling) {
+        const next = sibling.nextSibling;
+        accordionBody.appendChild(sibling);
+        sibling = next;
+      }
+
+      card.appendChild(accordionBody);
+      toggle.setAttribute('aria-controls', accordionBody.id);
+      toggle.setAttribute('aria-expanded', 'true');
+    };
+
+    const createAccordionToggle = (card, heading, index) => {
       const toggle = document.createElement('button');
       toggle.type = 'button';
       toggle.className = 'dashboard-accordion-toggle';
@@ -746,32 +794,29 @@
 
       card.insertBefore(toggle, heading);
       heading.remove();
+      return toggle;
+    };
 
-      const body = document.createElement('div');
-      body.className = 'dashboard-accordion-body';
-      body.id = `dashboard-panel-${index + 1}`;
-      body.setAttribute('role', 'region');
-      body.setAttribute('aria-labelledby', toggle.id);
-
-      let sibling = toggle.nextSibling;
-      while (sibling) {
-        const next = sibling.nextSibling;
-        body.appendChild(sibling);
-        sibling = next;
-      }
-
-      card.appendChild(body);
-      toggle.setAttribute('aria-controls', body.id);
-      toggle.setAttribute('aria-expanded', 'true');
-
+    const bindAccordionToggle = (card, toggle) => {
       toggle.addEventListener('click', () => {
         if (!mobileQuery.matches) return;
         const expanded = toggle.getAttribute('aria-expanded') === 'true';
         setExpanded(card, !expanded);
       });
+    };
 
+    const initializeAccordionCard = (card, index) => {
+      if (card.dataset.accordionReady === '1') return;
+      const heading = card.querySelector(':scope > h2');
+      if (!heading) return;
+
+      const toggle = createAccordionToggle(card, heading, index);
+      createAccordionBody(card, toggle, index);
+      bindAccordionToggle(card, toggle);
       card.dataset.accordionReady = '1';
-    });
+    };
+
+    cards.forEach(initializeAccordionCard);
 
     const apply = () => {
       const mobile = mobileQuery.matches;
