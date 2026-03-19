@@ -88,7 +88,7 @@
               });
               await loadQuotes();
             } catch (error) {
-              window.alert(error.message || 'Failed to update quote');
+              globalThis.alert(error.message || 'Failed to update quote');
             }
           });
 
@@ -103,7 +103,7 @@
                 await api(`/api/manager/quotes/${quote.id}/accept`, { method: 'POST' });
                 await loadQuotes();
               } catch (error) {
-                window.alert(error.message || 'Failed to accept quote');
+                globalThis.alert(error.message || 'Failed to accept quote');
               }
             });
           }
@@ -166,17 +166,17 @@
     const bindEvents = () => {
       el.quotesRefresh.addEventListener('click', () => {
         applyQuotesFiltersFromUI();
-        loadQuotes().catch((error) => window.alert(error.message || 'Could not load quotes'));
+        loadQuotes().catch((error) => globalThis.alert(error.message || 'Could not load quotes'));
       });
       el.quotesPrev.addEventListener('click', () => {
         if (state.quotesQuery.page <= 1) return;
         state.quotesQuery.page -= 1;
-        loadQuotes().catch((error) => window.alert(error.message || 'Could not load quotes'));
+        loadQuotes().catch((error) => globalThis.alert(error.message || 'Could not load quotes'));
       });
       el.quotesNext.addEventListener('click', () => {
         if (state.quotesQuery.page >= Number(state.quotesPagination.totalPages || 1)) return;
         state.quotesQuery.page += 1;
-        loadQuotes().catch((error) => window.alert(error.message || 'Could not load quotes'));
+        loadQuotes().catch((error) => globalThis.alert(error.message || 'Could not load quotes'));
       });
     };
 
@@ -189,7 +189,7 @@
     };
   };
 
-  window.LevelLinesManagerQuotes = {
+  globalThis.LevelLinesManagerQuotes = {
     createManagerQuotesController
   };
 })();

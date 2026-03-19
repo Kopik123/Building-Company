@@ -20,6 +20,11 @@
   } = {}) => {
     if (!state || !el) return null;
 
+    const buildPreviewText = (senderName, preview, fallback) => {
+      if (!preview) return fallback;
+      return senderName ? `${senderName}: ${preview}` : preview;
+    };
+
     const USER_SEARCH_CACHE_TTL_MS = 30 * 1000;
     const userSearchCache = new Map();
     const dependencies = {
@@ -38,7 +43,7 @@
       if (!section) return;
       section.scrollIntoView({ behavior: 'smooth', block: 'start' });
       if (focusNode && typeof focusNode.focus === 'function') {
-        window.setTimeout(() => focusNode.focus({ preventScroll: true }), 180);
+        globalThis.setTimeout(() => focusNode.focus({ preventScroll: true }), 180);
       }
     };
 
@@ -252,9 +257,7 @@
           if (updatedAt) metaParts.push(`Updated ${updatedAt}`);
           return {
             title: thread.name || thread.subject || 'Project thread',
-            detail: thread.latestMessagePreview
-              ? `${senderName ? `${senderName}: ` : ''}${thread.latestMessagePreview}`
-              : 'Project communication route',
+            detail: buildPreviewText(senderName, thread.latestMessagePreview, 'Project communication route'),
             meta: metaParts.join(' | ')
           };
         }
@@ -554,7 +557,7 @@
         }
       ].filter((task) => task.target);
 
-      (window.LevelLinesRuntime?.onceVisible || ((items) => {
+      (globalThis.LevelLinesRuntime?.onceVisible || ((items) => {
         items.forEach((item) => item.load());
         return () => {};
       }))(tasks);
@@ -565,8 +568,8 @@
       state.token = getToken();
       if (!state.token) {
         el.session.textContent = 'No active session. Redirecting to login...';
-        window.setTimeout(() => {
-          window.location.assign(loginUrl);
+        globalThis.setTimeout(() => {
+          globalThis.location.assign(loginUrl);
         }, 700);
         return;
       }
@@ -576,8 +579,8 @@
         if (!state.user || !['employee', 'manager', 'admin'].includes(role)) {
           clearSession();
           el.session.textContent = 'Session expired. Redirecting to login...';
-          window.setTimeout(() => {
-            window.location.assign(loginUrl);
+          globalThis.setTimeout(() => {
+            globalThis.location.assign(loginUrl);
           }, 700);
           return;
         }
@@ -605,8 +608,8 @@
       } catch (error) {
         clearSession();
         el.session.textContent = error.message || 'Session expired. Redirecting to login...';
-        window.setTimeout(() => {
-          window.location.assign(loginUrl);
+        globalThis.setTimeout(() => {
+          globalThis.location.assign(loginUrl);
         }, 700);
       }
     };
@@ -663,8 +666,8 @@
       });
 
       el.seedBtn.addEventListener('click', async () => {
-        if (!window.confirm('Run starter seed now?')) return;
-        const force = window.confirm('Force-update existing seed records? Click Cancel for safe mode.');
+        if (!globalThis.confirm('Run starter seed now?')) return;
+        const force = globalThis.confirm('Force-update existing seed records? Click Cancel for safe mode.');
         setStatus(el.seedStatus, 'Running seed...');
         try {
           const payload = await api('/api/manager/seed/starter', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ force }) });
@@ -690,7 +693,7 @@
 
       el.logout.addEventListener('click', () => {
         clearSession();
-        window.location.href = '/auth.html';
+        globalThis.location.href = '/auth.html';
       });
     };
 
@@ -710,7 +713,7 @@
     };
   };
 
-  window.LevelLinesManagerShell = {
+  globalThis.LevelLinesManagerShell = {
     createManagerShellController
   };
 })();

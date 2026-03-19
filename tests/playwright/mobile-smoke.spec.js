@@ -14,7 +14,7 @@ const openNavIfNeeded = async (page) => {
 };
 
 const expectNoHorizontalScroll = async (page) => {
-  const hasOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 2);
+  const hasOverflow = await page.evaluate(() => document.documentElement.scrollWidth > globalThis.innerWidth + 2);
   expect(hasOverflow).toBeFalsy();
 };
 
@@ -206,7 +206,7 @@ const mockClientSession = async (page) => {
     directThreadState.latestMessageAt = '2026-03-09T09:40:00Z';
     await route.fulfill({
       json: {
-        message: directMessagesState[directMessagesState.length - 1]
+        message: directMessagesState.at(-1)
       }
     });
   });
@@ -237,7 +237,7 @@ const mockClientSession = async (page) => {
     groupThreadState.messageCount = groupMessagesState.length;
     await route.fulfill({
       json: {
-        message: groupMessagesState[groupMessagesState.length - 1]
+        message: groupMessagesState.at(-1)
       }
     });
   });
@@ -468,7 +468,7 @@ const mockManagerSession = async (page) => {
     directThreadState.latestMessageAt = '2026-03-09T09:45:00Z';
     await route.fulfill({
       json: {
-        message: directMessagesState[directMessagesState.length - 1]
+        message: directMessagesState.at(-1)
       }
     });
   });
@@ -507,7 +507,7 @@ const mockManagerSession = async (page) => {
     groupThreadState.messageCount = groupMessagesState.length;
     await route.fulfill({
       json: {
-        message: groupMessagesState[groupMessagesState.length - 1]
+        message: groupMessagesState.at(-1)
       }
     });
   });
@@ -1305,12 +1305,12 @@ test('manager dashboard can create private threads and manage project chat parti
   await page.locator('#manager-direct-thread-form select[name="recipientType"]').selectOption('client');
   await page.locator('#manager-direct-thread-form input[name="recipientEmail"]').fill('client@example.com');
   await page.locator('#manager-direct-thread-form input[name="subject"]').fill('Kick-off thread');
-  await page.locator('#manager-direct-thread-form textarea[name="body"]').fill('Let us confirm the next site visit window.');
+  await page.locator('#manager-direct-thread-form textarea[name="body"]').fill('Let us confirm the next site visit globalThis.');
   await page.locator('#manager-direct-thread-form button[type="submit"]').click();
 
   await expect(page.locator('#manager-direct-thread-status')).toContainText(/private thread created/i);
   await expect(page.locator('#manager-direct-threads-list')).toContainText('Marta Client');
-  await expect(page.locator('#manager-direct-messages-list')).toContainText('Let us confirm the next site visit window.');
+  await expect(page.locator('#manager-direct-messages-list')).toContainText('Let us confirm the next site visit globalThis.');
 
   await page.locator('#manager-project-chat').scrollIntoViewIfNeeded();
   await page.locator('#manager-group-thread-form input[name="name"]').fill('Kitchen delivery thread');

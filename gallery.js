@@ -1,5 +1,5 @@
 (() => {
-  const runtime = window.LevelLinesRuntime || {};
+  const runtime = globalThis.LevelLinesRuntime || {};
   const getOptimizedMedia = runtime.getOptimizedMedia || ((src) => ({ fallback: src }));
   const syncKeyedList = runtime.syncKeyedList || ((container, items, { getKey, createNode, updateNode } = {}) => {
     if (!container) return;

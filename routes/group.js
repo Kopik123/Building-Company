@@ -140,10 +140,10 @@ router.post(
       return res.status(404).json({ error: 'Project not found' });
     }
 
-    const includeProjectClient = Object.prototype.hasOwnProperty.call(req.body, 'includeProjectClient')
+    const includeProjectClient = Object.hasOwn(req.body, 'includeProjectClient')
       ? Boolean(req.body.includeProjectClient)
       : true;
-    const includeAssignedStaff = Object.prototype.hasOwnProperty.call(req.body, 'includeAssignedStaff')
+    const includeAssignedStaff = Object.hasOwn(req.body, 'includeAssignedStaff')
       ? Boolean(req.body.includeAssignedStaff)
       : true;
 
@@ -266,7 +266,7 @@ router.get(
 
       const hasMore = rows.length > cursorPaging.limit;
       const messages = hasMore ? rows.slice(0, cursorPaging.limit) : rows;
-      const nextCursor = hasMore && messages.length ? encodeCursor(messages[messages.length - 1]) : null;
+      const nextCursor = hasMore && messages.length ? encodeCursor(messages.at(-1)) : null;
 
       return res.json({
         thread,
@@ -431,7 +431,7 @@ router.delete(
       where: { groupThreadId: req.params.id, userId: req.user.id }
     });
 
-    if (!membership || membership.role !== 'admin') {
+    if (membership?.role !== 'admin') {
       return res.status(403).json({ error: 'Only group admins can remove members' });
     }
 

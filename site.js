@@ -1,10 +1,10 @@
 (() => {
-  const runtime = window.LevelLinesRuntime || {};
+  const runtime = globalThis.LevelLinesRuntime || {};
   const TOKEN_KEY = runtime.TOKEN_KEY || 'll_auth_token';
   const USER_KEY = runtime.USER_KEY || 'll_auth_user';
   const AUTH_ME_CACHE_KEY = 'll_auth_me_cache';
   const AUTH_ME_TTL_MS = 60 * 1000;
-  const brand = window.LEVEL_LINES_BRAND || null;
+  const brand = globalThis.LEVEL_LINES_BRAND || null;
 
   const body = document.body;
   const header = document.querySelector('.site-header');
@@ -40,7 +40,7 @@
   const isPublicPage = !isAuthPage && !isWorkspacePage;
 
   const readAuthMeCache = (token) => {
-    if (!token || !window.sessionStorage) return null;
+    if (!token || !globalThis.sessionStorage) return null;
 
     try {
       const payload = JSON.parse(sessionStorage.getItem(AUTH_ME_CACHE_KEY) || 'null');
@@ -53,7 +53,7 @@
   };
 
   const writeAuthMeCache = (token, user) => {
-    if (!token || !window.sessionStorage) return;
+    if (!token || !globalThis.sessionStorage) return;
 
     try {
       sessionStorage.setItem(
@@ -70,7 +70,7 @@
   };
 
   const clearAuthMeCache = () => {
-    if (!window.sessionStorage) return;
+    if (!globalThis.sessionStorage) return;
     try {
       sessionStorage.removeItem(AUTH_ME_CACHE_KEY);
     } catch {
@@ -213,7 +213,7 @@
       const defaultLabel = select.getAttribute('data-default-label') || 'Select';
       const selectedValue = String(
         select.getAttribute('data-selected-value')
-        || new URLSearchParams(window.location.search).get('projectType')
+        || new URLSearchParams(globalThis.location.search).get('projectType')
         || ''
       ).trim().toLowerCase();
       select.innerHTML = '';
@@ -319,7 +319,7 @@
   };
 
   const buildAuthRedirectUrl = (nextPath = '') => {
-    const resolvedNext = nextPath || `${window.location.pathname}${window.location.search || ''}`;
+    const resolvedNext = nextPath || `${globalThis.location.pathname}${globalThis.location.search || ''}`;
     return `/auth.html?next=${encodeURIComponent(resolvedNext)}&reason=session`;
   };
 
@@ -335,13 +335,13 @@
     const expectedPath = currentWorkspacePath();
 
     if (!token || !user?.role) {
-      window.location.assign(buildAuthRedirectUrl(expectedPath));
+      globalThis.location.assign(buildAuthRedirectUrl(expectedPath));
       return true;
     }
 
     const rolePath = accountPathForRole(user.role);
     if (rolePath !== expectedPath) {
-      window.location.assign(rolePath);
+      globalThis.location.assign(rolePath);
       return true;
     }
 
@@ -524,8 +524,8 @@
         updateNavigationForSession(payload.user);
         setStatus(inlineLoginStatus, 'Login successful. Redirecting to account...', 'success');
         inlineLoginForm.reset();
-        window.setTimeout(() => {
-          window.location.assign(accountPathForRole(payload.user?.role));
+        globalThis.setTimeout(() => {
+          globalThis.location.assign(accountPathForRole(payload.user?.role));
         }, 350);
       } catch (error) {
         setStatus(inlineLoginStatus, error.message || 'Login failed.', 'error');
@@ -544,8 +544,8 @@
     });
   }
 
-  const isMobileMenuMode = () => window.matchMedia('(max-width: 992px)').matches;
-  const isCompactAuthMode = () => window.matchMedia('(max-width: 768px)').matches;
+  const isMobileMenuMode = () => globalThis.matchMedia('(max-width: 992px)').matches;
+  const isCompactAuthMode = () => globalThis.matchMedia('(max-width: 768px)').matches;
 
   const getMenuFocusable = () => {
     if (!navMenu) return [];
@@ -619,11 +619,11 @@
 
   if (header) {
     const syncHeader = () => {
-      header.classList.toggle('is-scrolled', window.scrollY > 8);
+      header.classList.toggle('is-scrolled', globalThis.scrollY > 8);
     };
 
     syncHeader();
-    window.addEventListener('scroll', syncHeader, { passive: true });
+    globalThis.addEventListener('scroll', syncHeader, { passive: true });
   }
 
   if (navMenu && navToggle) {
@@ -665,7 +665,7 @@
       if (!focusable.length) return;
 
       const first = focusable[0];
-      const last = focusable[focusable.length - 1];
+      const last = focusable.at(-1);
       const active = document.activeElement;
 
       if (event.shiftKey && active === first) {
@@ -677,7 +677,7 @@
       }
     });
 
-    window.addEventListener('resize', () => {
+    globalThis.addEventListener('resize', () => {
       setMenuState(!isMobileMenuMode());
       if (!isCompactAuthMode()) {
         closeAuthPanel();
@@ -723,7 +723,7 @@
     if (!dashboardShell) return;
 
     const cards = Array.from(dashboardShell.querySelectorAll('section.card:not(.dashboard-session)'));
-    const mobileQuery = window.matchMedia('(max-width: 768px)');
+    const mobileQuery = globalThis.matchMedia('(max-width: 768px)');
     const isTruthyFlag = (value) => ['1', 'true', 'yes', 'open'].includes(String(value || '').toLowerCase());
 
     const setExpanded = (card, expanded) => {
@@ -793,8 +793,8 @@
     };
 
     apply();
-    window.addEventListener('resize', apply);
-    window.addEventListener('ll:dashboard-accordions-refresh', apply);
+    globalThis.addEventListener('resize', apply);
+    globalThis.addEventListener('ll:dashboard-accordions-refresh', apply);
 
     dashboardShell.querySelectorAll('.dashboard-session-actions').forEach((row) => {
       row.classList.add('dashboard-sticky-actions');
@@ -806,7 +806,7 @@
 
     body.classList.add('has-home-motion');
 
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reduceMotion = globalThis.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const sections = Array.from(document.querySelectorAll('[data-home-section]'));
 
     if (reduceMotion) {
@@ -821,7 +821,7 @@
       });
     });
 
-    if (!('IntersectionObserver' in window)) {
+    if (!('IntersectionObserver' in globalThis)) {
       sections.forEach((node) => node.classList.add('is-visible'));
       return;
     }
@@ -847,7 +847,7 @@
   ensureInlineAuthLabels();
   ensureInlineRegisterLink();
   validateSession();
-  window.addEventListener('ll:session-changed', validateSession);
+  globalThis.addEventListener('ll:session-changed', validateSession);
 
   setupDashboardAccordions();
   setupHomePageMotion();

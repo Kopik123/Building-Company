@@ -78,7 +78,7 @@
         del.className = 'btn btn-outline';
         del.textContent = 'Delete';
         del.addEventListener('click', async () => {
-          if (!window.confirm(`Delete service "${service.title}"?`)) return;
+          if (!globalThis.confirm(`Delete service "${service.title}"?`)) return;
           try {
             await api(`/api/manager/services/${service.id}`, { method: 'DELETE' });
             await loadServices();
@@ -169,7 +169,7 @@
         del.className = 'btn btn-outline';
         del.textContent = 'Delete';
         del.addEventListener('click', async () => {
-          if (!window.confirm(`Delete material "${material.name}"?`)) return;
+          if (!globalThis.confirm(`Delete material "${material.name}"?`)) return;
           try {
             await api(`/api/manager/materials/${material.id}`, { method: 'DELETE' });
             await loadMaterials();
@@ -366,32 +366,32 @@
 
       el.servicesRefresh.addEventListener('click', () => {
         applyServicesFiltersFromUI();
-        loadServices().catch((error) => window.alert(error.message || 'Could not load services'));
+        loadServices().catch((error) => globalThis.alert(error.message || 'Could not load services'));
       });
       el.servicesPrev.addEventListener('click', () => {
         if (state.servicesQuery.page <= 1) return;
         state.servicesQuery.page -= 1;
-        loadServices().catch((error) => window.alert(error.message || 'Could not load services'));
+        loadServices().catch((error) => globalThis.alert(error.message || 'Could not load services'));
       });
       el.servicesNext.addEventListener('click', () => {
         if (state.servicesQuery.page >= Number(state.servicesPagination.totalPages || 1)) return;
         state.servicesQuery.page += 1;
-        loadServices().catch((error) => window.alert(error.message || 'Could not load services'));
+        loadServices().catch((error) => globalThis.alert(error.message || 'Could not load services'));
       });
 
       el.materialsRefresh.addEventListener('click', () => {
         applyMaterialsFiltersFromUI();
-        loadMaterials().catch((error) => window.alert(error.message || 'Could not load materials'));
+        loadMaterials().catch((error) => globalThis.alert(error.message || 'Could not load materials'));
       });
       el.materialsPrev.addEventListener('click', () => {
         if (state.materialsQuery.page <= 1) return;
         state.materialsQuery.page -= 1;
-        loadMaterials().catch((error) => window.alert(error.message || 'Could not load materials'));
+        loadMaterials().catch((error) => globalThis.alert(error.message || 'Could not load materials'));
       });
       el.materialsNext.addEventListener('click', () => {
         if (state.materialsQuery.page >= Number(state.materialsPagination.totalPages || 1)) return;
         state.materialsQuery.page += 1;
-        loadMaterials().catch((error) => window.alert(error.message || 'Could not load materials'));
+        loadMaterials().catch((error) => globalThis.alert(error.message || 'Could not load materials'));
       });
     };
 
@@ -406,7 +406,7 @@
     };
   };
 
-  window.LevelLinesManagerCatalog = {
+  globalThis.LevelLinesManagerCatalog = {
     createManagerCatalogController
   };
 })();

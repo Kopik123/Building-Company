@@ -17,6 +17,23 @@
   } = {}) => {
     if (!state || !el) return null;
 
+    const buildPreviewText = (senderName, preview, fallback) => {
+      if (!preview) return fallback;
+      return senderName ? `${senderName}: ${preview}` : preview;
+    };
+
+    const getDirectMessagesEmptyText = (fallbackManager) => {
+      if (state.selectedDirectThreadId) {
+        return 'No private messages in this thread.';
+      }
+
+      if (fallbackManager) {
+        return `Start a direct thread with ${fallbackManager.name || fallbackManager.email}.`;
+      }
+
+      return 'A direct manager conversation will appear here once a manager is assigned.';
+    };
+
     const updateThreadCardContent = (card, { title, preview, meta, badge }) => {
       const titleNode = card.querySelector('.dashboard-item-title');
       const badgeNode = card.querySelector('.dashboard-thread-badge');
@@ -98,9 +115,7 @@
           if (updatedAt) metaParts.push(`Updated ${updatedAt}`);
           updateThreadCardContent(card, {
             title: thread.name || thread.subject || 'Thread',
-            preview: thread.latestMessagePreview
-              ? `${senderName ? `${senderName}: ` : ''}${thread.latestMessagePreview}`
-              : 'Project communication route',
+            preview: buildPreviewText(senderName, thread.latestMessagePreview, 'Project communication route'),
             meta: metaParts.join(' | '),
             badge: 0
           });
@@ -172,13 +187,7 @@
             attachments: message.attachments
           });
         },
-        createEmptyNode: () => createMutedNode(
-          state.selectedDirectThreadId
-            ? 'No private messages in this thread.'
-            : (fallbackManager
-              ? `Start a direct thread with ${fallbackManager.name || fallbackManager.email}.`
-              : 'A direct manager conversation will appear here once a manager is assigned.')
-        )
+        createEmptyNode: () => createMutedNode(getDirectMessagesEmptyText(fallbackManager))
       });
     };
 
@@ -378,7 +387,7 @@
     };
   };
 
-  window.LevelLinesClientMessages = {
+  globalThis.LevelLinesClientMessages = {
     createClientMessagesController
   };
 })();

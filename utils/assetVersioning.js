@@ -1,5 +1,5 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require('node:fs');
+const path = require('node:path');
 
 const VERSIONED_EXTENSIONS = new Set([
   '.css',
@@ -12,6 +12,9 @@ const VERSIONED_EXTENSIONS = new Set([
   '.svg',
   '.ico'
 ]);
+
+const SRCSET_ENTRY_PATTERN = /^(\S+)(\s+.+)?$/;
+const HTML_ASSET_REF_PATTERN = /\b(href|src|srcset)=(['"])([^'"]+)\2/g;
 
 const createAssetVersion = () =>
   String(process.env.ASSET_VERSION || Date.now().toString(36));
@@ -47,7 +50,7 @@ const versionSrcset = (value, assetVersion) =>
     .map((entry) => {
       const trimmed = entry.trim();
       if (!trimmed) return trimmed;
-      const match = trimmed.match(/^(\S+)(\s+.+)?$/);
+      const match = SRCSET_ENTRY_PATTERN.exec(trimmed);
       if (!match) return trimmed;
       const [, url, descriptor = ''] = match;
       return `${appendVersionParam(url, assetVersion)}${descriptor}`;
@@ -55,7 +58,7 @@ const versionSrcset = (value, assetVersion) =>
     .join(', ');
 
 const versionHtmlAssetRefs = (html, assetVersion) =>
-  String(html).replace(/\b(href|src|srcset)=(['"])([^'"]+)\2/g, (_match, attr, quote, value) => {
+  String(html).replaceAll(HTML_ASSET_REF_PATTERN, (_match, attr, quote, value) => {
     const nextValue = attr === 'srcset'
       ? versionSrcset(value, assetVersion)
       : appendVersionParam(value, assetVersion);

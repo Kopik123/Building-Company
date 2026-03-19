@@ -118,11 +118,11 @@
     const bindEvents = () => {
       el.clientsRefresh.addEventListener('click', () => {
         applyClientsFiltersFromUI();
-        loadClients().catch((error) => window.alert(error.message || 'Could not load clients'));
+        loadClients().catch((error) => globalThis.alert(error.message || 'Could not load clients'));
       });
       el.staffRefresh.addEventListener('click', () => {
         applyStaffFiltersFromUI();
-        loadStaff().catch((error) => window.alert(error.message || 'Could not load staff'));
+        loadStaff().catch((error) => globalThis.alert(error.message || 'Could not load staff'));
       });
       el.staffCreateForm.addEventListener('submit', (event) => {
         createStaffMember(event).catch((error) => {
@@ -144,7 +144,7 @@
     };
   };
 
-  window.LevelLinesManagerPeople = {
+  globalThis.LevelLinesManagerPeople = {
     createManagerPeopleController
   };
 })();

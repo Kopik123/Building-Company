@@ -1,10 +1,10 @@
 (() => {
-  const runtime = window.LevelLinesRuntime || {};
-  const dashboardShared = window.LevelLinesDashboardShared || {};
-  const clientProjects = window.LevelLinesClientProjects || {};
-  const clientOverview = window.LevelLinesClientOverview || {};
-  const clientMessages = window.LevelLinesClientMessages || {};
-  const clientDashboardShell = window.LevelLinesClientDashboardShell || {};
+  const runtime = globalThis.LevelLinesRuntime || {};
+  const dashboardShared = globalThis.LevelLinesDashboardShared || {};
+  const clientProjects = globalThis.LevelLinesClientProjects || {};
+  const clientOverview = globalThis.LevelLinesClientOverview || {};
+  const clientMessages = globalThis.LevelLinesClientMessages || {};
+  const clientDashboardShell = globalThis.LevelLinesClientDashboardShell || {};
   const TOKEN_KEY = runtime.TOKEN_KEY || 'll_auth_token';
   const USER_KEY = runtime.USER_KEY || 'll_auth_user';
 
@@ -65,7 +65,7 @@
     node.textContent = message || '';
   });
   const requestAccordionRefresh = runtime.requestAccordionRefresh || (() => {
-    window.dispatchEvent(new CustomEvent('ll:dashboard-accordions-refresh'));
+    globalThis.dispatchEvent(new CustomEvent('ll:dashboard-accordions-refresh'));
   });
   const titleCase = runtime.titleCase || ((value) => String(value || '')
     .replace(/[_-]+/g, ' ')

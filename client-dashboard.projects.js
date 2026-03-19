@@ -97,7 +97,7 @@
         const projectId = String(el.uploadForm.elements.projectId.value || '').trim();
         const files = el.uploadForm.elements.files.files;
         if (!projectId) return setStatus(el.uploadStatus, 'Select project.', 'error');
-        if (!files || !files.length) return setStatus(el.uploadStatus, 'Select files.', 'error');
+        if (!files?.length) return setStatus(el.uploadStatus, 'Select files.', 'error');
 
         const formData = new FormData();
         Array.from(files).forEach((file) => formData.append('files', file));
@@ -122,7 +122,7 @@
     };
   };
 
-  window.LevelLinesClientProjects = {
+  globalThis.LevelLinesClientProjects = {
     createClientProjectsController
   };
 })();

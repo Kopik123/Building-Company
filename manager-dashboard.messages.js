@@ -18,6 +18,11 @@
     getInboxCounterparty,
     setSelectOptions
   }) => {
+    const buildPreviewText = (senderName, preview, fallback) => {
+      if (!preview) return fallback;
+      return senderName ? `${senderName}: ${preview}` : preview;
+    };
+
     const updateThreadCardContent = (card, { title, preview, meta, badge }) => {
       const titleNode = card.querySelector('.dashboard-item-title');
       const badgeNode = card.querySelector('.dashboard-thread-badge');
@@ -193,7 +198,8 @@
             removeBtn.className = 'btn btn-outline';
             removeBtn.textContent = 'Remove';
             removeBtn.addEventListener('click', async () => {
-              if (!window.confirm(`Remove ${memberUser.name || memberUser.email || 'this participant'} from the chat?`)) return;
+              const participantLabel = memberUser.name || memberUser.email || 'this participant';
+              if (!globalThis.confirm(`Remove ${participantLabel} from the chat?`)) return;
               setStatus(el.managerGroupMemberStatus, 'Removing participant...');
               try {
                 await api(`/api/group/threads/${thread.id}/members/${member.userId}`, { method: 'DELETE' });
@@ -248,9 +254,7 @@
           if (updatedAt) contextParts.push(`Updated ${updatedAt}`);
           updateThreadCardContent(card, {
             title: thread.name || thread.subject || 'Project thread',
-            preview: thread.latestMessagePreview
-              ? `${senderName ? `${senderName}: ` : ''}${thread.latestMessagePreview}`
-              : 'Project communication route',
+            preview: buildPreviewText(senderName, thread.latestMessagePreview, 'Project communication route'),
             meta: contextParts.join(' | '),
             badge: 0
           });
@@ -558,7 +562,7 @@
     };
   };
 
-  window.LevelLinesManagerMessages = {
+  globalThis.LevelLinesManagerMessages = {
     createManagerMessagesController
   };
 })();

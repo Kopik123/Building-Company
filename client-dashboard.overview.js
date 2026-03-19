@@ -14,6 +14,11 @@
   } = {}) => {
     if (!state || !el) return null;
 
+    const buildPreviewText = (senderName, preview, fallback) => {
+      if (!preview) return fallback;
+      return senderName ? `${senderName}: ${preview}` : preview;
+    };
+
     const renderMetrics = (metrics) => {
       el.metrics.innerHTML = '';
       const cards = [
@@ -139,9 +144,7 @@
           if (updatedAt) metaParts.push(`Updated ${updatedAt}`);
           return {
             title: thread.name || thread.subject || 'Project chat',
-            detail: thread.latestMessagePreview
-              ? `${senderName ? `${senderName}: ` : ''}${thread.latestMessagePreview}`
-              : 'Project communication route',
+            detail: buildPreviewText(senderName, thread.latestMessagePreview, 'Project communication route'),
             meta: metaParts.join(' | ')
           };
         }
@@ -236,7 +239,7 @@
     };
   };
 
-  window.LevelLinesClientOverview = {
+  globalThis.LevelLinesClientOverview = {
     createClientOverviewController
   };
 })();

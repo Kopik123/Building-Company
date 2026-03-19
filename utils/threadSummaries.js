@@ -3,10 +3,10 @@ const { Op, fn, col } = require('sequelize');
 const THREAD_PREVIEW_LIMIT = 120;
 
 const truncateMessageBody = (body, limit = THREAD_PREVIEW_LIMIT) => {
-  const normalized = String(body || '').replace(/\s+/g, ' ').trim();
+  const normalized = String(body || '').replaceAll(/\s+/g, ' ').trim();
   if (!normalized) return '';
   if (normalized.length <= limit) return normalized;
-  return `${normalized.slice(0, Math.max(0, limit - 1)).trimEnd()}…`;
+  return `${normalized.slice(0, Math.max(0, limit - 3)).trimEnd()}...`;
 };
 
 const toPlain = (value) => (value?.toJSON ? value.toJSON() : value);

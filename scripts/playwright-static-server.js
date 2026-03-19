@@ -1,4 +1,4 @@
-const path = require('path');
+const path = require('node:path');
 const express = require('express');
 const { createAssetVersion, createVersionedHtmlMiddleware } = require('../utils/assetVersioning');
 const { findAvailablePort } = require('./playwright-port');

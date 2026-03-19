@@ -34,7 +34,7 @@
         del.className = 'btn btn-outline';
         del.textContent = 'Delete line';
         del.addEventListener('click', async () => {
-          if (!window.confirm(`Delete estimate line "${line.description}"?`)) return;
+          if (!globalThis.confirm(`Delete estimate line "${line.description}"?`)) return;
           try {
             await api(`/api/manager/estimates/${estimate.id}/lines/${line.id}`, { method: 'DELETE' });
             await loadEstimateDetail(estimate.id, true);
@@ -221,7 +221,7 @@
       el.estimateDelete.addEventListener('click', async () => {
         const estimate = selectedEstimate();
         if (!estimate) return;
-        if (!window.confirm(`Delete estimate "${estimate.title}"?`)) return;
+        if (!globalThis.confirm(`Delete estimate "${estimate.title}"?`)) return;
         setStatus(el.estimateUpdateStatus, 'Deleting estimate...');
         try {
           await api(`/api/manager/estimates/${estimate.id}`, { method: 'DELETE' });
@@ -281,7 +281,7 @@
     };
   };
 
-  window.LevelLinesManagerEstimates = {
+  globalThis.LevelLinesManagerEstimates = {
     createManagerEstimatesController
   };
 })();

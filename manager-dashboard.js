@@ -1,13 +1,13 @@
 (() => {
-  const runtime = window.LevelLinesRuntime || {};
-  const dashboardShared = window.LevelLinesDashboardShared || {};
-  const managerProjects = window.LevelLinesManagerProjects || {};
-  const managerQuotes = window.LevelLinesManagerQuotes || {};
-  const managerCatalog = window.LevelLinesManagerCatalog || {};
-  const managerPeople = window.LevelLinesManagerPeople || {};
-  const managerEstimates = window.LevelLinesManagerEstimates || {};
-  const managerMessages = window.LevelLinesManagerMessages || {};
-  const managerShell = window.LevelLinesManagerShell || {};
+  const runtime = globalThis.LevelLinesRuntime || {};
+  const dashboardShared = globalThis.LevelLinesDashboardShared || {};
+  const managerProjects = globalThis.LevelLinesManagerProjects || {};
+  const managerQuotes = globalThis.LevelLinesManagerQuotes || {};
+  const managerCatalog = globalThis.LevelLinesManagerCatalog || {};
+  const managerPeople = globalThis.LevelLinesManagerPeople || {};
+  const managerEstimates = globalThis.LevelLinesManagerEstimates || {};
+  const managerMessages = globalThis.LevelLinesManagerMessages || {};
+  const managerShell = globalThis.LevelLinesManagerShell || {};
   const TOKEN_KEY = runtime.TOKEN_KEY || 'll_auth_token';
   const USER_KEY = runtime.USER_KEY || 'll_auth_user';
   const DEFAULT_PAGE_SIZE = 25;
@@ -196,7 +196,7 @@
     node.className = type === 'error' ? 'muted form-status is-error' : 'muted';
   });
   const requestAccordionRefresh = runtime.requestAccordionRefresh || (() => {
-    window.dispatchEvent(new CustomEvent('ll:dashboard-accordions-refresh'));
+    globalThis.dispatchEvent(new CustomEvent('ll:dashboard-accordions-refresh'));
   });
   const titleCase = runtime.titleCase || ((value) => String(value || '')
     .replace(/[_-]+/g, ' ')
@@ -445,7 +445,7 @@
           return;
         }
 
-        window.setTimeout(tick, 60);
+        globalThis.setTimeout(tick, 60);
       };
       tick();
     }));
@@ -480,7 +480,7 @@
     if (!section) return;
     section.scrollIntoView({ behavior: 'smooth', block: 'start' });
     if (focusNode && typeof focusNode.focus === 'function') {
-      window.setTimeout(() => focusNode.focus({ preventScroll: true }), 180);
+      globalThis.setTimeout(() => focusNode.focus({ preventScroll: true }), 180);
     }
   };
 

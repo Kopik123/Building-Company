@@ -33,7 +33,7 @@
         const startedAt = Date.now();
         const tick = () => {
           const user = getStoredUser();
-          if (user && user.role) {
+          if (user?.role) {
             resolve(user);
             return;
           }
@@ -43,7 +43,7 @@
             return;
           }
 
-          window.setTimeout(tick, 60);
+          globalThis.setTimeout(tick, 60);
         };
         tick();
       }));
@@ -54,8 +54,8 @@
       state.token = localStorage.getItem(tokenKey) || '';
       if (!state.token) {
         el.session.textContent = 'No active session. Redirecting to login...';
-        window.setTimeout(() => {
-          window.location.assign(loginUrl);
+        globalThis.setTimeout(() => {
+          globalThis.location.assign(loginUrl);
         }, 700);
         return;
       }
@@ -66,8 +66,8 @@
         if (role !== 'client') {
           clearSession();
           el.session.textContent = 'Session expired. Redirecting to login...';
-          window.setTimeout(() => {
-            window.location.assign(loginUrl);
+          globalThis.setTimeout(() => {
+            globalThis.location.assign(loginUrl);
           }, 700);
           return;
         }
@@ -79,8 +79,8 @@
       } catch (error) {
         clearSession();
         el.session.textContent = error.message || 'Session expired. Redirecting to login...';
-        window.setTimeout(() => {
-          window.location.assign(loginUrl);
+        globalThis.setTimeout(() => {
+          globalThis.location.assign(loginUrl);
         }, 700);
       }
     };
@@ -88,7 +88,7 @@
     const bindEvents = () => {
       el.logout.addEventListener('click', () => {
         clearSession();
-        window.location.href = '/auth.html';
+        globalThis.location.href = '/auth.html';
       });
     };
 
@@ -99,7 +99,7 @@
     };
   };
 
-  window.LevelLinesClientDashboardShell = {
+  globalThis.LevelLinesClientDashboardShell = {
     createClientDashboardShellController
   };
 })();
