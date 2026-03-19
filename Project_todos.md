@@ -26,7 +26,8 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 
 - [x] Continue splitting `manager-dashboard.js` into feature modules: `messages` after the `projects`, `quotes`, `services`, `materials`, `clients`, `staff` and `estimates` domain extraction.
 - [x] Trim `manager-dashboard.js` down to a thin orchestration shell now that `projects`, `quotes`, `services/materials`, `clients/staff`, `estimates` and `messages` all live in dedicated controllers.
-- [ ] Split `client-dashboard.js` into feature modules: `overview`, `projects/documents`, `quotes/services`, `direct manager`, `project chat`.
+- [x] Extract `overview` and `projects/documents` from `client-dashboard.js` into dedicated controllers and wire them through the shared client workspace shell.
+- [ ] Split the remaining `client-dashboard.js` domains into feature modules: `quotes/services`, `direct manager`, `project chat`.
 - [ ] Move more responsive/layout ownership out of `styles/base.css` into `styles/public.css` and `styles/workspace.css`.
 - [ ] Consider splitting `npm run generate:public-pages` into lighter `optimize:assets` and `generate:*` workflows for cases that do not need image work on every run.
 
