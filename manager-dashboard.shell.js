@@ -79,7 +79,7 @@
         ]
       },
       materials: {
-        description: 'Choose stock first, then add new materials or edit the current inventory list.',
+        description: 'Choose storage first, then add new materials or edit the current inventory list.',
         actions: [
           {
             label: 'Add material',
@@ -87,7 +87,7 @@
             run: () => scrollToSection('manager-materials-section', el.materialCreateForm?.elements?.name)
           },
           {
-            label: 'Edit stock',
+            label: 'Edit storage',
             variant: 'outline',
             run: () => scrollToSection('manager-materials-section', el.materialsFilterQ)
           }
@@ -313,29 +313,29 @@
         meta: 'Create'
       },
       {
-        label: 'Projects',
-        detail: 'Control status, media, gallery visibility and project documents.',
+        label: 'ProjectManager',
+        detail: 'Manage status, media, gallery visibility and project documents.',
         href: '#manager-projects-section',
         roles: ['employee', 'manager', 'admin'],
         meta: `${state.projectsPagination.total || state.projects.length || 0} loaded`
       },
       {
-        label: 'Quotes',
+        label: 'QuotesReview',
         detail: 'Review new enquiries, priorities and acceptance routes.',
         href: '#manager-quotes-section',
         roles: ['manager', 'admin'],
         meta: state.lazyLoaded.quotes || state.quotes.length ? `${state.quotesPagination.total || state.quotes.length || 0} loaded` : 'Open section'
       },
       {
-        label: 'Services',
+        label: 'ServicesManage',
         detail: 'Manage the website offer, ordering and visibility.',
         href: '#manager-services-section',
         roles: ['manager', 'admin'],
         meta: state.lazyLoaded.services || state.services.length ? `${state.servicesPagination.total || state.services.length || 0} loaded` : 'Open section'
       },
       {
-        label: 'Materials',
-        detail: 'Track stock, supplier notes and low-stock lines.',
+        label: 'MaterialsTrack',
+        detail: 'Track storage, supplier notes and low-storage lines.',
         href: '#manager-materials-section',
         roles: ['manager', 'admin'],
         meta: state.lazyLoaded.materials || state.materials.length ? `${state.materialsPagination.total || state.materials.length || 0} loaded` : 'Open section'
@@ -355,21 +355,21 @@
         meta: state.lazyLoaded.staff || state.staff.length ? `${state.staff.length} loaded` : 'Open section'
       },
       {
-        label: 'Estimate Builder',
+        label: 'Estimate',
         detail: 'Build project pricing from service and material lines.',
         href: '#manager-estimates-section',
         roles: ['manager', 'admin'],
         meta: state.lazyLoaded.estimates || state.estimates.length ? `${state.estimates.length} loaded` : 'Open section'
       },
       {
-        label: 'Private Inbox',
+        label: 'PrivateChat',
         detail: 'Keep one-to-one client conversation separate from project chat.',
         href: '#manager-private-inbox',
         roles: ['employee', 'manager', 'admin'],
         meta: state.overviewLoaded.directThreads ? `${state.directThreads.length} threads` : 'Loading summary'
       },
       {
-        label: 'Project Chat',
+        label: 'ProjectChat',
         detail: 'Open project-specific thread history and team conversation.',
         href: '#manager-project-chat',
         roles: ['employee', 'manager', 'admin'],
@@ -377,16 +377,8 @@
       }
     ];
 
-    const buildRoleOption = (role) => ({
-      label: 'Role',
-      detail: 'Employee access keeps the operational shell visible while manager-only actions stay limited.',
-      href: '#manager-projects-section',
-      meta: titleCase(role)
-    });
-
     const getAvailableOptions = (role) => {
-      const options = buildBaseAvailableOptions().filter((option) => option.roles.includes(role));
-      return ['manager', 'admin'].includes(role) ? options : [buildRoleOption(role), ...options];
+      return buildBaseAvailableOptions().filter((option) => option.roles.includes(role));
     };
 
     const createWorkspaceOptionLink = (option) => {

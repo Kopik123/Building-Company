@@ -47,6 +47,19 @@ const staleFooterServices = [
   'Flooring Installation'
 ];
 
+const managerQuickAccessLabels = [
+  'Create Project',
+  'ProjectManager',
+  'QuotesReview',
+  'ServicesManage',
+  'MaterialsTrack',
+  'Clients',
+  'Staff',
+  'Estimate',
+  'PrivateChat',
+  'ProjectChat'
+];
+
 const expectCanonicalFooterServices = async (page) => {
   const footerServices = page.locator('footer [data-brand-service-links]');
   await expect(footerServices.locator('a')).toHaveCount(canonicalFooterServices.length);
@@ -615,6 +628,41 @@ test('auth page shows account panel for logged session', async ({ page }) => {
   await expect(page.locator('[data-inline-session]')).toBeHidden();
 });
 
+test('auth page shows manager quick access panel for logged manager session', async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('ll_auth_token', 'test-token');
+    localStorage.setItem('ll_auth_user', JSON.stringify({
+      id: 'manager-1',
+      name: 'Daniel Manager',
+      email: 'manager@example.com',
+      role: 'manager'
+    }));
+  });
+  await page.route('**/api/auth/me', async (route) => {
+    await route.fulfill({
+      json: {
+        user: {
+          id: 'manager-1',
+          name: 'Daniel Manager',
+          email: 'manager@example.com',
+          role: 'manager',
+          phone: '+44 7942 874 446',
+          companyName: 'Level Lines Studio'
+        }
+      }
+    });
+  });
+
+  await page.goto('/auth.html');
+  await expect(page.locator('#auth-account-panel')).toBeVisible();
+  await expect(page.locator('#auth-quick-access-panel')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Quick Access', exact: true })).toBeVisible();
+
+  for (const label of managerQuickAccessLabels) {
+    await expect(page.locator('#auth-quick-access-links').getByRole('link', { name: label, exact: true })).toHaveCount(1);
+  }
+});
+
 test('client dashboard mobile menu opens', async ({ page }) => {
   await mockClientSession(page);
   await page.goto('/client-dashboard.html');
@@ -699,10 +747,15 @@ test('manager dashboard exposes project controls for logged session on mobile', 
   await page.goto('/manager-dashboard.html');
   await expect(page.getByRole('heading', { name: /company events/i })).toBeVisible();
   await expect(page.getByRole('heading', { name: /mail box/i })).toBeVisible();
-  await expect(page.getByRole('heading', { name: /available options/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /quick access/i })).toBeVisible();
   await expect(page.locator('#manager-mailbox-private-count')).toContainText('1');
   await expect(page.locator('#manager-mailbox-project-count')).toContainText('1');
   await expect(page.locator('#manager-available-options a[href="#manager-projects-section"]').first()).toBeVisible();
+  for (const label of managerQuickAccessLabels) {
+    await expect(
+      page.locator('#manager-available-options .workspace-option-link strong').filter({ hasText: label })
+    ).toHaveCount(1);
+  }
   await expect(page.locator('#project-create-form input[name="title"]')).toBeVisible();
   await expect(page.locator('#projects-list button').first()).toBeVisible();
   await page.locator('#projects-list button').first().evaluate((node) => node.click());
@@ -758,7 +811,7 @@ test('manager dashboard workflow chooser switches between projects materials and
   await expect(page.locator('#manager-projects-section')).toBeHidden();
   await expect(page.locator('#manager-services-section')).toBeHidden();
   await expect(workflowActions.getByRole('button', { name: 'Add material' })).toBeVisible();
-  await expect(workflowActions.getByRole('button', { name: 'Edit stock' })).toBeVisible();
+  await expect(workflowActions.getByRole('button', { name: 'Edit storage' })).toBeVisible();
 
   await servicesChoice.click();
   await expect(servicesChoice).toHaveAttribute('aria-pressed', 'true');
@@ -1029,7 +1082,7 @@ test('manager dashboard services and materials controls can update catalog items
   await serviceCard.getByRole('button', { name: 'Save' }).click();
   await expect(serviceCard.getByRole('heading', { name: 'Bathrooms Premium' })).toBeVisible();
 
-  await page.getByRole('button', { name: 'Materials / Stock' }).click();
+  await page.getByRole('button', { name: 'Materials / Storage' }).click();
   await page.locator('#manager-materials-section').scrollIntoViewIfNeeded();
   await expandDashboardSectionIfCollapsed(page, '#manager-materials-section');
 

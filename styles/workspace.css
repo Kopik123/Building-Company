@@ -411,6 +411,19 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.auth-account-access-panel {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: var(--space-3);
+}
+
+.auth-account-access-head {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  align-items: baseline;
+}
+
 .dashboard-accordion-toggle {
   width: 100%;
   text-align: left;

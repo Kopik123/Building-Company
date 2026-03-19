@@ -24,6 +24,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [x] Keep the gallery center image on `contain` but switch visible side previews to `cover`, so wide-desktop side thumbnails feel like previews instead of padded black panels.
 - [x] Align the gallery Playwright regression with the new service-switcher contract so it checks active service title/meta/status instead of the removed image-title node.
 - [x] Sync the workspace/auth footer service fallbacks to the canonical five-service set so those pages no longer ship stale wall/flooring labels before `site.js` hydrates brand links.
+- [x] Rename the manager quick-access/account-panel labels to `Create Project`, `ProjectManager`, `QuotesReview`, `ServicesManage`, `MaterialsTrack`, `Clients`, `Staff`, `Estimate`, `PrivateChat` and `ProjectChat`, and surface the same manager quick-access links inside the logged-in `auth.html` account panel.
 - [ ] Confirm on live `/services.html` that `Discuss wall systems` opens `/quote.html` with the wall-systems context already selected in the quote form.
 - [ ] Capture fresh screenshot evidence for homepage, gallery, quote/contact forms, auth state and both dashboards after the consolidated live QA pass.
 - [ ] Resolve the local PowerShell execution-policy issue blocking `npm.ps1`; until fixed, keep using `npm.cmd` for local validation commands.

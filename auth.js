@@ -15,6 +15,9 @@
   const accountRole = document.getElementById('auth-account-role');
   const logoutButton = document.getElementById('auth-logout');
   const accountPanel = document.getElementById('auth-account-panel');
+  const quickAccessPanel = document.getElementById('auth-quick-access-panel');
+  const quickAccessLinks = document.getElementById('auth-quick-access-links');
+  const quickAccessRole = document.getElementById('auth-quick-access-role');
   const guestGrid = document.getElementById('auth-guest-grid');
 
   if (
@@ -66,6 +69,57 @@
     if (role === 'manager') return 'Manager';
     if (role === 'admin') return 'Admin';
     return 'User';
+  };
+
+  const canUseManagerWorkspace = (roleRaw) => ['employee', 'manager', 'admin'].includes(String(roleRaw || '').toLowerCase());
+
+  const buildManagerQuickAccessOptions = () => [
+    { label: 'Create Project', href: '/manager-dashboard.html#manager-project-create', roles: ['employee', 'manager', 'admin'] },
+    { label: 'ProjectManager', href: '/manager-dashboard.html#manager-projects-section', roles: ['employee', 'manager', 'admin'] },
+    { label: 'QuotesReview', href: '/manager-dashboard.html#manager-quotes-section', roles: ['manager', 'admin'] },
+    { label: 'ServicesManage', href: '/manager-dashboard.html#manager-services-section', roles: ['manager', 'admin'] },
+    { label: 'MaterialsTrack', href: '/manager-dashboard.html#manager-materials-section', roles: ['manager', 'admin'] },
+    { label: 'Clients', href: '/manager-dashboard.html#manager-clients-section', roles: ['manager', 'admin'] },
+    { label: 'Staff', href: '/manager-dashboard.html#manager-staff-section', roles: ['manager', 'admin'] },
+    { label: 'Estimate', href: '/manager-dashboard.html#manager-estimates-section', roles: ['manager', 'admin'] },
+    { label: 'PrivateChat', href: '/manager-dashboard.html#manager-private-inbox', roles: ['employee', 'manager', 'admin'] },
+    { label: 'ProjectChat', href: '/manager-dashboard.html#manager-project-chat', roles: ['employee', 'manager', 'admin'] }
+  ];
+
+  const createQuickAccessLink = (option) => {
+    const link = document.createElement('a');
+    link.className = 'workspace-option-link';
+    link.href = option.href;
+
+    const heading = document.createElement('strong');
+    heading.textContent = option.label;
+    link.appendChild(heading);
+
+    return link;
+  };
+
+  const renderQuickAccess = (user) => {
+    if (!quickAccessPanel || !quickAccessLinks) {
+      return;
+    }
+
+    const role = String(user?.role || '').toLowerCase();
+    const showQuickAccess = canUseManagerWorkspace(role);
+    quickAccessPanel.hidden = !showQuickAccess;
+    quickAccessLinks.replaceChildren();
+
+    if (quickAccessRole) {
+      quickAccessRole.textContent = showQuickAccess ? humanRole(role) : '';
+    }
+
+    if (!showQuickAccess) {
+      return;
+    }
+
+    const options = buildManagerQuickAccessOptions().filter((option) => option.roles.includes(role));
+    const fragment = document.createDocumentFragment();
+    options.forEach((option) => fragment.appendChild(createQuickAccessLink(option)));
+    quickAccessLinks.appendChild(fragment);
   };
 
   const saveSession = runtime.saveSession || ((token, user) => {
@@ -123,6 +177,7 @@
       guestGrid.hidden = true;
       accountPanel.hidden = false;
       fillProfileForm(user);
+      renderQuickAccess(user);
       return;
     }
 
@@ -131,6 +186,7 @@
     logoutButton.hidden = true;
     guestGrid.hidden = false;
     accountPanel.hidden = true;
+    renderQuickAccess(null);
   };
 
   const syncSession = async () => {
