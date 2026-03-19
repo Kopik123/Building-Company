@@ -30,6 +30,33 @@ const expectResponsiveShellDefaultNavState = async (page) => {
   await expect(navMenu).toBeVisible();
 };
 
+const canonicalFooterServices = [
+  'Full Bathroom Renovations',
+  'Kitchen Installation and Refurbishment',
+  'Tiling incl. Large Format / Wet Showers / Exterior',
+  'Carpentry',
+  'Interior and Exterior Wall'
+];
+
+const staleFooterServices = [
+  'External Wall Systems',
+  'Interior Wall Systems',
+  'Flooring Installation'
+];
+
+const expectCanonicalFooterServices = async (page) => {
+  const footerServices = page.locator('footer [data-brand-service-links]');
+  await expect(footerServices.locator('a')).toHaveCount(canonicalFooterServices.length);
+
+  for (const label of canonicalFooterServices) {
+    await expect(footerServices.getByRole('link', { name: label, exact: true })).toHaveCount(1);
+  }
+
+  for (const label of staleFooterServices) {
+    await expect(footerServices.getByRole('link', { name: label, exact: true })).toHaveCount(0);
+  }
+};
+
 const expandDashboardSectionIfCollapsed = async (page, sectionSelector) => {
   const toggle = page.locator(`${sectionSelector} .dashboard-accordion-toggle`);
   if (!await toggle.count()) return;
@@ -524,6 +551,7 @@ test('auth page renders login/register forms on mobile', async ({ page }) => {
   await expect(page.locator('body.public-site.workspace-site.page-auth')).toBeVisible();
   await expect(page.locator('#login-form')).toBeVisible();
   await expect(page.locator('#register-form')).toBeVisible();
+  await expectCanonicalFooterServices(page);
   await expectNoHorizontalScroll(page);
 });
 
@@ -565,6 +593,7 @@ test('client dashboard mobile menu opens', async ({ page }) => {
   await mockClientSession(page);
   await page.goto('/client-dashboard.html');
   await expect(page.locator('body.public-site.workspace-site.page-client-dashboard')).toBeVisible();
+  await expectCanonicalFooterServices(page);
   await openNavIfNeeded(page);
   await expect(page.locator('[data-nav-menu] [data-auth-link]')).toBeHidden();
   await expect(page.locator('[data-account-settings-link]')).toBeVisible();
@@ -626,6 +655,7 @@ test('manager dashboard mobile menu opens', async ({ page }) => {
   await mockManagerSession(page);
   await page.goto('/manager-dashboard.html');
   await expect(page.locator('body.public-site.workspace-site.page-manager-dashboard')).toBeVisible();
+  await expectCanonicalFooterServices(page);
   await openNavIfNeeded(page);
   await expect(page.locator('[data-nav-menu] [data-auth-link]')).toBeHidden();
   await expect(page.locator('[data-account-settings-link]')).toBeVisible();
