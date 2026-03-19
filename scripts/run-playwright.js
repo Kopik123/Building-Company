@@ -1,3 +1,4 @@
+const net = require('net');
 const path = require('path');
 const { startStaticServer } = require('./playwright-static-server');
 const { program } = require('playwright/lib/program');
@@ -25,9 +26,34 @@ const closeServer = (server) =>
     });
   });
 
+const canListenOnPort = (port) =>
+  new Promise((resolve) => {
+    const probe = net.createServer();
+    probe.once('error', () => resolve(false));
+    probe.once('listening', () => {
+      probe.close(() => resolve(true));
+    });
+    probe.listen(port, '127.0.0.1');
+  });
+
+const findAvailablePort = async (preferredPort, maxAttempts = 20) => {
+  for (let offset = 0; offset < maxAttempts; offset += 1) {
+    const port = preferredPort + offset;
+    // eslint-disable-next-line no-await-in-loop
+    if (await canListenOnPort(port)) {
+      return port;
+    }
+  }
+
+  throw new Error(`No available Playwright static server port found in range ${preferredPort}-${preferredPort + maxAttempts - 1}.`);
+};
+
 const main = async () => {
   process.env.PW_EXTERNAL_STATIC_SERVER = '1';
-  const port = Number(process.env.PW_STATIC_PORT || 4173);
+  const preferredPort = Number(process.env.PW_STATIC_PORT || 4173);
+  const port = await findAvailablePort(preferredPort);
+  process.env.PW_STATIC_PORT = String(port);
+  process.env.PW_BASE_URL = `http://127.0.0.1:${port}`;
   const server = await startStaticServer({ port });
 
   const shutdown = async () => {
@@ -59,7 +85,14 @@ process.on('uncaughtException', (error) => {
   process.exit(1);
 });
 
-main().catch((error) => {
-  reportError(error);
-  process.exit(1);
-});
+module.exports = {
+  findAvailablePort,
+  main
+};
+
+if (require.main === module) {
+  main().catch((error) => {
+    reportError(error);
+    process.exit(1);
+  });
+}
