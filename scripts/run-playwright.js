@@ -1,10 +1,49 @@
-const path = require('path');
+const fs = require('node:fs');
+const path = require('node:path');
 const { startStaticServer } = require('./playwright-static-server');
 const { findAvailablePort } = require('./playwright-port');
 const { program } = require('playwright/lib/program');
 
-const args = process.argv.slice(2);
-const cliArgs = ['node', 'playwright', 'test', ...args];
+const pathValueFlags = new Set(['-c', '--config']);
+
+const normalizeCliPathArg = (arg, cwd = process.cwd()) => {
+  const resolvedPath = path.resolve(cwd, arg);
+  if (!fs.existsSync(resolvedPath)) {
+    return arg;
+  }
+
+  const relativePath = path.relative(cwd, resolvedPath);
+  const portablePath = relativePath || path.basename(resolvedPath);
+  return portablePath.split(path.sep).join('/');
+};
+
+const normalizeCliArgs = (rawArgs, cwd = process.cwd()) => {
+  const normalizedArgs = [];
+  let expectingPathValue = false;
+
+  for (const arg of rawArgs) {
+    if (expectingPathValue) {
+      normalizedArgs.push(normalizeCliPathArg(arg, cwd));
+      expectingPathValue = false;
+      continue;
+    }
+
+    if (pathValueFlags.has(arg)) {
+      normalizedArgs.push(arg);
+      expectingPathValue = true;
+      continue;
+    }
+
+    if (arg.startsWith('-')) {
+      normalizedArgs.push(arg);
+      continue;
+    }
+
+    normalizedArgs.push(normalizeCliPathArg(arg, cwd));
+  }
+
+  return normalizedArgs;
+};
 
 const reportError = (error) => {
   if (error && error.code === 'EPERM') {
@@ -27,6 +66,8 @@ const closeServer = (server) =>
   });
 
 const main = async () => {
+  const args = normalizeCliArgs(process.argv.slice(2));
+  const cliArgs = ['node', 'playwright', 'test', ...args];
   process.env.PW_EXTERNAL_STATIC_SERVER = '1';
   const preferredPort = Number(process.env.PW_STATIC_PORT || 4173);
   const port = await findAvailablePort(preferredPort);
@@ -65,6 +106,7 @@ process.on('uncaughtException', (error) => {
 
 module.exports = {
   findAvailablePort,
+  normalizeCliArgs,
   main
 };
 

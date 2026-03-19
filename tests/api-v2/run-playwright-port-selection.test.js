@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const net = require('node:net');
 const test = require('node:test');
 
-const { findAvailablePort } = require('../../scripts/run-playwright');
+const { findAvailablePort, normalizeCliArgs } = require('../../scripts/run-playwright');
 const { startStaticServer } = require('../../scripts/playwright-static-server');
 
 const listen = (server, port) =>
@@ -59,4 +59,23 @@ test('startStaticServer falls forward when the preferred port is occupied', asyn
     }
     await close(occupied);
   }
+});
+
+test('normalizeCliArgs converts Windows-style file arguments into portable Playwright paths', () => {
+  const cwd = process.cwd();
+  const normalized = normalizeCliArgs([
+    '-c',
+    '.\\tests\\playwright\\playwright.config.js',
+    '.\\tests\\playwright\\public-redesign.spec.js',
+    '--grep',
+    'homepage mobile shell'
+  ], cwd);
+
+  assert.deepEqual(normalized, [
+    '-c',
+    'tests/playwright/playwright.config.js',
+    'tests/playwright/public-redesign.spec.js',
+    '--grep',
+    'homepage mobile shell'
+  ]);
 });
