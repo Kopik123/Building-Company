@@ -453,6 +453,19 @@ test('client dashboard keeps key logged-in cards open on mobile', async ({ page 
   await expect(page.locator('#client-threads-list .dashboard-item').first()).toBeVisible();
 });
 
+test('client dashboard loads direct and project chat messages when threads open', async ({ page }) => {
+  await mockClientSession(page);
+  await page.goto('/client-dashboard.html');
+
+  await page.locator('#client-direct-threads-list').scrollIntoViewIfNeeded();
+  await page.locator('#client-direct-threads-list .dashboard-item .btn').first().click();
+  await expect(page.locator('#client-direct-messages-list')).toContainText('We can review the revised tile selection this afternoon.');
+
+  await page.locator('#client-threads-list').scrollIntoViewIfNeeded();
+  await page.locator('#client-threads-list .dashboard-item .btn').first().click();
+  await expect(page.locator('#client-messages-list')).toContainText('We confirmed the brass profile today.');
+});
+
 test('manager dashboard mobile menu opens', async ({ page }) => {
   await mockManagerSession(page);
   await page.goto('/manager-dashboard.html');
