@@ -299,6 +299,12 @@
   background: transparent;
 }
 
+.page-gallery .public-section,
+.page-gallery .public-section--dark,
+.page-gallery .public-section--light {
+  background: transparent;
+}
+
 .page-home .public-page-main {
   padding-top: 0.45rem;
 }
