@@ -34,6 +34,14 @@
       return 'A direct manager conversation will appear here once a manager is assigned.';
     };
 
+    const getDirectThreadsEmptyText = (fallbackManager) => {
+      if (fallbackManager) {
+        return `No private thread yet. Use the message box to start a direct conversation with ${fallbackManager.name || fallbackManager.email}.`;
+      }
+
+      return 'No manager thread yet. A direct conversation becomes available once a manager is assigned.';
+    };
+
     const updateThreadCardContent = (card, { title, preview, meta, badge }) => {
       const titleNode = card.querySelector('.dashboard-item-title');
       const badgeNode = card.querySelector('.dashboard-thread-badge');
@@ -58,6 +66,13 @@
     const hasMessagePayload = ({ body, files }) => Boolean(String(body || '').trim() || files.length);
 
     const defaultAttachmentBody = (files) => `Sent ${files.length} file(s)`;
+
+    const getSendStatusText = ({ hasThread, files }) => {
+      if (!hasThread) return 'Opening thread...';
+      return files.length ? 'Uploading...' : 'Sending...';
+    };
+
+    const getCurrentUserLabel = () => state.user?.name || state.user?.email || 'Client';
 
     const sendThreadMessage = async ({ threadType, threadId, body, files }) => {
       const normalizedBody = String(body || '').trim();
@@ -95,66 +110,86 @@
       return threadManager || null;
     };
 
+    const openGroupThread = async (threadId) => {
+      state.selectedThreadId = threadId;
+      renderThreads();
+      await loadMessages();
+    };
+
+    const createGroupThreadCardNode = () => createThreadCard({ onOpen: openGroupThread });
+
+    const updateGroupThreadCard = (card, thread) => {
+      card.dataset.threadId = thread.id;
+      card.className = `dashboard-item ${thread.id === state.selectedThreadId ? 'is-active' : ''}`;
+      const senderName = thread.latestMessageSender?.name || thread.latestMessageSender?.email || '';
+      const metaParts = [];
+      if (thread.messageCount) metaParts.push(`${thread.messageCount} messages`);
+      const updatedAt = formatDateTime(thread.latestMessageAt || thread.updatedAt);
+      if (updatedAt) metaParts.push(`Updated ${updatedAt}`);
+      updateThreadCardContent(card, {
+        title: thread.name || thread.subject || 'Thread',
+        preview: buildPreviewText(senderName, thread.latestMessagePreview, 'Project communication route'),
+        meta: metaParts.join(' | '),
+        badge: 0
+      });
+    };
+
+    const createEmptyGroupThreadsNode = () => createMutedNode('No communication threads yet.');
+
+    const openDirectThread = async (threadId) => {
+      state.selectedDirectThreadId = threadId;
+      renderDirectThreads();
+      await loadDirectMessages();
+    };
+
+    const createDirectThreadCardNode = () => createThreadCard({ onOpen: openDirectThread });
+
+    const updateDirectThreadCard = (card, thread) => {
+      const counterparty = getThreadCounterparty(thread);
+      card.dataset.threadId = thread.id;
+      card.className = `dashboard-item ${thread.id === state.selectedDirectThreadId ? 'is-active' : ''}`;
+      const metaParts = [];
+      if (Number(thread.unreadCount || 0) > 0) metaParts.push(`${thread.unreadCount} unread`);
+      const updatedAt = formatDateTime(thread.latestMessageAt || thread.updatedAt);
+      if (updatedAt) metaParts.push(`Updated ${updatedAt}`);
+      updateThreadCardContent(card, {
+        title: counterparty?.name || counterparty?.email || thread.subject || 'Direct thread',
+        preview: thread.latestMessagePreview || thread.subject || 'Direct manager conversation',
+        meta: metaParts.join(' | '),
+        badge: thread.unreadCount || 0
+      });
+    };
+
+    const createEmptyDirectThreadsNode = () => createMutedNode(getDirectThreadsEmptyText(getPreferredManager()));
+
+    const updateMessageNode = (card, message) => {
+      const sender = message.sender?.name || message.sender?.email || 'Unknown';
+      renderMessageCardContent(card, {
+        metaText: `${sender} | ${formatDateTime(message.createdAt) || '-'}`,
+        bodyText: message.body || '',
+        attachments: message.attachments
+      });
+    };
+
+    const createEmptyMessagesNode = () => createMutedNode(state.selectedThreadId ? 'No messages in this thread.' : 'Select a thread to view messages.');
+
+    const createEmptyDirectMessagesNode = () => createMutedNode(getDirectMessagesEmptyText(getPreferredManager()));
+
     const renderThreads = () => {
       syncKeyedList(el.threadsList, state.threads, {
         getKey: (thread) => thread.id,
-        createNode: () => createThreadCard({
-          onOpen: async (threadId) => {
-            state.selectedThreadId = threadId;
-            renderThreads();
-            await loadMessages();
-          }
-        }),
-        updateNode: (card, thread) => {
-          card.dataset.threadId = thread.id;
-          card.className = `dashboard-item ${thread.id === state.selectedThreadId ? 'is-active' : ''}`;
-          const senderName = thread.latestMessageSender?.name || thread.latestMessageSender?.email || '';
-          const metaParts = [];
-          if (thread.messageCount) metaParts.push(`${thread.messageCount} messages`);
-          const updatedAt = formatDateTime(thread.latestMessageAt || thread.updatedAt);
-          if (updatedAt) metaParts.push(`Updated ${updatedAt}`);
-          updateThreadCardContent(card, {
-            title: thread.name || thread.subject || 'Thread',
-            preview: buildPreviewText(senderName, thread.latestMessagePreview, 'Project communication route'),
-            meta: metaParts.join(' | '),
-            badge: 0
-          });
-        },
-        createEmptyNode: () => createMutedNode('No communication threads yet.')
+        createNode: createGroupThreadCardNode,
+        updateNode: updateGroupThreadCard,
+        createEmptyNode: createEmptyGroupThreadsNode
       });
     };
 
     const renderDirectThreads = () => {
-      const fallbackManager = getPreferredManager();
       syncKeyedList(el.directThreadsList, state.directThreads, {
         getKey: (thread) => thread.id,
-        createNode: () => createThreadCard({
-          onOpen: async (threadId) => {
-            state.selectedDirectThreadId = threadId;
-            renderDirectThreads();
-            await loadDirectMessages();
-          }
-        }),
-        updateNode: (card, thread) => {
-          const counterparty = getThreadCounterparty(thread);
-          card.dataset.threadId = thread.id;
-          card.className = `dashboard-item ${thread.id === state.selectedDirectThreadId ? 'is-active' : ''}`;
-          const metaParts = [];
-          if (Number(thread.unreadCount || 0) > 0) metaParts.push(`${thread.unreadCount} unread`);
-          const updatedAt = formatDateTime(thread.latestMessageAt || thread.updatedAt);
-          if (updatedAt) metaParts.push(`Updated ${updatedAt}`);
-          updateThreadCardContent(card, {
-            title: counterparty?.name || counterparty?.email || thread.subject || 'Direct thread',
-            preview: thread.latestMessagePreview || thread.subject || 'Direct manager conversation',
-            meta: metaParts.join(' | '),
-            badge: thread.unreadCount || 0
-          });
-        },
-        createEmptyNode: () => createMutedNode(
-          fallbackManager
-            ? `No private thread yet. Use the message box to start a direct conversation with ${fallbackManager.name || fallbackManager.email}.`
-            : 'No manager thread yet. A direct conversation becomes available once a manager is assigned.'
-        )
+        createNode: createDirectThreadCardNode,
+        updateNode: updateDirectThreadCard,
+        createEmptyNode: createEmptyDirectThreadsNode
       });
     };
 
@@ -162,32 +197,17 @@
       syncKeyedList(el.messagesList, state.selectedThreadId ? state.messages : [], {
         getKey: (message, index) => message.id || `${message.createdAt || 'message'}-${index}`,
         createNode: createMessageCard,
-        updateNode: (card, message) => {
-          const sender = message.sender?.name || message.sender?.email || 'Unknown';
-          renderMessageCardContent(card, {
-            metaText: `${sender} | ${formatDateTime(message.createdAt) || '-'}`,
-            bodyText: message.body || '',
-            attachments: message.attachments
-          });
-        },
-        createEmptyNode: () => createMutedNode(state.selectedThreadId ? 'No messages in this thread.' : 'Select a thread to view messages.')
+        updateNode: updateMessageNode,
+        createEmptyNode: createEmptyMessagesNode
       });
     };
 
     const renderDirectMessages = () => {
-      const fallbackManager = getPreferredManager();
       syncKeyedList(el.directMessagesList, state.selectedDirectThreadId ? state.directMessages : [], {
         getKey: (message, index) => message.id || `${message.createdAt || 'direct-message'}-${index}`,
         createNode: createMessageCard,
-        updateNode: (card, message) => {
-          const sender = message.sender?.name || message.sender?.email || 'Unknown';
-          renderMessageCardContent(card, {
-            metaText: `${sender} | ${formatDateTime(message.createdAt) || '-'}`,
-            bodyText: message.body || '',
-            attachments: message.attachments
-          });
-        },
-        createEmptyNode: () => createMutedNode(getDirectMessagesEmptyText(fallbackManager))
+        updateNode: updateMessageNode,
+        createEmptyNode: createEmptyDirectMessagesNode
       });
     };
 
@@ -203,6 +223,16 @@
       renderMessages();
     };
 
+    const markSelectedDirectThreadRead = async () => {
+      const selectedThread = state.directThreads.find((thread) => thread.id === state.selectedDirectThreadId) || null;
+      if (Number(selectedThread?.unreadCount || 0) <= 0) return;
+
+      await api(`/api/inbox/threads/${state.selectedDirectThreadId}/read`, { method: 'POST' });
+      selectedThread.unreadCount = 0;
+      renderDirectThreads();
+      renderOperationsShell();
+    };
+
     const loadDirectMessages = async () => {
       if (!state.selectedDirectThreadId) {
         state.directMessages = [];
@@ -213,13 +243,7 @@
       const payload = await api(`/api/inbox/threads/${state.selectedDirectThreadId}/messages?pageSize=100`);
       state.directMessages = Array.isArray(payload.messages) ? payload.messages : [];
       renderDirectMessages();
-      const selectedThread = state.directThreads.find((thread) => thread.id === state.selectedDirectThreadId) || null;
-      if (Number(selectedThread?.unreadCount || 0) > 0) {
-        await api(`/api/inbox/threads/${state.selectedDirectThreadId}/read`, { method: 'POST' });
-        selectedThread.unreadCount = 0;
-        renderDirectThreads();
-        renderOperationsShell();
-      }
+      await markSelectedDirectThreadRead();
     };
 
     const ensureThreadSummaries = async ({ forceRefresh = false } = {}) => {
@@ -266,117 +290,194 @@
       requestAccordionRefresh?.();
     };
 
+    const createLazyLoadTask = ({ target, isLoaded, load }) => ({
+      target,
+      loaded: false,
+      load: async () => {
+        if (isLoaded()) return;
+        await load();
+      }
+    });
+
+    const loadVisibleDirectThreads = async () => {
+      if (state.lazyLoaded.directThreads) return;
+      state.lazyLoaded.directThreads = true;
+      await loadDirectThreads();
+    };
+
+    const loadVisibleGroupThreads = async () => {
+      if (state.lazyLoaded.groupThreads) return;
+      state.lazyLoaded.groupThreads = true;
+      await loadThreads();
+    };
+
+    const runVisibilityFallback = (items) => {
+      items.forEach((item) => item.load());
+      return () => {};
+    };
+
     const setupLazySections = () => {
       const directSection = el.directThreadsList.closest('section');
       const groupSection = el.threadsList.closest('section');
       const tasks = [];
 
       if (directSection) {
-        tasks.push({
+        tasks.push(createLazyLoadTask({
           target: directSection,
-          loaded: false,
-          load: async () => {
-            if (state.lazyLoaded.directThreads) return;
-            state.lazyLoaded.directThreads = true;
-            await loadDirectThreads();
-          }
-        });
+          isLoaded: () => state.lazyLoaded.directThreads,
+          load: loadVisibleDirectThreads
+        }));
       }
 
       if (groupSection) {
-        tasks.push({
+        tasks.push(createLazyLoadTask({
           target: groupSection,
-          loaded: false,
-          load: async () => {
-            if (state.lazyLoaded.groupThreads) return;
-            state.lazyLoaded.groupThreads = true;
-            await loadThreads();
-          }
+          isLoaded: () => state.lazyLoaded.groupThreads,
+          load: loadVisibleGroupThreads
+        }));
+      }
+
+      (onceVisible || runVisibilityFallback)(tasks);
+    };
+
+    const readFormMessage = (form) => String(form.elements.body.value || '').trim();
+
+    const validateMessagePayload = ({ body, files, statusNode }) => {
+      if (hasMessagePayload({ body, files })) return true;
+      setStatus(statusNode, 'Message or attachment is required.', 'error');
+      return false;
+    };
+
+    const resetAndConfirmMessage = ({ form, statusNode, message }) => {
+      setStatus(statusNode, message, 'success');
+      form.reset();
+    };
+
+    const submitGroupMessage = async ({ body, files }) => {
+      await sendThreadMessage({
+        threadType: 'group',
+        threadId: state.selectedThreadId,
+        body,
+        files
+      });
+      await loadThreads({ forceRefresh: true });
+    };
+
+    const createDirectThreadPayload = ({ managerId, body, hasFiles }) => {
+      const payload = {
+        recipientUserId: managerId,
+        subject: `Direct manager conversation - ${getCurrentUserLabel()}`
+      };
+
+      if (hasFiles) {
+        payload.createOnly = true;
+      } else {
+        payload.body = body;
+      }
+
+      return payload;
+    };
+
+    const createDirectThread = async ({ body, files }) => {
+      const manager = getPreferredManager();
+      if (!manager?.id) {
+        throw new Error('No assigned manager is available for a private thread yet.');
+      }
+
+      const payload = await api('/api/inbox/threads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(createDirectThreadPayload({
+          managerId: manager.id,
+          body,
+          hasFiles: files.length > 0
+        }))
+      });
+      const threadId = payload.thread?.id || '';
+
+      if (files.length) {
+        await sendThreadMessage({
+          threadType: 'direct',
+          threadId,
+          body,
+          files
         });
       }
 
-      (onceVisible || ((items) => {
-        items.forEach((item) => item.load());
-        return () => {};
-      }))(tasks);
+      return threadId;
+    };
+
+    const resolveDirectThreadId = async ({ body, files }) => {
+      if (state.selectedDirectThreadId) return state.selectedDirectThreadId;
+      return createDirectThread({ body, files });
+    };
+
+    const submitDirectMessage = async ({ threadId, body, files }) => {
+      if (threadId !== state.selectedDirectThreadId) {
+        await loadDirectThreads(threadId, { forceRefresh: true });
+        return;
+      }
+
+      await sendThreadMessage({
+        threadType: 'direct',
+        threadId,
+        body,
+        files
+      });
+      await loadDirectThreads(threadId, { forceRefresh: true });
+    };
+
+    const handleGroupMessageSubmit = async (event) => {
+      event.preventDefault();
+      if (!state.selectedThreadId) {
+        setStatus(el.messageStatus, 'Select a thread first.', 'error');
+        return;
+      }
+
+      const body = readFormMessage(el.messageForm);
+      const files = collectFiles(el.messageForm);
+      if (!validateMessagePayload({ body, files, statusNode: el.messageStatus })) return;
+
+      setStatus(el.messageStatus, files.length ? 'Uploading...' : 'Sending...');
+      try {
+        await submitGroupMessage({ body, files });
+        resetAndConfirmMessage({
+          form: el.messageForm,
+          statusNode: el.messageStatus,
+          message: 'Message sent.'
+        });
+      } catch (error) {
+        setStatus(el.messageStatus, error.message || 'Send failed.', 'error');
+      }
+    };
+
+    const handleDirectMessageSubmit = async (event) => {
+      event.preventDefault();
+      const body = readFormMessage(el.directMessageForm);
+      const files = collectFiles(el.directMessageForm);
+      if (!validateMessagePayload({ body, files, statusNode: el.directMessageStatus })) return;
+
+      setStatus(
+        el.directMessageStatus,
+        getSendStatusText({ hasThread: Boolean(state.selectedDirectThreadId), files })
+      );
+
+      try {
+        const threadId = await resolveDirectThreadId({ body, files });
+        await submitDirectMessage({ threadId, body, files });
+        resetAndConfirmMessage({
+          form: el.directMessageForm,
+          statusNode: el.directMessageStatus,
+          message: 'Private message sent.'
+        });
+      } catch (error) {
+        setStatus(el.directMessageStatus, error.message || 'Private message failed.', 'error');
+      }
     };
 
     const bindEvents = () => {
-      el.messageForm.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        if (!state.selectedThreadId) return setStatus(el.messageStatus, 'Select a thread first.', 'error');
-        const body = String(el.messageForm.elements.body.value || '').trim();
-        const files = collectFiles(el.messageForm);
-        if (!hasMessagePayload({ body, files })) return setStatus(el.messageStatus, 'Message or attachment is required.', 'error');
-
-        setStatus(el.messageStatus, files.length ? 'Uploading...' : 'Sending...');
-        try {
-          await sendThreadMessage({
-            threadType: 'group',
-            threadId: state.selectedThreadId,
-            body,
-            files
-          });
-          setStatus(el.messageStatus, 'Message sent.', 'success');
-          el.messageForm.reset();
-          await loadThreads({ forceRefresh: true });
-        } catch (error) {
-          setStatus(el.messageStatus, error.message || 'Send failed.', 'error');
-        }
-      });
-
-      el.directMessageForm.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const body = String(el.directMessageForm.elements.body.value || '').trim();
-        const files = collectFiles(el.directMessageForm);
-        if (!hasMessagePayload({ body, files })) return setStatus(el.directMessageStatus, 'Message or attachment is required.', 'error');
-
-        setStatus(el.directMessageStatus, state.selectedDirectThreadId ? (files.length ? 'Uploading...' : 'Sending...') : 'Opening thread...');
-        try {
-          let threadId = state.selectedDirectThreadId;
-          if (!threadId) {
-            const manager = getPreferredManager();
-            if (!manager?.id) {
-              return setStatus(el.directMessageStatus, 'No assigned manager is available for a private thread yet.', 'error');
-            }
-
-            const payload = await api('/api/inbox/threads', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                recipientUserId: manager.id,
-                subject: `Direct manager conversation - ${state.user?.name || state.user?.email || 'Client'}`,
-                ...(files.length
-                  ? { createOnly: true }
-                  : { body })
-              })
-            });
-            threadId = payload.thread?.id || '';
-            if (files.length) {
-              await sendThreadMessage({
-                threadType: 'direct',
-                threadId,
-                body,
-                files
-              });
-            }
-            await loadDirectThreads(threadId, { forceRefresh: true });
-          } else {
-            await sendThreadMessage({
-              threadType: 'direct',
-              threadId,
-              body,
-              files
-            });
-            await loadDirectThreads(threadId, { forceRefresh: true });
-          }
-
-          setStatus(el.directMessageStatus, 'Private message sent.', 'success');
-          el.directMessageForm.reset();
-        } catch (error) {
-          setStatus(el.directMessageStatus, error.message || 'Private message failed.', 'error');
-        }
-      });
+      el.messageForm.addEventListener('submit', handleGroupMessageSubmit);
+      el.directMessageForm.addEventListener('submit', handleDirectMessageSubmit);
     };
 
     return {
