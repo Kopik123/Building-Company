@@ -126,6 +126,18 @@ test('gallery collapses intro and side previews cleanly on narrower desktop widt
   await expect.poll(async () => page.locator('.roller-card.is-right').evaluate((node) => getComputedStyle(node).visibility)).toBe('hidden');
 });
 
+test('gallery uses contain for the center image and cover for side previews on wide desktop', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1200 });
+  await page.goto('/gallery.html');
+
+  await expect(page.locator('.roller-card.is-center')).toBeVisible();
+  await expect.poll(async () => page.locator('.roller-card.is-left').evaluate((node) => getComputedStyle(node).visibility)).toBe('visible');
+  await expect.poll(async () => page.locator('.roller-card.is-right').evaluate((node) => getComputedStyle(node).visibility)).toBe('visible');
+  await expect.poll(async () => page.locator('.roller-card.is-center .roller-image').evaluate((node) => getComputedStyle(node).objectFit)).toBe('contain');
+  await expect.poll(async () => page.locator('.roller-card.is-left .roller-image').evaluate((node) => getComputedStyle(node).objectFit)).toBe('cover');
+  await expect.poll(async () => page.locator('.roller-card.is-right .roller-image').evaluate((node) => getComputedStyle(node).objectFit)).toBe('cover');
+});
+
 test('wall systems service CTA opens quote with wall-systems context preselected', async ({ page }) => {
   await page.goto('/services.html');
   await page.getByRole('link', { name: /discuss wall systems/i }).click();

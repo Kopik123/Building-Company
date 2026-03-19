@@ -708,9 +708,13 @@
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
   object-position: center;
   background: rgba(0, 0, 0, 0.32);
+}
+
+.roller-card.is-center .roller-image {
+  object-fit: contain;
 }
 
 .roller-caption {
