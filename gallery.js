@@ -326,19 +326,23 @@
       collectionsById.set(normalizedId, collection);
     });
 
+    const appendUniqueSourceImages = (images, source, seenSources) => {
+      if (!source) return;
+      source.images.forEach((image) => {
+        const imageKey = String(image.src || image.media?.fallback || '').trim();
+        if (!imageKey || seenSources.has(imageKey)) return;
+        seenSources.add(imageKey);
+        images.push(image);
+      });
+    };
+
     const curated = SERVICE_COLLECTION_DEFINITIONS.map((definition) => {
       const images = [];
       const seenSources = new Set();
 
       definition.sources.forEach((sourceKey) => {
         const source = collectionsById.get(String(sourceKey || '').trim().toLowerCase());
-        if (!source) return;
-        source.images.forEach((image) => {
-          const imageKey = String(image.src || image.media?.fallback || '').trim();
-          if (!imageKey || seenSources.has(imageKey)) return;
-          seenSources.add(imageKey);
-          images.push(image);
-        });
+        appendUniqueSourceImages(images, source, seenSources);
       });
 
       return {
@@ -453,6 +457,30 @@
     }
   };
 
+  const getPhotoOrdinalText = (index, total) => `photo ${index + 1} of ${total}`;
+
+  const getFallbackImageLabel = (centeredIndex) => `Photo ${centeredIndex + 1}`;
+
+  const getDisplayImageLabel = (imageItem, centeredIndex) => (
+    imageItem?.label || getFallbackImageLabel(centeredIndex)
+  );
+
+  const buildProjectMetaText = ({ project, total, centeredIndex, projectName }) => {
+    const photoOrdinal = getPhotoOrdinalText(centeredIndex, total);
+    if (gallerySource === 'services') {
+      return `${project.description || projectName.subtitle} | ${total} completed-work images | ${photoOrdinal}`;
+    }
+    return `${levelLabel(state.projectIndex)} | ${total} image sequence | ${photoOrdinal}`;
+  };
+
+  const buildGalleryStatusText = ({ project, imageLabel, total, centeredIndex }) => {
+    const photoOrdinal = getPhotoOrdinalText(centeredIndex, total);
+    if (gallerySource === 'services') {
+      return `${project.name} / ${imageLabel} / ${photoOrdinal}`;
+    }
+    return `${levelLabel(state.projectIndex)} / ${project.name} / ${imageLabel} / ${photoOrdinal}`;
+  };
+
   const setStatus = () => {
     const project = currentProject();
     if (!project) return;
@@ -460,6 +488,7 @@
     const centeredIndex = normalizeIndex(Math.round(state.position), total);
     const imageItem = project.images[centeredIndex];
     const projectName = splitProjectName(project.name);
+    const imageLabel = getDisplayImageLabel(imageItem, centeredIndex);
 
     if (imageTitleNode) {
       imageTitleNode.textContent = imageItem?.label || 'Selected image';
@@ -470,15 +499,11 @@
     }
 
     if (projectMetaNode) {
-      projectMetaNode.textContent = gallerySource === 'services'
-        ? `${project.description || projectName.subtitle} | ${total} completed-work images | photo ${centeredIndex + 1} of ${total}`
-        : `${levelLabel(state.projectIndex)} | ${total} image sequence | photo ${centeredIndex + 1} of ${total}`;
+      projectMetaNode.textContent = buildProjectMetaText({ project, total, centeredIndex, projectName });
     }
 
     if (statusNode) {
-      statusNode.textContent = gallerySource === 'services'
-        ? `${project.name} / ${imageItem?.label || `Photo ${centeredIndex + 1}`} / photo ${centeredIndex + 1} of ${total}`
-        : `${levelLabel(state.projectIndex)} / ${project.name} / ${imageItem?.label || `Photo ${centeredIndex + 1}`} / photo ${centeredIndex + 1} of ${total}`;
+      statusNode.textContent = buildGalleryStatusText({ project, imageLabel, total, centeredIndex });
     }
   };
 
@@ -542,6 +567,65 @@
     lightboxRoot.hidden = false;
     lightboxRoot.setAttribute('aria-hidden', 'false');
     document.body.classList.add('gallery-lightbox-open');
+  };
+
+  const getRollerCardMediaKey = (project, imageItem, index) => (
+    imageItem.src || imageItem.media?.fallback || `${project.name}-${index}`
+  );
+
+  const openRollerCardLightbox = (card) => {
+    const project = currentProject();
+    if (!project) return;
+    const cardIndex = Number(card.dataset.index || 0);
+    const imageItem = project.images[cardIndex];
+    openLightbox(imageItem, project, cardIndex);
+  };
+
+  const handleRollerCardKeydown = (event, card) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    openRollerCardLightbox(card);
+  };
+
+  const ensureRollerCaptionNode = (card) => {
+    let caption = card.querySelector('.roller-caption');
+    if (!caption) {
+      caption = document.createElement('p');
+      caption.className = 'roller-caption';
+      card.appendChild(caption);
+    }
+    return caption;
+  };
+
+  const createRollerCardNode = () => {
+    const card = document.createElement('article');
+    card.className = 'roller-card is-hidden';
+    card.tabIndex = 0;
+    card.setAttribute('role', 'button');
+    card.setAttribute('aria-label', 'Open image fullscreen');
+    card.addEventListener('click', () => openRollerCardLightbox(card));
+    card.addEventListener('keydown', (event) => handleRollerCardKeydown(event, card));
+    card.appendChild(ensureRollerCaptionNode(card));
+    return card;
+  };
+
+  const updateRollerCardNode = (project, card, imageItem, index) => {
+    card.dataset.index = String(index);
+    card.setAttribute('aria-label', `Open ${imageItem.label} fullscreen`);
+    const mediaKey = getRollerCardMediaKey(project, imageItem, index);
+    const picture = createResponsivePicture(imageItem.media, {
+      alt: `${project.name} - ${imageItem.label}`,
+      className: 'roller-picture',
+      imgClassName: 'roller-image',
+      loading: 'lazy',
+      sizes: imageItem.media?.sizes
+    });
+    syncPictureNode(card, picture, mediaKey);
+
+    const caption = ensureRollerCaptionNode(card);
+    if (caption.textContent !== imageItem.label) {
+      caption.textContent = imageItem.label;
+    }
   };
 
   const stopAnimation = () => {
@@ -674,56 +758,9 @@
 
     const project = currentProject();
     syncKeyedList(stage, project.images, {
-      getKey: (imageItem, index) => imageItem.src || imageItem.media?.fallback || `${project.name}-${index}`,
-      createNode: () => {
-        const card = document.createElement('article');
-        card.className = 'roller-card is-hidden';
-        card.tabIndex = 0;
-        card.setAttribute('role', 'button');
-        card.setAttribute('aria-label', 'Open image fullscreen');
-        const openCurrentCard = () => {
-          const project = currentProject();
-          if (!project) return;
-          const cardIndex = Number(card.dataset.index || 0);
-          const imageItem = project.images[cardIndex];
-          openLightbox(imageItem, project, cardIndex);
-        };
-        card.addEventListener('click', openCurrentCard);
-        card.addEventListener('keydown', (event) => {
-          if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault();
-            openCurrentCard();
-          }
-        });
-
-        const caption = document.createElement('p');
-        caption.className = 'roller-caption';
-        card.appendChild(caption);
-        return card;
-      },
-      updateNode: (card, imageItem, index) => {
-        card.dataset.index = String(index);
-        card.setAttribute('aria-label', `Open ${imageItem.label} fullscreen`);
-        const mediaKey = imageItem.src || imageItem.media?.fallback || `${project.name}-${index}`;
-        const picture = createResponsivePicture(imageItem.media, {
-          alt: `${project.name} - ${imageItem.label}`,
-          className: 'roller-picture',
-          imgClassName: 'roller-image',
-          loading: 'lazy',
-          sizes: imageItem.media?.sizes
-        });
-        syncPictureNode(card, picture, mediaKey);
-
-        let caption = card.querySelector('.roller-caption');
-        if (!caption) {
-          caption = document.createElement('p');
-          caption.className = 'roller-caption';
-          card.appendChild(caption);
-        }
-        if (caption.textContent !== imageItem.label) {
-          caption.textContent = imageItem.label;
-        }
-      }
+      getKey: (imageItem, index) => getRollerCardMediaKey(project, imageItem, index),
+      createNode: () => createRollerCardNode(),
+      updateNode: (card, imageItem, index) => updateRollerCardNode(project, card, imageItem, index)
     });
 
     state.cards = Array.from(stage.querySelectorAll('.roller-card'));
@@ -766,6 +803,39 @@
     state.chips = Array.from(projectStrip.querySelectorAll('.gallery-service-button'));
 
     updateProjectStripState();
+  };
+
+  const getDefaultProjects = () => (
+    gallerySource === 'services'
+      ? buildCuratedServiceCollections(defaultCollectionsBySource.services)
+      : normalizeProjects(defaultCollectionsBySource[gallerySource] || defaultCollectionsBySource.projects)
+  );
+
+  const loadRemoteProjects = async () => {
+    if (gallerySource === 'services') {
+      await loadServiceCollections();
+      return;
+    }
+    await loadManagedProjects();
+  };
+
+  const finalizeServiceProjects = () => {
+    if (gallerySource !== 'services') return;
+    projects = buildCuratedServiceCollections(projects);
+  };
+
+  const setGalleryDisabledState = () => {
+    if (statusNode) statusNode.textContent = 'No gallery photos available yet.';
+    prevButton.disabled = true;
+    nextButton.disabled = true;
+    if (projectPrevButton) projectPrevButton.disabled = true;
+    if (projectNextButton) projectNextButton.disabled = true;
+  };
+
+  const syncProjectNavigationState = () => {
+    if (projects.length > 1) return;
+    if (projectPrevButton) projectPrevButton.disabled = true;
+    if (projectNextButton) projectNextButton.disabled = true;
   };
 
   const roll = (step) => {
@@ -821,29 +891,17 @@
   });
 
   const init = async () => {
-    projects = gallerySource === 'services'
-      ? buildCuratedServiceCollections(defaultCollectionsBySource.services)
-      : normalizeProjects(defaultCollectionsBySource[gallerySource] || defaultCollectionsBySource.projects);
+    projects = getDefaultProjects();
     const hasInlineProjects = loadInlineProjects();
 
     if (!hasInlineProjects) {
-      if (gallerySource === 'services') {
-        await loadServiceCollections();
-      } else {
-        await loadManagedProjects();
-      }
+      await loadRemoteProjects();
     }
 
-    if (gallerySource === 'services') {
-      projects = buildCuratedServiceCollections(projects);
-    }
+    finalizeServiceProjects();
 
     if (!projects.length) {
-      if (statusNode) statusNode.textContent = 'No gallery photos available yet.';
-      prevButton.disabled = true;
-      nextButton.disabled = true;
-      if (projectPrevButton) projectPrevButton.disabled = true;
-      if (projectNextButton) projectNextButton.disabled = true;
+      setGalleryDisabledState();
       return;
     }
 
@@ -851,10 +909,7 @@
     buildProjectStrip();
     buildRoller();
 
-    if (projects.length <= 1) {
-      if (projectPrevButton) projectPrevButton.disabled = true;
-      if (projectNextButton) projectNextButton.disabled = true;
-    }
+    syncProjectNavigationState();
   };
 
   init();
