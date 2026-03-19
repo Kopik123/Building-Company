@@ -47,6 +47,109 @@ const isStaffUser = (user) => STAFF_ROLES.has(String(user?.role || '').toLowerCa
 const getCurrentMembershipRole = (thread, userId) =>
   thread?.members?.find((member) => member.userId === userId)?.role || null;
 
+const getValidationErrors = (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    res.status(400).json({ errors: errors.array() });
+    return true;
+  }
+  return false;
+};
+
+const findThreadMembership = (threadId, userId) =>
+  GroupMember.findOne({
+    where: { groupThreadId: threadId, userId }
+  });
+
+const requireThreadMembership = async (threadId, userId, res) => {
+  const membership = await findThreadMembership(threadId, userId);
+  if (!membership) {
+    res.status(403).json({ error: 'Access denied' });
+    return null;
+  }
+  return membership;
+};
+
+const requireThreadAdmin = async (threadId, userId, res, errorMessage = 'Only group admins can add members') => {
+  const membership = await findThreadMembership(threadId, userId);
+  if (membership?.role !== 'admin') {
+    res.status(403).json({ error: errorMessage });
+    return null;
+  }
+  return membership;
+};
+
+const getThreadIncludeFlags = (body) => ({
+  includeProjectClient: Object.hasOwn(body, 'includeProjectClient')
+    ? Boolean(body.includeProjectClient)
+    : true,
+  includeAssignedStaff: Object.hasOwn(body, 'includeAssignedStaff')
+    ? Boolean(body.includeAssignedStaff)
+    : true
+});
+
+const collectSeedMemberIds = (project, body, currentUserId) => {
+  const { includeProjectClient, includeAssignedStaff } = getThreadIncludeFlags(body);
+  const seedMemberIds = new Set();
+  if (includeProjectClient && project.clientId) seedMemberIds.add(project.clientId);
+  if (includeAssignedStaff && project.assignedManagerId) seedMemberIds.add(project.assignedManagerId);
+  for (const userId of body.participantUserIds || []) {
+    if (userId) {
+      seedMemberIds.add(userId);
+    }
+  }
+  seedMemberIds.delete(currentUserId);
+  return Array.from(seedMemberIds);
+};
+
+const loadInvitedUsers = async (memberCandidates, res) => {
+  if (!memberCandidates.length) {
+    return [];
+  }
+
+  const users = await User.findAll({
+    where: {
+      id: { [Op.in]: memberCandidates },
+      isActive: true
+    },
+    attributes: threadUserAttributes
+  });
+  const foundIds = new Set(users.map((user) => user.id));
+  const missingIds = memberCandidates.filter((userId) => !foundIds.has(userId));
+  if (missingIds.length) {
+    res.status(404).json({ error: 'One or more invited users were not found' });
+    return null;
+  }
+  return users;
+};
+
+const createProjectChatThread = async ({ project, body, currentUserId, users }) => {
+  const thread = await GroupThread.create({
+    name: String(body.name || '').trim() || `${project.title} Project Chat`,
+    quoteId: project.quoteId || null,
+    projectId: project.id,
+    createdBy: currentUserId
+  });
+
+  await GroupMember.create({
+    groupThreadId: thread.id,
+    userId: currentUserId,
+    role: 'admin'
+  });
+
+  if (users.length) {
+    await GroupMember.bulkCreate(
+      users.map((user) => ({
+        groupThreadId: thread.id,
+        userId: user.id,
+        role: 'member'
+      }))
+    );
+  }
+
+  return thread;
+};
+
 const serializeThread = (thread, userId) => {
   const payload = thread?.toJSON ? thread.toJSON() : thread;
   return {
@@ -65,9 +168,8 @@ router.get(
     query('pageSize').optional().isInt({ min: 1, max: MAX_PAGE_SIZE }).toInt()
   ],
   asyncHandler(async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+    if (getValidationErrors(req, res)) {
+      return;
     }
 
     const where = { userId: req.user.id };
@@ -123,9 +225,8 @@ router.post(
     body('includeAssignedStaff').optional().isBoolean()
   ],
   asyncHandler(async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+    if (getValidationErrors(req, res)) {
+      return;
     }
 
     if (!isStaffUser(req.user)) {
@@ -140,60 +241,18 @@ router.post(
       return res.status(404).json({ error: 'Project not found' });
     }
 
-    const includeProjectClient = Object.hasOwn(req.body, 'includeProjectClient')
-      ? Boolean(req.body.includeProjectClient)
-      : true;
-    const includeAssignedStaff = Object.hasOwn(req.body, 'includeAssignedStaff')
-      ? Boolean(req.body.includeAssignedStaff)
-      : true;
-
-    const seedMemberIds = new Set();
-    if (includeProjectClient && project.clientId) seedMemberIds.add(project.clientId);
-    if (includeAssignedStaff && project.assignedManagerId) seedMemberIds.add(project.assignedManagerId);
-    for (const userId of req.body.participantUserIds || []) {
-      if (userId) seedMemberIds.add(userId);
-    }
-    seedMemberIds.delete(req.user.id);
-
-    const memberCandidates = Array.from(seedMemberIds);
-    let users = [];
-    if (memberCandidates.length) {
-      users = await User.findAll({
-        where: {
-          id: { [Op.in]: memberCandidates },
-          isActive: true
-        },
-        attributes: threadUserAttributes
-      });
-      const foundIds = new Set(users.map((user) => user.id));
-      const missingIds = memberCandidates.filter((userId) => !foundIds.has(userId));
-      if (missingIds.length) {
-        return res.status(404).json({ error: 'One or more invited users were not found' });
-      }
+    const memberCandidates = collectSeedMemberIds(project, req.body, req.user.id);
+    const users = await loadInvitedUsers(memberCandidates, res);
+    if (!users) {
+      return;
     }
 
-    const thread = await GroupThread.create({
-      name: String(req.body.name || '').trim() || `${project.title} Project Chat`,
-      quoteId: project.quoteId || null,
-      projectId: project.id,
-      createdBy: req.user.id
+    const thread = await createProjectChatThread({
+      project,
+      body: req.body,
+      currentUserId: req.user.id,
+      users
     });
-
-    await GroupMember.create({
-      groupThreadId: thread.id,
-      userId: req.user.id,
-      role: 'admin'
-    });
-
-    if (users.length) {
-      await GroupMember.bulkCreate(
-        users.map((user) => ({
-          groupThreadId: thread.id,
-          userId: user.id,
-          role: 'member'
-        }))
-      );
-    }
 
     const createdThread = await GroupThread.findByPk(thread.id, {
       include: threadIncludes
@@ -222,17 +281,13 @@ router.get(
     query('pageSize').optional().isInt({ min: 1, max: MAX_PAGE_SIZE }).toInt()
   ],
   asyncHandler(async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+    if (getValidationErrors(req, res)) {
+      return;
     }
 
-    const membership = await GroupMember.findOne({
-      where: { groupThreadId: req.params.id, userId: req.user.id }
-    });
-
+    const membership = await requireThreadMembership(req.params.id, req.user.id, res);
     if (!membership) {
-      return res.status(403).json({ error: 'Access denied' });
+      return;
     }
 
     const thread = await GroupThread.findByPk(req.params.id);
@@ -309,17 +364,13 @@ router.post(
   '/threads/:id/messages',
   [auth, param('id').isUUID(), body('body').trim().notEmpty()],
   asyncHandler(async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+    if (getValidationErrors(req, res)) {
+      return;
     }
 
-    const membership = await GroupMember.findOne({
-      where: { groupThreadId: req.params.id, userId: req.user.id }
-    });
-
+    const membership = await requireThreadMembership(req.params.id, req.user.id, res);
     if (!membership) {
-      return res.status(403).json({ error: 'Access denied' });
+      return;
     }
 
     const message = await GroupMessage.create({
@@ -339,17 +390,13 @@ router.post(
   [auth, param('id').isUUID()],
   upload.array('files', 5),
   asyncHandler(async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+    if (getValidationErrors(req, res)) {
+      return;
     }
 
-    const membership = await GroupMember.findOne({
-      where: { groupThreadId: req.params.id, userId: req.user.id }
-    });
-
+    const membership = await requireThreadMembership(req.params.id, req.user.id, res);
     if (!membership) {
-      return res.status(403).json({ error: 'Access denied' });
+      return;
     }
 
     const files = req.files || [];
@@ -382,17 +429,13 @@ router.post(
   '/threads/:id/members',
   [auth, param('id').isUUID(), body('userId').isUUID()],
   asyncHandler(async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+    if (getValidationErrors(req, res)) {
+      return;
     }
 
-    const membership = await GroupMember.findOne({
-      where: { groupThreadId: req.params.id, userId: req.user.id }
-    });
-
-    if (!membership || membership.role !== 'admin') {
-      return res.status(403).json({ error: 'Only group admins can add members' });
+    const membership = await requireThreadAdmin(req.params.id, req.user.id, res, 'Only group admins can add members');
+    if (!membership) {
+      return;
     }
 
     const targetUser = await User.findByPk(req.body.userId);
@@ -422,17 +465,13 @@ router.delete(
   '/threads/:id/members/:userId',
   [auth, param('id').isUUID(), param('userId').isUUID()],
   asyncHandler(async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
+    if (getValidationErrors(req, res)) {
+      return;
     }
 
-    const membership = await GroupMember.findOne({
-      where: { groupThreadId: req.params.id, userId: req.user.id }
-    });
-
-    if (membership?.role !== 'admin') {
-      return res.status(403).json({ error: 'Only group admins can remove members' });
+    const membership = await requireThreadAdmin(req.params.id, req.user.id, res, 'Only group admins can remove members');
+    if (!membership) {
+      return;
     }
 
     const targetMembership = await GroupMember.findOne({
