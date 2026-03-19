@@ -49,5 +49,6 @@
   "prettier.semi": true,
   "workbench.editor.enablePreview": false,
   "explorer.confirmDelete": false,
-  "terminal.integrated.defaultProfile.windows": "PowerShell"
+  "terminal.integrated.defaultProfile.windows": "PowerShell",
+  "chatgpt.composerEnterBehavior": "cmdIfMultiline"
 }
