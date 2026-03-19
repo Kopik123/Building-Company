@@ -6,6 +6,7 @@ const { auth } = require('../middleware/auth');
 const { upload, DEFAULT_ATTACHMENT_BODY } = require('../utils/upload');
 const asyncHandler = require('../utils/asyncHandler');
 const { createPaginationHelpers } = require('../utils/pagination');
+const { attachGroupThreadSummaries } = require('../utils/threadSummaries');
 
 const router = express.Router();
 const senderAttributes = ['id', 'name', 'email', 'role'];
@@ -91,8 +92,14 @@ router.get(
     const threads = memberships
       .map((membership) => (membership.thread ? serializeThread(membership.thread, req.user.id) : null))
       .filter(Boolean);
-    return res.json({
+    const summarizedThreads = await attachGroupThreadSummaries({
       threads,
+      GroupMessage,
+      User,
+      senderAttributes
+    });
+    return res.json({
+      threads: summarizedThreads,
       pagination: {
         page,
         pageSize,
@@ -192,7 +199,14 @@ router.post(
       include: threadIncludes
     });
 
-    return res.status(201).json({ thread: serializeThread(createdThread, req.user.id) });
+    const [summarizedThread] = await attachGroupThreadSummaries({
+      threads: [serializeThread(createdThread, req.user.id)],
+      GroupMessage,
+      User,
+      senderAttributes
+    });
+
+    return res.status(201).json({ thread: summarizedThread });
   })
 );
 

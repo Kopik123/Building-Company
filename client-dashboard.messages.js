@@ -16,6 +16,21 @@
   } = {}) => {
     if (!state || !el) return null;
 
+    const updateThreadCardContent = (card, { title, preview, meta, badge }) => {
+      const titleNode = card.querySelector('.dashboard-item-title');
+      const badgeNode = card.querySelector('.dashboard-thread-badge');
+      const previewNode = card.querySelector('.dashboard-thread-preview');
+      const metaNode = card.querySelector('.dashboard-thread-meta');
+      if (titleNode) titleNode.textContent = title || 'Thread';
+      if (previewNode) previewNode.textContent = preview || 'No recent messages yet.';
+      if (metaNode) metaNode.textContent = meta || '';
+      if (badgeNode) {
+        const hasBadge = badge !== null && badge !== undefined && badge !== '' && Number(badge) > 0;
+        badgeNode.hidden = !hasBadge;
+        badgeNode.textContent = hasBadge ? `${badge} unread` : '';
+      }
+    };
+
     const renderOperationsShell = () => {
       onRenderOperationsShell?.();
     };
@@ -42,8 +57,19 @@
         updateNode: (card, thread) => {
           card.dataset.threadId = thread.id;
           card.className = `dashboard-item ${thread.id === state.selectedThreadId ? 'is-active' : ''}`;
-          card.children[0].textContent = thread.name || thread.subject || 'Thread';
-          card.children[1].textContent = `Updated: ${formatDateTime(thread.updatedAt) || '-'}`;
+          const senderName = thread.latestMessageSender?.name || thread.latestMessageSender?.email || '';
+          const metaParts = [];
+          if (thread.messageCount) metaParts.push(`${thread.messageCount} messages`);
+          const updatedAt = formatDateTime(thread.latestMessageAt || thread.updatedAt);
+          if (updatedAt) metaParts.push(`Updated ${updatedAt}`);
+          updateThreadCardContent(card, {
+            title: thread.name || thread.subject || 'Thread',
+            preview: thread.latestMessagePreview
+              ? `${senderName ? `${senderName}: ` : ''}${thread.latestMessagePreview}`
+              : 'Project communication route',
+            meta: metaParts.join(' | '),
+            badge: 0
+          });
         },
         createEmptyNode: () => createMutedNode('No communication threads yet.')
       });
@@ -64,8 +90,16 @@
           const counterparty = getThreadCounterparty(thread);
           card.dataset.threadId = thread.id;
           card.className = `dashboard-item ${thread.id === state.selectedDirectThreadId ? 'is-active' : ''}`;
-          card.children[0].textContent = counterparty?.name || counterparty?.email || thread.subject || 'Direct thread';
-          card.children[1].textContent = `${thread.subject || 'Direct manager conversation'} | Updated: ${formatDateTime(thread.updatedAt) || '-'}`;
+          const metaParts = [];
+          if (Number(thread.unreadCount || 0) > 0) metaParts.push(`${thread.unreadCount} unread`);
+          const updatedAt = formatDateTime(thread.latestMessageAt || thread.updatedAt);
+          if (updatedAt) metaParts.push(`Updated ${updatedAt}`);
+          updateThreadCardContent(card, {
+            title: counterparty?.name || counterparty?.email || thread.subject || 'Direct thread',
+            preview: thread.latestMessagePreview || thread.subject || 'Direct manager conversation',
+            meta: metaParts.join(' | '),
+            badge: thread.unreadCount || 0
+          });
         },
         createEmptyNode: () => createMutedNode(
           fallbackManager
@@ -130,6 +164,13 @@
       const payload = await api(`/api/inbox/threads/${state.selectedDirectThreadId}/messages?pageSize=100`);
       state.directMessages = Array.isArray(payload.messages) ? payload.messages : [];
       renderDirectMessages();
+      const selectedThread = state.directThreads.find((thread) => thread.id === state.selectedDirectThreadId) || null;
+      if (Number(selectedThread?.unreadCount || 0) > 0) {
+        await api(`/api/inbox/threads/${state.selectedDirectThreadId}/read`, { method: 'POST' });
+        selectedThread.unreadCount = 0;
+        renderDirectThreads();
+        renderOperationsShell();
+      }
     };
 
     const ensureThreadSummaries = async ({ forceRefresh = false } = {}) => {
@@ -227,7 +268,7 @@
           });
           setStatus(el.messageStatus, 'Message sent.', 'success');
           el.messageForm.reset();
-          await loadMessages();
+          await loadThreads({ forceRefresh: true });
         } catch (error) {
           setStatus(el.messageStatus, error.message || 'Send failed.', 'error');
         }
@@ -264,7 +305,7 @@
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ body })
             });
-            await loadDirectMessages();
+            await loadDirectThreads(threadId, { forceRefresh: true });
           }
 
           setStatus(el.directMessageStatus, 'Private message sent.', 'success');

@@ -14,6 +14,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [ ] On live `manager-dashboard.html`, verify the new private messenger flow can create a direct thread with a client and with a staff member from the new email-based composer.
 - [ ] On live `manager-dashboard.html`, verify project chat creation works from the new form: pick a project, auto-seed the client/assigned staff, optionally add an extra participant, and confirm the thread opens selected after creation.
 - [ ] On live `manager-dashboard.html`, verify project-chat participant management works end-to-end: current member list renders, admins can add/remove participants, and non-admin thread members do not see admin-only controls.
+- [ ] On live both dashboards, verify direct thread cards and mailbox previews now show the latest-message preview plus unread state, and that opening a direct thread clears the unread indicator without a full page reload.
 - [ ] Confirm on live `/gallery.html` that the gallery now reads fully service-led, with correct service descriptions, service rail labels and fullscreen image flow on desktop and mobile.
 - [ ] Confirm on live `/gallery.html` that the side-preview images inside the gallery stage stay centered, scaled and readable on desktop instead of overlapping or clipping against the stage edges.
 - [x] Align the gallery Playwright regression with the new service-switcher contract so it checks active service title/meta/status instead of the removed image-title node.
@@ -44,6 +45,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [ ] Consolidate manual public pages and generated SEO pages onto one content model/source so brochure copy, metadata, FAQ and CTA logic stop drifting.
 - [ ] Create a shared web/mobile contract layer for auth/session, project summaries, thread summaries, notifications and estimate state before expanding `mobile-v1` further.
 - [ ] Keep every new feature review aligned with future Android/iOS app readiness, especially API contracts, auth/session handling, messaging and media flows.
+- [ ] Decide whether group/project chat needs per-member unread tracking now that thread summaries already expose latest-message preview and message counts; current group-chat UX still has no unread badge model.
 
 ## Tooling And Quality
 

@@ -108,10 +108,17 @@
   const createThreadCard = ({ onOpen }) => {
     const card = document.createElement('article');
     card.className = 'dashboard-item';
+    const head = document.createElement('div');
+    head.className = 'dashboard-thread-head';
     const heading = document.createElement('h3');
     heading.className = 'dashboard-item-title';
+    const badge = document.createElement('span');
+    badge.className = 'dashboard-thread-badge';
+    badge.hidden = true;
+    const preview = document.createElement('p');
+    preview.className = 'dashboard-thread-preview';
     const meta = document.createElement('p');
-    meta.className = 'muted';
+    meta.className = 'muted dashboard-thread-meta';
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'btn btn-outline';
@@ -121,7 +128,10 @@
       if (!threadId) return;
       await onOpen(threadId);
     });
-    card.appendChild(heading);
+    head.appendChild(heading);
+    head.appendChild(badge);
+    card.appendChild(head);
+    card.appendChild(preview);
     card.appendChild(meta);
     card.appendChild(btn);
     return card;

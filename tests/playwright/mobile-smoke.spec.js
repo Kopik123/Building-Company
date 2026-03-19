@@ -38,6 +38,27 @@ const expandDashboardSectionIfCollapsed = async (page, sectionSelector) => {
 };
 
 const mockClientSession = async (page) => {
+  const directThreadState = {
+    id: 'direct-thread-1',
+    subject: 'Direct manager conversation',
+    updatedAt: '2026-03-09T09:30:00Z',
+    latestMessagePreview: 'We can review the revised tile selection this afternoon.',
+    latestMessageAt: '2026-03-09T09:35:00Z',
+    unreadCount: 1,
+    participantA: { id: 'client-1', name: 'Marta Client', email: 'client@example.com' },
+    participantB: { id: 'manager-1', name: 'Daniel', email: 'manager@example.com' }
+  };
+
+  const groupThreadState = {
+    id: 'thread-1',
+    name: 'Bathroom progress',
+    updatedAt: '2026-03-09T10:00:00Z',
+    latestMessagePreview: 'We confirmed the brass profile today.',
+    latestMessageAt: '2026-03-09T10:05:00Z',
+    latestMessageSender: { id: 'manager-1', name: 'Daniel', email: 'manager@example.com', role: 'manager' },
+    messageCount: 1
+  };
+
   await page.addInitScript(() => {
     localStorage.setItem('ll_auth_token', 'test-token');
     localStorage.setItem('ll_auth_user', JSON.stringify({
@@ -98,7 +119,7 @@ const mockClientSession = async (page) => {
   await page.route('**/api/group/threads?pageSize=100', async (route) => {
     await route.fulfill({
       json: {
-        threads: [{ id: 'thread-1', name: 'Bathroom progress', updatedAt: '2026-03-09T10:00:00Z' }]
+        threads: [groupThreadState]
       }
     });
   });
@@ -106,15 +127,14 @@ const mockClientSession = async (page) => {
   await page.route('**/api/inbox/threads?*', async (route) => {
     await route.fulfill({
       json: {
-        threads: [{
-          id: 'direct-thread-1',
-          subject: 'Direct manager conversation',
-          updatedAt: '2026-03-09T09:30:00Z',
-          participantA: { id: 'client-1', name: 'Marta Client', email: 'client@example.com' },
-          participantB: { id: 'manager-1', name: 'Daniel', email: 'manager@example.com' }
-        }]
+        threads: [directThreadState]
       }
     });
+  });
+
+  await page.route('**/api/inbox/threads/direct-thread-1/read', async (route) => {
+    directThreadState.unreadCount = 0;
+    await route.fulfill({ json: { message: 'Thread marked as read', markedReadCount: 1 } });
   });
 
   await page.route('**/api/inbox/threads/direct-thread-1/messages?pageSize=100', async (route) => {
@@ -458,8 +478,10 @@ test('client dashboard loads direct and project chat messages when threads open'
   await page.goto('/client-dashboard.html');
 
   await page.locator('#client-direct-threads-list').scrollIntoViewIfNeeded();
+  await expect(page.locator('#client-direct-threads-list .dashboard-item').first()).toContainText('We can review the revised tile selection this afternoon.');
   await page.locator('#client-direct-threads-list .dashboard-item .btn').first().click();
   await expect(page.locator('#client-direct-messages-list')).toContainText('We can review the revised tile selection this afternoon.');
+  await expect(page.locator('#client-direct-threads-list .dashboard-thread-badge')).toBeHidden();
 
   await page.locator('#client-threads-list').scrollIntoViewIfNeeded();
   await page.locator('#client-threads-list .dashboard-item .btn').first().click();

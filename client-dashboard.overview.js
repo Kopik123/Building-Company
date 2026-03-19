@@ -115,10 +115,14 @@
         emptyText: 'No direct manager thread yet.',
         mapItem: (thread) => {
           const counterparty = getThreadCounterparty(thread);
+          const metaParts = [];
+          if (Number(thread.unreadCount || 0) > 0) metaParts.push(`${thread.unreadCount} unread`);
+          const updatedAt = formatDateTime(thread.latestMessageAt || thread.updatedAt);
+          if (updatedAt) metaParts.push(`Updated ${updatedAt}`);
           return {
             title: counterparty?.name || counterparty?.email || 'Direct manager',
-            detail: thread.subject || 'Private conversation route',
-            meta: formatDateTime(thread.updatedAt) ? `Updated ${formatDateTime(thread.updatedAt)}` : ''
+            detail: thread.latestMessagePreview || thread.subject || 'Private conversation route',
+            meta: metaParts.join(' | ')
           };
         }
       });
@@ -127,11 +131,20 @@
         loaded: state.overviewLoaded.groupThreads,
         loadingText: 'Loading project threads...',
         emptyText: 'No project thread yet.',
-        mapItem: (thread) => ({
-          title: thread.name || thread.subject || 'Project chat',
-          detail: 'Project communication route',
-          meta: formatDateTime(thread.updatedAt) ? `Updated ${formatDateTime(thread.updatedAt)}` : ''
-        })
+        mapItem: (thread) => {
+          const senderName = thread.latestMessageSender?.name || thread.latestMessageSender?.email || '';
+          const metaParts = [];
+          if (thread.messageCount) metaParts.push(`${thread.messageCount} messages`);
+          const updatedAt = formatDateTime(thread.latestMessageAt || thread.updatedAt);
+          if (updatedAt) metaParts.push(`Updated ${updatedAt}`);
+          return {
+            title: thread.name || thread.subject || 'Project chat',
+            detail: thread.latestMessagePreview
+              ? `${senderName ? `${senderName}: ` : ''}${thread.latestMessagePreview}`
+              : 'Project communication route',
+            meta: metaParts.join(' | ')
+          };
+        }
       });
     };
 

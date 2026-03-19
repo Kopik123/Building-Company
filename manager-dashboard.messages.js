@@ -17,8 +17,26 @@
     getInboxCounterparty,
     setSelectOptions
   }) => {
+    const updateThreadCardContent = (card, { title, preview, meta, badge }) => {
+      const titleNode = card.querySelector('.dashboard-item-title');
+      const badgeNode = card.querySelector('.dashboard-thread-badge');
+      const previewNode = card.querySelector('.dashboard-thread-preview');
+      const metaNode = card.querySelector('.dashboard-thread-meta');
+      if (titleNode) titleNode.textContent = title || 'Thread';
+      if (previewNode) previewNode.textContent = preview || 'No recent messages yet.';
+      if (metaNode) metaNode.textContent = meta || '';
+      if (badgeNode) {
+        const hasBadge = badge !== null && badge !== undefined && badge !== '' && Number(badge) > 0;
+        badgeNode.hidden = !hasBadge;
+        badgeNode.textContent = hasBadge ? `${badge} unread` : '';
+      }
+    };
+
     const selectedGroupThread = () =>
       state.groupThreads.find((thread) => thread.id === state.selectedGroupThreadId) || null;
+
+    const selectedDirectThread = () =>
+      state.directThreads.find((thread) => thread.id === state.selectedDirectThreadId) || null;
 
     const renderDirectMessages = () => {
       syncKeyedList(el.managerDirectMessagesList, state.selectedDirectThreadId ? state.directMessages : [], {
@@ -74,8 +92,16 @@
           const counterparty = getInboxCounterparty(thread);
           card.dataset.threadId = thread.id;
           card.className = `dashboard-item ${thread.id === state.selectedDirectThreadId ? 'is-active' : ''}`;
-          card.children[0].textContent = counterparty?.name || counterparty?.email || 'Direct thread';
-          card.children[1].textContent = `${thread.subject || 'Private inbox'} | Updated: ${formatDateTime(thread.updatedAt) || '-'}`;
+          const metaParts = [];
+          if (Number(thread.unreadCount || 0) > 0) metaParts.push(`${thread.unreadCount} unread`);
+          const updatedAt = formatDateTime(thread.latestMessageAt || thread.updatedAt);
+          if (updatedAt) metaParts.push(`Updated ${updatedAt}`);
+          updateThreadCardContent(card, {
+            title: counterparty?.name || counterparty?.email || 'Direct thread',
+            preview: thread.latestMessagePreview || thread.subject || 'Private inbox route',
+            meta: metaParts.join(' | '),
+            badge: thread.unreadCount || 0
+          });
         },
         createEmptyNode: () => createMutedNode('No private threads yet.')
       });
@@ -167,12 +193,21 @@
         updateNode: (card, thread) => {
           card.dataset.threadId = thread.id;
           card.className = `dashboard-item ${thread.id === state.selectedGroupThreadId ? 'is-active' : ''}`;
-          card.children[0].textContent = thread.name || thread.subject || 'Project thread';
+          const senderName = thread.latestMessageSender?.name || thread.latestMessageSender?.email || '';
           const contextParts = [];
           if (thread.project?.title) contextParts.push(thread.project.title);
           if (thread.memberCount) contextParts.push(`${thread.memberCount} members`);
-          contextParts.push(`Updated: ${formatDateTime(thread.updatedAt) || '-'}`);
-          card.children[1].textContent = contextParts.join(' | ');
+          if (thread.messageCount) contextParts.push(`${thread.messageCount} messages`);
+          const updatedAt = formatDateTime(thread.latestMessageAt || thread.updatedAt);
+          if (updatedAt) contextParts.push(`Updated ${updatedAt}`);
+          updateThreadCardContent(card, {
+            title: thread.name || thread.subject || 'Project thread',
+            preview: thread.latestMessagePreview
+              ? `${senderName ? `${senderName}: ` : ''}${thread.latestMessagePreview}`
+              : 'Project communication route',
+            meta: contextParts.join(' | '),
+            badge: 0
+          });
         },
         createEmptyNode: () => createMutedNode('No project chat threads available.')
       });
@@ -190,6 +225,12 @@
       const payload = await api(`/api/inbox/threads/${state.selectedDirectThreadId}/messages?pageSize=100`);
       state.directMessages = Array.isArray(payload.messages) ? payload.messages : [];
       renderDirectMessages();
+      const thread = selectedDirectThread();
+      if (Number(thread?.unreadCount || 0) > 0) {
+        await api(`/api/inbox/threads/${state.selectedDirectThreadId}/read`, { method: 'POST' });
+        thread.unreadCount = 0;
+        renderDirectThreads();
+      }
     };
 
     const loadDirectThreads = async (preferredThreadId = '', options = {}) => {

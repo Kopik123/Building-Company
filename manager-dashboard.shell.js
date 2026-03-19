@@ -227,10 +227,14 @@
         emptyText: 'No private client threads yet.',
         mapItem: (thread) => {
           const counterparty = getInboxCounterparty(thread);
+          const metaParts = [];
+          if (Number(thread.unreadCount || 0) > 0) metaParts.push(`${thread.unreadCount} unread`);
+          const updatedAt = formatDateTime(thread.latestMessageAt || thread.updatedAt);
+          if (updatedAt) metaParts.push(`Updated ${updatedAt}`);
           return {
             title: counterparty?.name || counterparty?.email || 'Direct thread',
-            detail: thread.subject || 'Private inbox route',
-            meta: formatDateTime(thread.updatedAt) ? `Updated ${formatDateTime(thread.updatedAt)}` : ''
+            detail: thread.latestMessagePreview || thread.subject || 'Private inbox route',
+            meta: metaParts.join(' | ')
           };
         }
       });
@@ -239,11 +243,21 @@
         loaded: state.overviewLoaded.groupThreads,
         loadingText: 'Loading project threads...',
         emptyText: 'No project threads yet.',
-        mapItem: (thread) => ({
-          title: thread.name || thread.subject || 'Project thread',
-          detail: 'Project communication route',
-          meta: formatDateTime(thread.updatedAt) ? `Updated ${formatDateTime(thread.updatedAt)}` : ''
-        })
+        mapItem: (thread) => {
+          const senderName = thread.latestMessageSender?.name || thread.latestMessageSender?.email || '';
+          const metaParts = [];
+          if (thread.memberCount) metaParts.push(`${thread.memberCount} members`);
+          if (thread.messageCount) metaParts.push(`${thread.messageCount} messages`);
+          const updatedAt = formatDateTime(thread.latestMessageAt || thread.updatedAt);
+          if (updatedAt) metaParts.push(`Updated ${updatedAt}`);
+          return {
+            title: thread.name || thread.subject || 'Project thread',
+            detail: thread.latestMessagePreview
+              ? `${senderName ? `${senderName}: ` : ''}${thread.latestMessagePreview}`
+              : 'Project communication route',
+            meta: metaParts.join(' | ')
+          };
+        }
       });
     };
 
