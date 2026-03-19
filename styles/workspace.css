@@ -20,7 +20,9 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   padding: clamp(1rem, 2vw, 1.5rem);
-  background: linear-gradient(170deg, rgba(8, 8, 8, 0.95), rgba(3, 3, 3, 0.98));
+  background:
+    linear-gradient(170deg, rgba(8, 8, 8, 0.9), rgba(3, 3, 3, 0.96)),
+    url('/boxbackground.png') center center / cover no-repeat;
   box-shadow: var(--shadow-soft);
 }
 
@@ -34,7 +36,9 @@
   padding: clamp(0.95rem, 1.8vw, 1.35rem);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  background: linear-gradient(165deg, rgba(10, 10, 10, 0.97), rgba(5, 5, 5, 0.97));
+  background:
+    linear-gradient(165deg, rgba(10, 10, 10, 0.9), rgba(5, 5, 5, 0.95)),
+    url('/boxbackground.png') center center / cover no-repeat;
   box-shadow: var(--shadow-soft);
 }
 
@@ -77,7 +81,9 @@
   border: 1px solid rgba(209, 164, 74, 0.28);
   border-radius: var(--radius-xs);
   padding: 0.58rem 0.72rem;
-  background: rgba(6, 6, 6, 0.78);
+  background:
+    linear-gradient(160deg, rgba(12, 12, 12, 0.88), rgba(6, 6, 6, 0.92)),
+    url('/boxbackground.png') center center / cover no-repeat;
 }
 
 .workspace-overview-entry h3 {
@@ -100,7 +106,9 @@
   border: 1px solid rgba(209, 164, 74, 0.42);
   border-radius: var(--radius-xs);
   padding: 0.46rem 0.55rem;
-  background: rgba(8, 8, 8, 0.7);
+  background:
+    linear-gradient(160deg, rgba(10, 10, 10, 0.86), rgba(5, 5, 5, 0.9)),
+    url('/boxbackground.png') center center / cover no-repeat;
   display: grid;
   gap: 0.15rem;
 }
@@ -127,7 +135,9 @@
   border: 1px solid rgba(209, 164, 74, 0.32);
   border-radius: var(--radius-xs);
   padding: 0.6rem;
-  background: rgba(5, 5, 5, 0.73);
+  background:
+    linear-gradient(160deg, rgba(10, 10, 10, 0.86), rgba(5, 5, 5, 0.92)),
+    url('/boxbackground.png') center center / cover no-repeat;
 }
 
 .workspace-session-actions,
@@ -257,7 +267,9 @@
   border: 1px solid rgba(209, 164, 74, 0.35);
   border-radius: var(--radius-xs);
   padding: 0.58rem 0.68rem;
-  background: rgba(7, 7, 7, 0.86);
+  background:
+    linear-gradient(160deg, rgba(12, 12, 12, 0.88), rgba(6, 6, 6, 0.92)),
+    url('/boxbackground.png') center center / cover no-repeat;
 }
 
 .dashboard-item.is-active {
@@ -305,7 +317,9 @@
   padding: 0.48rem 0.62rem;
   border: 1px solid rgba(209, 164, 74, 0.38);
   border-radius: var(--radius-xs);
-  background: rgba(10, 10, 10, 0.78);
+  background:
+    linear-gradient(160deg, rgba(10, 10, 10, 0.86), rgba(6, 6, 6, 0.92)),
+    url('/boxbackground.png') center center / cover no-repeat;
   color: var(--color-text);
   text-decoration: none;
 }
@@ -313,7 +327,9 @@
 .dashboard-attachment-link:hover,
 .dashboard-attachment-link:focus-visible {
   border-color: rgba(209, 164, 74, 0.72);
-  background: rgba(14, 14, 14, 0.92);
+  background:
+    linear-gradient(160deg, rgba(16, 16, 16, 0.92), rgba(8, 8, 8, 0.95)),
+    url('/boxbackground.png') center center / cover no-repeat;
 }
 
 .dashboard-attachment-size {
