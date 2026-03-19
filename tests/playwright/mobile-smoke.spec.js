@@ -373,7 +373,7 @@ test('homepage mobile shell keeps visible inline login and hamburger navigation'
   await expect(page.locator('.site-header--public-shell [data-inline-login-form]')).toBeVisible();
   await expectResponsiveShellDefaultNavState(page);
   await openNavIfNeeded(page);
-  await expect(page.locator('.site-header--public-shell .public-brand-title-image[src="/assets/optimized/brand/title.png"]')).toHaveCount(1);
+  await expect(page.locator('.site-header--public-shell .public-brand-title-image[src^="/assets/optimized/brand/title.png"]')).toHaveCount(1);
   await expect(page.locator('[data-nav-menu] a[href="/index.html"]')).toBeVisible();
   await expect(page.locator('[data-nav-menu] a[href="/about.html"]')).toBeVisible();
   await expect(page.locator('[data-nav-menu] a[href="/services.html"]')).toBeVisible();

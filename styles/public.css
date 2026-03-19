@@ -856,6 +856,29 @@
   color: var(--color-text);
 }
 
+.page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}
+
+.contact-link-list {
+  list-style: none;
+  padding: 0;
+}
+
+.home-card-contact-list-link,
+.contact-link-list a {
+  text-decoration: none;
+}
+
+.home-card-contact-list-link:hover,
+.contact-link-list a:hover {
+  text-decoration: underline;
+  text-decoration-color: var(--color-gold-2);
+}
+
 .text-link {
   font-size: 0.8rem;
   letter-spacing: 0.09em;
@@ -1125,6 +1148,14 @@
 
   .public-inline-register-link,
   .public-inline-login-submit {
+    width: 100%;
+  }
+
+  .page-actions {
+    flex-direction: column;
+  }
+
+  .page-actions > * {
     width: 100%;
   }
 

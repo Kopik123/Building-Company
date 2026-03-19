@@ -57,7 +57,7 @@ test('homepage renders one dominant card and routes navigation to dedicated page
   await page.goto('/index.html');
 
   await expect(page.locator('body.public-site.page-home')).toBeVisible();
-  await expect(page.locator('.site-header--public-shell .public-brand-title-image[src="/assets/optimized/brand/title.png"]')).toHaveCount(1);
+  await expect(page.locator('.site-header--public-shell .public-brand-title-image[src^="/assets/optimized/brand/title.png"]')).toHaveCount(1);
   await expect(page.locator('.site-header--public-shell [data-inline-login-form]')).toBeVisible();
   await expectShellNavigationDefaultState(page);
   await expect(page.locator('main h1').first()).toContainText(/premium bathrooms, kitchens and interiors delivered/i);
@@ -142,7 +142,7 @@ test('authenticated public shell hides login-only controls and keeps one account
 test('service, location and legal pages keep the same shell and single primary consultation route', async ({ page }) => {
   await page.goto('/premium-bathrooms-manchester.html');
   await expect(page.locator('body.public-site.page-service')).toBeVisible();
-  await expect(page.locator('.site-header--public-shell .public-brand-title-image[src="/assets/optimized/brand/title.png"]')).toHaveCount(1);
+  await expect(page.locator('.site-header--public-shell .public-brand-title-image[src^="/assets/optimized/brand/title.png"]')).toHaveCount(1);
   await expect(page.locator('.site-header--public-shell [data-inline-login-form]')).toBeVisible();
   await expect(page.locator('.public-hero--inner .inner-hero-shell.content-card--dark')).toBeVisible();
   await expectShellNavigationDefaultState(page);
@@ -161,7 +161,7 @@ test('service, location and legal pages keep the same shell and single primary c
 
   await page.goto('/privacy.html');
   await expect(page.locator('body.public-site.page-legal')).toBeVisible();
-  await expect(page.locator('.site-header--public-shell .public-brand-title-image[src="/assets/optimized/brand/title.png"]')).toHaveCount(1);
+  await expect(page.locator('.site-header--public-shell .public-brand-title-image[src^="/assets/optimized/brand/title.png"]')).toHaveCount(1);
   await expect(page.locator('.site-header--public-shell [data-inline-login-form]')).toBeVisible();
   await expectShellNavigationDefaultState(page);
   await expect(page.getByRole('heading', { name: /privacy policy for studio enquiries, consultations/i })).toBeVisible();

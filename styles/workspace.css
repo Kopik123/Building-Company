@@ -138,6 +138,40 @@
   flex-wrap: wrap;
 }
 
+.dashboard-search-row {
+  display: grid;
+}
+
+.dashboard-inline-check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.dashboard-inline-check input[type='checkbox'] {
+  width: 1rem;
+  height: 1rem;
+  min-height: 1rem;
+  accent-color: var(--color-gold-2);
+}
+
+.dashboard-list {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.dashboard-grid {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.workspace-contact-list {
+  list-style: none;
+  padding: 0;
+}
+
 .dashboard-session-actions .btn,
 .dashboard-actions-row .btn {
   min-width: 140px;
