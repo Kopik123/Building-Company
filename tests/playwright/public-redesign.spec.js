@@ -81,6 +81,8 @@ test('core brochure pages render about, services, gallery, contact and quote rou
   await page.goto('/about.html');
   await expect(page.locator('body.public-site.page-about')).toBeVisible();
   await expect(page.getByRole('heading', { name: /premium renovation studio built/i })).toBeVisible();
+  await expect.poll(async () => page.locator('.public-section--dark').first().evaluate((node) => getComputedStyle(node).backgroundImage)).toBe('none');
+  await expect.poll(async () => page.locator('.public-section--light').first().evaluate((node) => getComputedStyle(node).backgroundImage)).toBe('none');
 
   await page.goto('/services.html');
   await expect(page.locator('body.public-site.page-services')).toBeVisible();

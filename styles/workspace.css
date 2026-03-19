@@ -219,7 +219,7 @@
 }
 
 .workspace-content-shell {
-  background: linear-gradient(180deg, rgba(26, 18, 8, 0.09), rgba(20, 15, 8, 0.04));
+  background: transparent;
 }
 
 .dashboard-manager-top-grid {
@@ -230,7 +230,11 @@
 
 .card {
   padding: clamp(0.95rem, 1.8vw, 1.4rem);
-  background: linear-gradient(160deg, var(--color-surface-light), var(--color-surface-light-2));
+  background:
+    linear-gradient(165deg, rgba(12, 12, 12, 0.9), rgba(5, 5, 5, 0.96)),
+    url('/mainbackground.png') center center / cover no-repeat;
+  background-origin: border-box;
+  background-clip: border-box;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
 }

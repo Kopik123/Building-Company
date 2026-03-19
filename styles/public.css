@@ -282,27 +282,14 @@
 
 .public-section {
   padding: clamp(2.2rem, 6.4vw, 4rem) 0;
-}
-
-.public-section--dark {
-  background: linear-gradient(180deg, rgba(7, 7, 7, 0.98), rgba(3, 3, 3, 0.98));
-}
-
-.public-section--light {
-  background:
-    radial-gradient(140% 120% at 50% 0%, rgba(209, 164, 74, 0.1), rgba(0, 0, 0, 0) 45%),
-    linear-gradient(180deg, rgba(244, 238, 225, 0.98), rgba(232, 223, 205, 0.96));
-}
-
-.page-home .public-section,
-.page-home .public-section--dark,
-.page-home .public-section--light {
   background: transparent;
 }
 
-.page-gallery .public-section,
-.page-gallery .public-section--dark,
-.page-gallery .public-section--light {
+.public-section--dark {
+  background: transparent;
+}
+
+.public-section--light {
   background: transparent;
 }
 
