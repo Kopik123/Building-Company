@@ -8,6 +8,7 @@
     syncKeyedList,
     createThreadCard,
     createMessageCard,
+    renderMessageCardContent,
     formatDateTime,
     requestAccordionRefresh,
     getThreadCounterparty,
@@ -33,6 +34,39 @@
 
     const renderOperationsShell = () => {
       onRenderOperationsShell?.();
+    };
+
+    const collectFiles = (form) => Array.from(form?.elements?.files?.files || []);
+
+    const hasMessagePayload = ({ body, files }) => Boolean(String(body || '').trim() || files.length);
+
+    const defaultAttachmentBody = (files) => `Sent ${files.length} file(s)`;
+
+    const sendThreadMessage = async ({ threadType, threadId, body, files }) => {
+      const normalizedBody = String(body || '').trim();
+      if (!hasMessagePayload({ body: normalizedBody, files })) {
+        throw new Error('Message or attachment is required.');
+      }
+
+      const baseUrl = threadType === 'group'
+        ? `/api/group/threads/${threadId}/messages`
+        : `/api/inbox/threads/${threadId}/messages`;
+
+      if (files.length) {
+        const formData = new FormData();
+        formData.append('body', normalizedBody || defaultAttachmentBody(files));
+        files.forEach((file) => formData.append('files', file));
+        return api(`${baseUrl}/upload`, {
+          method: 'POST',
+          body: formData
+        });
+      }
+
+      return api(baseUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ body: normalizedBody })
+      });
     };
 
     const getPreferredManager = () => {
@@ -115,8 +149,11 @@
         createNode: createMessageCard,
         updateNode: (card, message) => {
           const sender = message.sender?.name || message.sender?.email || 'Unknown';
-          card.children[0].textContent = `${sender} | ${formatDateTime(message.createdAt) || '-'}`;
-          card.children[1].textContent = message.body || '';
+          renderMessageCardContent(card, {
+            metaText: `${sender} | ${formatDateTime(message.createdAt) || '-'}`,
+            bodyText: message.body || '',
+            attachments: message.attachments
+          });
         },
         createEmptyNode: () => createMutedNode(state.selectedThreadId ? 'No messages in this thread.' : 'Select a thread to view messages.')
       });
@@ -129,8 +166,11 @@
         createNode: createMessageCard,
         updateNode: (card, message) => {
           const sender = message.sender?.name || message.sender?.email || 'Unknown';
-          card.children[0].textContent = `${sender} | ${formatDateTime(message.createdAt) || '-'}`;
-          card.children[1].textContent = message.body || '';
+          renderMessageCardContent(card, {
+            metaText: `${sender} | ${formatDateTime(message.createdAt) || '-'}`,
+            bodyText: message.body || '',
+            attachments: message.attachments
+          });
         },
         createEmptyNode: () => createMutedNode(
           state.selectedDirectThreadId
@@ -257,14 +297,16 @@
         event.preventDefault();
         if (!state.selectedThreadId) return setStatus(el.messageStatus, 'Select a thread first.', 'error');
         const body = String(el.messageForm.elements.body.value || '').trim();
-        if (!body) return setStatus(el.messageStatus, 'Message is required.', 'error');
+        const files = collectFiles(el.messageForm);
+        if (!hasMessagePayload({ body, files })) return setStatus(el.messageStatus, 'Message or attachment is required.', 'error');
 
-        setStatus(el.messageStatus, 'Sending...');
+        setStatus(el.messageStatus, files.length ? 'Uploading...' : 'Sending...');
         try {
-          await api(`/api/group/threads/${state.selectedThreadId}/messages`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ body })
+          await sendThreadMessage({
+            threadType: 'group',
+            threadId: state.selectedThreadId,
+            body,
+            files
           });
           setStatus(el.messageStatus, 'Message sent.', 'success');
           el.messageForm.reset();
@@ -277,9 +319,10 @@
       el.directMessageForm.addEventListener('submit', async (event) => {
         event.preventDefault();
         const body = String(el.directMessageForm.elements.body.value || '').trim();
-        if (!body) return setStatus(el.directMessageStatus, 'Message is required.', 'error');
+        const files = collectFiles(el.directMessageForm);
+        if (!hasMessagePayload({ body, files })) return setStatus(el.directMessageStatus, 'Message or attachment is required.', 'error');
 
-        setStatus(el.directMessageStatus, state.selectedDirectThreadId ? 'Sending...' : 'Opening thread...');
+        setStatus(el.directMessageStatus, state.selectedDirectThreadId ? (files.length ? 'Uploading...' : 'Sending...') : 'Opening thread...');
         try {
           let threadId = state.selectedDirectThreadId;
           if (!threadId) {
@@ -294,16 +337,27 @@
               body: JSON.stringify({
                 recipientUserId: manager.id,
                 subject: `Direct manager conversation - ${state.user?.name || state.user?.email || 'Client'}`,
-                body
+                ...(files.length
+                  ? { createOnly: true }
+                  : { body })
               })
             });
             threadId = payload.thread?.id || '';
+            if (files.length) {
+              await sendThreadMessage({
+                threadType: 'direct',
+                threadId,
+                body,
+                files
+              });
+            }
             await loadDirectThreads(threadId, { forceRefresh: true });
           } else {
-            await api(`/api/inbox/threads/${threadId}/messages`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ body })
+            await sendThreadMessage({
+              threadType: 'direct',
+              threadId,
+              body,
+              files
             });
             await loadDirectThreads(threadId, { forceRefresh: true });
           }

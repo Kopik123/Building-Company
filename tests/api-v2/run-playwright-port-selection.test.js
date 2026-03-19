@@ -8,7 +8,7 @@ const { startStaticServer } = require('../../scripts/playwright-static-server');
 const listen = (server, port) =>
   new Promise((resolve, reject) => {
     server.once('error', reject);
-    server.listen(port, '127.0.0.1', () => resolve(server.address()));
+    server.listen(port, () => resolve(server.address()));
   });
 
 const close = (server) =>

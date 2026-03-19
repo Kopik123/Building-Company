@@ -290,6 +290,38 @@
   color: var(--color-text);
 }
 
+.dashboard-message-attachments {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 0.55rem;
+}
+
+.dashboard-attachment-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+  width: 100%;
+  padding: 0.48rem 0.62rem;
+  border: 1px solid rgba(209, 164, 74, 0.38);
+  border-radius: var(--radius-xs);
+  background: rgba(10, 10, 10, 0.78);
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.dashboard-attachment-link:hover,
+.dashboard-attachment-link:focus-visible {
+  border-color: rgba(209, 164, 74, 0.72);
+  background: rgba(14, 14, 14, 0.92);
+}
+
+.dashboard-attachment-size {
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
 .dashboard-thread-meta {
   color: var(--color-text-muted);
 }

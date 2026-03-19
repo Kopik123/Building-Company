@@ -7,7 +7,7 @@ const canListenOnPort = (port) =>
     probe.once('listening', () => {
       probe.close(() => resolve(true));
     });
-    probe.listen(port, '127.0.0.1');
+    probe.listen(port);
   });
 
 const findAvailablePort = async (preferredPort, maxAttempts = 20) => {

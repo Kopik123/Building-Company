@@ -141,11 +141,65 @@
     const card = document.createElement('article');
     card.className = 'dashboard-item';
     const meta = document.createElement('p');
-    meta.className = 'muted';
+    meta.className = 'muted dashboard-message-meta';
     const body = document.createElement('p');
+    body.className = 'dashboard-message-body';
+    const attachments = document.createElement('div');
+    attachments.className = 'dashboard-message-attachments';
+    attachments.hidden = true;
     card.appendChild(meta);
     card.appendChild(body);
+    card.appendChild(attachments);
     return card;
+  };
+
+  const formatAttachmentSize = (size) => {
+    const value = Number(size || 0);
+    if (!Number.isFinite(value) || value <= 0) return '';
+    if (value < 1024) return `${value} B`;
+    if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
+    return `${(value / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const renderMessageCardContent = (card, { metaText, bodyText, attachments } = {}) => {
+    if (!card) return;
+
+    const metaNode = card.querySelector('.dashboard-message-meta') || card.children[0];
+    const bodyNode = card.querySelector('.dashboard-message-body') || card.children[1];
+    let attachmentsNode = card.querySelector('.dashboard-message-attachments');
+
+    if (!attachmentsNode) {
+      attachmentsNode = document.createElement('div');
+      attachmentsNode.className = 'dashboard-message-attachments';
+      attachmentsNode.hidden = true;
+      card.appendChild(attachmentsNode);
+    }
+
+    if (metaNode) metaNode.textContent = metaText || '';
+    if (bodyNode) bodyNode.textContent = bodyText || '';
+
+    attachmentsNode.innerHTML = '';
+    const attachmentList = Array.isArray(attachments) ? attachments.filter(Boolean) : [];
+    attachmentsNode.hidden = attachmentList.length === 0;
+
+    attachmentList.forEach((attachment, index) => {
+      const link = document.createElement('a');
+      link.className = 'dashboard-attachment-link';
+      link.href = attachment.url || '#';
+      link.target = '_blank';
+      link.rel = 'noreferrer noopener';
+      link.textContent = attachment.name || `Attachment ${index + 1}`;
+
+      const sizeText = formatAttachmentSize(attachment.size);
+      if (sizeText) {
+        const size = document.createElement('span');
+        size.className = 'dashboard-attachment-size';
+        size.textContent = sizeText;
+        link.appendChild(size);
+      }
+
+      attachmentsNode.appendChild(link);
+    });
   };
 
   window.LevelLinesDashboardShared = {
@@ -154,6 +208,7 @@
     syncKeyedList,
     createMutedNode,
     createThreadCard,
-    createMessageCard
+    createMessageCard,
+    renderMessageCardContent
   };
 })();

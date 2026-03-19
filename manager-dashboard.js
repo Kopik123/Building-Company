@@ -308,11 +308,37 @@
     const card = document.createElement('article');
     card.className = 'dashboard-item';
     const meta = document.createElement('p');
-    meta.className = 'muted';
+    meta.className = 'muted dashboard-message-meta';
     const body = document.createElement('p');
+    body.className = 'dashboard-message-body';
+    const attachments = document.createElement('div');
+    attachments.className = 'dashboard-message-attachments';
+    attachments.hidden = true;
     card.appendChild(meta);
     card.appendChild(body);
+    card.appendChild(attachments);
     return card;
+  });
+  const renderMessageCardContent = dashboardShared.renderMessageCardContent || ((card, { metaText, bodyText, attachments } = {}) => {
+    const metaNode = card.querySelector('.dashboard-message-meta') || card.children[0];
+    const bodyNode = card.querySelector('.dashboard-message-body') || card.children[1];
+    const attachmentsNode = card.querySelector('.dashboard-message-attachments') || card.children[2];
+    if (metaNode) metaNode.textContent = metaText || '';
+    if (bodyNode) bodyNode.textContent = bodyText || '';
+    if (attachmentsNode) {
+      attachmentsNode.innerHTML = '';
+      const items = Array.isArray(attachments) ? attachments : [];
+      attachmentsNode.hidden = items.length === 0;
+      items.forEach((attachment, index) => {
+        const link = document.createElement('a');
+        link.className = 'dashboard-attachment-link';
+        link.href = attachment.url || '#';
+        link.target = '_blank';
+        link.rel = 'noreferrer noopener';
+        link.textContent = attachment.name || `Attachment ${index + 1}`;
+        attachmentsNode.appendChild(link);
+      });
+    }
   });
   const renderMailboxPreviewList = dashboardShared.renderMailboxPreviewList || runtime.renderMailboxPreviewList || ((node, items, { loaded, loadingText, emptyText, mapItem }) => {
     node.innerHTML = '';
@@ -607,6 +633,7 @@
     createMutedNode,
     createThreadCard,
     createMessageCard,
+    renderMessageCardContent,
     formatDateTime,
     setStatus,
     normUuid,

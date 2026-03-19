@@ -121,3 +121,54 @@ test('inbox thread read endpoint marks all unread messages in a thread as read',
   assert.equal(markedPayload.options.where.recipientId, '33333333-3333-4333-8333-333333333333');
   assert.equal(markedPayload.options.where.isRead, false);
 });
+
+test('inbox thread create-only mode opens a thread without creating an opening message', async () => {
+  let createdMessage = false;
+  mockModels({
+    InboxThread: {
+      async findOrCreate() {
+        return [{
+          id: 'thread-2',
+          participantAId: '33333333-3333-4333-8333-333333333333',
+          participantBId: '44444444-4444-4444-8444-444444444444',
+          subject: 'Attachment-first thread'
+        }];
+      }
+    },
+    InboxMessage: {
+      async create() {
+        createdMessage = true;
+        return { id: 'message-2' };
+      }
+    },
+    User: {
+      async findByPk(id) {
+        return {
+          id,
+          email: 'manager@example.com',
+          role: 'manager',
+          name: 'Daniel Manager',
+          isActive: true
+        };
+      }
+    }
+  });
+
+  const route = loadRoute('routes/inbox.js');
+  const app = buildExpressApp('/api/inbox', route);
+  const token = signAccessToken('33333333-3333-4333-8333-333333333333', 'client');
+
+  const response = await request(app)
+    .post('/api/inbox/threads')
+    .set('Authorization', `Bearer ${token}`)
+    .send({
+      recipientUserId: '44444444-4444-4444-8444-444444444444',
+      subject: 'Attachment-first thread',
+      createOnly: true
+    })
+    .expect(201);
+
+  assert.equal(response.body.thread.id, 'thread-2');
+  assert.equal(response.body.message, null);
+  assert.equal(createdMessage, false);
+});

@@ -65,17 +65,29 @@ router.get(
 
 router.post(
   '/threads',
-  [auth, body('recipientUserId').isUUID(), body('subject').trim().notEmpty(), body('body').trim().notEmpty()],
+  [
+    auth,
+    body('recipientUserId').isUUID(),
+    body('subject').trim().notEmpty(),
+    body('body').optional({ checkFalsy: true }).trim(),
+    body('createOnly').optional().isBoolean()
+  ],
   asyncHandler(async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { recipientUserId, subject, body: messageBody, quoteId } = req.body;
+    const { recipientUserId, subject, quoteId } = req.body;
+    const messageBody = String(req.body.body || '').trim();
+    const createOnly = Boolean(req.body.createOnly);
 
     if (recipientUserId === req.user.id) {
       return res.status(400).json({ error: 'Cannot message yourself' });
+    }
+
+    if (!messageBody && !createOnly) {
+      return res.status(400).json({ error: 'Opening message is required unless createOnly is true' });
     }
 
     const recipient = await User.findByPk(recipientUserId);
@@ -99,12 +111,15 @@ router.post(
       }
     });
 
-    const message = await InboxMessage.create({
-      threadId: thread.id,
-      senderId: req.user.id,
-      recipientId: recipientUserId,
-      body: messageBody
-    });
+    let message = null;
+    if (messageBody) {
+      message = await InboxMessage.create({
+        threadId: thread.id,
+        senderId: req.user.id,
+        recipientId: recipientUserId,
+        body: messageBody
+      });
+    }
 
     return res.status(201).json({ thread, message });
   })

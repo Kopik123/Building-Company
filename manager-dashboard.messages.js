@@ -8,6 +8,7 @@
     createMutedNode,
     createThreadCard,
     createMessageCard,
+    renderMessageCardContent,
     formatDateTime,
     setStatus,
     normUuid,
@@ -38,14 +39,50 @@
     const selectedDirectThread = () =>
       state.directThreads.find((thread) => thread.id === state.selectedDirectThreadId) || null;
 
+    const collectFiles = (form) => Array.from(form?.elements?.files?.files || []);
+
+    const hasMessagePayload = ({ body, files }) => Boolean(String(body || '').trim() || files.length);
+
+    const defaultAttachmentBody = (files) => `Sent ${files.length} file(s)`;
+
+    const sendThreadMessage = async ({ threadType, threadId, body, files }) => {
+      const normalizedBody = String(body || '').trim();
+      if (!hasMessagePayload({ body: normalizedBody, files })) {
+        throw new Error('Message or attachment is required.');
+      }
+
+      const baseUrl = threadType === 'group'
+        ? `/api/group/threads/${threadId}/messages`
+        : `/api/inbox/threads/${threadId}/messages`;
+
+      if (files.length) {
+        const formData = new FormData();
+        formData.append('body', normalizedBody || defaultAttachmentBody(files));
+        files.forEach((file) => formData.append('files', file));
+        return api(`${baseUrl}/upload`, {
+          method: 'POST',
+          body: formData
+        });
+      }
+
+      return api(baseUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ body: normalizedBody })
+      });
+    };
+
     const renderDirectMessages = () => {
       syncKeyedList(el.managerDirectMessagesList, state.selectedDirectThreadId ? state.directMessages : [], {
         getKey: (message, index) => message.id || `${message.createdAt || 'direct-message'}-${index}`,
         createNode: createMessageCard,
         updateNode: (card, message) => {
           const sender = message.sender?.name || message.sender?.email || 'Unknown';
-          card.children[0].textContent = `${sender} | ${formatDateTime(message.createdAt) || '-'}`;
-          card.children[1].textContent = message.body || '';
+          renderMessageCardContent(card, {
+            metaText: `${sender} | ${formatDateTime(message.createdAt) || '-'}`,
+            bodyText: message.body || '',
+            attachments: message.attachments
+          });
         },
         createEmptyNode: () => createMutedNode(state.selectedDirectThreadId ? 'No private messages in this thread.' : 'Select a private thread to view messages.')
       });
@@ -61,12 +98,18 @@
       if (directMessageField) {
         const disabled = !state.selectedDirectThreadId;
         directMessageField.disabled = disabled;
+        if (el.managerDirectMessageForm?.elements?.files) {
+          el.managerDirectMessageForm.elements.files.disabled = disabled;
+        }
         el.managerDirectMessageForm.querySelector('button[type="submit"]').disabled = disabled;
       }
 
       if (groupMessageField) {
         const disabled = !state.selectedGroupThreadId;
         groupMessageField.disabled = disabled;
+        if (el.managerGroupMessageForm?.elements?.files) {
+          el.managerGroupMessageForm.elements.files.disabled = disabled;
+        }
         el.managerGroupMessageForm.querySelector('button[type="submit"]').disabled = disabled;
       }
 
@@ -173,8 +216,11 @@
         createNode: createMessageCard,
         updateNode: (card, message) => {
           const sender = message.sender?.name || message.sender?.email || 'Unknown';
-          card.children[0].textContent = `${sender} | ${formatDateTime(message.createdAt) || '-'}`;
-          card.children[1].textContent = message.body || '';
+          renderMessageCardContent(card, {
+            metaText: `${sender} | ${formatDateTime(message.createdAt) || '-'}`,
+            bodyText: message.body || '',
+            attachments: message.attachments
+          });
         },
         createEmptyNode: () => createMutedNode(state.selectedGroupThreadId ? 'No project messages in this thread.' : 'Select a project chat thread to view messages.')
       });
@@ -324,9 +370,10 @@
         const recipientEmail = normEmail(form.recipientEmail.value);
         const subject = String(form.subject.value || '').trim();
         const body = String(form.body.value || '').trim();
+        const files = collectFiles(el.managerDirectThreadForm);
 
-        if (!recipientEmail || !subject || !body) {
-          return setStatus(el.managerDirectThreadStatus, 'Recipient, subject and opening message are required.', 'error');
+        if (!recipientEmail || !subject || !hasMessagePayload({ body, files })) {
+          return setStatus(el.managerDirectThreadStatus, 'Recipient, subject and an opening message or attachment are required.', 'error');
         }
 
         setStatus(el.managerDirectThreadStatus, 'Creating private thread...');
@@ -336,15 +383,34 @@
             return setStatus(el.managerDirectThreadStatus, 'Pick an existing client or staff member from the suggestions.', 'error');
           }
 
-          const payload = await api('/api/inbox/threads', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              recipientUserId: recipient.id,
-              subject,
-              body
-            })
-          });
+          let payload;
+          if (files.length) {
+            payload = await api('/api/inbox/threads', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                recipientUserId: recipient.id,
+                subject,
+                createOnly: true
+              })
+            });
+            await sendThreadMessage({
+              threadType: 'direct',
+              threadId: payload.thread?.id,
+              body,
+              files
+            });
+          } else {
+            payload = await api('/api/inbox/threads', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                recipientUserId: recipient.id,
+                subject,
+                body
+              })
+            });
+          }
 
           setStatus(el.managerDirectThreadStatus, 'Private thread created.', 'success');
           el.managerDirectThreadForm.reset();
@@ -439,13 +505,15 @@
         event.preventDefault();
         if (!state.selectedDirectThreadId) return setStatus(el.managerDirectMessageStatus, 'Select a private thread first.', 'error');
         const body = String(el.managerDirectMessageForm.elements.body.value || '').trim();
-        if (!body) return setStatus(el.managerDirectMessageStatus, 'Message is required.', 'error');
-        setStatus(el.managerDirectMessageStatus, 'Sending...');
+        const files = collectFiles(el.managerDirectMessageForm);
+        if (!hasMessagePayload({ body, files })) return setStatus(el.managerDirectMessageStatus, 'Message or attachment is required.', 'error');
+        setStatus(el.managerDirectMessageStatus, files.length ? 'Uploading...' : 'Sending...');
         try {
-          await api(`/api/inbox/threads/${state.selectedDirectThreadId}/messages`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ body })
+          await sendThreadMessage({
+            threadType: 'direct',
+            threadId: state.selectedDirectThreadId,
+            body,
+            files
           });
           setStatus(el.managerDirectMessageStatus, 'Private message sent.', 'success');
           el.managerDirectMessageForm.reset();
@@ -459,13 +527,15 @@
         event.preventDefault();
         if (!state.selectedGroupThreadId) return setStatus(el.managerGroupMessageStatus, 'Select a project thread first.', 'error');
         const body = String(el.managerGroupMessageForm.elements.body.value || '').trim();
-        if (!body) return setStatus(el.managerGroupMessageStatus, 'Message is required.', 'error');
-        setStatus(el.managerGroupMessageStatus, 'Sending...');
+        const files = collectFiles(el.managerGroupMessageForm);
+        if (!hasMessagePayload({ body, files })) return setStatus(el.managerGroupMessageStatus, 'Message or attachment is required.', 'error');
+        setStatus(el.managerGroupMessageStatus, files.length ? 'Uploading...' : 'Sending...');
         try {
-          await api(`/api/group/threads/${state.selectedGroupThreadId}/messages`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ body })
+          await sendThreadMessage({
+            threadType: 'group',
+            threadId: state.selectedGroupThreadId,
+            body,
+            files
           });
           setStatus(el.managerGroupMessageStatus, 'Project message sent.', 'success');
           el.managerGroupMessageForm.reset();

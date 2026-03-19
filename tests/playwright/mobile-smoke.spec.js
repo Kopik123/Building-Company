@@ -1,4 +1,7 @@
+const path = require('node:path');
 const { test, expect } = require('@playwright/test');
+
+const messageAttachmentFixture = path.join(__dirname, '..', 'fixtures', 'message-attachment.txt');
 
 const openNavIfNeeded = async (page) => {
   const toggle = page.locator('[data-nav-toggle]');
@@ -48,6 +51,13 @@ const mockClientSession = async (page) => {
     participantA: { id: 'client-1', name: 'Marta Client', email: 'client@example.com' },
     participantB: { id: 'manager-1', name: 'Daniel', email: 'manager@example.com' }
   };
+  const directMessagesState = [{
+    id: 'direct-message-1',
+    body: 'We can review the revised tile selection this afternoon.',
+    createdAt: '2026-03-09T09:35:00Z',
+    sender: { name: 'Daniel' },
+    attachments: []
+  }];
 
   const groupThreadState = {
     id: 'thread-1',
@@ -58,6 +68,13 @@ const mockClientSession = async (page) => {
     latestMessageSender: { id: 'manager-1', name: 'Daniel', email: 'manager@example.com', role: 'manager' },
     messageCount: 1
   };
+  const groupMessagesState = [{
+    id: 'message-1',
+    body: 'We confirmed the brass profile today.',
+    createdAt: '2026-03-09T10:05:00Z',
+    sender: { name: 'Daniel' },
+    attachments: []
+  }];
 
   await page.addInitScript(() => {
     localStorage.setItem('ll_auth_token', 'test-token');
@@ -140,12 +157,29 @@ const mockClientSession = async (page) => {
   await page.route('**/api/inbox/threads/direct-thread-1/messages?pageSize=100', async (route) => {
     await route.fulfill({
       json: {
-        messages: [{
-          id: 'direct-message-1',
-          body: 'We can review the revised tile selection this afternoon.',
-          createdAt: '2026-03-09T09:35:00Z',
-          sender: { name: 'Daniel' }
-        }]
+        messages: directMessagesState
+      }
+    });
+  });
+
+  await page.route('**/api/inbox/threads/direct-thread-1/messages/upload', async (route) => {
+    directMessagesState.push({
+      id: `direct-message-${directMessagesState.length + 1}`,
+      body: 'Sent 1 file(s)',
+      createdAt: '2026-03-09T09:40:00Z',
+      sender: { name: 'Marta Client' },
+      attachments: [{
+        name: 'message-attachment.txt',
+        url: '/uploads/message-attachment.txt',
+        size: 48,
+        mimeType: 'text/plain'
+      }]
+    });
+    directThreadState.latestMessagePreview = 'Sent 1 file(s)';
+    directThreadState.latestMessageAt = '2026-03-09T09:40:00Z';
+    await route.fulfill({
+      json: {
+        message: directMessagesState[directMessagesState.length - 1]
       }
     });
   });
@@ -153,18 +187,70 @@ const mockClientSession = async (page) => {
   await page.route('**/api/group/threads/thread-1/messages?pageSize=100', async (route) => {
     await route.fulfill({
       json: {
-        messages: [{
-          id: 'message-1',
-          body: 'We confirmed the brass profile today.',
-          createdAt: '2026-03-09T10:05:00Z',
-          sender: { name: 'Daniel' }
-        }]
+        messages: groupMessagesState
+      }
+    });
+  });
+
+  await page.route('**/api/group/threads/thread-1/messages/upload', async (route) => {
+    groupMessagesState.push({
+      id: `message-${groupMessagesState.length + 1}`,
+      body: 'Sent 1 file(s)',
+      createdAt: '2026-03-09T10:10:00Z',
+      sender: { name: 'Marta Client' },
+      attachments: [{
+        name: 'message-attachment.txt',
+        url: '/uploads/message-attachment.txt',
+        size: 48,
+        mimeType: 'text/plain'
+      }]
+    });
+    groupThreadState.latestMessagePreview = 'Sent 1 file(s)';
+    groupThreadState.latestMessageAt = '2026-03-09T10:10:00Z';
+    groupThreadState.messageCount = groupMessagesState.length;
+    await route.fulfill({
+      json: {
+        message: groupMessagesState[groupMessagesState.length - 1]
       }
     });
   });
 };
 
 const mockManagerSession = async (page) => {
+  const directThreadState = {
+    id: 'manager-direct-thread-1',
+    subject: 'Direct manager conversation',
+    updatedAt: '2026-03-09T09:30:00Z',
+    latestMessagePreview: 'Client approved the revised lighting allowance.',
+    latestMessageAt: '2026-03-09T09:40:00Z',
+    unreadCount: 0,
+    participantA: { id: 'manager-1', name: 'Daniel Manager', email: 'manager@example.com' },
+    participantB: { id: 'client-1', name: 'Marta Client', email: 'client@example.com' }
+  };
+  const directMessagesState = [{
+    id: 'manager-direct-message-1',
+    body: 'Client approved the revised lighting allowance.',
+    createdAt: '2026-03-09T09:40:00Z',
+    sender: { name: 'Marta Client' },
+    attachments: []
+  }];
+  const groupThreadState = {
+    id: 'manager-group-thread-1',
+    name: 'Prestige Kitchen',
+    updatedAt: '2026-03-09T10:00:00Z',
+    latestMessagePreview: 'Stone samples booked for Friday.',
+    latestMessageAt: '2026-03-09T10:05:00Z',
+    latestMessageSender: { id: 'manager-1', name: 'Daniel Manager', email: 'manager@example.com', role: 'manager' },
+    messageCount: 1
+  };
+  const groupMessagesState = [{
+    id: 'manager-group-message-1',
+    body: 'Stone samples booked for Friday.',
+    createdAt: '2026-03-09T10:05:00Z',
+    sender: { name: 'Daniel Manager' },
+    attachments: []
+  }];
+
   await page.addInitScript(() => {
     localStorage.setItem('ll_auth_token', 'test-token');
     localStorage.setItem('ll_auth_user', JSON.stringify({
@@ -325,13 +411,7 @@ const mockManagerSession = async (page) => {
   await page.route('**/api/inbox/threads?*', async (route) => {
     await route.fulfill({
       json: {
-        threads: [{
-          id: 'manager-direct-thread-1',
-          subject: 'Direct manager conversation',
-          updatedAt: '2026-03-09T09:30:00Z',
-          participantA: { id: 'manager-1', name: 'Daniel Manager', email: 'manager@example.com' },
-          participantB: { id: 'client-1', name: 'Marta Client', email: 'client@example.com' }
-        }]
+        threads: [directThreadState]
       }
     });
   });
@@ -339,12 +419,29 @@ const mockManagerSession = async (page) => {
   await page.route('**/api/inbox/threads/manager-direct-thread-1/messages?pageSize=100', async (route) => {
     await route.fulfill({
       json: {
-        messages: [{
-          id: 'manager-direct-message-1',
-          body: 'Client approved the revised lighting allowance.',
-          createdAt: '2026-03-09T09:40:00Z',
-          sender: { name: 'Marta Client' }
-        }]
+        messages: directMessagesState
+      }
+    });
+  });
+
+  await page.route('**/api/inbox/threads/manager-direct-thread-1/messages/upload', async (route) => {
+    directMessagesState.push({
+      id: `manager-direct-message-${directMessagesState.length + 1}`,
+      body: 'Sent 1 file(s)',
+      createdAt: '2026-03-09T09:45:00Z',
+      sender: { name: 'Daniel Manager' },
+      attachments: [{
+        name: 'message-attachment.txt',
+        url: '/uploads/message-attachment.txt',
+        size: 48,
+        mimeType: 'text/plain'
+      }]
+    });
+    directThreadState.latestMessagePreview = 'Sent 1 file(s)';
+    directThreadState.latestMessageAt = '2026-03-09T09:45:00Z';
+    await route.fulfill({
+      json: {
+        message: directMessagesState[directMessagesState.length - 1]
       }
     });
   });
@@ -352,7 +449,7 @@ const mockManagerSession = async (page) => {
   await page.route('**/api/group/threads?*', async (route) => {
     await route.fulfill({
       json: {
-        threads: [{ id: 'manager-group-thread-1', name: 'Prestige Kitchen', updatedAt: '2026-03-09T10:00:00Z' }]
+        threads: [groupThreadState]
       }
     });
   });
@@ -360,12 +457,30 @@ const mockManagerSession = async (page) => {
   await page.route('**/api/group/threads/manager-group-thread-1/messages?pageSize=100', async (route) => {
     await route.fulfill({
       json: {
-        messages: [{
-          id: 'manager-group-message-1',
-          body: 'Stone samples booked for Friday.',
-          createdAt: '2026-03-09T10:05:00Z',
-          sender: { name: 'Daniel Manager' }
-        }]
+        messages: groupMessagesState
+      }
+    });
+  });
+
+  await page.route('**/api/group/threads/manager-group-thread-1/messages/upload', async (route) => {
+    groupMessagesState.push({
+      id: `manager-group-message-${groupMessagesState.length + 1}`,
+      body: 'Sent 1 file(s)',
+      createdAt: '2026-03-09T10:10:00Z',
+      sender: { name: 'Daniel Manager' },
+      attachments: [{
+        name: 'message-attachment.txt',
+        url: '/uploads/message-attachment.txt',
+        size: 48,
+        mimeType: 'text/plain'
+      }]
+    });
+    groupThreadState.latestMessagePreview = 'Sent 1 file(s)';
+    groupThreadState.latestMessageAt = '2026-03-09T10:10:00Z';
+    groupThreadState.messageCount = groupMessagesState.length;
+    await route.fulfill({
+      json: {
+        message: groupMessagesState[groupMessagesState.length - 1]
       }
     });
   });
@@ -488,6 +603,25 @@ test('client dashboard loads direct and project chat messages when threads open'
   await expect(page.locator('#client-messages-list')).toContainText('We confirmed the brass profile today.');
 });
 
+test('client dashboard can send attachments in direct and project chat', async ({ page }) => {
+  await mockClientSession(page);
+  await page.goto('/client-dashboard.html');
+
+  await page.locator('#client-direct-threads-list').scrollIntoViewIfNeeded();
+  await page.locator('#client-direct-threads-list .dashboard-item .btn').first().click();
+  await page.locator('#client-direct-message-form input[name="files"]').setInputFiles(messageAttachmentFixture);
+  await page.locator('#client-direct-message-form button[type="submit"]').click();
+  await expect(page.locator('#client-direct-message-status')).toContainText(/private message sent/i);
+  await expect(page.locator('#client-direct-messages-list')).toContainText('message-attachment.txt');
+
+  await page.locator('#client-threads-list').scrollIntoViewIfNeeded();
+  await page.locator('#client-threads-list .dashboard-item .btn').first().click();
+  await page.locator('#client-message-form input[name="files"]').setInputFiles(messageAttachmentFixture);
+  await page.locator('#client-message-form button[type="submit"]').click();
+  await expect(page.locator('#client-message-status')).toContainText(/message sent/i);
+  await expect(page.locator('#client-messages-list')).toContainText('message-attachment.txt');
+});
+
 test('manager dashboard mobile menu opens', async ({ page }) => {
   await mockManagerSession(page);
   await page.goto('/manager-dashboard.html');
@@ -523,6 +657,25 @@ test('manager dashboard exposes project controls for logged session on mobile', 
   await expect(page.locator('#manager-direct-threads-list .dashboard-item').first()).toBeVisible();
   await page.locator('#manager-group-threads-list').scrollIntoViewIfNeeded();
   await expect(page.locator('#manager-group-threads-list .dashboard-item').first()).toBeVisible();
+});
+
+test('manager dashboard can send attachments in private and project chat', async ({ page }) => {
+  await mockManagerSession(page);
+  await page.goto('/manager-dashboard.html');
+
+  await page.locator('#manager-private-inbox').scrollIntoViewIfNeeded();
+  await page.locator('#manager-direct-threads-list .dashboard-item .btn').first().click();
+  await page.locator('#manager-direct-message-form input[name="files"]').setInputFiles(messageAttachmentFixture);
+  await page.locator('#manager-direct-message-form button[type="submit"]').click();
+  await expect(page.locator('#manager-direct-message-status')).toContainText(/private message sent/i);
+  await expect(page.locator('#manager-direct-messages-list')).toContainText('message-attachment.txt');
+
+  await page.locator('#manager-project-chat').scrollIntoViewIfNeeded();
+  await page.locator('#manager-group-threads-list .dashboard-item .btn').first().click();
+  await page.locator('#manager-group-message-form input[name="files"]').setInputFiles(messageAttachmentFixture);
+  await page.locator('#manager-group-message-form button[type="submit"]').click();
+  await expect(page.locator('#manager-group-message-status')).toContainText(/project message sent/i);
+  await expect(page.locator('#manager-group-messages-list')).toContainText('message-attachment.txt');
 });
 
 test('manager dashboard workflow chooser switches between projects materials and services', async ({ page }) => {

@@ -718,6 +718,9 @@
                   <label class="span-2">Opening message
                     <textarea name="body" rows="3" required></textarea>
                   </label>
+                  <label class="span-2">Attachments
+                    <input type="file" name="files" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip" />
+                  </label>
                 </div>
                 <button type="submit" class="btn btn-gold">Create private thread</button>
                 <p class="form-status" id="manager-direct-thread-status" aria-live="polite"></p>
@@ -734,7 +737,10 @@
                 <form id="manager-direct-message-form" novalidate>
                   <div class="form-grid">
                     <label class="span-2">Message
-                      <textarea name="body" rows="3" required></textarea>
+                      <textarea name="body" rows="3"></textarea>
+                    </label>
+                    <label class="span-2">Attachments
+                      <input type="file" name="files" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip" />
                     </label>
                   </div>
                   <button type="submit" class="btn btn-gold">Send private message</button>
@@ -812,7 +818,10 @@
                 <form id="manager-group-message-form" novalidate>
                   <div class="form-grid">
                     <label class="span-2">Message
-                      <textarea name="body" rows="3" required></textarea>
+                      <textarea name="body" rows="3"></textarea>
+                    </label>
+                    <label class="span-2">Attachments
+                      <input type="file" name="files" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip" />
                     </label>
                   </div>
                   <button type="submit" class="btn btn-gold">Send project message</button>
