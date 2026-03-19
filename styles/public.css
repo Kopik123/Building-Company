@@ -759,6 +759,30 @@
   right: clamp(0.8rem, 2vw, 1.4rem);
 }
 
+@media (max-width: 1200px) {
+  .page-gallery .page-intro-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .page-gallery .gallery-stage {
+    min-height: clamp(380px, 56vw, 560px);
+    padding-inline: clamp(3rem, 5vw, 4rem);
+  }
+
+  .page-gallery .roller-card.is-left,
+  .page-gallery .roller-card.is-right,
+  .page-gallery .roller-card.is-hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .page-gallery .roller-card.is-center {
+    width: min(30rem, calc(100% - 1.5rem));
+    max-width: calc(100% - 1.5rem);
+  }
+}
+
 .gallery-project-strip {
   display: flex;
   flex-wrap: wrap;

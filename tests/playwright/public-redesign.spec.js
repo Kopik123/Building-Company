@@ -111,6 +111,21 @@ test('core brochure pages render about, services, gallery, contact and quote rou
   expect(quoteCardTop).toBeLessThan(quoteIntroTop);
 });
 
+test('gallery collapses intro and side previews cleanly on narrower desktop widths', async ({ page }) => {
+  await page.setViewportSize({ width: 900, height: 1200 });
+  await page.goto('/gallery.html');
+
+  await expect(page.locator('body.public-site.page-gallery')).toBeVisible();
+  await expectNoHorizontalScroll(page);
+
+  const galleryIntroColumns = await page.locator('.page-intro-grid').evaluate((node) => getComputedStyle(node).gridTemplateColumns);
+  expect(galleryIntroColumns.trim().split(/\s+/).length).toBe(1);
+
+  await expect(page.locator('.roller-card.is-center')).toBeVisible();
+  await expect.poll(async () => page.locator('.roller-card.is-left').evaluate((node) => getComputedStyle(node).visibility)).toBe('hidden');
+  await expect.poll(async () => page.locator('.roller-card.is-right').evaluate((node) => getComputedStyle(node).visibility)).toBe('hidden');
+});
+
 test('wall systems service CTA opens quote with wall-systems context preselected', async ({ page }) => {
   await page.goto('/services.html');
   await page.getByRole('link', { name: /discuss wall systems/i }).click();

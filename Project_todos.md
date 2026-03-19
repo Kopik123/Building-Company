@@ -18,6 +18,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [ ] On live both dashboards, verify direct and project chat now support attachments end-to-end: select a file, send it, confirm the message renders the attachment link, and confirm attachment-first direct conversation creation works when no private thread exists yet.
 - [ ] Confirm on live `/gallery.html` that the gallery now reads fully service-led, with correct service descriptions, service rail labels and fullscreen image flow on desktop and mobile.
 - [ ] Confirm on live `/gallery.html` that the side-preview images inside the gallery stage stay centered, scaled and readable on desktop instead of overlapping or clipping against the stage edges.
+- [x] Collapse the gallery intro and side-preview stage earlier on narrower desktop/tablet widths so the page switches to one dominant image before the old three-card stage becomes cramped.
 - [x] Align the gallery Playwright regression with the new service-switcher contract so it checks active service title/meta/status instead of the removed image-title node.
 - [x] Sync the workspace/auth footer service fallbacks to the canonical five-service set so those pages no longer ship stale wall/flooring labels before `site.js` hydrates brand links.
 - [ ] Confirm on live `/services.html` that `Discuss wall systems` opens `/quote.html` with the wall-systems context already selected in the quote form.
