@@ -16,210 +16,364 @@
     requestManagerWorkflowRender,
     syncEstimateReferenceOptions
   }) => {
-    const renderServices = () => {
-      el.servicesList.innerHTML = '';
-      if (!state.services.length) {
-        el.servicesList.appendChild(createMutedNode('No services found for current filters.'));
-        renderPagination(el.servicesPagination, el.servicesPrev, el.servicesNext, state.servicesPagination);
+    const parseIntegerInput = (value, fallback = 0) => Number.parseInt(value, 10) || fallback;
+
+    const parseDecimalInput = (value, fallback = 0) => Number(value || fallback);
+
+    const runCatalogAction = async (statusElement, workingMessage, successMessage, action, errorMessage) => {
+      if (workingMessage) {
+        setStatus(statusElement, workingMessage);
+      }
+      try {
+        await action();
+        if (successMessage) {
+          setStatus(statusElement, successMessage, 'success');
+        }
+      } catch (error) {
+        setStatus(statusElement, error.message || errorMessage, 'error');
+        throw error;
+      }
+    };
+
+    const showCatalogLoadError = (message) => {
+      globalThis.alert(message);
+    };
+
+    const refreshServices = async () => {
+      await loadServices();
+      syncEstimateReferenceOptions();
+    };
+
+    const refreshMaterials = async () => {
+      await loadMaterials();
+      syncEstimateReferenceOptions();
+    };
+
+    const renderCatalogCollection = ({
+      items,
+      listElement,
+      emptyMessage,
+      paginationElement,
+      prevButton,
+      nextButton,
+      paginationState,
+      createCard
+    }) => {
+      listElement.innerHTML = '';
+      if (!items.length) {
+        listElement.appendChild(createMutedNode(emptyMessage));
+        renderPagination(paginationElement, prevButton, nextButton, paginationState);
         renderOperationsShell();
-        return;
+        return false;
       }
 
       const frag = document.createDocumentFragment();
-      state.services.forEach((service) => {
-        const card = document.createElement('article');
-        card.className = 'dashboard-item';
-        card.innerHTML = `<h3>${escapeHtml(service.title)}</h3><p class="muted">${escapeHtml(service.slug)} | ${escapeHtml(service.category)} | order ${escapeHtml(service.displayOrder)} | ${service.showOnWebsite ? 'public' : 'hidden'}</p>`;
-
-        const row = document.createElement('div');
-        row.className = 'dashboard-edit-grid dashboard-edit-grid--wide';
-
-        const title = document.createElement('input');
-        title.type = 'text';
-        title.placeholder = 'Service title';
-        title.value = service.title || '';
-
-        const shortDescription = document.createElement('input');
-        shortDescription.type = 'text';
-        shortDescription.placeholder = 'Short description';
-        shortDescription.value = service.shortDescription || '';
-
-        const order = document.createElement('input');
-        order.type = 'number';
-        order.value = Number.isFinite(service.displayOrder) ? service.displayOrder : 0;
-
-        const { field: publicField, input: publicCheck } = createCheckboxField('Visibility', 'Show on website', service.showOnWebsite);
-
-        const save = document.createElement('button');
-        save.type = 'button';
-        save.className = 'btn btn-gold';
-        save.textContent = 'Save';
-        save.addEventListener('click', async () => {
-          try {
-            await api(`/api/manager/services/${service.id}`, {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                title: title.value.trim(),
-                shortDescription: shortDescription.value.trim(),
-                displayOrder: Number.parseInt(order.value, 10) || 0,
-                showOnWebsite: publicCheck.checked
-              })
-            });
-            await loadServices();
-            setStatus(el.serviceCreateStatus, 'Service updated.', 'success');
-          } catch (error) {
-            setStatus(el.serviceCreateStatus, error.message || 'Failed to update service.', 'error');
-          }
-        });
-
-        const del = document.createElement('button');
-        del.type = 'button';
-        del.className = 'btn btn-outline';
-        del.textContent = 'Delete';
-        del.addEventListener('click', async () => {
-          if (!globalThis.confirm(`Delete service "${service.title}"?`)) return;
-          try {
-            await api(`/api/manager/services/${service.id}`, { method: 'DELETE' });
-            await loadServices();
-          } catch (error) {
-            setStatus(el.serviceCreateStatus, error.message || 'Failed to delete service.', 'error');
-          }
-        });
-
-        row.appendChild(createControlField('Title', title));
-        row.appendChild(createControlField('Summary', shortDescription));
-        row.appendChild(createControlField('Display Order', order));
-        row.appendChild(publicField);
-        row.appendChild(createEditActions([save, del]));
-        card.appendChild(row);
-        frag.appendChild(card);
+      items.forEach((item) => {
+        frag.appendChild(createCard(item));
       });
 
-      el.servicesList.appendChild(frag);
-      renderPagination(el.servicesPagination, el.servicesPrev, el.servicesNext, state.servicesPagination);
+      listElement.appendChild(frag);
+      renderPagination(paginationElement, prevButton, nextButton, paginationState);
       renderOperationsShell();
       requestManagerWorkflowRender();
+      return true;
+    };
+
+    const createButton = (label, className) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = className;
+      button.textContent = label;
+      return button;
+    };
+
+    const createTextInput = (placeholder, value = '') => {
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.placeholder = placeholder;
+      input.value = value;
+      return input;
+    };
+
+    const createNumberInput = (value, options = {}) => {
+      const input = document.createElement('input');
+      input.type = 'number';
+      if (options.placeholder) {
+        input.placeholder = options.placeholder;
+      }
+      if (options.step) {
+        input.step = options.step;
+      }
+      input.value = value;
+      return input;
+    };
+
+    const createCatalogEditRow = () => {
+      const row = document.createElement('div');
+      row.className = 'dashboard-edit-grid dashboard-edit-grid--wide';
+      return row;
+    };
+
+    const buildServiceUpdatePayload = ({ title, shortDescription, order, publicCheck }) => ({
+      title: title.value.trim(),
+      shortDescription: shortDescription.value.trim(),
+      displayOrder: parseIntegerInput(order.value),
+      showOnWebsite: publicCheck.checked
+    });
+
+    const confirmServiceDeletion = (service) => globalThis.confirm(`Delete service "${service.title}"?`);
+
+    const handleServiceSave = async (service, fields) => {
+      await runCatalogAction(
+        el.serviceCreateStatus,
+        '',
+        'Service updated.',
+        async () => {
+          await api(`/api/manager/services/${service.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(buildServiceUpdatePayload(fields))
+          });
+          await refreshServices();
+        },
+        'Failed to update service.'
+      );
+    };
+
+    const handleServiceDelete = async (service) => {
+      if (!confirmServiceDeletion(service)) {
+        return;
+      }
+      await runCatalogAction(
+        el.serviceCreateStatus,
+        '',
+        '',
+        async () => {
+          await api(`/api/manager/services/${service.id}`, { method: 'DELETE' });
+          await refreshServices();
+        },
+        'Failed to delete service.'
+      );
+    };
+
+    const createServiceCard = (service) => {
+      const card = document.createElement('article');
+      card.className = 'dashboard-item';
+      card.innerHTML = `<h3>${escapeHtml(service.title)}</h3><p class="muted">${escapeHtml(service.slug)} | ${escapeHtml(service.category)} | order ${escapeHtml(service.displayOrder)} | ${service.showOnWebsite ? 'public' : 'hidden'}</p>`;
+
+      const row = createCatalogEditRow();
+      const title = createTextInput('Service title', service.title || '');
+      const shortDescription = createTextInput('Short description', service.shortDescription || '');
+      const order = createNumberInput(Number.isFinite(service.displayOrder) ? service.displayOrder : 0);
+      const { field: publicField, input: publicCheck } = createCheckboxField('Visibility', 'Show on website', service.showOnWebsite);
+      const fields = { title, shortDescription, order, publicCheck };
+
+      const save = createButton('Save', 'btn btn-gold');
+      save.addEventListener('click', () => {
+        handleServiceSave(service, fields).catch(() => {});
+      });
+
+      const del = createButton('Delete', 'btn btn-outline');
+      del.addEventListener('click', () => {
+        handleServiceDelete(service).catch(() => {});
+      });
+
+      row.appendChild(createControlField('Title', title));
+      row.appendChild(createControlField('Summary', shortDescription));
+      row.appendChild(createControlField('Display Order', order));
+      row.appendChild(publicField);
+      row.appendChild(createEditActions([save, del]));
+      card.appendChild(row);
+      return card;
+    };
+
+    const getMaterialStockState = (material) => Number(material.stockQty) <= Number(material.minStockQty);
+
+    const buildMaterialUpdatePayload = ({ stock, minStock, unitCost, supplier }) => ({
+      stockQty: parseDecimalInput(stock.value),
+      minStockQty: parseDecimalInput(minStock.value),
+      unitCost: unitCost.value ? Number(unitCost.value) : null,
+      supplier: supplier.value.trim()
+    });
+
+    const confirmMaterialDeletion = (material) => globalThis.confirm(`Delete material "${material.name}"?`);
+
+    const handleMaterialSave = async (material, fields) => {
+      await runCatalogAction(
+        el.materialCreateStatus,
+        '',
+        'Material updated.',
+        async () => {
+          await api(`/api/manager/materials/${material.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(buildMaterialUpdatePayload(fields))
+          });
+          await refreshMaterials();
+        },
+        'Failed to update material.'
+      );
+    };
+
+    const handleMaterialDelete = async (material) => {
+      if (!confirmMaterialDeletion(material)) {
+        return;
+      }
+      await runCatalogAction(
+        el.materialCreateStatus,
+        '',
+        'Material deleted.',
+        async () => {
+          await api(`/api/manager/materials/${material.id}`, { method: 'DELETE' });
+          await refreshMaterials();
+        },
+        'Failed to delete material.'
+      );
+    };
+
+    const createMaterialCard = (material) => {
+      const lowStock = getMaterialStockState(material);
+      const card = document.createElement('article');
+      card.className = 'dashboard-item';
+      card.innerHTML = `<h3>${escapeHtml(material.name)}</h3><p class="muted">${escapeHtml(material.category)} | SKU: ${escapeHtml(material.sku || '-')} | stock ${escapeHtml(material.stockQty)}/${escapeHtml(material.minStockQty)} | ${lowStock ? 'LOW STOCK' : 'OK'}</p>`;
+
+      const row = createCatalogEditRow();
+      const stock = createNumberInput(material.stockQty ?? 0, { step: '0.01' });
+      const minStock = createNumberInput(material.minStockQty ?? 0, { step: '0.01' });
+      const unitCost = createNumberInput(material.unitCost ?? '', { step: '0.01' });
+      const supplier = createTextInput('Supplier', material.supplier || '');
+      const fields = { stock, minStock, unitCost, supplier };
+
+      const save = createButton('Save', 'btn btn-gold');
+      save.addEventListener('click', () => {
+        handleMaterialSave(material, fields).catch(() => {});
+      });
+
+      const del = createButton('Delete', 'btn btn-outline');
+      del.addEventListener('click', () => {
+        handleMaterialDelete(material).catch(() => {});
+      });
+
+      row.appendChild(createControlField('Stock Qty', stock));
+      row.appendChild(createControlField('Min Stock', minStock));
+      row.appendChild(createControlField('Unit Cost', unitCost));
+      row.appendChild(createControlField('Supplier', supplier));
+      row.appendChild(createEditActions([save, del]));
+      card.appendChild(row);
+      return card;
+    };
+
+    const updateCatalogState = (itemsKey, paginationKey, payload, collectionKey) => {
+      state[itemsKey] = Array.isArray(payload[collectionKey]) ? payload[collectionKey] : [];
+      state[paginationKey] = payload.pagination || state[paginationKey];
+    };
+
+    const loadCatalogCollection = async ({ path, query, itemsKey, paginationKey, collectionKey, render }) => {
+      const payload = await api(`/api/manager/${path}?${buildQuery(query)}`);
+      updateCatalogState(itemsKey, paginationKey, payload, collectionKey);
+      render();
+    };
+
+    const reloadServicesFromFilters = () => {
+      applyServicesFiltersFromUI();
+      loadServices().catch((error) => showCatalogLoadError(error.message || 'Could not load services'));
+    };
+
+    const loadPreviousServicesPage = () => {
+      if (state.servicesQuery.page <= 1) {
+        return;
+      }
+      state.servicesQuery.page -= 1;
+      loadServices().catch((error) => showCatalogLoadError(error.message || 'Could not load services'));
+    };
+
+    const loadNextServicesPage = () => {
+      if (state.servicesQuery.page >= Number(state.servicesPagination.totalPages || 1)) {
+        return;
+      }
+      state.servicesQuery.page += 1;
+      loadServices().catch((error) => showCatalogLoadError(error.message || 'Could not load services'));
+    };
+
+    const reloadMaterialsFromFilters = () => {
+      applyMaterialsFiltersFromUI();
+      loadMaterials().catch((error) => showCatalogLoadError(error.message || 'Could not load materials'));
+    };
+
+    const loadPreviousMaterialsPage = () => {
+      if (state.materialsQuery.page <= 1) {
+        return;
+      }
+      state.materialsQuery.page -= 1;
+      loadMaterials().catch((error) => showCatalogLoadError(error.message || 'Could not load materials'));
+    };
+
+    const loadNextMaterialsPage = () => {
+      if (state.materialsQuery.page >= Number(state.materialsPagination.totalPages || 1)) {
+        return;
+      }
+      state.materialsQuery.page += 1;
+      loadMaterials().catch((error) => showCatalogLoadError(error.message || 'Could not load materials'));
+    };
+
+    const renderServices = () => {
+      renderCatalogCollection({
+        items: state.services,
+        listElement: el.servicesList,
+        emptyMessage: 'No services found for current filters.',
+        paginationElement: el.servicesPagination,
+        prevButton: el.servicesPrev,
+        nextButton: el.servicesNext,
+        paginationState: state.servicesPagination,
+        createCard: createServiceCard
+      });
     };
 
     const renderMaterials = () => {
-      el.materialsList.innerHTML = '';
-      if (!state.materials.length) {
-        el.materialsList.appendChild(createMutedNode('No materials found for current filters.'));
-        renderPagination(el.materialsPagination, el.materialsPrev, el.materialsNext, state.materialsPagination);
-        renderOperationsShell();
-        return;
-      }
-
-      const frag = document.createDocumentFragment();
-      state.materials.forEach((material) => {
-        const lowStock = Number(material.stockQty) <= Number(material.minStockQty);
-        const card = document.createElement('article');
-        card.className = 'dashboard-item';
-        card.innerHTML = `<h3>${escapeHtml(material.name)}</h3><p class="muted">${escapeHtml(material.category)} | SKU: ${escapeHtml(material.sku || '-')} | stock ${escapeHtml(material.stockQty)}/${escapeHtml(material.minStockQty)} | ${lowStock ? 'LOW STOCK' : 'OK'}</p>`;
-
-        const row = document.createElement('div');
-        row.className = 'dashboard-edit-grid dashboard-edit-grid--wide';
-
-        const stock = document.createElement('input');
-        stock.type = 'number';
-        stock.step = '0.01';
-        stock.value = material.stockQty ?? 0;
-
-        const minStock = document.createElement('input');
-        minStock.type = 'number';
-        minStock.step = '0.01';
-        minStock.value = material.minStockQty ?? 0;
-
-        const unitCost = document.createElement('input');
-        unitCost.type = 'number';
-        unitCost.step = '0.01';
-        unitCost.value = material.unitCost ?? '';
-
-        const supplier = document.createElement('input');
-        supplier.type = 'text';
-        supplier.value = material.supplier || '';
-        supplier.placeholder = 'Supplier';
-
-        const save = document.createElement('button');
-        save.type = 'button';
-        save.className = 'btn btn-gold';
-        save.textContent = 'Save';
-        save.addEventListener('click', async () => {
-          try {
-            await api(`/api/manager/materials/${material.id}`, {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                stockQty: Number(stock.value || 0),
-                minStockQty: Number(minStock.value || 0),
-                unitCost: unitCost.value ? Number(unitCost.value) : null,
-                supplier: supplier.value.trim()
-              })
-            });
-            await loadMaterials();
-            setStatus(el.materialCreateStatus, 'Material updated.', 'success');
-          } catch (error) {
-            setStatus(el.materialCreateStatus, error.message || 'Failed to update material.', 'error');
-          }
-        });
-
-        const del = document.createElement('button');
-        del.type = 'button';
-        del.className = 'btn btn-outline';
-        del.textContent = 'Delete';
-        del.addEventListener('click', async () => {
-          if (!globalThis.confirm(`Delete material "${material.name}"?`)) return;
-          try {
-            await api(`/api/manager/materials/${material.id}`, { method: 'DELETE' });
-            await loadMaterials();
-            setStatus(el.materialCreateStatus, 'Material deleted.', 'success');
-          } catch (error) {
-            setStatus(el.materialCreateStatus, error.message || 'Failed to delete material.', 'error');
-          }
-        });
-
-        row.appendChild(createControlField('Stock Qty', stock));
-        row.appendChild(createControlField('Min Stock', minStock));
-        row.appendChild(createControlField('Unit Cost', unitCost));
-        row.appendChild(createControlField('Supplier', supplier));
-        row.appendChild(createEditActions([save, del]));
-        card.appendChild(row);
-        frag.appendChild(card);
+      renderCatalogCollection({
+        items: state.materials,
+        listElement: el.materialsList,
+        emptyMessage: 'No materials found for current filters.',
+        paginationElement: el.materialsPagination,
+        prevButton: el.materialsPrev,
+        nextButton: el.materialsNext,
+        paginationState: state.materialsPagination,
+        createCard: createMaterialCard
       });
-
-      el.materialsList.appendChild(frag);
-      renderPagination(el.materialsPagination, el.materialsPrev, el.materialsNext, state.materialsPagination);
-      renderOperationsShell();
-      requestManagerWorkflowRender();
     };
 
     const loadServices = async () => {
-      const payload = await api(`/api/manager/services?${buildQuery({
-        page: state.servicesQuery.page,
-        pageSize: state.servicesQuery.pageSize,
-        q: state.servicesQuery.q,
-        category: state.servicesQuery.category,
-        showOnWebsite: state.servicesQuery.showOnWebsite
-      })}`);
-      state.services = Array.isArray(payload.services) ? payload.services : [];
-      state.servicesPagination = payload.pagination || state.servicesPagination;
-      renderServices();
-      syncEstimateReferenceOptions();
+      await loadCatalogCollection({
+        path: 'services',
+        query: {
+          page: state.servicesQuery.page,
+          pageSize: state.servicesQuery.pageSize,
+          q: state.servicesQuery.q,
+          category: state.servicesQuery.category,
+          showOnWebsite: state.servicesQuery.showOnWebsite
+        },
+        itemsKey: 'services',
+        paginationKey: 'servicesPagination',
+        collectionKey: 'services',
+        render: renderServices
+      });
     };
 
     const loadMaterials = async () => {
-      const payload = await api(`/api/manager/materials?${buildQuery({
-        page: state.materialsQuery.page,
-        pageSize: state.materialsQuery.pageSize,
-        q: state.materialsQuery.q,
-        category: state.materialsQuery.category,
-        lowStock: state.materialsQuery.lowStock
-      })}`);
-      state.materials = Array.isArray(payload.materials) ? payload.materials : [];
-      state.materialsPagination = payload.pagination || state.materialsPagination;
-      renderMaterials();
-      syncEstimateReferenceOptions();
+      await loadCatalogCollection({
+        path: 'materials',
+        query: {
+          page: state.materialsQuery.page,
+          pageSize: state.materialsQuery.pageSize,
+          q: state.materialsQuery.q,
+          category: state.materialsQuery.category,
+          lowStock: state.materialsQuery.lowStock
+        },
+        itemsKey: 'materials',
+        paginationKey: 'materialsPagination',
+        collectionKey: 'materials',
+        render: renderMaterials
+      });
     };
 
     const applyServicesFiltersFromUI = () => {
@@ -285,7 +439,6 @@
 
     const handleServiceCreateSubmit = async (event) => {
       event.preventDefault();
-      setStatus(el.serviceCreateStatus, 'Adding service...');
       const f = el.serviceCreateForm.elements;
       const payload = {
         title: String(f.title.value || '').trim(),
@@ -302,28 +455,30 @@
         setStatus(el.serviceCreateStatus, 'Service title is required.', 'error');
         return;
       }
-      try {
-        await api('/api/manager/services', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        setStatus(el.serviceCreateStatus, 'Service added.', 'success');
-        el.serviceCreateForm.reset();
-        f.category.value = 'bathroom';
-        f.displayOrder.value = '0';
-        f.showOnWebsite.checked = true;
-        state.servicesQuery.page = 1;
-        state.lazyLoaded.services = true;
-        await loadServices();
-      } catch (error) {
-        setStatus(el.serviceCreateStatus, error.message || 'Failed to add service.', 'error');
-      }
+      await runCatalogAction(
+        el.serviceCreateStatus,
+        'Adding service...',
+        'Service added.',
+        async () => {
+          await api('/api/manager/services', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          el.serviceCreateForm.reset();
+          f.category.value = 'bathroom';
+          f.displayOrder.value = '0';
+          f.showOnWebsite.checked = true;
+          state.servicesQuery.page = 1;
+          state.lazyLoaded.services = true;
+          await refreshServices();
+        },
+        'Failed to add service.'
+      ).catch(() => {});
     };
 
     const handleMaterialCreateSubmit = async (event) => {
       event.preventDefault();
-      setStatus(el.materialCreateStatus, 'Adding material...');
       const f = el.materialCreateForm.elements;
       const payload = {
         name: String(f.name.value || '').trim(),
@@ -340,59 +495,38 @@
         setStatus(el.materialCreateStatus, 'Material name is required.', 'error');
         return;
       }
-      try {
-        await api('/api/manager/materials', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        setStatus(el.materialCreateStatus, 'Material added.', 'success');
-        el.materialCreateForm.reset();
-        f.category.value = 'tiles';
-        f.unit.value = 'pcs';
-        f.stockQty.value = '0';
-        f.minStockQty.value = '0';
-        state.materialsQuery.page = 1;
-        state.lazyLoaded.materials = true;
-        await loadMaterials();
-      } catch (error) {
-        setStatus(el.materialCreateStatus, error.message || 'Failed to add material.', 'error');
-      }
+      await runCatalogAction(
+        el.materialCreateStatus,
+        'Adding material...',
+        'Material added.',
+        async () => {
+          await api('/api/manager/materials', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          el.materialCreateForm.reset();
+          f.category.value = 'tiles';
+          f.unit.value = 'pcs';
+          f.stockQty.value = '0';
+          f.minStockQty.value = '0';
+          state.materialsQuery.page = 1;
+          state.lazyLoaded.materials = true;
+          await refreshMaterials();
+        },
+        'Failed to add material.'
+      ).catch(() => {});
     };
 
     const bindEvents = () => {
       el.serviceCreateForm.addEventListener('submit', handleServiceCreateSubmit);
       el.materialCreateForm.addEventListener('submit', handleMaterialCreateSubmit);
-
-      el.servicesRefresh.addEventListener('click', () => {
-        applyServicesFiltersFromUI();
-        loadServices().catch((error) => globalThis.alert(error.message || 'Could not load services'));
-      });
-      el.servicesPrev.addEventListener('click', () => {
-        if (state.servicesQuery.page <= 1) return;
-        state.servicesQuery.page -= 1;
-        loadServices().catch((error) => globalThis.alert(error.message || 'Could not load services'));
-      });
-      el.servicesNext.addEventListener('click', () => {
-        if (state.servicesQuery.page >= Number(state.servicesPagination.totalPages || 1)) return;
-        state.servicesQuery.page += 1;
-        loadServices().catch((error) => globalThis.alert(error.message || 'Could not load services'));
-      });
-
-      el.materialsRefresh.addEventListener('click', () => {
-        applyMaterialsFiltersFromUI();
-        loadMaterials().catch((error) => globalThis.alert(error.message || 'Could not load materials'));
-      });
-      el.materialsPrev.addEventListener('click', () => {
-        if (state.materialsQuery.page <= 1) return;
-        state.materialsQuery.page -= 1;
-        loadMaterials().catch((error) => globalThis.alert(error.message || 'Could not load materials'));
-      });
-      el.materialsNext.addEventListener('click', () => {
-        if (state.materialsQuery.page >= Number(state.materialsPagination.totalPages || 1)) return;
-        state.materialsQuery.page += 1;
-        loadMaterials().catch((error) => globalThis.alert(error.message || 'Could not load materials'));
-      });
+      el.servicesRefresh.addEventListener('click', reloadServicesFromFilters);
+      el.servicesPrev.addEventListener('click', loadPreviousServicesPage);
+      el.servicesNext.addEventListener('click', loadNextServicesPage);
+      el.materialsRefresh.addEventListener('click', reloadMaterialsFromFilters);
+      el.materialsPrev.addEventListener('click', loadPreviousMaterialsPage);
+      el.materialsNext.addEventListener('click', loadNextMaterialsPage);
     };
 
     return {
