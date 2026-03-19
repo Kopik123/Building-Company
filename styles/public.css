@@ -247,6 +247,7 @@
 }
 
 .public-page-main {
+  padding-top: var(--space-3);
   padding-bottom: var(--space-8);
 }
 
@@ -781,6 +782,10 @@
     width: min(30rem, calc(100% - 1.5rem));
     max-width: calc(100% - 1.5rem);
   }
+}
+
+.page-gallery .page-intro-grid {
+  align-items: start;
 }
 
 .gallery-project-strip {
