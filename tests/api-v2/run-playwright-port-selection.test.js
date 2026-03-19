@@ -3,6 +3,7 @@ const net = require('node:net');
 const test = require('node:test');
 
 const { findAvailablePort } = require('../../scripts/run-playwright');
+const { startStaticServer } = require('../../scripts/playwright-static-server');
 
 const listen = (server, port) =>
   new Promise((resolve, reject) => {
@@ -37,6 +38,25 @@ test('findAvailablePort skips an occupied preferred port', async () => {
       await close(probe);
     }
   } finally {
+    await close(occupied);
+  }
+});
+
+test('startStaticServer falls forward when the preferred port is occupied', async () => {
+  const occupied = net.createServer();
+  const initialAddress = await listen(occupied, 0);
+  const preferredPort = initialAddress.port;
+
+  let server;
+  try {
+    server = await startStaticServer({ port: preferredPort });
+    const address = server.address();
+    assert.equal(typeof address, 'object');
+    assert.notEqual(address.port, preferredPort);
+  } finally {
+    if (server) {
+      await close(server);
+    }
     await close(occupied);
   }
 });

@@ -593,13 +593,21 @@
     const cards = state.cards;
     const total = cards.length;
     if (!total) return;
+    const baseCardWidth = cards[0]?.offsetWidth || 0;
+    const stageWidth = stage.clientWidth || 0;
+    const sideGutter = Math.min(48, Math.max(24, stageWidth * 0.03));
+    const availableTranslate = Math.max(0, stageWidth / 2 - baseCardWidth / 2 - sideGutter);
+    const translateBase = Math.max(
+      profile.translateX,
+      Math.min(availableTranslate * 0.95, profile.translateX * 1.75)
+    );
 
     cards.forEach((card, index) => {
       const delta = shortestDelta(state.position, index, total);
       const absDelta = Math.abs(delta);
       const visible = absDelta <= profile.visibleDistance;
 
-      const x = delta * profile.translateX;
+      const x = delta * translateBase;
       const y = absDelta > 1 ? profile.farLift : 0;
       const scale = 1 - Math.min(absDelta, 1.25) * profile.scaleDrop;
       const rotateY = -delta * profile.rotateY;

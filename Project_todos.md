@@ -49,6 +49,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 
 - [ ] Resolve the remaining local Playwright `spawn EPERM` issue and record the first green local `npm run test:e2e:mobile` pass.
 - [x] Make `scripts/run-playwright.js` resilient to parallel local runs; today the static server binds fixed port `4173`, so concurrent Playwright commands can fail with `EADDRINUSE`.
+- [ ] Investigate why direct file targeting through `node scripts/run-playwright.js ... tests/playwright/public-redesign.spec.js` can still return `No tests found` on Windows, even though the same suite runs correctly through `--grep`.
 - [ ] Export the real issue list from SonarQube for branch `vscode`, classify each `Bug` and `Vulnerability`, and start cleanup with `manager-dashboard.js`, `routes/manager.js`, `client-dashboard.js`, `styles/base.css` and `apps/mobile-v1/App.js`.
 - [ ] Run `scripts/sonar-export.sh` with `SONAR_URL` and `SONAR_TOKEN`, then attach `sonar-issues-full.json`, `sonar-quality-gate.json` and `sonar-measures.json` to the Sonar cleanup workflow.
 - [ ] Revisit SonarQube CPD exclusions once more public HTML moves into the shared renderer and fewer static outputs need to stay excluded.
