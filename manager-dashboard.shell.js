@@ -110,10 +110,11 @@
       }
     };
 
-    const renderManagerWorkflow = () => {
-      const selectedDomain = MANAGER_DOMAIN_CONFIG[state.selectedManagerDomain] ? state.selectedManagerDomain : 'projects';
-      state.selectedManagerDomain = selectedDomain;
+    const getSelectedManagerDomain = () => (
+      MANAGER_DOMAIN_CONFIG[state.selectedManagerDomain] ? state.selectedManagerDomain : 'projects'
+    );
 
+    const updateManagerDomainButtonStates = (selectedDomain) => {
       (managerDomainButtons || []).forEach((button) => {
         const isActive = button.dataset.managerDomainChoice === selectedDomain;
         button.classList.toggle('btn-gold', isActive);
@@ -121,10 +122,34 @@
         button.classList.toggle('is-active', isActive);
         button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
       });
+    };
 
+    const updateManagerDomainSectionVisibility = (selectedDomain) => {
       (managerDomainSections || []).forEach((section) => {
         section.classList.toggle('manager-domain-hidden', section.dataset.managerDomainSection !== selectedDomain);
       });
+    };
+
+    const createManagerWorkflowActionButton = (action) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = action.variant === 'gold'
+        ? 'btn btn-gold manager-workflow-action'
+        : 'btn btn-outline manager-workflow-action';
+      button.textContent = action.label;
+      button.disabled = typeof action.disabled === 'function' ? action.disabled() : false;
+      button.addEventListener('click', () => {
+        action.run();
+        renderManagerWorkflow();
+      });
+      return button;
+    };
+
+    const renderManagerWorkflow = () => {
+      const selectedDomain = getSelectedManagerDomain();
+      state.selectedManagerDomain = selectedDomain;
+      updateManagerDomainButtonStates(selectedDomain);
+      updateManagerDomainSectionVisibility(selectedDomain);
 
       const config = MANAGER_DOMAIN_CONFIG[selectedDomain];
       if (el.managerWorkflowDescription) {
@@ -133,81 +158,96 @@
       if (!el.managerWorkflowActions) return;
 
       el.managerWorkflowActions.replaceChildren();
-      config.actions.forEach((action) => {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = action.variant === 'gold' ? 'btn btn-gold manager-workflow-action' : 'btn btn-outline manager-workflow-action';
-        button.textContent = action.label;
-        button.disabled = typeof action.disabled === 'function' ? action.disabled() : false;
-        button.addEventListener('click', () => {
-          action.run();
-          renderManagerWorkflow();
-        });
-        el.managerWorkflowActions.appendChild(button);
-      });
+      const actionsFragment = document.createDocumentFragment();
+      config.actions.forEach((action) => actionsFragment.appendChild(createManagerWorkflowActionButton(action)));
+      el.managerWorkflowActions.appendChild(actionsFragment);
     };
 
-    const renderCompanyEvents = () => {
-      el.managerCompanyEventsList.innerHTML = '';
-
-      const items = [];
-      const recentProjects = [...state.projects]
+    const getRecentProjects = () => (
+      [...state.projects]
         .sort((left, right) => {
           const leftDate = Date.parse(left.updatedAt || left.endDate || left.startDate || 0) || 0;
           const rightDate = Date.parse(right.updatedAt || right.endDate || right.startDate || 0) || 0;
           return rightDate - leftDate;
         })
-        .slice(0, 3);
+        .slice(0, 3)
+    );
 
-      recentProjects.forEach((project) => {
-        const metaParts = [];
-        if (project.location) metaParts.push(project.location);
-        if (project.client?.email) metaParts.push(`Client ${project.client.email}`);
-        if (project.assignedManager?.email) metaParts.push(`Staff ${project.assignedManager.email}`);
-        const mediaSummary = [];
-        if (Number.isFinite(Number(project.imageCount))) mediaSummary.push(`${project.imageCount} images`);
-        if (Number.isFinite(Number(project.documentCount))) mediaSummary.push(`${project.documentCount} docs`);
-        if (mediaSummary.length) metaParts.push(mediaSummary.join(' / '));
+    const buildProjectMetaParts = (project) => {
+      const metaParts = [];
+      if (project.location) metaParts.push(project.location);
+      if (project.client?.email) metaParts.push(`Client ${project.client.email}`);
+      if (project.assignedManager?.email) metaParts.push(`Staff ${project.assignedManager.email}`);
+      const mediaSummary = [];
+      if (Number.isFinite(Number(project.imageCount))) mediaSummary.push(`${project.imageCount} images`);
+      if (Number.isFinite(Number(project.documentCount))) mediaSummary.push(`${project.documentCount} docs`);
+      if (mediaSummary.length) metaParts.push(mediaSummary.join(' / '));
+      return metaParts.join(' | ');
+    };
 
-        items.push({
-          title: project.title || 'Project',
-          detail: `${titleCase(project.status || 'planning')} project${project.showInGallery ? ' | visible in gallery' : ''}`,
-          meta: metaParts.join(' | ')
-        });
-      });
+    const buildProjectCompanyEvent = (project) => ({
+      title: project.title || 'Project',
+      detail: `${titleCase(project.status || 'planning')} project${project.showInGallery ? ' | visible in gallery' : ''}`,
+      meta: buildProjectMetaParts(project)
+    });
 
+    const buildPendingQuotesEvent = () => {
       if (state.lazyLoaded.quotes || state.quotes.length) {
         const pendingQuotes = state.quotes.filter((quote) => String(quote.status || '').toLowerCase() === 'pending').length;
         if (pendingQuotes) {
-          items.push({
+          return {
             title: `${pendingQuotes} quote${pendingQuotes === 1 ? '' : 's'} waiting`,
             detail: 'Pending response and priority review.',
             meta: 'Quotes become visible here once the quote section has been loaded.'
-          });
+          };
         }
       }
+      return null;
+    };
 
+    const buildDraftEstimatesEvent = () => {
       if (state.lazyLoaded.estimates || state.estimates.length) {
         const draftEstimates = state.estimates.filter((estimate) => String(estimate.status || '').toLowerCase() === 'draft').length;
         if (draftEstimates) {
-          items.push({
+          return {
             title: `${draftEstimates} estimate draft${draftEstimates === 1 ? '' : 's'} open`,
             detail: 'Pricing is still being shaped before client issue.',
             meta: 'Estimate Builder'
-          });
+          };
         }
       }
+      return null;
+    };
 
+    const buildLowStockEvent = () => {
       if (state.lazyLoaded.materials || state.materials.length) {
         const lowStock = state.materials.filter((material) => Number(material.stockQty || 0) <= Number(material.minStockQty || 0)).length;
         if (lowStock) {
-          items.push({
+          return {
             title: `${lowStock} material line${lowStock === 1 ? '' : 's'} flagged`,
             detail: 'Low-stock inventory needs review before the next ordering pass.',
             meta: 'Materials Inventory'
-          });
+          };
         }
       }
+      return null;
+    };
+
+    const buildCompanyEvents = () => {
+      const items = getRecentProjects().map(buildProjectCompanyEvent);
+      [
+        buildPendingQuotesEvent(),
+        buildDraftEstimatesEvent(),
+        buildLowStockEvent()
+      ].forEach((item) => {
+        if (item) items.push(item);
+      });
+      return items.slice(0, 4);
+    };
+
+    const renderCompanyEvents = () => {
+      el.managerCompanyEventsList.innerHTML = '';
+      const items = buildCompanyEvents();
 
       if (!items.length) {
         const text = document.createElement('p');
@@ -264,6 +304,112 @@
       });
     };
 
+    const buildBaseAvailableOptions = () => [
+      {
+        label: 'Create Project',
+        detail: 'Start a new project brief with client and staff assignment.',
+        href: '#manager-project-create',
+        roles: ['employee', 'manager', 'admin'],
+        meta: 'Create'
+      },
+      {
+        label: 'Projects',
+        detail: 'Control status, media, gallery visibility and project documents.',
+        href: '#manager-projects-section',
+        roles: ['employee', 'manager', 'admin'],
+        meta: `${state.projectsPagination.total || state.projects.length || 0} loaded`
+      },
+      {
+        label: 'Quotes',
+        detail: 'Review new enquiries, priorities and acceptance routes.',
+        href: '#manager-quotes-section',
+        roles: ['manager', 'admin'],
+        meta: state.lazyLoaded.quotes || state.quotes.length ? `${state.quotesPagination.total || state.quotes.length || 0} loaded` : 'Open section'
+      },
+      {
+        label: 'Services',
+        detail: 'Manage the website offer, ordering and visibility.',
+        href: '#manager-services-section',
+        roles: ['manager', 'admin'],
+        meta: state.lazyLoaded.services || state.services.length ? `${state.servicesPagination.total || state.services.length || 0} loaded` : 'Open section'
+      },
+      {
+        label: 'Materials',
+        detail: 'Track stock, supplier notes and low-stock lines.',
+        href: '#manager-materials-section',
+        roles: ['manager', 'admin'],
+        meta: state.lazyLoaded.materials || state.materials.length ? `${state.materialsPagination.total || state.materials.length || 0} loaded` : 'Open section'
+      },
+      {
+        label: 'Clients',
+        detail: 'Search client records and contact context for active jobs.',
+        href: '#manager-clients-section',
+        roles: ['manager', 'admin'],
+        meta: state.lazyLoaded.clients || state.clients.length ? `${state.clients.length} loaded` : 'Open section'
+      },
+      {
+        label: 'Staff',
+        detail: 'Review staff access and create new operational users.',
+        href: '#manager-staff-section',
+        roles: ['manager', 'admin'],
+        meta: state.lazyLoaded.staff || state.staff.length ? `${state.staff.length} loaded` : 'Open section'
+      },
+      {
+        label: 'Estimate Builder',
+        detail: 'Build project pricing from service and material lines.',
+        href: '#manager-estimates-section',
+        roles: ['manager', 'admin'],
+        meta: state.lazyLoaded.estimates || state.estimates.length ? `${state.estimates.length} loaded` : 'Open section'
+      },
+      {
+        label: 'Private Inbox',
+        detail: 'Keep one-to-one client conversation separate from project chat.',
+        href: '#manager-private-inbox',
+        roles: ['employee', 'manager', 'admin'],
+        meta: state.overviewLoaded.directThreads ? `${state.directThreads.length} threads` : 'Loading summary'
+      },
+      {
+        label: 'Project Chat',
+        detail: 'Open project-specific thread history and team conversation.',
+        href: '#manager-project-chat',
+        roles: ['employee', 'manager', 'admin'],
+        meta: state.overviewLoaded.groupThreads ? `${state.groupThreads.length} threads` : 'Loading summary'
+      }
+    ];
+
+    const buildRoleOption = (role) => ({
+      label: 'Role',
+      detail: 'Employee access keeps the operational shell visible while manager-only actions stay limited.',
+      href: '#manager-projects-section',
+      meta: titleCase(role)
+    });
+
+    const getAvailableOptions = (role) => {
+      const options = buildBaseAvailableOptions().filter((option) => option.roles.includes(role));
+      return ['manager', 'admin'].includes(role) ? options : [buildRoleOption(role), ...options];
+    };
+
+    const createWorkspaceOptionLink = (option) => {
+      const link = document.createElement('a');
+      link.className = 'workspace-option-link';
+      link.href = option.href;
+
+      const heading = document.createElement('strong');
+      heading.textContent = option.label;
+      link.appendChild(heading);
+
+      const detail = document.createElement('span');
+      detail.textContent = option.detail;
+      link.appendChild(detail);
+
+      const meta = document.createElement('small');
+      meta.className = 'workspace-option-meta';
+      meta.textContent = option.meta;
+      link.appendChild(meta);
+
+      return link;
+    };
+
     const renderAvailableOptions = () => {
       el.managerAvailableOptions.innerHTML = '';
 
@@ -276,112 +422,9 @@
       }
 
       const role = String(state.user.role || '').toLowerCase();
-      const isManagerLevel = ['manager', 'admin'].includes(role);
-
-      const options = [
-        {
-          label: 'Create Project',
-          detail: 'Start a new project brief with client and staff assignment.',
-          href: '#manager-project-create',
-          roles: ['employee', 'manager', 'admin'],
-          meta: 'Create'
-        },
-        {
-          label: 'Projects',
-          detail: 'Control status, media, gallery visibility and project documents.',
-          href: '#manager-projects-section',
-          roles: ['employee', 'manager', 'admin'],
-          meta: `${state.projectsPagination.total || state.projects.length || 0} loaded`
-        },
-        {
-          label: 'Quotes',
-          detail: 'Review new enquiries, priorities and acceptance routes.',
-          href: '#manager-quotes-section',
-          roles: ['manager', 'admin'],
-          meta: state.lazyLoaded.quotes || state.quotes.length ? `${state.quotesPagination.total || state.quotes.length || 0} loaded` : 'Open section'
-        },
-        {
-          label: 'Services',
-          detail: 'Manage the website offer, ordering and visibility.',
-          href: '#manager-services-section',
-          roles: ['manager', 'admin'],
-          meta: state.lazyLoaded.services || state.services.length ? `${state.servicesPagination.total || state.services.length || 0} loaded` : 'Open section'
-        },
-        {
-          label: 'Materials',
-          detail: 'Track stock, supplier notes and low-stock lines.',
-          href: '#manager-materials-section',
-          roles: ['manager', 'admin'],
-          meta: state.lazyLoaded.materials || state.materials.length ? `${state.materialsPagination.total || state.materials.length || 0} loaded` : 'Open section'
-        },
-        {
-          label: 'Clients',
-          detail: 'Search client records and contact context for active jobs.',
-          href: '#manager-clients-section',
-          roles: ['manager', 'admin'],
-          meta: state.lazyLoaded.clients || state.clients.length ? `${state.clients.length} loaded` : 'Open section'
-        },
-        {
-          label: 'Staff',
-          detail: 'Review staff access and create new operational users.',
-          href: '#manager-staff-section',
-          roles: ['manager', 'admin'],
-          meta: state.lazyLoaded.staff || state.staff.length ? `${state.staff.length} loaded` : 'Open section'
-        },
-        {
-          label: 'Estimate Builder',
-          detail: 'Build project pricing from service and material lines.',
-          href: '#manager-estimates-section',
-          roles: ['manager', 'admin'],
-          meta: state.lazyLoaded.estimates || state.estimates.length ? `${state.estimates.length} loaded` : 'Open section'
-        },
-        {
-          label: 'Private Inbox',
-          detail: 'Keep one-to-one client conversation separate from project chat.',
-          href: '#manager-private-inbox',
-          roles: ['employee', 'manager', 'admin'],
-          meta: state.overviewLoaded.directThreads ? `${state.directThreads.length} threads` : 'Loading summary'
-        },
-        {
-          label: 'Project Chat',
-          detail: 'Open project-specific thread history and team conversation.',
-          href: '#manager-project-chat',
-          roles: ['employee', 'manager', 'admin'],
-          meta: state.overviewLoaded.groupThreads ? `${state.groupThreads.length} threads` : 'Loading summary'
-        }
-      ].filter((option) => option.roles.includes(role));
-
-      if (!isManagerLevel) {
-        options.unshift({
-          label: 'Role',
-          detail: 'Employee access keeps the operational shell visible while manager-only actions stay limited.',
-          href: '#manager-projects-section',
-          meta: titleCase(role)
-        });
-      }
-
+      const options = getAvailableOptions(role);
       const frag = document.createDocumentFragment();
-      options.forEach((option) => {
-        const link = document.createElement('a');
-        link.className = 'workspace-option-link';
-        link.href = option.href;
-
-        const heading = document.createElement('strong');
-        heading.textContent = option.label;
-        link.appendChild(heading);
-
-        const detail = document.createElement('span');
-        detail.textContent = option.detail;
-        link.appendChild(detail);
-
-        const meta = document.createElement('small');
-        meta.className = 'workspace-option-meta';
-        meta.textContent = option.meta;
-        link.appendChild(meta);
-
-        frag.appendChild(link);
-      });
-
+      options.forEach((option) => frag.appendChild(createWorkspaceOptionLink(option)));
       el.managerAvailableOptions.appendChild(frag);
     };
 
@@ -437,6 +480,41 @@
       return users.find((user) => normEmail(user.email) === normalized) || null;
     };
 
+    const clearAutocompleteState = ({ datalist, statusNode, onResolved, clearStatus = false }) => {
+      fillDatalist(datalist, []);
+      if (clearStatus) setSmallStatus(statusNode, '', '');
+      if (typeof onResolved === 'function') onResolved(null);
+    };
+
+    const resolveAutocompleteType = (getType, type) => (
+      typeof getType === 'function' ? getType() : type
+    );
+
+    const applyAutocompleteMatches = ({ users, value, datalist, statusNode, onResolved }) => {
+      fillDatalist(datalist, users);
+      if (!users.length) {
+        setSmallStatus(statusNode, 'No matches.', 'error');
+        if (typeof onResolved === 'function') onResolved(null);
+        return;
+      }
+
+      const exact = users.find((user) => normEmail(user.email) === value);
+      if (exact) {
+        setSmallStatus(statusNode, `Matched: ${exact.name || exact.email} (${exact.email})`, '');
+        if (typeof onResolved === 'function') onResolved(exact);
+        return;
+      }
+
+      setSmallStatus(statusNode, `${users.length} suggestion(s). Keep typing or pick from list.`, '');
+      if (typeof onResolved === 'function') onResolved(null);
+    };
+
+    const applyAutocompleteError = ({ error, datalist, statusNode, onResolved }) => {
+      fillDatalist(datalist, []);
+      setSmallStatus(statusNode, error.message || 'Lookup failed.', 'error');
+      if (typeof onResolved === 'function') onResolved(null);
+    };
+
     const setupLiveEmailAutocomplete = ({ input, datalist, type, getType, statusNode, onResolved }) => {
       let debounceTimer = null;
       let requestCounter = 0;
@@ -445,37 +523,25 @@
         const value = normEmail(input.value);
         clearTimeout(debounceTimer);
         if (value.length < 2) {
-          fillDatalist(datalist, []);
-          if (!value) setSmallStatus(statusNode, '', '');
-          if (typeof onResolved === 'function') onResolved(null);
+          clearAutocompleteState({
+            datalist,
+            statusNode,
+            onResolved,
+            clearStatus: !value
+          });
           return;
         }
 
         debounceTimer = setTimeout(async () => {
           const requestId = ++requestCounter;
           try {
-            const resolvedType = typeof getType === 'function' ? getType() : type;
+            const resolvedType = resolveAutocompleteType(getType, type);
             const users = await searchUsersByEmail(resolvedType, value);
             if (requestId !== requestCounter) return;
-            fillDatalist(datalist, users);
-            if (!users.length) {
-              setSmallStatus(statusNode, 'No matches.', 'error');
-              if (typeof onResolved === 'function') onResolved(null);
-              return;
-            }
-            const exact = users.find((user) => normEmail(user.email) === value);
-            if (exact) {
-              setSmallStatus(statusNode, `Matched: ${exact.name || exact.email} (${exact.email})`, '');
-              if (typeof onResolved === 'function') onResolved(exact);
-            } else {
-              setSmallStatus(statusNode, `${users.length} suggestion(s). Keep typing or pick from list.`, '');
-              if (typeof onResolved === 'function') onResolved(null);
-            }
+            applyAutocompleteMatches({ users, value, datalist, statusNode, onResolved });
           } catch (error) {
             if (requestId !== requestCounter) return;
-            fillDatalist(datalist, []);
-            setSmallStatus(statusNode, error.message || 'Lookup failed.', 'error');
-            if (typeof onResolved === 'function') onResolved(null);
+            applyAutocompleteError({ error, datalist, statusNode, onResolved });
           }
         }, 260);
       };
@@ -495,126 +561,116 @@
       input.addEventListener('blur', () => {
         const value = normEmail(input.value);
         if (!value) {
-          setSmallStatus(statusNode, '', '');
-          if (typeof onResolved === 'function') onResolved(null);
+          clearAutocompleteState({ datalist, statusNode, onResolved, clearStatus: true });
         }
       });
     };
 
-    const setupLazySections = (role) => {
-      const tasks = [
-        {
-          key: 'quotes',
-          target: el.quotesList.closest('section'),
-          load: async () => {
-            await dependencies.quotesController?.loadQuotesForRole(role);
-          }
-        },
-        {
-          key: 'services',
-          target: el.servicesList.closest('section'),
-          load: async () => {
-            await dependencies.catalogController?.loadServicesIfNeeded();
-          }
-        },
-        {
-          key: 'materials',
-          target: el.materialsList.closest('section'),
-          load: async () => {
-            await dependencies.catalogController?.loadMaterialsIfNeeded();
-          }
-        },
-        {
-          key: 'clients',
-          target: el.clientsList.closest('section'),
-          load: async () => {
-            await dependencies.peopleController?.loadClientsIfNeeded();
-          }
-        },
-        {
-          key: 'staff',
-          target: el.staffList.closest('section'),
-          load: async () => {
-            await dependencies.peopleController?.loadStaffIfNeeded();
-          }
-        },
-        {
-          key: 'estimates',
-          target: el.estimatesList.closest('section'),
-          load: async () => {
-            await dependencies.estimatesController?.loadEstimatesIfNeeded();
-          }
-        },
-        {
-          key: 'directThreads',
-          target: el.managerDirectThreadsList.closest('section'),
-          load: async () => dependencies.messagesController?.loadDirectThreadsIfNeeded?.()
-        },
-        {
-          key: 'groupThreads',
-          target: el.managerGroupThreadsList.closest('section'),
-          load: async () => dependencies.messagesController?.loadGroupThreadsIfNeeded?.()
-        }
-      ].filter((task) => task.target);
+    const createLazySectionTask = (key, target, load) => (
+      target ? { key, target, load } : null
+    );
 
-      (globalThis.LevelLinesRuntime?.onceVisible || ((items) => {
+    const getLazySectionTasks = (role) => ([
+      createLazySectionTask('quotes', el.quotesList.closest('section'), async () => {
+        await dependencies.quotesController?.loadQuotesForRole(role);
+      }),
+      createLazySectionTask('services', el.servicesList.closest('section'), async () => {
+        await dependencies.catalogController?.loadServicesIfNeeded();
+      }),
+      createLazySectionTask('materials', el.materialsList.closest('section'), async () => {
+        await dependencies.catalogController?.loadMaterialsIfNeeded();
+      }),
+      createLazySectionTask('clients', el.clientsList.closest('section'), async () => {
+        await dependencies.peopleController?.loadClientsIfNeeded();
+      }),
+      createLazySectionTask('staff', el.staffList.closest('section'), async () => {
+        await dependencies.peopleController?.loadStaffIfNeeded();
+      }),
+      createLazySectionTask('estimates', el.estimatesList.closest('section'), async () => {
+        await dependencies.estimatesController?.loadEstimatesIfNeeded();
+      }),
+      createLazySectionTask('directThreads', el.managerDirectThreadsList.closest('section'), async () => (
+        dependencies.messagesController?.loadDirectThreadsIfNeeded?.()
+      )),
+      createLazySectionTask('groupThreads', el.managerGroupThreadsList.closest('section'), async () => (
+        dependencies.messagesController?.loadGroupThreadsIfNeeded?.()
+      ))
+    ].filter(Boolean));
+
+    const runLazySectionSetup = (tasks) => (
+      globalThis.LevelLinesRuntime?.onceVisible || ((items) => {
         items.forEach((item) => item.load());
         return () => {};
-      }))(tasks);
+      })
+    )(tasks);
+
+    const setupLazySections = (role) => {
+      runLazySectionSetup(getLazySectionTasks(role));
+    };
+
+    const getManagerLoginUrl = () => `/auth.html?next=${encodeURIComponent('/manager-dashboard.html')}`;
+
+    const redirectToManagerLogin = (message, loginUrl) => {
+      el.session.textContent = message;
+      globalThis.setTimeout(() => {
+        globalThis.location.assign(loginUrl);
+      }, 700);
+    };
+
+    const isManagerDashboardRole = (role) => ['employee', 'manager', 'admin'].includes(role);
+
+    const getManagerRole = () => String(state.user?.role || '').toLowerCase();
+
+    const applyManagerSeedPermissions = (role) => {
+      if (['manager', 'admin'].includes(role)) return;
+      el.seedBtn.disabled = true;
+      el.seedBtn.title = 'Only manager/admin can run seed';
+    };
+
+    const warmMailboxOverview = async () => {
+      const mailboxResults = await Promise.allSettled([
+        dependencies.messagesController?.loadDirectThreads('', { loadMessages: false, pageSize: 4 }),
+        dependencies.messagesController?.loadGroupThreads('', { loadMessages: false, pageSize: 4 })
+      ]);
+      if (mailboxResults[0]?.status === 'rejected') {
+        state.overviewLoaded.directThreads = true;
+        state.directThreads = [];
+      }
+      if (mailboxResults[1]?.status === 'rejected') {
+        state.overviewLoaded.groupThreads = true;
+        state.groupThreads = [];
+      }
     };
 
     const bootstrap = async () => {
-      const loginUrl = `/auth.html?next=${encodeURIComponent('/manager-dashboard.html')}`;
+      const loginUrl = getManagerLoginUrl();
       state.token = getToken();
       if (!state.token) {
-        el.session.textContent = 'No active session. Redirecting to login...';
-        globalThis.setTimeout(() => {
-          globalThis.location.assign(loginUrl);
-        }, 700);
+        redirectToManagerLogin('No active session. Redirecting to login...', loginUrl);
         return;
       }
       try {
         state.user = getStoredUser() || await waitForStoredUser();
-        const role = String(state.user?.role || '').toLowerCase();
-        if (!state.user || !['employee', 'manager', 'admin'].includes(role)) {
+        const role = getManagerRole();
+        if (!state.user || !isManagerDashboardRole(role)) {
           clearSession();
-          el.session.textContent = 'Session expired. Redirecting to login...';
-          globalThis.setTimeout(() => {
-            globalThis.location.assign(loginUrl);
-          }, 700);
+          redirectToManagerLogin('Session expired. Redirecting to login...', loginUrl);
           return;
         }
         renderSession();
         renderManagerWorkflow();
-        if (!['manager', 'admin'].includes(role)) {
-          el.seedBtn.disabled = true;
-          el.seedBtn.title = 'Only manager/admin can run seed';
-        }
+        applyManagerSeedPermissions(role);
         await dependencies.loadProjects?.();
-        const mailboxResults = await Promise.allSettled([
-          dependencies.messagesController?.loadDirectThreads('', { loadMessages: false, pageSize: 4 }),
-          dependencies.messagesController?.loadGroupThreads('', { loadMessages: false, pageSize: 4 })
-        ]);
-        if (mailboxResults[0]?.status === 'rejected') {
-          state.overviewLoaded.directThreads = true;
-          state.directThreads = [];
-        }
-        if (mailboxResults[1]?.status === 'rejected') {
-          state.overviewLoaded.groupThreads = true;
-          state.groupThreads = [];
-        }
+        await warmMailboxOverview();
         renderOperationsShell();
         setupLazySections(role);
       } catch (error) {
         clearSession();
-        el.session.textContent = error.message || 'Session expired. Redirecting to login...';
-        globalThis.setTimeout(() => {
-          globalThis.location.assign(loginUrl);
-        }, 700);
+        redirectToManagerLogin(error.message || 'Session expired. Redirecting to login...', loginUrl);
       }
     };
 
-    const bindEvents = () => {
+    const bindProjectAutocompleteInputs = () => {
       setupLiveEmailAutocomplete({
         input: el.projectCreateForm.elements.clientEmail,
         datalist: el.projectCreateClientSuggestions,
@@ -639,6 +695,9 @@
         type: 'staff',
         statusNode: el.projectEditManagerLookupStatus
       });
+    };
+
+    const bindMessagingAutocompleteInputs = () => {
       setupLiveEmailAutocomplete({
         input: el.managerDirectThreadForm.elements.recipientEmail,
         datalist: el.managerDirectRecipientSuggestions,
@@ -657,44 +716,66 @@
         getType: () => String(el.managerGroupMemberForm.elements.participantType.value || 'client'),
         statusNode: el.managerGroupMemberLookupStatus
       });
+    };
 
+    const bindManagerDomainButtons = () => {
       (managerDomainButtons || []).forEach((button) => {
         button.addEventListener('click', () => {
           state.selectedManagerDomain = button.dataset.managerDomainChoice || 'projects';
           renderManagerWorkflow();
         });
       });
+    };
 
-      el.seedBtn.addEventListener('click', async () => {
-        if (!globalThis.confirm('Run starter seed now?')) return;
-        const force = globalThis.confirm('Force-update existing seed records? Click Cancel for safe mode.');
-        setStatus(el.seedStatus, 'Running seed...');
-        try {
-          const payload = await api('/api/manager/seed/starter', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ force }) });
-          const stats = payload?.stats || {};
-          setStatus(el.seedStatus, `Seed done. Services +${stats.servicesCreated || 0}, materials +${stats.materialsCreated || 0}, projects +${stats.projectsCreated || 0}, media +${stats.mediaCreated || 0}.`, 'success');
-          const refreshTasks = [];
-          const projectsChanged = Number(stats.projectsCreated || 0) > 0 || Number(stats.mediaCreated || 0) > 0;
+    const refreshManagerSeedData = async (stats) => {
+      const refreshTasks = [];
+      const projectsChanged = Number(stats.projectsCreated || 0) > 0 || Number(stats.mediaCreated || 0) > 0;
 
-          if (projectsChanged) {
-            state.projectsQuery.page = 1;
-            refreshTasks.push(dependencies.loadProjects?.());
-          }
+      if (projectsChanged) {
+        state.projectsQuery.page = 1;
+        refreshTasks.push(dependencies.loadProjects?.());
+      }
 
-          refreshTasks.push(dependencies.catalogController?.refreshAfterSeed(stats));
+      refreshTasks.push(dependencies.catalogController?.refreshAfterSeed(stats));
 
-          if (refreshTasks.length) {
-            await Promise.all(refreshTasks);
-          }
-        } catch (error) {
-          setStatus(el.seedStatus, error.message || 'Seed failed.', 'error');
-        }
-      });
+      if (refreshTasks.length) {
+        await Promise.all(refreshTasks);
+      }
+    };
 
-      el.logout.addEventListener('click', () => {
-        clearSession();
-        globalThis.location.href = '/auth.html';
-      });
+    const handleSeedClick = async () => {
+      if (!globalThis.confirm('Run starter seed now?')) return;
+      const force = globalThis.confirm('Force-update existing seed records? Click Cancel for safe mode.');
+      setStatus(el.seedStatus, 'Running seed...');
+      try {
+        const payload = await api('/api/manager/seed/starter', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ force })
+        });
+        const stats = payload?.stats || {};
+        setStatus(
+          el.seedStatus,
+          `Seed done. Services +${stats.servicesCreated || 0}, materials +${stats.materialsCreated || 0}, projects +${stats.projectsCreated || 0}, media +${stats.mediaCreated || 0}.`,
+          'success'
+        );
+        await refreshManagerSeedData(stats);
+      } catch (error) {
+        setStatus(el.seedStatus, error.message || 'Seed failed.', 'error');
+      }
+    };
+
+    const handleManagerLogout = () => {
+      clearSession();
+      globalThis.location.href = '/auth.html';
+    };
+
+    const bindEvents = () => {
+      bindProjectAutocompleteInputs();
+      bindMessagingAutocompleteInputs();
+      bindManagerDomainButtons();
+      el.seedBtn.addEventListener('click', handleSeedClick);
+      el.logout.addEventListener('click', handleManagerLogout);
     };
 
     const setDependencies = (nextDependencies = {}) => {
