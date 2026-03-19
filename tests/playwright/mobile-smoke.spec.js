@@ -5,11 +5,14 @@ const messageAttachmentFixture = path.join(__dirname, '..', 'fixtures', 'message
 
 const openNavIfNeeded = async (page) => {
   const toggle = page.locator('[data-nav-toggle]');
-  if (await toggle.count()) {
-    if (await toggle.first().isVisible()) {
-      await toggle.first().click();
-      return;
-    }
+  const firstToggle = toggle.first();
+  const hasToggle = Boolean(await toggle.count());
+  if (!hasToggle) {
+    return;
+  }
+
+  if (await firstToggle.isVisible()) {
+    await firstToggle.click();
   }
 };
 
@@ -59,12 +62,35 @@ const expectCanonicalFooterServices = async (page) => {
 
 const expandDashboardSectionIfCollapsed = async (page, sectionSelector) => {
   const toggle = page.locator(`${sectionSelector} .dashboard-accordion-toggle`);
-  if (!await toggle.count()) return;
-  if (!await toggle.first().isVisible()) return;
-  const expanded = await toggle.first().getAttribute('aria-expanded');
+  const firstToggle = toggle.first();
+  const hasToggle = Boolean(await toggle.count());
+  if (!hasToggle) return;
+  const toggleVisible = await firstToggle.isVisible();
+  if (!toggleVisible) return;
+  const expanded = await firstToggle.getAttribute('aria-expanded');
   if (expanded === 'false') {
-    await toggle.first().click();
+    await firstToggle.click();
   }
+};
+
+const handleRouteMethod = async (route, method, onMatch) => {
+  if (route.request().method() === method) {
+    await onMatch();
+    return;
+  }
+
+  await route.fallback();
+};
+
+const memberListHasUser = (members, userId) => members.some((member) => member.userId === userId);
+
+const addMemberIfMissing = (members, member) => {
+  const memberAlreadyPresent = memberListHasUser(members, member.userId);
+  if (memberAlreadyPresent) {
+    return;
+  }
+
+  members.push(member);
 };
 
 const mockClientSession = async (page) => {
@@ -780,15 +806,12 @@ test('manager dashboard quote controls can accept and update a quote', async ({ 
   });
 
   await page.route('**/api/manager/quotes/quote-1', async (route) => {
-    if (route.request().method() !== 'PATCH') {
-      await route.fallback();
-      return;
-    }
-
-    const payload = route.request().postDataJSON();
-    quoteState.status = payload.status;
-    quoteState.priority = payload.priority;
-    await route.fulfill({ json: { quote: { ...quoteState } } });
+    await handleRouteMethod(route, 'PATCH', async () => {
+      const payload = route.request().postDataJSON();
+      quoteState.status = payload.status;
+      quoteState.priority = payload.priority;
+      await route.fulfill({ json: { quote: { ...quoteState } } });
+    });
   });
 
   await page.goto('/manager-dashboard.html');
@@ -877,29 +900,27 @@ test('manager dashboard estimate controls can update an estimate and add custom 
   });
 
   await page.route('**/api/manager/estimates/estimate-1/lines', async (route) => {
-    if (route.request().method() !== 'POST') {
-      await route.fallback();
-      return;
-    }
+    await handleRouteMethod(route, 'POST', async () => {
+      const payload = route.request().postDataJSON();
+      const quantity = Number(payload.quantity || 0);
+      const hasLineTotalOverride = payload.lineTotalOverride !== null && payload.lineTotalOverride !== undefined;
+      const unitCost = hasLineTotalOverride
+        ? Number(payload.lineTotalOverride)
+        : Number(payload.unitCost || 0) * quantity;
 
-    const payload = route.request().postDataJSON();
-    const quantity = Number(payload.quantity || 0);
-    const unitCost = payload.lineTotalOverride != null
-      ? Number(payload.lineTotalOverride)
-      : Number(payload.unitCost || 0) * quantity;
+      estimateState.lines.push({
+        id: `estimate-line-${lineCounter++}`,
+        description: payload.description,
+        lineType: payload.lineType,
+        quantity,
+        unit: payload.unit || '',
+        lineTotal: unitCost,
+        notes: payload.notes || ''
+      });
+      recomputeEstimateTotals();
 
-    estimateState.lines.push({
-      id: `estimate-line-${lineCounter++}`,
-      description: payload.description,
-      lineType: payload.lineType,
-      quantity,
-      unit: payload.unit || '',
-      lineTotal: unitCost,
-      notes: payload.notes || ''
+      await route.fulfill({ json: { ok: true } });
     });
-    recomputeEstimateTotals();
-
-    await route.fulfill({ json: { ok: true } });
   });
 
   await page.goto('/manager-dashboard.html');
@@ -975,29 +996,25 @@ test('manager dashboard services and materials controls can update catalog items
   });
 
   await page.route('**/api/manager/services/service-1', async (route) => {
-    if (route.request().method() !== 'PATCH') {
-      await route.fallback();
-      return;
-    }
-    const payload = route.request().postDataJSON();
-    serviceState.title = payload.title;
-    serviceState.shortDescription = payload.shortDescription;
-    serviceState.displayOrder = payload.displayOrder;
-    serviceState.showOnWebsite = payload.showOnWebsite;
-    await route.fulfill({ json: { service: { ...serviceState } } });
+    await handleRouteMethod(route, 'PATCH', async () => {
+      const payload = route.request().postDataJSON();
+      serviceState.title = payload.title;
+      serviceState.shortDescription = payload.shortDescription;
+      serviceState.displayOrder = payload.displayOrder;
+      serviceState.showOnWebsite = payload.showOnWebsite;
+      await route.fulfill({ json: { service: { ...serviceState } } });
+    });
   });
 
   await page.route('**/api/manager/materials/material-1', async (route) => {
-    if (route.request().method() !== 'PATCH') {
-      await route.fallback();
-      return;
-    }
-    const payload = route.request().postDataJSON();
-    materialState.stockQty = payload.stockQty;
-    materialState.minStockQty = payload.minStockQty;
-    materialState.unitCost = payload.unitCost;
-    materialState.supplier = payload.supplier;
-    await route.fulfill({ json: { material: { ...materialState } } });
+    await handleRouteMethod(route, 'PATCH', async () => {
+      const payload = route.request().postDataJSON();
+      materialState.stockQty = payload.stockQty;
+      materialState.minStockQty = payload.minStockQty;
+      materialState.unitCost = payload.unitCost;
+      materialState.supplier = payload.supplier;
+      await route.fulfill({ json: { material: { ...materialState } } });
+    });
   });
 
   await page.goto('/manager-dashboard.html');
@@ -1044,19 +1061,17 @@ test('manager dashboard clients and staff controls can load people sections and 
   });
 
   await page.route('**/api/manager/staff', async (route) => {
-    if (route.request().method() !== 'POST') {
-      await route.fallback();
-      return;
-    }
-    const payload = route.request().postDataJSON();
-    const created = {
-      id: `staff-${staffState.length + 1}`,
-      name: payload.name,
-      email: payload.email,
-      role: payload.role || 'employee'
-    };
-    staffState = [...staffState, created];
-    await route.fulfill({ json: { staff: created } });
+    await handleRouteMethod(route, 'POST', async () => {
+      const payload = route.request().postDataJSON();
+      const created = {
+        id: `staff-${staffState.length + 1}`,
+        name: payload.name,
+        email: payload.email,
+        role: payload.role || 'employee'
+      };
+      staffState = [...staffState, created];
+      await route.fulfill({ json: { staff: created } });
+    });
   });
 
   await page.goto('/manager-dashboard.html');
@@ -1147,34 +1162,31 @@ test('manager dashboard can create private threads and manage project chat parti
   });
 
   await page.route('**/api/inbox/threads', async (route) => {
-    if (route.request().method() !== 'POST') {
-      await route.fallback();
-      return;
-    }
-
-    const payload = route.request().postDataJSON();
-    const threadId = `manager-direct-thread-${directThreadCounter++}`;
-    const recipient = clients.find((item) => item.id === payload.recipientUserId) || staff.find((item) => item.id === payload.recipientUserId);
-    const message = {
-      id: `manager-direct-message-${directMessageCounter++}`,
-      body: payload.body,
-      createdAt: '2026-03-17T18:00:00Z',
-      sender: { name: 'Daniel Manager' }
-    };
-    const thread = {
-      id: threadId,
-      subject: payload.subject,
-      updatedAt: '2026-03-17T18:00:00Z',
-      participantAId: 'manager-1',
-      participantBId: recipient.id
-    };
-    directThreads.unshift(thread);
-    directMessagesByThreadId[threadId] = [message];
-    await route.fulfill({
-      json: {
-        thread: toDirectThreadPayload(thread),
-        message
-      }
+    await handleRouteMethod(route, 'POST', async () => {
+      const payload = route.request().postDataJSON();
+      const threadId = `manager-direct-thread-${directThreadCounter++}`;
+      const recipient = clients.find((item) => item.id === payload.recipientUserId) || staff.find((item) => item.id === payload.recipientUserId);
+      const message = {
+        id: `manager-direct-message-${directMessageCounter++}`,
+        body: payload.body,
+        createdAt: '2026-03-17T18:00:00Z',
+        sender: { name: 'Daniel Manager' }
+      };
+      const thread = {
+        id: threadId,
+        subject: payload.subject,
+        updatedAt: '2026-03-17T18:00:00Z',
+        participantAId: 'manager-1',
+        participantBId: recipient.id
+      };
+      directThreads.unshift(thread);
+      directMessagesByThreadId[threadId] = [message];
+      await route.fulfill({
+        json: {
+          thread: toDirectThreadPayload(thread),
+          message
+        }
+      });
     });
   });
 
@@ -1196,59 +1208,56 @@ test('manager dashboard can create private threads and manage project chat parti
   });
 
   await page.route('**/api/group/threads', async (route) => {
-    if (route.request().method() !== 'POST') {
-      await route.fallback();
-      return;
-    }
+    await handleRouteMethod(route, 'POST', async () => {
+      const payload = route.request().postDataJSON();
+      const members = [
+        {
+          id: `group-member-${groupMemberCounter++}`,
+          groupThreadId: `manager-group-thread-${groupThreadCounter}`,
+          userId: 'manager-1',
+          role: 'admin',
+          user: staff[0]
+        }
+      ];
 
-    const payload = route.request().postDataJSON();
-    const members = [
-      {
-        id: `group-member-${groupMemberCounter++}`,
-        groupThreadId: `manager-group-thread-${groupThreadCounter}`,
-        userId: 'manager-1',
-        role: 'admin',
-        user: staff[0]
-      }
-    ];
-
-    if (payload.includeProjectClient) {
-      members.push({
-        id: `group-member-${groupMemberCounter++}`,
-        groupThreadId: `manager-group-thread-${groupThreadCounter}`,
-        userId: project.clientId,
-        role: 'member',
-        user: clients[0]
-      });
-    }
-
-    for (const userId of payload.participantUserIds || []) {
-      const user = clients.find((item) => item.id === userId) || staff.find((item) => item.id === userId);
-      if (user && !members.some((member) => member.userId === userId)) {
+      if (payload.includeProjectClient) {
         members.push({
           id: `group-member-${groupMemberCounter++}`,
           groupThreadId: `manager-group-thread-${groupThreadCounter}`,
-          userId,
+          userId: project.clientId,
           role: 'member',
-          user
+          user: clients[0]
         });
       }
-    }
 
-    const thread = {
-      id: `manager-group-thread-${groupThreadCounter++}`,
-      name: payload.name,
-      projectId: payload.projectId,
-      updatedAt: '2026-03-17T18:05:00Z',
-      members
-    };
-    groupThreads.unshift(thread);
-    groupMessagesByThreadId[thread.id] = [];
-
-    await route.fulfill({
-      json: {
-        thread: toGroupThreadPayload(thread)
+      for (const userId of payload.participantUserIds || []) {
+        const user = clients.find((item) => item.id === userId) || staff.find((item) => item.id === userId);
+        if (user) {
+          addMemberIfMissing(members, {
+            id: `group-member-${groupMemberCounter++}`,
+            groupThreadId: `manager-group-thread-${groupThreadCounter}`,
+            userId,
+            role: 'member',
+            user
+          });
+        }
       }
+
+      const thread = {
+        id: `manager-group-thread-${groupThreadCounter++}`,
+        name: payload.name,
+        projectId: payload.projectId,
+        updatedAt: '2026-03-17T18:05:00Z',
+        members
+      };
+      groupThreads.unshift(thread);
+      groupMessagesByThreadId[thread.id] = [];
+
+      await route.fulfill({
+        json: {
+          thread: toGroupThreadPayload(thread)
+        }
+      });
     });
   });
 
@@ -1262,41 +1271,37 @@ test('manager dashboard can create private threads and manage project chat parti
   });
 
   await page.route('**/api/group/threads/*/members', async (route) => {
-    if (route.request().method() !== 'POST') {
-      await route.fallback();
-      return;
-    }
-    const threadId = route.request().url().match(/threads\/([^/]+)\/members/)?.[1] || '';
-    const payload = route.request().postDataJSON();
-    const thread = groupThreads.find((item) => item.id === threadId);
-    const user = clients.find((item) => item.id === payload.userId) || staff.find((item) => item.id === payload.userId);
-    if (thread && user && !thread.members.some((member) => member.userId === payload.userId)) {
-      thread.members.push({
-        id: `group-member-${groupMemberCounter++}`,
-        groupThreadId: threadId,
-        userId: payload.userId,
-        role: 'member',
-        user
-      });
-      thread.updatedAt = '2026-03-17T18:06:00Z';
-    }
-    await route.fulfill({ json: { member: { userId: payload.userId } } });
+    await handleRouteMethod(route, 'POST', async () => {
+      const threadId = route.request().url().match(/threads\/([^/]+)\/members/)?.[1] || '';
+      const payload = route.request().postDataJSON();
+      const thread = groupThreads.find((item) => item.id === threadId);
+      const user = clients.find((item) => item.id === payload.userId) || staff.find((item) => item.id === payload.userId);
+      if (thread && user) {
+        addMemberIfMissing(thread.members, {
+          id: `group-member-${groupMemberCounter++}`,
+          groupThreadId: threadId,
+          userId: payload.userId,
+          role: 'member',
+          user
+        });
+        thread.updatedAt = '2026-03-17T18:06:00Z';
+      }
+      await route.fulfill({ json: { member: { userId: payload.userId } } });
+    });
   });
 
   await page.route('**/api/group/threads/*/members/*', async (route) => {
-    if (route.request().method() !== 'DELETE') {
-      await route.fallback();
-      return;
-    }
-    const match = route.request().url().match(/threads\/([^/]+)\/members\/([^/?]+)/);
-    const threadId = match?.[1] || '';
-    const userId = match?.[2] || '';
-    const thread = groupThreads.find((item) => item.id === threadId);
-    if (thread) {
-      thread.members = thread.members.filter((member) => member.userId !== userId);
-      thread.updatedAt = '2026-03-17T18:07:00Z';
-    }
-    await route.fulfill({ json: { message: 'Member removed' } });
+    await handleRouteMethod(route, 'DELETE', async () => {
+      const match = route.request().url().match(/threads\/([^/]+)\/members\/([^/?]+)/);
+      const threadId = match?.[1] || '';
+      const userId = match?.[2] || '';
+      const thread = groupThreads.find((item) => item.id === threadId);
+      if (thread) {
+        thread.members = thread.members.filter((member) => member.userId !== userId);
+        thread.updatedAt = '2026-03-17T18:07:00Z';
+      }
+      await route.fulfill({ json: { message: 'Member removed' } });
+    });
   });
 
   await page.goto('/manager-dashboard.html');
@@ -1305,12 +1310,12 @@ test('manager dashboard can create private threads and manage project chat parti
   await page.locator('#manager-direct-thread-form select[name="recipientType"]').selectOption('client');
   await page.locator('#manager-direct-thread-form input[name="recipientEmail"]').fill('client@example.com');
   await page.locator('#manager-direct-thread-form input[name="subject"]').fill('Kick-off thread');
-  await page.locator('#manager-direct-thread-form textarea[name="body"]').fill('Let us confirm the next site visit globalThis.');
+  await page.locator('#manager-direct-thread-form textarea[name="body"]').fill('Let us confirm the next site visit.');
   await page.locator('#manager-direct-thread-form button[type="submit"]').click();
 
   await expect(page.locator('#manager-direct-thread-status')).toContainText(/private thread created/i);
   await expect(page.locator('#manager-direct-threads-list')).toContainText('Marta Client');
-  await expect(page.locator('#manager-direct-messages-list')).toContainText('Let us confirm the next site visit globalThis.');
+  await expect(page.locator('#manager-direct-messages-list')).toContainText('Let us confirm the next site visit.');
 
   await page.locator('#manager-project-chat').scrollIntoViewIfNeeded();
   await page.locator('#manager-group-thread-form input[name="name"]').fill('Kitchen delivery thread');
