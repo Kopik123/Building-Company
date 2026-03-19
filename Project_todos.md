@@ -28,7 +28,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [x] Trim `manager-dashboard.js` down to a thin orchestration shell now that `projects`, `quotes`, `services/materials`, `clients/staff`, `estimates` and `messages` all live in dedicated controllers.
 - [x] Extract `overview` and `projects/documents` from `client-dashboard.js` into dedicated controllers and wire them through the shared client workspace shell.
 - [x] Extract the remaining client communication domains (`direct manager`, `project chat`) into a dedicated messaging controller and wire them through the shared client workspace shell.
-- [ ] Decide whether `client-dashboard.js` should stop at the current 343-line orchestration shell or get one final `client-dashboard.shell.js` extraction for bootstrap/session plumbing.
+- [x] Extract `client-dashboard.shell.js` so bootstrap/session/logout leave `client-dashboard.js` as a thin orchestration shell around overview, projects and messaging controllers.
 - [ ] Move more responsive/layout ownership out of `styles/base.css` into `styles/public.css` and `styles/workspace.css`.
 - [ ] Consider splitting `npm run generate:public-pages` into lighter `optimize:assets` and `generate:*` workflows for cases that do not need image work on every run.
 

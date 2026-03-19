@@ -4,6 +4,7 @@
   const clientProjects = window.LevelLinesClientProjects || {};
   const clientOverview = window.LevelLinesClientOverview || {};
   const clientMessages = window.LevelLinesClientMessages || {};
+  const clientDashboardShell = window.LevelLinesClientDashboardShell || {};
   const TOKEN_KEY = runtime.TOKEN_KEY || 'll_auth_token';
   const USER_KEY = runtime.USER_KEY || 'll_auth_user';
 
@@ -197,41 +198,6 @@
     return card;
   });
 
-  const clearSession = () => {
-    (runtime.clearSession || (() => {
-      localStorage.removeItem(TOKEN_KEY);
-      localStorage.removeItem(USER_KEY);
-    }))();
-    state.token = '';
-    state.user = null;
-  };
-  const getStoredUser = runtime.getStoredUser || (() => {
-    try {
-      return JSON.parse(localStorage.getItem(USER_KEY) || 'null');
-    } catch {
-      return null;
-    }
-  });
-  const waitForStoredUser = runtime.waitForStoredUser || ((timeoutMs = 900) =>
-    new Promise((resolve) => {
-      const startedAt = Date.now();
-      const tick = () => {
-        const user = getStoredUser();
-        if (user && user.role) {
-          resolve(user);
-          return;
-        }
-
-        if (Date.now() - startedAt >= timeoutMs || !localStorage.getItem(TOKEN_KEY)) {
-          resolve(null);
-          return;
-        }
-
-        window.setTimeout(tick, 60);
-      };
-      tick();
-    }));
-
   const api = (runtime.createApiClient ? runtime.createApiClient(() => state.token) : async (url, options = {}) => {
     const headers = new Headers(options.headers || {});
     if (!headers.has('Authorization') && state.token) {
@@ -295,49 +261,19 @@
     onceVisible: runtime.onceVisible
   });
 
-  const bootstrap = async () => {
-    const loginUrl = `/auth.html?next=${encodeURIComponent('/client-dashboard.html')}`;
-    overviewController?.renderOperationsShell?.();
-    state.token = localStorage.getItem(TOKEN_KEY) || '';
-    if (!state.token) {
-      el.session.textContent = 'No active session. Redirecting to login...';
-      window.setTimeout(() => {
-        window.location.assign(loginUrl);
-      }, 700);
-      return;
-    }
-
-    try {
-      state.user = getStoredUser() || await waitForStoredUser();
-      const role = String(state.user?.role || '').toLowerCase();
-      if (role !== 'client') {
-        clearSession();
-        el.session.textContent = 'Session expired. Redirecting to login...';
-        window.setTimeout(() => {
-          window.location.assign(loginUrl);
-        }, 700);
-        return;
-      }
-
-      el.session.textContent = `Logged as ${state.user.name || state.user.email} (${state.user.role})`;
-      await overviewController?.loadOverview?.();
-      messagesController?.setupLazySections?.();
-      requestAccordionRefresh();
-    } catch (error) {
-      clearSession();
-      el.session.textContent = error.message || 'Session expired. Redirecting to login...';
-      window.setTimeout(() => {
-        window.location.assign(loginUrl);
-      }, 700);
-    }
-  };
-
-  el.logout.addEventListener('click', () => {
-    clearSession();
-    window.location.href = '/auth.html';
+  const shellController = (clientDashboardShell.createClientDashboardShellController || (() => null))({
+    runtime,
+    state,
+    el,
+    tokenKey: TOKEN_KEY,
+    userKey: USER_KEY,
+    overviewController,
+    messagesController,
+    requestAccordionRefresh
   });
 
   projectsController?.bindEvents?.();
   messagesController?.bindEvents?.();
-  bootstrap();
+  shellController?.bindEvents?.();
+  shellController?.bootstrap?.();
 })();
