@@ -120,7 +120,7 @@ test('createApp exposes a simple healthz endpoint for process checks', async () 
   assert.equal(typeof response.body?.uptimeSeconds, 'number');
 });
 
-test('createApp disables browser storage for iterated frontend assets after deploys', async () => {
+test('createApp disables browser storage for iterated frontend assets after deploys and versions html asset urls', async () => {
   mockModels(createModelsStub());
 
   const { createApp } = loadRoute('app.js');
@@ -141,4 +141,7 @@ test('createApp disables browser storage for iterated frontend assets after depl
   assert.equal(cssResponse.headers['cache-control'], 'no-store');
   assert.equal(imageResponse.headers['cache-control'], 'no-store');
   assert.equal(htmlResponse.headers['cache-control'], 'no-store');
+  assert.match(htmlResponse.text, /\/styles\/base\.css\?v=/);
+  assert.match(htmlResponse.text, /\/site\.js\?v=/);
+  assert.match(htmlResponse.text, /\/assets\/optimized\/brand\/title\.png\?v=/);
 });

@@ -1,10 +1,12 @@
 const path = require('path');
 const express = require('express');
+const { createAssetVersion, createVersionedHtmlMiddleware } = require('../utils/assetVersioning');
 
 const root = path.join(__dirname, '..');
 
 const createStaticApp = () => {
   const app = express();
+  const assetVersion = createAssetVersion();
 
   app.use(express.json());
 
@@ -22,6 +24,11 @@ const createStaticApp = () => {
     res.status(200).json({});
   });
 
+  app.use(createVersionedHtmlMiddleware({
+    rootDir: root,
+    assetVersion,
+    cacheControl: 'no-store'
+  }));
   app.use(express.static(root));
   return app;
 };

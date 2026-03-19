@@ -4,6 +4,7 @@ const compression = require('compression');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const { createAssetVersion, createVersionedHtmlMiddleware } = require('./utils/assetVersioning');
 
 const authRoutes = require('./routes/auth');
 const quotesRoutes = require('./routes/quotes');
@@ -52,7 +53,9 @@ const setStaticCacheHeaders = (res, filePath) => {
 
 const createApp = () => {
   const app = express();
+  const assetVersion = createAssetVersion();
   app.locals.galleryPath = path.join(__dirname, 'Gallery');
+  app.locals.assetVersion = assetVersion;
   const allowedOrigins = String(process.env.CORS_ORIGINS || '')
     .split(',')
     .map((origin) => origin.trim())
@@ -129,6 +132,11 @@ const createApp = () => {
 
   app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
     setHeaders: setStaticCacheHeaders
+  }));
+  app.use(createVersionedHtmlMiddleware({
+    rootDir: __dirname,
+    assetVersion,
+    cacheControl: 'no-store'
   }));
   app.use(express.static(path.join(__dirname), {
     setHeaders: setStaticCacheHeaders
