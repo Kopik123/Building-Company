@@ -53,6 +53,44 @@ const mockPublicClientSession = async (page) => {
   });
 };
 
+const managerQuickAccessLabels = [
+  'Create Project',
+  'ProjectManager',
+  'QuotesReview',
+  'ServicesManage',
+  'MaterialsTrack',
+  'Clients',
+  'Staff',
+  'Estimate',
+  'PrivateChat',
+  'ProjectChat'
+];
+
+const mockPublicManagerSession = async (page) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('ll_auth_token', 'test-token');
+    localStorage.setItem('ll_auth_user', JSON.stringify({
+      id: 'manager-1',
+      name: 'Daniel Manager',
+      email: 'manager@example.com',
+      role: 'manager'
+    }));
+  });
+
+  await page.route('**/api/auth/me', async (route) => {
+    await route.fulfill({
+      json: {
+        user: {
+          id: 'manager-1',
+          name: 'Daniel Manager',
+          email: 'manager@example.com',
+          role: 'manager'
+        }
+      }
+    });
+  });
+};
+
 test('homepage renders one dominant card and routes navigation to dedicated pages', async ({ page }) => {
   await page.goto('/index.html');
 
@@ -170,6 +208,23 @@ test('authenticated public shell hides login-only controls and keeps one account
   await expect(page.locator('[data-inline-logout]')).toBeVisible();
   await expect(page.locator('[data-inline-login-form] input[name="email"]')).toBeHidden();
   await expect(page.locator('[data-inline-login-form] input[name="password"]')).toBeHidden();
+});
+
+test('authenticated manager public shell shows quick access panel and hides plain account link', async ({ page }) => {
+  await mockPublicManagerSession(page);
+  await page.goto('/index.html');
+
+  await expect(page.locator('[data-inline-login-form]')).toBeHidden();
+  await expect(page.locator('[data-inline-session]')).toBeVisible();
+  await expect(page.locator('[data-header-account-panel]')).toBeVisible();
+  await expect(page.locator('[data-header-account-role]')).toContainText(/manager/i);
+
+  for (const label of managerQuickAccessLabels) {
+    await expect(page.locator('[data-header-account-links]').getByRole('link', { name: label, exact: true })).toHaveCount(1);
+  }
+
+  await openNavIfNeeded(page);
+  await expect(page.locator('[data-nav-menu] [data-auth-link]')).toBeHidden();
 });
 
 test('service, location and legal pages keep the same shell and single primary consultation route', async ({ page }) => {

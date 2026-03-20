@@ -25,6 +25,7 @@
   const inlineSession = document.querySelector('[data-inline-session]');
   const inlineSessionCopy = document.querySelector('[data-inline-session-copy]');
   const inlineLogoutButton = document.querySelector('[data-inline-logout]');
+  const publicShellControls = document.querySelector('.public-shell-controls');
   const menuWrap =
     document.querySelector('[data-menu-wrap]') ||
     (navMenu ? navMenu.closest('.menu-wrap') : null) ||
@@ -352,11 +353,104 @@
     return String(authLink?.getAttribute('data-auth-guest-label') || '').trim() || brand?.publicAuthLabel || 'Account';
   };
 
-  const getPublicAuthState = (loggedIn) => {
+  const canUseManagerQuickAccess = (roleRaw) => ['employee', 'manager', 'admin'].includes(String(roleRaw || '').toLowerCase());
+
+  const buildManagerQuickAccessOptions = () => [
+    { label: 'Create Project', href: '/manager-dashboard.html#manager-project-create', roles: ['employee', 'manager', 'admin'] },
+    { label: 'ProjectManager', href: '/manager-dashboard.html#manager-projects-section', roles: ['employee', 'manager', 'admin'] },
+    { label: 'QuotesReview', href: '/manager-dashboard.html#manager-quotes-section', roles: ['manager', 'admin'] },
+    { label: 'ServicesManage', href: '/manager-dashboard.html#manager-services-section', roles: ['manager', 'admin'] },
+    { label: 'MaterialsTrack', href: '/manager-dashboard.html#manager-materials-section', roles: ['manager', 'admin'] },
+    { label: 'Clients', href: '/manager-dashboard.html#manager-clients-section', roles: ['manager', 'admin'] },
+    { label: 'Staff', href: '/manager-dashboard.html#manager-staff-section', roles: ['manager', 'admin'] },
+    { label: 'Estimate', href: '/manager-dashboard.html#manager-estimates-section', roles: ['manager', 'admin'] },
+    { label: 'PrivateChat', href: '/manager-dashboard.html#manager-private-inbox', roles: ['employee', 'manager', 'admin'] },
+    { label: 'ProjectChat', href: '/manager-dashboard.html#manager-project-chat', roles: ['employee', 'manager', 'admin'] }
+  ];
+
+  const ensureHeaderQuickAccessPanel = () => {
+    if (!publicShellControls) return null;
+
+    let panel = publicShellControls.querySelector('[data-header-account-panel]');
+    if (!panel) {
+      panel = document.createElement('section');
+      panel.className = 'public-header-account-panel';
+      panel.setAttribute('data-header-account-panel', 'true');
+      panel.hidden = true;
+
+      const head = document.createElement('div');
+      head.className = 'public-header-account-head';
+
+      const titleWrap = document.createElement('div');
+      const label = document.createElement('p');
+      label.className = 'public-header-account-label';
+      label.textContent = 'Account Panel';
+      const title = document.createElement('p');
+      title.className = 'public-header-account-title';
+      title.textContent = 'Quick Access';
+      titleWrap.append(label, title);
+
+      const role = document.createElement('p');
+      role.className = 'public-header-account-role';
+      role.setAttribute('data-header-account-role', 'true');
+
+      head.append(titleWrap, role);
+
+      const links = document.createElement('div');
+      links.className = 'public-header-account-links';
+      links.setAttribute('data-header-account-links', 'true');
+      links.setAttribute('aria-live', 'polite');
+
+      panel.append(head, links);
+      publicShellControls.appendChild(panel);
+    }
+
+    return {
+      panel,
+      role: panel.querySelector('[data-header-account-role]'),
+      links: panel.querySelector('[data-header-account-links]')
+    };
+  };
+
+  const headerQuickAccess = ensureHeaderQuickAccessPanel();
+
+  const createHeaderQuickAccessLink = (option) => {
+    const link = document.createElement('a');
+    link.className = 'public-header-account-link';
+    link.href = option.href;
+    link.textContent = option.label;
+    return link;
+  };
+
+  const renderHeaderQuickAccess = (user) => {
+    if (!headerQuickAccess) return false;
+
+    const role = String(user?.role || '').toLowerCase();
+    const showQuickAccess = Boolean(user) && isPublicPage && canUseManagerQuickAccess(role);
+
+    setHidden(headerQuickAccess.panel, !showQuickAccess);
+    headerQuickAccess.links.replaceChildren();
+    if (headerQuickAccess.role) {
+      headerQuickAccess.role.textContent = showQuickAccess ? `${role.charAt(0).toUpperCase()}${role.slice(1)}` : '';
+    }
+
+    if (!showQuickAccess) {
+      return false;
+    }
+
+    const options = buildManagerQuickAccessOptions().filter((option) => option.roles.includes(role));
+    const fragment = document.createDocumentFragment();
+    options.forEach((option) => fragment.appendChild(createHeaderQuickAccessLink(option)));
+    headerQuickAccess.links.appendChild(fragment);
+    return true;
+  };
+
+  const getPublicAuthState = (loggedIn, user) => {
     const showHeaderAuthPanel = (!loggedIn && !isWorkspacePage) || (loggedIn && isPublicPage);
     const showHeaderLoginForm = !loggedIn && !isWorkspacePage;
     const showHeaderSession = loggedIn && isPublicPage;
-    const hideHeaderAccountLink = loggedIn && (isAuthPage || isWorkspacePage);
+    const showHeaderQuickAccess = loggedIn && isPublicPage && canUseManagerQuickAccess(user?.role);
+    const hideHeaderAccountLink = (loggedIn && (isAuthPage || isWorkspacePage)) || showHeaderQuickAccess;
 
     let authView = 'hidden';
     if (showHeaderSession) {
@@ -370,6 +464,7 @@
       showHeaderAuthPanel,
       showHeaderLoginForm,
       showHeaderSession,
+      showHeaderQuickAccess,
       hideHeaderAccountLink
     };
   };
@@ -406,6 +501,10 @@
       return;
     }
     const identity = user?.name || user?.email || 'Account ready';
+    if (isPublicPage && canUseManagerQuickAccess(user?.role)) {
+      inlineSessionCopy.textContent = `${identity} is signed in. Use Account Panel or Log out.`;
+      return;
+    }
     inlineSessionCopy.textContent = `${identity} is signed in. Use Account or Log out.`;
   };
 
@@ -418,7 +517,7 @@
       showHeaderLoginForm,
       showHeaderSession,
       hideHeaderAccountLink
-    } = getPublicAuthState(loggedIn);
+    } = getPublicAuthState(loggedIn, user);
 
     body.classList.toggle('has-auth-session', loggedIn);
     body.classList.toggle('is-auth-guest', !loggedIn);
@@ -451,6 +550,7 @@
     syncAccountSettingsLinks(loggedIn);
     syncAuthLinks(loggedIn, user, hideHeaderAccountLink);
     syncInlineSessionCopy(loggedIn, user);
+    renderHeaderQuickAccess(loggedIn ? user : null);
   };
 
   const updateNavigationForSession = (user) => {
