@@ -46,7 +46,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [x] Extract the remaining client communication domains (`direct manager`, `project chat`) into a dedicated messaging controller and wire them through the shared client workspace shell.
 - [x] Extract `client-dashboard.shell.js` so bootstrap/session/logout leave `client-dashboard.js` as a thin orchestration shell around overview, projects and messaging controllers.
 - [x] Move more responsive/layout ownership out of `styles/base.css` into `styles/public.css` and `styles/workspace.css`.
-- [ ] Consider splitting `npm run generate:public-pages` into lighter `optimize:assets` and `generate:*` workflows for cases that do not need image work on every run.
+- [x] Split generated-page workflows into a light HTML-only path (`npm run generate:public-pages:content`) and a full asset+HTML path (`npm run generate:public-pages` / `generate:public-pages:full`) so routine brochure/content edits do not require a full asset optimisation pass.
 
 ## Product And Workflow
 

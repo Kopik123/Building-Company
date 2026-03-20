@@ -23,11 +23,14 @@ npm run test:all
 ```bash
 npm run generate:locations
 npm run generate:services
+npm run generate:public-pages:content
 npm run generate:public-pages
 ```
 
 - `npm run verify:generated` sprawdza, czy wygenerowane pliki HTML są zgodne z danymi w `scripts/*.data.js`.
 - `npm run test:ci` uruchamia pełny lekki gate repo: `verify:generated` oraz `test:api:v2`.
+- `npm run generate:public-pages:content` przebudowuje tylko generowane HTML-e.
+- `npm run generate:public-pages` uruchamia pełny pipeline: optymalizacja assetów + generowane HTML-e.
 
 ## Uruchomienie lokalnie
 
