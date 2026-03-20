@@ -1,7 +1,69 @@
-const assetManifest = window.LEVEL_LINES_ASSETS || {};
+const assetManifest = globalThis.LEVEL_LINES_ASSETS || {};
 const brandAssets = assetManifest.brand || {};
+const managerQuickAccess = [
+  {
+    key: 'createProject',
+    label: 'Create Project',
+    href: '/manager-dashboard.html#manager-project-create',
+    roles: ['employee', 'manager', 'admin']
+  },
+  {
+    key: 'projectManager',
+    label: 'ProjectManager',
+    href: '/manager-dashboard.html#manager-projects-section',
+    roles: ['employee', 'manager', 'admin']
+  },
+  {
+    key: 'quotesReview',
+    label: 'QuotesReview',
+    href: '/manager-dashboard.html#manager-quotes-section',
+    roles: ['manager', 'admin']
+  },
+  {
+    key: 'servicesManage',
+    label: 'ServicesManage',
+    href: '/manager-dashboard.html#manager-services-section',
+    roles: ['manager', 'admin']
+  },
+  {
+    key: 'materialsTrack',
+    label: 'MaterialsTrack',
+    href: '/manager-dashboard.html#manager-materials-section',
+    roles: ['manager', 'admin']
+  },
+  {
+    key: 'clients',
+    label: 'Clients',
+    href: '/manager-dashboard.html#manager-clients-section',
+    roles: ['manager', 'admin']
+  },
+  {
+    key: 'staff',
+    label: 'Staff',
+    href: '/manager-dashboard.html#manager-staff-section',
+    roles: ['manager', 'admin']
+  },
+  {
+    key: 'estimate',
+    label: 'Estimate',
+    href: '/manager-dashboard.html#manager-estimates-section',
+    roles: ['manager', 'admin']
+  },
+  {
+    key: 'privateChat',
+    label: 'PrivateChat',
+    href: '/manager-dashboard.html#manager-private-inbox',
+    roles: ['employee', 'manager', 'admin']
+  },
+  {
+    key: 'projectChat',
+    label: 'ProjectChat',
+    href: '/manager-dashboard.html#manager-project-chat',
+    roles: ['employee', 'manager', 'admin']
+  }
+];
 
-window.LEVEL_LINES_BRAND = {
+globalThis.LEVEL_LINES_BRAND = {
   name: 'Level Lines Studio',
   shortName: 'Level Lines',
   claim: 'Plan | Design | Craft',
@@ -61,6 +123,7 @@ window.LEVEL_LINES_BRAND = {
     'Northwich',
     'Warrington'
   ],
+  managerQuickAccess,
   pillars: ['Plan', 'Design', 'Craft'],
   services: [
     {

@@ -1,5 +1,6 @@
 (() => {
-  const runtime = window.LevelLinesRuntime || {};
+  const runtime = globalThis.LevelLinesRuntime || {};
+  const brand = globalThis.LEVEL_LINES_BRAND || null;
   const TOKEN_KEY = runtime.TOKEN_KEY || 'll_auth_token';
   const USER_KEY = runtime.USER_KEY || 'll_auth_user';
 
@@ -54,7 +55,7 @@
   };
 
   const resolveNextPath = () => {
-    const raw = new URLSearchParams(window.location.search).get('next');
+    const raw = new URLSearchParams(globalThis.location.search).get('next');
     if (!raw) return '';
     if (!raw.startsWith('/')) return '';
     if (raw.startsWith('//')) return '';
@@ -71,20 +72,12 @@
     return 'User';
   };
 
-  const canUseManagerWorkspace = (roleRaw) => ['employee', 'manager', 'admin'].includes(String(roleRaw || '').toLowerCase());
+  const getManagerQuickAccessOptions = () => Array.isArray(brand?.managerQuickAccess) ? brand.managerQuickAccess : [];
 
-  const buildManagerQuickAccessOptions = () => [
-    { label: 'Create Project', href: '/manager-dashboard.html#manager-project-create', roles: ['employee', 'manager', 'admin'] },
-    { label: 'ProjectManager', href: '/manager-dashboard.html#manager-projects-section', roles: ['employee', 'manager', 'admin'] },
-    { label: 'QuotesReview', href: '/manager-dashboard.html#manager-quotes-section', roles: ['manager', 'admin'] },
-    { label: 'ServicesManage', href: '/manager-dashboard.html#manager-services-section', roles: ['manager', 'admin'] },
-    { label: 'MaterialsTrack', href: '/manager-dashboard.html#manager-materials-section', roles: ['manager', 'admin'] },
-    { label: 'Clients', href: '/manager-dashboard.html#manager-clients-section', roles: ['manager', 'admin'] },
-    { label: 'Staff', href: '/manager-dashboard.html#manager-staff-section', roles: ['manager', 'admin'] },
-    { label: 'Estimate', href: '/manager-dashboard.html#manager-estimates-section', roles: ['manager', 'admin'] },
-    { label: 'PrivateChat', href: '/manager-dashboard.html#manager-private-inbox', roles: ['employee', 'manager', 'admin'] },
-    { label: 'ProjectChat', href: '/manager-dashboard.html#manager-project-chat', roles: ['employee', 'manager', 'admin'] }
-  ];
+  const canUseManagerWorkspace = (roleRaw) => {
+    const role = String(roleRaw || '').toLowerCase();
+    return getManagerQuickAccessOptions().some((option) => option.roles.includes(role));
+  };
 
   const createQuickAccessLink = (option) => {
     const link = document.createElement('a');
@@ -116,7 +109,7 @@
       return;
     }
 
-    const options = buildManagerQuickAccessOptions().filter((option) => option.roles.includes(role));
+    const options = getManagerQuickAccessOptions().filter((option) => option.roles.includes(role));
     const fragment = document.createDocumentFragment();
     options.forEach((option) => fragment.appendChild(createQuickAccessLink(option)));
     quickAccessLinks.appendChild(fragment);
@@ -125,13 +118,13 @@
   const saveSession = runtime.saveSession || ((token, user) => {
     localStorage.setItem(TOKEN_KEY, token);
     localStorage.setItem(USER_KEY, JSON.stringify(user || {}));
-    window.dispatchEvent(new Event('ll:session-changed'));
+    globalThis.dispatchEvent(new Event('ll:session-changed'));
   });
 
   const clearSession = runtime.clearSession || (() => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
-    window.dispatchEvent(new Event('ll:session-changed'));
+    globalThis.dispatchEvent(new Event('ll:session-changed'));
   });
 
   const getSavedUser = runtime.getStoredUser || (() => {
@@ -217,8 +210,8 @@
     const roleDestination = dashboardPathForRole(user?.role || getSavedUser()?.role);
     const destination = requestedNext || (roleDestination === '/auth.html' ? '/client-dashboard.html' : roleDestination);
     if (!destination) return;
-    window.setTimeout(() => {
-      window.location.assign(destination);
+    globalThis.setTimeout(() => {
+      globalThis.location.assign(destination);
     }, 350);
   };
 
@@ -399,7 +392,7 @@
     setStatus(profileStatus, '');
     setStatus(passwordStatus, '');
     renderSession(null);
-    window.location.assign('/auth.html');
+    globalThis.location.assign('/auth.html');
   });
 
   renderSession(getSavedUser());

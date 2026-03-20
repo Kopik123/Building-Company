@@ -29,6 +29,8 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [x] Remove the old `public-section` and workspace content-shell background bands that were still sitting behind brochure/workspace cards and visually obscuring the shared `mainbackground.png` card treatment.
 - [x] Move the gallery `Service Rail / Gallery / active service meta` card above the `Service Gallery / How To Browse` intro cards so the interactive service rail leads the page before the explanatory copy.
 - [x] Show a real manager `Account Panel / Quick Access` inside the public header after login, using the requested manager labels (`Create Project`, `ProjectManager`, `QuotesReview`, `ServicesManage`, `MaterialsTrack`, `Clients`, `Staff`, `Estimate`, `PrivateChat`, `ProjectChat`) and hiding the plain public `Account` link while that panel is visible.
+- [x] Deduplicate the manager quick-access config so `brand.js`, `auth.js`, `site.js` and `manager-dashboard.shell.js` all read the same labels, hrefs and role rules from one shared source.
+- [x] Keep manager-dashboard quick-access links as local `#section` anchors even after moving the shared quick-access config into `brand.js`, so public/auth pages can use full dashboard URLs without breaking in-dashboard quick-access navigation.
 - [ ] Confirm on live `/services.html` that `Discuss wall systems` opens `/quote.html` with the wall-systems context already selected in the quote form.
 - [ ] Capture fresh screenshot evidence for homepage, gallery, quote/contact forms, auth state and both dashboards after the consolidated live QA pass.
 - [ ] Resolve the local PowerShell execution-policy issue blocking `npm.ps1`; until fixed, keep using `npm.cmd` for local validation commands.

@@ -353,20 +353,12 @@
     return String(authLink?.getAttribute('data-auth-guest-label') || '').trim() || brand?.publicAuthLabel || 'Account';
   };
 
-  const canUseManagerQuickAccess = (roleRaw) => ['employee', 'manager', 'admin'].includes(String(roleRaw || '').toLowerCase());
+  const getManagerQuickAccessOptions = () => Array.isArray(brand?.managerQuickAccess) ? brand.managerQuickAccess : [];
 
-  const buildManagerQuickAccessOptions = () => [
-    { label: 'Create Project', href: '/manager-dashboard.html#manager-project-create', roles: ['employee', 'manager', 'admin'] },
-    { label: 'ProjectManager', href: '/manager-dashboard.html#manager-projects-section', roles: ['employee', 'manager', 'admin'] },
-    { label: 'QuotesReview', href: '/manager-dashboard.html#manager-quotes-section', roles: ['manager', 'admin'] },
-    { label: 'ServicesManage', href: '/manager-dashboard.html#manager-services-section', roles: ['manager', 'admin'] },
-    { label: 'MaterialsTrack', href: '/manager-dashboard.html#manager-materials-section', roles: ['manager', 'admin'] },
-    { label: 'Clients', href: '/manager-dashboard.html#manager-clients-section', roles: ['manager', 'admin'] },
-    { label: 'Staff', href: '/manager-dashboard.html#manager-staff-section', roles: ['manager', 'admin'] },
-    { label: 'Estimate', href: '/manager-dashboard.html#manager-estimates-section', roles: ['manager', 'admin'] },
-    { label: 'PrivateChat', href: '/manager-dashboard.html#manager-private-inbox', roles: ['employee', 'manager', 'admin'] },
-    { label: 'ProjectChat', href: '/manager-dashboard.html#manager-project-chat', roles: ['employee', 'manager', 'admin'] }
-  ];
+  const canUseManagerQuickAccess = (roleRaw) => {
+    const role = String(roleRaw || '').toLowerCase();
+    return getManagerQuickAccessOptions().some((option) => option.roles.includes(role));
+  };
 
   const ensureHeaderQuickAccessPanel = () => {
     if (!publicShellControls) return null;
@@ -438,7 +430,7 @@
       return false;
     }
 
-    const options = buildManagerQuickAccessOptions().filter((option) => option.roles.includes(role));
+    const options = getManagerQuickAccessOptions().filter((option) => option.roles.includes(role));
     const fragment = document.createDocumentFragment();
     options.forEach((option) => fragment.appendChild(createHeaderQuickAccessLink(option)));
     headerQuickAccess.links.appendChild(fragment);

@@ -20,6 +20,7 @@
   } = {}) => {
     if (!state || !el) return null;
 
+    const brand = globalThis.LEVEL_LINES_BRAND || null;
     const buildPreviewText = (senderName, preview, fallback) => {
       if (!preview) return fallback;
       return senderName ? `${senderName}: ${preview}` : preview;
@@ -27,6 +28,7 @@
 
     const USER_SEARCH_CACHE_TTL_MS = 30 * 1000;
     const userSearchCache = new Map();
+    const getManagerQuickAccessOptions = () => Array.isArray(brand?.managerQuickAccess) ? brand.managerQuickAccess : [];
     const dependencies = {
       loadProjects: async () => {},
       openProjectEditor: async () => {},
@@ -304,78 +306,92 @@
       });
     };
 
-    const buildBaseAvailableOptions = () => [
-      {
-        label: 'Create Project',
-        detail: 'Start a new project brief with client and staff assignment.',
-        href: '#manager-project-create',
-        roles: ['employee', 'manager', 'admin'],
-        meta: 'Create'
-      },
-      {
-        label: 'ProjectManager',
-        detail: 'Manage status, media, gallery visibility and project documents.',
-        href: '#manager-projects-section',
-        roles: ['employee', 'manager', 'admin'],
-        meta: `${state.projectsPagination.total || state.projects.length || 0} loaded`
-      },
-      {
-        label: 'QuotesReview',
-        detail: 'Review new enquiries, priorities and acceptance routes.',
-        href: '#manager-quotes-section',
-        roles: ['manager', 'admin'],
-        meta: state.lazyLoaded.quotes || state.quotes.length ? `${state.quotesPagination.total || state.quotes.length || 0} loaded` : 'Open section'
-      },
-      {
-        label: 'ServicesManage',
-        detail: 'Manage the website offer, ordering and visibility.',
-        href: '#manager-services-section',
-        roles: ['manager', 'admin'],
-        meta: state.lazyLoaded.services || state.services.length ? `${state.servicesPagination.total || state.services.length || 0} loaded` : 'Open section'
-      },
-      {
-        label: 'MaterialsTrack',
-        detail: 'Track storage, supplier notes and low-storage lines.',
-        href: '#manager-materials-section',
-        roles: ['manager', 'admin'],
-        meta: state.lazyLoaded.materials || state.materials.length ? `${state.materialsPagination.total || state.materials.length || 0} loaded` : 'Open section'
-      },
-      {
-        label: 'Clients',
-        detail: 'Search client records and contact context for active jobs.',
-        href: '#manager-clients-section',
-        roles: ['manager', 'admin'],
-        meta: state.lazyLoaded.clients || state.clients.length ? `${state.clients.length} loaded` : 'Open section'
-      },
-      {
-        label: 'Staff',
-        detail: 'Review staff access and create new operational users.',
-        href: '#manager-staff-section',
-        roles: ['manager', 'admin'],
-        meta: state.lazyLoaded.staff || state.staff.length ? `${state.staff.length} loaded` : 'Open section'
-      },
-      {
-        label: 'Estimate',
-        detail: 'Build project pricing from service and material lines.',
-        href: '#manager-estimates-section',
-        roles: ['manager', 'admin'],
-        meta: state.lazyLoaded.estimates || state.estimates.length ? `${state.estimates.length} loaded` : 'Open section'
-      },
-      {
-        label: 'PrivateChat',
-        detail: 'Keep one-to-one client conversation separate from project chat.',
-        href: '#manager-private-inbox',
-        roles: ['employee', 'manager', 'admin'],
-        meta: state.overviewLoaded.directThreads ? `${state.directThreads.length} threads` : 'Loading summary'
-      },
-      {
-        label: 'ProjectChat',
-        detail: 'Open project-specific thread history and team conversation.',
-        href: '#manager-project-chat',
-        roles: ['employee', 'manager', 'admin'],
-        meta: state.overviewLoaded.groupThreads ? `${state.groupThreads.length} threads` : 'Loading summary'
+    const getAvailableOptionDetail = (key) => {
+      switch (key) {
+        case 'createProject':
+          return 'Start a new project brief with client and staff assignment.';
+        case 'projectManager':
+          return 'Manage status, media, gallery visibility and project documents.';
+        case 'quotesReview':
+          return 'Review new enquiries, priorities and acceptance routes.';
+        case 'servicesManage':
+          return 'Manage the website offer, ordering and visibility.';
+        case 'materialsTrack':
+          return 'Track storage, supplier notes and low-storage lines.';
+        case 'clients':
+          return 'Search client records and contact context for active jobs.';
+        case 'staff':
+          return 'Review staff access and create new operational users.';
+        case 'estimate':
+          return 'Build project pricing from service and material lines.';
+        case 'privateChat':
+          return 'Keep one-to-one client conversation separate from project chat.';
+        case 'projectChat':
+          return 'Open project-specific thread history and team conversation.';
+        default:
+          return 'Open this management route.';
       }
-    ];
+    };
+
+    const getAvailableOptionMeta = (key) => {
+      switch (key) {
+        case 'createProject':
+          return 'Create';
+        case 'projectManager':
+          return `${state.projectsPagination.total || state.projects.length || 0} loaded`;
+        case 'quotesReview':
+          return state.lazyLoaded.quotes || state.quotes.length
+            ? `${state.quotesPagination.total || state.quotes.length || 0} loaded`
+            : 'Open section';
+        case 'servicesManage':
+          return state.lazyLoaded.services || state.services.length
+            ? `${state.servicesPagination.total || state.services.length || 0} loaded`
+            : 'Open section';
+        case 'materialsTrack':
+          return state.lazyLoaded.materials || state.materials.length
+            ? `${state.materialsPagination.total || state.materials.length || 0} loaded`
+            : 'Open section';
+        case 'clients':
+          return state.lazyLoaded.clients || state.clients.length
+            ? `${state.clients.length} loaded`
+            : 'Open section';
+        case 'staff':
+          return state.lazyLoaded.staff || state.staff.length
+            ? `${state.staff.length} loaded`
+            : 'Open section';
+        case 'estimate':
+          return state.lazyLoaded.estimates || state.estimates.length
+            ? `${state.estimates.length} loaded`
+            : 'Open section';
+        case 'privateChat':
+          return state.overviewLoaded.directThreads
+            ? `${state.directThreads.length} threads`
+            : 'Loading summary';
+        case 'projectChat':
+          return state.overviewLoaded.groupThreads
+            ? `${state.groupThreads.length} threads`
+            : 'Loading summary';
+        default:
+          return '';
+      }
+    };
+
+    const toWorkspaceQuickAccessHref = (href) => {
+      const value = String(href || '').trim();
+      if (value.startsWith('/manager-dashboard.html#')) {
+        return value.replace('/manager-dashboard.html', '');
+      }
+      return value;
+    };
+
+    const buildBaseAvailableOptions = () => (
+      getManagerQuickAccessOptions().map((option) => ({
+        ...option,
+        href: toWorkspaceQuickAccessHref(option.href),
+        detail: getAvailableOptionDetail(option.key),
+        meta: getAvailableOptionMeta(option.key)
+      }))
+    );
 
     const getAvailableOptions = (role) => {
       return buildBaseAvailableOptions().filter((option) => option.roles.includes(role));
