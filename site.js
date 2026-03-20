@@ -177,6 +177,21 @@
     });
   };
 
+  const renderBrandFeaturedLocations = (container) => {
+    if (!brand || !container || !Array.isArray(brand.featuredLocationLinks)) return;
+
+    const linkClass = container.getAttribute('data-link-class') || '';
+    container.innerHTML = '';
+
+    brand.featuredLocationLinks.forEach((item) => {
+      const link = document.createElement('a');
+      link.href = item.href || '/services.html';
+      link.textContent = item.label || 'Location';
+      if (linkClass) link.className = linkClass;
+      container.appendChild(link);
+    });
+  };
+
   const renderBrandClaimSegments = (node) => {
     if (!node || !brand?.claim) return;
 
@@ -295,6 +310,7 @@
 
     document.querySelectorAll('[data-brand-area-list]').forEach(renderBrandAreas);
     document.querySelectorAll('[data-brand-service-links]').forEach(renderBrandServices);
+    document.querySelectorAll('[data-brand-featured-location-links]').forEach(renderBrandFeaturedLocations);
     document.querySelectorAll('[data-brand-footer-copy]').forEach((node) => {
       setBrandNodeValue(node, brand.footerCopy);
     });
@@ -491,10 +507,10 @@
       return;
     }
     if (!loggedIn) {
-      inlineSessionCopy.textContent = 'Use the inline login to move into project visibility.';
+      inlineSessionCopy.textContent = 'Login for private access.';
       return;
     }
-    const identity = user?.name || user?.email || 'Account ready';
+    const identity = user?.name || user?.email || 'Signed in';
     if (isPublicPage && canUseManagerQuickAccess(user?.role)) {
       inlineSessionCopy.textContent = `${identity} is signed in. Use Account Panel or Log out.`;
       return;

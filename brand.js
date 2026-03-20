@@ -90,14 +90,14 @@ globalThis.LEVEL_LINES_BRAND = {
   name: 'Level Lines Studio',
   shortName: 'Level Lines',
   claim: 'Plan | Design | Craft',
-  region: 'North West - Lancashire',
+  region: 'Manchester and the North West',
   headerIconPath: brandAssets.headerIcon?.fallback || '/logo.png',
   titleImagePath: brandAssets.title?.fallback || '/title.png',
   workspaceImagePath: brandAssets.workspace?.fallback || '/logo4.png',
   publicAuthLabel: 'Account',
   roleProfiles,
   consultationCtaLabel: 'Send Enquiry',
-  footerCopy: 'A premium renovation studio for bathrooms, kitchens and interiors, shaped with quiet planning, material restraint and finish control across the North West.',
+  footerCopy: 'A premium renovation studio for bathrooms, kitchens and interiors, shaped for quieter planning and finish control across Manchester and the North West.',
   email: 'LevelLineStudioMCR@gmail.com',
   phones: [
     {
@@ -114,24 +114,24 @@ globalThis.LEVEL_LINES_BRAND = {
   budgetRanges: ['\u00A38,000-\u00A312,000', '\u00A312,000-\u00A320,000', '\u00A320,000-\u00A330,000', '\u00A330,000+'],
   copy: {
     home: {
-      heroLead: 'Level Lines Studio shapes premium bathroom, kitchen and interior renovation briefs for homeowners who expect strong line quality, quieter luxury and a controlled building process.',
-      servicesTitle: 'A curated renovation scope held in one premium studio structure.',
-      servicesLead: 'Full bathroom renovations, kitchen installation and refurbishment, tiling, carpentry and wall works are held in one composed scope, so layout logic, detailing and finish control stay aligned.',
-      processLead: 'Plan, design and craft are treated as one disciplined sequence: define the brief properly, shape the material language and execute without noise.',
-      areasLead: 'The studio keeps its footprint close enough for direct oversight, tighter sequencing and more controlled communication.',
-      contactLead: 'Direct studio numbers and email remain visible because first conversations should feel precise, calm and uncomplicated.',
+      heroLead: 'Level Lines Studio shapes premium bathroom, kitchen and interior renovation briefs for homeowners who want cleaner scope, quieter planning and stronger finish control.',
+      servicesTitle: 'A curated renovation scope held in one studio structure.',
+      servicesLead: 'Bathrooms, kitchens, tiling, carpentry and wall systems stay aligned inside one service-led route.',
+      processLead: 'Plan, design and craft stay connected from first survey to final handover.',
+      areasLead: 'The studio footprint stays selective enough for direct oversight and controlled delivery.',
+      contactLead: 'Direct studio contact stays visible because first conversations should feel clear and calm.',
       consultationTitle: 'Send Enquiry',
       consultationLead:
-        'Share the rooms involved, the finish ambition and your timing. The studio replies with a measured next step.'
+        'Share the rooms involved, finish level and timing. The studio replies with the right next step.'
     },
     about: {
-      heroLead: 'A premium renovation studio shaped around line quality, restrained materials and execution that feels deliberate rather than improvised.'
+      heroLead: 'A premium renovation studio shaped around clearer scope, restrained materials and deliberate execution.'
     },
     contact: {
-      heroLead: 'Contact the studio directly when the brief calls for premium finish control, cleaner planning and a quieter route from enquiry to site.'
+      heroLead: 'Contact the studio directly when the brief calls for premium finish control and a cleaner route from enquiry to site.'
     },
     quote: {
-      heroLead: 'Use one private enquiry route for bathroom, kitchen and interior briefs, then describe the rooms, timing and finish ambition.'
+      heroLead: 'Use one private enquiry route for bathroom, kitchen and interior briefs, then describe rooms, timing and finish level.'
     }
   },
   serviceAreas: [
@@ -146,6 +146,32 @@ globalThis.LEVEL_LINES_BRAND = {
     'Stockport',
     'Northwich',
     'Warrington'
+  ],
+  featuredLocationLinks: [
+    {
+      label: 'Didsbury',
+      href: '/premium-renovations-didsbury.html'
+    },
+    {
+      label: 'Altrincham',
+      href: '/premium-renovations-altrincham.html'
+    },
+    {
+      label: 'Stockport',
+      href: '/premium-renovations-stockport.html'
+    },
+    {
+      label: 'Sale',
+      href: '/premium-renovations-sale.html'
+    },
+    {
+      label: 'Chorlton',
+      href: '/premium-renovations-chorlton.html'
+    },
+    {
+      label: 'Wilmslow',
+      href: '/premium-renovations-wilmslow.html'
+    }
   ],
   managerQuickAccess,
   pillars: ['Plan', 'Design', 'Craft'],

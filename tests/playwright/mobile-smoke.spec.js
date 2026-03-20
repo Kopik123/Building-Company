@@ -680,7 +680,7 @@ test('client dashboard keeps key logged-in cards open on mobile', async ({ page 
   await page.goto('/client-dashboard.html');
   await expect(page.getByRole('heading', { name: 'Project Status', exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: /mail box/i })).toBeVisible();
-  await expect(page.getByRole('heading', { name: /available options/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /quick access/i })).toBeVisible();
   await expect(page.locator('#client-mailbox-direct-count')).toContainText(/[0-9]+/);
   await expect(page.locator('#client-mailbox-project-count')).toContainText(/[0-9]+/);
   await expect(page.locator('#client-available-options a[href="#client-projects-section"]').first()).toBeVisible();

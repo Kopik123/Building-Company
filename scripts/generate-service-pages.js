@@ -7,7 +7,8 @@ const {
   renderPillarSection,
   renderFeatureSection,
   renderMediaStripSection,
-  renderFaqSection
+  renderFaqSection,
+  renderLinkClusterSection
 } = require('./publicPageRenderer');
 const {
   buildAreaItems,
@@ -22,9 +23,9 @@ const SERVICE_BOARD_CONFIG = {
     headingTitle: 'Bathrooms',
     relatedLabels: [
       'Full Bathroom Renovations',
-      'Tiling incl. Large Format / Wet Showers',
+      'Tiling incl. Large Format / Wet Showers / Exterior',
       'Carpentry',
-      'Interior Wall Systems'
+      'Interior and Exterior Wall'
     ],
     projects: [
       {
@@ -58,8 +59,8 @@ const SERVICE_BOARD_CONFIG = {
     relatedLabels: [
       'Kitchen Installation and Refurbishment',
       'Carpentry',
-      'Flooring Installation',
-      'Interior Wall Systems'
+      'Tiling incl. Large Format / Wet Showers / Exterior',
+      'Interior and Exterior Wall'
     ],
     projects: [
       {
@@ -92,9 +93,9 @@ const SERVICE_BOARD_CONFIG = {
     headingTitle: 'Interiors | Wall Systems',
     relatedLabels: [
       'Carpentry',
-      'Interior Wall Systems',
-      'External Wall Systems',
-      'Flooring Installation'
+      'Interior and Exterior Wall',
+      'Full Bathroom Renovations',
+      'Kitchen Installation and Refurbishment'
     ],
     projects: [
       {
@@ -133,13 +134,13 @@ const buildServiceBoard = (page) => {
     boardHeading: {
       eyebrow: `Premium service | ${page.consultation.locationValue}`,
       title: config.headingTitle,
-      lead: page.hero.title
+      lead: page.summaryLine || page.hero.title
     },
     boardClaim: {
       eyebrow: 'Plan | Design | Craft',
-      title: shared.claim,
-      lead: page.hero.lead
+      title: shared.claim
     },
+    proofPoints: page.proofPoints || [],
     galleryProjects: config.projects,
     summarySections: [
       {
@@ -223,6 +224,11 @@ const buildServicePages = () =>
           metrics: page.feature.metrics,
           image: page.feature.image,
           imageAlt: page.feature.imageAlt
+        }),
+        renderLinkClusterSection({
+          eyebrow: 'Service routes',
+          title: 'Move between service, gallery and local intent.',
+          groups: page.internalLinks || []
         }),
         renderMediaStripSection({
           eyebrow: page.mediaStrip.eyebrow,

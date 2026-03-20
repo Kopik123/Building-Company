@@ -125,7 +125,7 @@ const renderInlineLoginStrip = (shared) => `      <button class="public-auth-tog
           </div>
         </form>
         <div class="public-inline-session" data-inline-session data-auth-user-only hidden>
-          <p class="public-inline-session-copy" data-inline-session-copy>Account ready.</p>
+          <p class="public-inline-session-copy" data-inline-session-copy>Signed in.</p>
           <div class="public-inline-session-actions">
             <button class="public-inline-session-link public-inline-session-link--button" type="button" data-inline-logout>Log out</button>
           </div>
@@ -159,6 +159,14 @@ const renderLinks = (links, className = '') =>
       const classAttr = className ? ` class="${className}"` : '';
       return `          <a${classAttr} href="${escapeHtml(link.href)}">${escapeHtml(link.label)}</a>`;
     })
+    .join('\n');
+
+const renderLinkClusterLinks = (links = []) =>
+  links
+    .map(
+      (link) =>
+        `              <a class="page-link-pill" href="${escapeHtml(link.href)}">${escapeHtml(link.label)}</a>`
+    )
     .join('\n');
 
 const renderSummaryLinks = (links = []) =>
@@ -208,6 +216,11 @@ const renderHeroChips = (chips) =>
       const attrs = chip.isBrandRegion ? ' class="stat-chip" data-brand-region' : chip.isBrandClaim ? ' class="stat-chip" data-brand-claim' : ' class="stat-chip"';
       return `          <span${attrs}>${escapeHtml(chip.label)}</span>`;
     })
+    .join('\n');
+
+const renderProofPoints = (items = []) =>
+  items
+    .map((item) => `          <span class="stat-chip">${escapeHtml(item)}</span>`)
     .join('\n');
 
 const renderPillars = (pillars) =>
@@ -398,11 +411,16 @@ const renderStudioBoard = ({ shared, board }) => {
             <p class="section-eyebrow">${escapeHtml(heading.eyebrow || '')}</p>
             <h1>${escapeHtml(heading.title || '')}</h1>
             <p class="section-lead">${escapeHtml(heading.lead || '')}</p>
+${Array.isArray(board.proofPoints) && board.proofPoints.length
+  ? `            <div class="hero-chip-row">
+${renderProofPoints(board.proofPoints)}
+            </div>`
+  : ''}
           </div>
           <div class="studio-board-claim">
             <p class="section-eyebrow">${escapeHtml(claim.eyebrow || 'Studio Method')}</p>
             <p class="studio-board-claimline">${escapeHtml(claim.title || shared.claim)}</p>
-            <p class="studio-board-claimcopy">${escapeHtml(claim.lead || '')}</p>
+${claim.lead ? `            <p class="studio-board-claimcopy">${escapeHtml(claim.lead)}</p>` : ''}
           </div>
         </div>
 
@@ -493,9 +511,10 @@ const renderConsultationSection = ({ title, lead, formContext, locationValue, se
         <p class="section-eyebrow">Private Consultation</p>
         <h2>${escapeHtml(title || shared.enquiryTitle || 'Send Enquiry')}</h2>
         <p class="section-lead">${escapeHtml(lead || shared.enquiryLead || '')}</p>
-        <div class="consultation-points">
-          <p><strong data-brand-region>${escapeHtml(shared.region)}</strong></p>
-          <p>Selective briefs, direct studio access and a measured intake process.</p>
+        <div class="hero-chip-row consultation-chip-row">
+          <span class="stat-chip" data-brand-region>${escapeHtml(shared.region)}</span>
+          <span class="stat-chip">${escapeHtml(shared.consultationCtaLabel || 'Send Enquiry')}</span>
+          <span class="stat-chip">${escapeHtml(shared.claim)}</span>
         </div>
       </div>
       <form class="quote-form surface-card surface-card--light js-quote-form" data-form-context="${escapeHtml(formContext)}" novalidate>
@@ -517,6 +536,29 @@ const renderConsultationSection = ({ title, lead, formContext, locationValue, se
       </form>
     </div>
   </section>`;
+
+const renderLinkClusterSection = ({ eyebrow, title, groups = [] }) => `    <section class="section section--light">
+      <div class="container section-shell">
+        <div class="section-heading">
+          <p class="section-eyebrow">${escapeHtml(eyebrow)}</p>
+          <h2>${escapeHtml(title)}</h2>
+        </div>
+        <div class="page-grid-${Math.min(Math.max(groups.length, 1), 3)}">
+${groups
+  .map(
+    (group) => `          <article class="content-card content-card--light">
+            <p class="section-eyebrow section-eyebrow--compact">${escapeHtml(group.eyebrow || 'Routes')}</p>
+            <h3>${escapeHtml(group.title || '')}</h3>
+            ${group.lead ? `<p class="page-aside-copy">${escapeHtml(group.lead)}</p>` : ''}
+            <div class="page-link-cluster">
+${renderLinkClusterLinks(group.links || [])}
+            </div>
+          </article>`
+  )
+  .join('\n')}
+        </div>
+      </div>
+    </section>`;
 
 const renderFooter = (shared) => `  <footer class="site-footer">
     <div class="container footer-grid">
@@ -643,5 +685,6 @@ module.exports = {
   renderFeatureSection,
   renderMediaStripSection,
   renderFaqSection,
-  renderStudioBoard
+  renderStudioBoard,
+  renderLinkClusterSection
 };

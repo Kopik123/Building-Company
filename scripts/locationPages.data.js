@@ -7,6 +7,33 @@ const pages = [
   {
     fileName: 'premium-renovations-didsbury.html',
     location: 'Didsbury',
+    primaryKeyword: 'premium renovations didsbury',
+    searchIntent: 'location',
+    summaryLine: 'Didsbury bathroom, kitchen and interior briefs shaped through one premium studio route.',
+    proofPoints: ['Bathrooms and kitchens', 'Character-property fit', 'Quote-first intake'],
+    internalLinks: [
+      {
+        eyebrow: 'Service routes',
+        title: 'Core service pages',
+        lead: 'Start with the service line that leads the brief, then move into quote.',
+        links: [
+          { href: '/premium-bathrooms-manchester.html', label: 'Bathroom service' },
+          { href: '/premium-kitchens-manchester.html', label: 'Kitchen service' },
+          { href: '/interior-renovations-manchester.html', label: 'Interior service' }
+        ]
+      },
+      {
+        eyebrow: 'Next step',
+        title: 'Move into the brief',
+        lead: 'Use the direct route when the rooms, timing and finish level are known.',
+        links: [
+          { href: '/quote.html', label: 'Start Quote' },
+          { href: '/services.html', label: 'Services hub' },
+          { href: '/gallery.html', label: 'View Gallery' }
+        ]
+      }
+    ],
+    suppressHelperCopy: true,
     heroImage: '/Gallery/premium/bathroom-main.jpg',
     ogImage: 'https://levellines.co.uk/Gallery/premium/bathroom-main.jpg',
     metaDescription: buildLocationMetaDescription('Didsbury'),
@@ -47,6 +74,33 @@ const pages = [
   {
     fileName: 'premium-renovations-altrincham.html',
     location: 'Altrincham',
+    primaryKeyword: 'premium renovations altrincham',
+    searchIntent: 'location',
+    summaryLine: 'Altrincham renovation briefs delivered with kitchen-led planning and measured finish control.',
+    proofPoints: ['Kitchen-led briefs', 'Bathroom upgrades', 'Joinery support'],
+    internalLinks: [
+      {
+        eyebrow: 'Service routes',
+        title: 'Core service pages',
+        lead: 'Start with the service line that leads the brief, then move into quote.',
+        links: [
+          { href: '/premium-bathrooms-manchester.html', label: 'Bathroom service' },
+          { href: '/premium-kitchens-manchester.html', label: 'Kitchen service' },
+          { href: '/interior-renovations-manchester.html', label: 'Interior service' }
+        ]
+      },
+      {
+        eyebrow: 'Next step',
+        title: 'Move into the brief',
+        lead: 'Use the direct route when the rooms, timing and finish level are known.',
+        links: [
+          { href: '/quote.html', label: 'Start Quote' },
+          { href: '/services.html', label: 'Services hub' },
+          { href: '/gallery.html', label: 'View Gallery' }
+        ]
+      }
+    ],
+    suppressHelperCopy: true,
     heroImage: '/Gallery/premium/kitchen-panorama-right.jpg',
     ogImage: 'https://levellines.co.uk/Gallery/premium/kitchen-panorama-right.jpg',
     metaDescription: buildLocationMetaDescription('Altrincham'),
@@ -86,6 +140,33 @@ const pages = [
   {
     fileName: 'premium-renovations-stockport.html',
     location: 'Stockport',
+    primaryKeyword: 'premium renovations stockport',
+    searchIntent: 'location',
+    summaryLine: 'Stockport renovation briefs held together by stronger carpentry, wall-system and finish discipline.',
+    proofPoints: ['Interior and exterior scope', 'Wall-system discipline', 'Finish-first sequencing'],
+    internalLinks: [
+      {
+        eyebrow: 'Service routes',
+        title: 'Core service pages',
+        lead: 'Start with the service line that leads the brief, then move into quote.',
+        links: [
+          { href: '/premium-bathrooms-manchester.html', label: 'Bathroom service' },
+          { href: '/premium-kitchens-manchester.html', label: 'Kitchen service' },
+          { href: '/interior-renovations-manchester.html', label: 'Interior service' }
+        ]
+      },
+      {
+        eyebrow: 'Next step',
+        title: 'Move into the brief',
+        lead: 'Use the direct route when the rooms, timing and finish level are known.',
+        links: [
+          { href: '/quote.html', label: 'Start Quote' },
+          { href: '/services.html', label: 'Services hub' },
+          { href: '/gallery.html', label: 'View Gallery' }
+        ]
+      }
+    ],
+    suppressHelperCopy: true,
     heroImage: '/Gallery/premium/exterior-wood-gables.jpg',
     ogImage: 'https://levellines.co.uk/Gallery/premium/exterior-wood-gables.jpg',
     metaDescription: buildLocationMetaDescription('Stockport'),
@@ -125,6 +206,33 @@ const pages = [
   {
     fileName: 'premium-renovations-sale.html',
     location: 'Sale',
+    primaryKeyword: 'premium renovations sale manchester',
+    searchIntent: 'location',
+    summaryLine: 'Sale renovation briefs shaped through restrained palettes and tighter material control.',
+    proofPoints: ['Material restraint', 'Selective room upgrades', 'Premium finish control'],
+    internalLinks: [
+      {
+        eyebrow: 'Service routes',
+        title: 'Core service pages',
+        lead: 'Start with the service line that leads the brief, then move into quote.',
+        links: [
+          { href: '/premium-bathrooms-manchester.html', label: 'Bathroom service' },
+          { href: '/premium-kitchens-manchester.html', label: 'Kitchen service' },
+          { href: '/interior-renovations-manchester.html', label: 'Interior service' }
+        ]
+      },
+      {
+        eyebrow: 'Next step',
+        title: 'Move into the brief',
+        lead: 'Use the direct route when the rooms, timing and finish level are known.',
+        links: [
+          { href: '/quote.html', label: 'Start Quote' },
+          { href: '/services.html', label: 'Services hub' },
+          { href: '/gallery.html', label: 'View Gallery' }
+        ]
+      }
+    ],
+    suppressHelperCopy: true,
     heroImage: '/Gallery/premium/brick-detail-red.jpg',
     ogImage: 'https://levellines.co.uk/Gallery/premium/brick-detail-red.jpg',
     metaDescription: buildLocationMetaDescription('Sale'),
@@ -164,6 +272,33 @@ const pages = [
   {
     fileName: 'premium-renovations-chorlton.html',
     location: 'Chorlton',
+    primaryKeyword: 'premium renovations chorlton',
+    searchIntent: 'location',
+    summaryLine: 'Chorlton renovation briefs delivered with graphic materials and disciplined detailing.',
+    proofPoints: ['Stone and tile detail', 'Joinery control', 'Craft-focused delivery'],
+    internalLinks: [
+      {
+        eyebrow: 'Service routes',
+        title: 'Core service pages',
+        lead: 'Start with the service line that leads the brief, then move into quote.',
+        links: [
+          { href: '/premium-bathrooms-manchester.html', label: 'Bathroom service' },
+          { href: '/premium-kitchens-manchester.html', label: 'Kitchen service' },
+          { href: '/interior-renovations-manchester.html', label: 'Interior service' }
+        ]
+      },
+      {
+        eyebrow: 'Next step',
+        title: 'Move into the brief',
+        lead: 'Use the direct route when the rooms, timing and finish level are known.',
+        links: [
+          { href: '/quote.html', label: 'Start Quote' },
+          { href: '/services.html', label: 'Services hub' },
+          { href: '/gallery.html', label: 'View Gallery' }
+        ]
+      }
+    ],
+    suppressHelperCopy: true,
     heroImage: '/Gallery/premium/brick-dark-main.jpg',
     ogImage: 'https://levellines.co.uk/Gallery/premium/brick-dark-main.jpg',
     metaDescription: buildLocationMetaDescription('Chorlton'),
@@ -204,6 +339,33 @@ const pages = [
   {
     fileName: 'premium-renovations-wilmslow.html',
     location: 'Wilmslow',
+    primaryKeyword: 'premium renovations wilmslow',
+    searchIntent: 'location',
+    summaryLine: 'Wilmslow renovation briefs shaped for quieter luxury and stronger finish discipline.',
+    proofPoints: ['Quiet-luxury finish', 'Kitchen and bathroom scope', 'Interior continuity'],
+    internalLinks: [
+      {
+        eyebrow: 'Service routes',
+        title: 'Core service pages',
+        lead: 'Start with the service line that leads the brief, then move into quote.',
+        links: [
+          { href: '/premium-bathrooms-manchester.html', label: 'Bathroom service' },
+          { href: '/premium-kitchens-manchester.html', label: 'Kitchen service' },
+          { href: '/interior-renovations-manchester.html', label: 'Interior service' }
+        ]
+      },
+      {
+        eyebrow: 'Next step',
+        title: 'Move into the brief',
+        lead: 'Use the direct route when the rooms, timing and finish level are known.',
+        links: [
+          { href: '/quote.html', label: 'Start Quote' },
+          { href: '/services.html', label: 'Services hub' },
+          { href: '/gallery.html', label: 'View Gallery' }
+        ]
+      }
+    ],
+    suppressHelperCopy: true,
     heroImage: '/Gallery/premium/exterior-front.jpg',
     ogImage: 'https://levellines.co.uk/Gallery/premium/exterior-front.jpg',
     metaDescription: buildLocationMetaDescription('Wilmslow'),

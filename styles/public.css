@@ -612,6 +612,37 @@
   flex-wrap: wrap;
 }
 
+.page-link-cluster {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.52rem;
+}
+
+.page-link-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0.42rem 0.82rem;
+  border: 1px solid rgba(209, 164, 74, 0.42);
+  border-radius: 999px;
+  background:
+    linear-gradient(165deg, rgba(10, 10, 10, 0.86), rgba(4, 4, 4, 0.92)),
+    url('/boxbackground.png') center center / 100% 100% no-repeat;
+  color: var(--color-text);
+  font-size: 0.84rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-decoration: none;
+}
+
+.page-link-pill:hover,
+.page-link-pill:focus-visible {
+  border-color: rgba(242, 206, 119, 0.72);
+  text-decoration: none;
+  transform: translateY(-1px);
+}
+
 .media-strip {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }

@@ -4,6 +4,10 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 
 ## Now
 
+- [x] Save the launch-ready design/SEO execution plan under `Plans/Plan poprawy designu i SEO dla gotowej strony Level Lines Studio.md` and register it in `Plans/Plan History.md`.
+- [x] Remove helper/filler copy from the main public brochure surfaces (`Home`, `Services`, `Gallery`, `Quote`, `Contact`, legal pages) and tighten auth/workspace shell copy to task-led labels only.
+- [x] Extend the public page content/generator model with launch-ready SEO fields (`primaryKeyword`, `searchIntent`, `summaryLine`, `proofPoints`, `internalLinks`, `suppressHelperCopy`) so generated service/location pages keep one consistent search-intent contract.
+- [x] Add an automated SEO/content contract that enforces unique `title`, `meta description`, `canonical`, single `H1`, correct `noindex` rules, sitemap coverage and helper-copy removal across public pages.
 - [x] Swap the quote-page top and lower card rows so `Before you send + form` sits above `Quote + How to brief`, matching the requested layout while keeping `#quote-card` on the form section.
 - [x] Fix the public-header regression where authenticated brochure pages could still show autofilled inline login inputs alongside session controls.
 - [x] Verify the live cache policy on `HTML`, `CSS`, `JS` and image assets; current production behavior is `HTML`/`healthz` = `Cache-Control: no-store`, while versioned `CSS`/`JS`/image assets return `Cache-Control: max-age=604800, public`.
@@ -34,6 +38,9 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [x] Centralise role labels and account destinations so `brand.js`, `auth.js`, `site.js`, `client-dashboard.shell.js` and `manager-dashboard.shell.js` all agree on role naming, redirect paths and manager-workspace permissions.
 - [x] Confirm on live `/services.html` that `Discuss wall systems` opens `/quote.html` with the wall-systems context already selected in the quote form.
 - [ ] Capture fresh screenshot evidence for homepage, gallery, quote/contact forms, auth state and both dashboards after the consolidated live QA pass.
+- [ ] Run manual rich-results / SERP preview QA for homepage, services, gallery, one generated service page and one generated location page after the launch-ready SEO/content pass.
+- [ ] Run a manual internal-link crawl pass from homepage -> services -> service page -> location page -> quote so the new route clusters do not leave orphan brochure pages.
+- [ ] Capture manual social-preview evidence for homepage, services, gallery and one location page after the SEO metadata sweep.
 - [ ] Resolve the local PowerShell execution-policy issue blocking `npm.ps1`; until fixed, keep using `npm.cmd` for local validation commands.
 - [x] Standardise local shell snippets for Windows PowerShell 5.1 (`;` or `cmd /c`) because `&&` chaining is not supported in the current local shell.
 - [ ] Decide whether the current live cache contract should stay as `HTML no-store + versioned assets cached for 7 days`, or whether versioned `CSS`/`JS`/image assets should also move to `no-store` during active brochure iteration.

@@ -6,7 +6,8 @@ const {
   renderIntroSection,
   renderPillarSection,
   renderFeatureSection,
-  renderFaqSection
+  renderFaqSection,
+  renderLinkClusterSection
 } = require('./publicPageRenderer');
 const {
   buildAreaItems,
@@ -196,7 +197,7 @@ const LOCATION_BOARD_CONFIG = {
 const CORE_SERVICE_LABELS = [
   'Full Bathroom Renovations',
   'Kitchen Installation and Refurbishment',
-  'Interior Wall Systems'
+  'Interior and Exterior Wall'
 ];
 
 const buildLocationBoard = (page) => {
@@ -207,13 +208,13 @@ const buildLocationBoard = (page) => {
     boardHeading: {
       eyebrow: `Premium renovations | ${page.location}`,
       title: config.headingTitle,
-      lead: page.heroTitle
+      lead: page.summaryLine || page.heroTitle
     },
     boardClaim: {
       eyebrow: 'Plan | Design | Craft',
-      title: shared.claim,
-      lead: page.heroLead
+      title: shared.claim
     },
+    proofPoints: page.proofPoints || [],
     galleryProjects: config.projects,
     summarySections: [
       {
@@ -319,6 +320,11 @@ const buildLocationPages = () =>
           metrics: page.caseStudy.metrics,
           image: page.caseStudy.image,
           imageAlt: page.caseStudy.imageAlt
+        }),
+        renderLinkClusterSection({
+          eyebrow: 'Local routes',
+          title: `Service and quote routes for ${page.location}.`,
+          groups: page.internalLinks || []
         }),
         renderFaqSection({
           eyebrow: 'FAQ',
