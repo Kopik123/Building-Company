@@ -102,33 +102,25 @@
       {
         name: 'Bathrooms',
         images: [
-          { src: '/Gallery/bathrooms/primary-suite-overview.jpg', label: 'Primary suite overview' },
-          { src: '/Gallery/bathrooms/freestanding-bath-detail.jpg', label: 'Freestanding bath detail' },
+          { src: '/Gallery/bathrooms/The Slate Suite.png', label: 'The Slate Suite' },
+          { src: '/Gallery/bathrooms/Gemini_Generated_Image_9cq5ti9cq5ti9cq5.png', label: 'Bathroom concept detail' },
           { src: '/Gallery/bathrooms/wet-room-tile-geometry.jpg', label: 'Wet-room tile geometry' }
         ]
       },
       {
         name: 'Kitchens',
         images: [
-          { src: '/Gallery/kitchens/island-overview.jpg', label: 'Island overview' },
-          { src: '/Gallery/kitchens/joinery-left-run.jpg', label: 'Joinery left run' },
-          { src: '/Gallery/kitchens/finish-right-run.jpg', label: 'Finish right run' }
-        ]
-      },
-      {
-        name: 'Interiors',
-        images: [
-          { src: '/Gallery/interiors/material-surface-overview.jpg', label: 'Material surface overview' },
-          { src: '/Gallery/interiors/charcoal-finish-detail.jpg', label: 'Charcoal finish detail' },
-          { src: '/Gallery/interiors/warm-finish-detail.jpg', label: 'Warm finish detail' }
+          { src: '/Gallery/kitchens/Alabaster Horizon.png', label: 'Alabaster Horizon' },
+          { src: '/Gallery/kitchens/Midnight Marble.png', label: 'Midnight Marble' },
+          { src: '/Gallery/kitchens/Obsidian Oak.png', label: 'Obsidian Oak' }
         ]
       },
       {
         name: 'Exteriors',
         images: [
-          { src: '/Gallery/exteriors/front-elevation-overview.jpg', label: 'Front elevation overview' },
-          { src: '/Gallery/exteriors/chimney-detail.jpg', label: 'Chimney detail' },
-          { src: '/Gallery/exteriors/timber-gable-detail.jpg', label: 'Timber gable detail' }
+          { src: '/Gallery/exteriors/Rendering.jpg', label: 'Rendering' },
+          { src: '/Gallery/exteriors/White brickslips.png', label: 'White brickslips' },
+          { src: '/Gallery/exteriors/charcoal brickslips.jpg', label: 'Charcoal brickslips' }
         ]
       }
     ]
