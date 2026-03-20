@@ -99,6 +99,9 @@ test('core brochure pages render about, services, gallery, contact and quote rou
   await expect(page.locator('[data-gallery-active-project-meta]')).toBeVisible();
   await expect(page.locator('[data-gallery-status]')).toBeVisible();
   await expect.poll(async () => page.locator('.gallery-stage').evaluate((node) => getComputedStyle(node).backgroundImage)).toContain('mainbackground.png');
+  const galleryRailTop = await page.locator('#gallery').evaluate((node) => node.getBoundingClientRect().top);
+  const galleryIntroTop = await page.locator('.page-intro-grid').evaluate((node) => node.getBoundingClientRect().top);
+  expect(galleryRailTop).toBeLessThan(galleryIntroTop);
 
   await page.goto('/contact.html');
   await expect(page.locator('body.public-site.page-contact')).toBeVisible();

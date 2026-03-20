@@ -27,6 +27,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [x] Rename the manager quick-access/account-panel labels to `Create Project`, `ProjectManager`, `QuotesReview`, `ServicesManage`, `MaterialsTrack`, `Clients`, `Staff`, `Estimate`, `PrivateChat` and `ProjectChat`, and surface the same manager quick-access links inside the logged-in `auth.html` account panel.
 - [x] Apply `boxbackground.png` to all field-style workspace panels (operations cards, overview entries, mailbox stats/columns, dashboard items and attachment rows) so the highlighted surfaces across manager/client cards consistently use the box background.
 - [x] Remove the old `public-section` and workspace content-shell background bands that were still sitting behind brochure/workspace cards and visually obscuring the shared `mainbackground.png` card treatment.
+- [x] Move the gallery `Service Rail / Gallery / active service meta` card above the `Service Gallery / How To Browse` intro cards so the interactive service rail leads the page before the explanatory copy.
 - [ ] Confirm on live `/services.html` that `Discuss wall systems` opens `/quote.html` with the wall-systems context already selected in the quote form.
 - [ ] Capture fresh screenshot evidence for homepage, gallery, quote/contact forms, auth state and both dashboards after the consolidated live QA pass.
 - [ ] Resolve the local PowerShell execution-policy issue blocking `npm.ps1`; until fixed, keep using `npm.cmd` for local validation commands.
