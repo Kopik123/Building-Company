@@ -18,6 +18,22 @@ npm run test:e2e:mobile
 npm run test:all
 ```
 
+### Windows PowerShell 5.1
+
+- Use `npm.cmd` instead of `npm` in local PowerShell 5.1.
+- Do not use Bash-style `&&` directly in PowerShell 5.1; use multi-line fail-fast checks or `cmd /c`.
+- Canonical local examples live in [deploy/WINDOWS_POWERSHELL_5_1_LOCAL_COMMANDS.md](deploy/WINDOWS_POWERSHELL_5_1_LOCAL_COMMANDS.md).
+
+Example:
+
+```powershell
+npm.cmd run verify:generated
+if ($LASTEXITCODE -ne 0) { exit 1 }
+
+npm.cmd run test:ci
+if ($LASTEXITCODE -ne 0) { exit 1 }
+```
+
 ### Generowane strony publiczne
 
 ```bash
