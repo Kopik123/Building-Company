@@ -1,10 +1,17 @@
 require('dotenv').config();
 
+const applyMigrationDatabaseFallback = () => {
+  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
+  if (!process.env.DEV_DATABASE_URL) return null;
+  process.env.DATABASE_URL = process.env.DEV_DATABASE_URL;
+  return process.env.DATABASE_URL;
+};
+
 const getMissingDatabaseUrlMessage = () =>
-  'DATABASE_URL is required to run migrations. Set it in your shell or local .env before running `npm run migrate` or `npm run migrate:status`.';
+  'DATABASE_URL is required to run migrations. Set DATABASE_URL or DEV_DATABASE_URL in your shell or local .env before running `npm run migrate` or `npm run migrate:status`.';
 
 const ensureDatabaseUrl = () => {
-  if (process.env.DATABASE_URL) return;
+  if (applyMigrationDatabaseFallback()) return;
   const error = new Error(getMissingDatabaseUrlMessage());
   error.code = 'MISSING_DATABASE_URL';
   throw error;
@@ -39,6 +46,7 @@ const run = async () => {
 
 module.exports = {
   run,
+  applyMigrationDatabaseFallback,
   ensureDatabaseUrl,
   getMissingDatabaseUrlMessage,
   loadMigrator

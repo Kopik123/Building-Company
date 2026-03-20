@@ -74,6 +74,10 @@ npm run migrate
 npm run migrate:status
 ```
 
+- Skrypty migracji wymagają `DATABASE_URL`.
+- Dla wygody lokalnej możesz ustawić `DEV_DATABASE_URL`; `scripts/migrate.js` użyje go tylko jako CLI fallback, jeśli `DATABASE_URL` nie jest ustawione w bieżącym shellu.
+- Runtime aplikacji nadal wymaga normalnego `DATABASE_URL`.
+
 ## Formularz e-mail i galeria
 
 - Frontend wysyła formularz kontaktowy do `POST /api/contact`.
