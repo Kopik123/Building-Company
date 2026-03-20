@@ -47,11 +47,13 @@
     node.textContent = message;
   });
 
-  const dashboardPathForRole = (roleRaw) => {
+  const getRoleProfile = (roleRaw) => {
     const role = String(roleRaw || '').toLowerCase();
-    if (role === 'client') return '/client-dashboard.html';
-    if (['employee', 'manager', 'admin'].includes(role)) return '/manager-dashboard.html';
-    return '/auth.html';
+    return brand?.roleProfiles?.[role] || null;
+  };
+
+  const dashboardPathForRole = (roleRaw) => {
+    return getRoleProfile(roleRaw)?.accountPath || '/auth.html';
   };
 
   const resolveNextPath = () => {
@@ -64,19 +66,14 @@
   };
 
   const humanRole = (roleRaw) => {
-    const role = String(roleRaw || '').toLowerCase();
-    if (role === 'client') return 'Client';
-    if (role === 'employee') return 'Employee';
-    if (role === 'manager') return 'Manager';
-    if (role === 'admin') return 'Admin';
-    return 'User';
+    return getRoleProfile(roleRaw)?.label || 'User';
   };
 
   const getManagerQuickAccessOptions = () => Array.isArray(brand?.managerQuickAccess) ? brand.managerQuickAccess : [];
 
   const canUseManagerWorkspace = (roleRaw) => {
-    const role = String(roleRaw || '').toLowerCase();
-    return getManagerQuickAccessOptions().some((option) => option.roles.includes(role));
+    return Boolean(getRoleProfile(roleRaw)?.managerWorkspace)
+      && getManagerQuickAccessOptions().some((option) => option.roles.includes(String(roleRaw || '').toLowerCase()));
   };
 
   const createQuickAccessLink = (option) => {

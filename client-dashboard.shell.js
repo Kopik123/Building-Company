@@ -11,6 +11,9 @@
   } = {}) => {
     if (!state || !el) return null;
 
+    const brand = globalThis.LEVEL_LINES_BRAND || null;
+    const getClientDashboardPath = () => brand?.roleProfiles?.client?.accountPath || '/client-dashboard.html';
+
     const clearSession = () => {
       (runtime.clearSession || (() => {
         localStorage.removeItem(tokenKey);
@@ -49,7 +52,7 @@
       }));
 
     const bootstrap = async () => {
-      const loginUrl = `/auth.html?next=${encodeURIComponent('/client-dashboard.html')}`;
+      const loginUrl = `/auth.html?next=${encodeURIComponent(getClientDashboardPath())}`;
       overviewController?.renderOperationsShell?.();
       state.token = localStorage.getItem(tokenKey) || '';
       if (!state.token) {

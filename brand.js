@@ -1,5 +1,28 @@
 const assetManifest = globalThis.LEVEL_LINES_ASSETS || {};
 const brandAssets = assetManifest.brand || {};
+const roleProfiles = {
+  client: {
+    label: 'Client',
+    accountPath: '/client-dashboard.html'
+  },
+  employee: {
+    label: 'Employee',
+    accountPath: '/manager-dashboard.html',
+    managerWorkspace: true
+  },
+  manager: {
+    label: 'Manager',
+    accountPath: '/manager-dashboard.html',
+    managerWorkspace: true,
+    canRunSeed: true
+  },
+  admin: {
+    label: 'Admin',
+    accountPath: '/manager-dashboard.html',
+    managerWorkspace: true,
+    canRunSeed: true
+  }
+};
 const managerQuickAccess = [
   {
     key: 'createProject',
@@ -72,6 +95,7 @@ globalThis.LEVEL_LINES_BRAND = {
   titleImagePath: brandAssets.title?.fallback || '/title.png',
   workspaceImagePath: brandAssets.workspace?.fallback || '/logo4.png',
   publicAuthLabel: 'Account',
+  roleProfiles,
   consultationCtaLabel: 'Send Enquiry',
   footerCopy: 'A premium renovation studio for bathrooms, kitchens and interiors, shaped with quiet planning, material restraint and finish control across the North West.',
   email: 'LevelLineStudioMCR@gmail.com',

@@ -28,6 +28,10 @@
 
     const USER_SEARCH_CACHE_TTL_MS = 30 * 1000;
     const userSearchCache = new Map();
+    const getRoleProfile = (roleRaw) => {
+      const role = String(roleRaw || '').toLowerCase();
+      return brand?.roleProfiles?.[role] || null;
+    };
     const getManagerQuickAccessOptions = () => Array.isArray(brand?.managerQuickAccess) ? brand.managerQuickAccess : [];
     const dependencies = {
       loadProjects: async () => {},
@@ -616,7 +620,10 @@
       runLazySectionSetup(getLazySectionTasks(role));
     };
 
-    const getManagerLoginUrl = () => `/auth.html?next=${encodeURIComponent('/manager-dashboard.html')}`;
+    const getManagerLoginUrl = () => {
+      const managerPath = getRoleProfile('manager')?.accountPath || '/manager-dashboard.html';
+      return `/auth.html?next=${encodeURIComponent(managerPath)}`;
+    };
 
     const redirectToManagerLogin = (message, loginUrl) => {
       el.session.textContent = message;
@@ -625,12 +632,12 @@
       }, 700);
     };
 
-    const isManagerDashboardRole = (role) => ['employee', 'manager', 'admin'].includes(role);
+    const isManagerDashboardRole = (role) => Boolean(getRoleProfile(role)?.managerWorkspace);
 
     const getManagerRole = () => String(state.user?.role || '').toLowerCase();
 
     const applyManagerSeedPermissions = (role) => {
-      if (['manager', 'admin'].includes(role)) return;
+      if (getRoleProfile(role)?.canRunSeed) return;
       el.seedBtn.disabled = true;
       el.seedBtn.title = 'Only manager/admin can run seed';
     };

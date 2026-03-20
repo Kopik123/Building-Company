@@ -306,11 +306,13 @@
     document.querySelectorAll('select[data-brand-project-type-select], select[data-brand-budget-select]').forEach(renderBrandSelectOptions);
   };
 
-  const accountPathForRole = (roleRaw) => {
+  const getRoleProfile = (roleRaw) => {
     const role = String(roleRaw || '').toLowerCase();
-    if (role === 'client') return '/client-dashboard.html';
-    if (['employee', 'manager', 'admin'].includes(role)) return '/manager-dashboard.html';
-    return '/auth.html';
+    return brand?.roleProfiles?.[role] || null;
+  };
+
+  const accountPathForRole = (roleRaw) => {
+    return getRoleProfile(roleRaw)?.accountPath || '/auth.html';
   };
 
   const currentWorkspacePath = () => {
@@ -356,8 +358,8 @@
   const getManagerQuickAccessOptions = () => Array.isArray(brand?.managerQuickAccess) ? brand.managerQuickAccess : [];
 
   const canUseManagerQuickAccess = (roleRaw) => {
-    const role = String(roleRaw || '').toLowerCase();
-    return getManagerQuickAccessOptions().some((option) => option.roles.includes(role));
+    return Boolean(getRoleProfile(roleRaw)?.managerWorkspace)
+      && getManagerQuickAccessOptions().some((option) => option.roles.includes(String(roleRaw || '').toLowerCase()));
   };
 
   const ensureHeaderQuickAccessPanel = () => {
@@ -423,7 +425,7 @@
     setHidden(headerQuickAccess.panel, !showQuickAccess);
     headerQuickAccess.links.replaceChildren();
     if (headerQuickAccess.role) {
-      headerQuickAccess.role.textContent = showQuickAccess ? `${role.charAt(0).toUpperCase()}${role.slice(1)}` : '';
+      headerQuickAccess.role.textContent = showQuickAccess ? (getRoleProfile(role)?.label || '') : '';
     }
 
     if (!showQuickAccess) {

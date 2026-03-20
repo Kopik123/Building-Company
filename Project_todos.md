@@ -31,6 +31,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [x] Show a real manager `Account Panel / Quick Access` inside the public header after login, using the requested manager labels (`Create Project`, `ProjectManager`, `QuotesReview`, `ServicesManage`, `MaterialsTrack`, `Clients`, `Staff`, `Estimate`, `PrivateChat`, `ProjectChat`) and hiding the plain public `Account` link while that panel is visible.
 - [x] Deduplicate the manager quick-access config so `brand.js`, `auth.js`, `site.js` and `manager-dashboard.shell.js` all read the same labels, hrefs and role rules from one shared source.
 - [x] Keep manager-dashboard quick-access links as local `#section` anchors even after moving the shared quick-access config into `brand.js`, so public/auth pages can use full dashboard URLs without breaking in-dashboard quick-access navigation.
+- [x] Centralise role labels and account destinations so `brand.js`, `auth.js`, `site.js`, `client-dashboard.shell.js` and `manager-dashboard.shell.js` all agree on role naming, redirect paths and manager-workspace permissions.
 - [ ] Confirm on live `/services.html` that `Discuss wall systems` opens `/quote.html` with the wall-systems context already selected in the quote form.
 - [ ] Capture fresh screenshot evidence for homepage, gallery, quote/contact forms, auth state and both dashboards after the consolidated live QA pass.
 - [ ] Resolve the local PowerShell execution-policy issue blocking `npm.ps1`; until fixed, keep using `npm.cmd` for local validation commands.
