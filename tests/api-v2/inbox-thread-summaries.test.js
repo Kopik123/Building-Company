@@ -1,7 +1,10 @@
 const assert = require('node:assert/strict');
+const fs = require('node:fs/promises');
+const path = require('node:path');
 const test = require('node:test');
 const request = require('supertest');
 const { buildExpressApp, loadRoute, mock, mockModels, signAccessToken } = require('./_helpers');
+const { UPLOADS_DIR } = require('../../utils/upload');
 
 process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-secret-v2';
 
@@ -171,4 +174,63 @@ test('inbox thread create-only mode opens a thread without creating an opening m
   assert.equal(response.body.thread.id, 'thread-2');
   assert.equal(response.body.message, null);
   assert.equal(createdMessage, false);
+});
+
+test('inbox attachment upload accepts multipart files and stores attachment metadata', async () => {
+  const threadId = '11111111-1111-4111-8111-111111111111';
+  let createdPayload = null;
+
+  mockModels({
+    InboxThread: {
+      async findByPk(id) {
+        if (id !== threadId) return null;
+        return {
+          id: threadId,
+          participantAId: '33333333-3333-4333-8333-333333333333',
+          participantBId: '44444444-4444-4444-8444-444444444444'
+        };
+      }
+    },
+    InboxMessage: {
+      async create(payload) {
+        createdPayload = payload;
+        return {
+          id: 'message-upload-1',
+          ...payload
+        };
+      }
+    },
+    User: {
+      async findByPk(id) {
+        return {
+          id,
+          email: 'client@example.com',
+          role: 'client',
+          name: 'Client Test',
+          isActive: true
+        };
+      }
+    }
+  });
+
+  const route = loadRoute('routes/inbox.js');
+  const app = buildExpressApp('/api/inbox', route);
+  const token = signAccessToken('33333333-3333-4333-8333-333333333333', 'client');
+
+  const response = await request(app)
+    .post(`/api/inbox/threads/${threadId}/messages/upload`)
+    .set('Authorization', `Bearer ${token}`)
+    .attach('files', Buffer.from('attachment-body'), {
+      filename: 'attachment.txt',
+      contentType: 'text/plain'
+    })
+    .expect(201);
+
+  assert.equal(response.body.message.attachments.length, 1);
+  assert.equal(response.body.message.attachments[0].name, 'attachment.txt');
+  assert.equal(createdPayload.attachments.length, 1);
+  assert.equal(createdPayload.body, 'Sent 1 file(s)');
+
+  const storedFileName = path.basename(response.body.message.attachments[0].url);
+  await fs.unlink(path.join(UPLOADS_DIR, storedFileName));
 });
