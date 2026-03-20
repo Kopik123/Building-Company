@@ -1375,6 +1375,8 @@ test('manager dashboard can create private threads and manage project chat parti
   await page.locator('#manager-group-thread-form select[name="projectId"]').selectOption('project-1');
   await page.locator('#manager-group-thread-form select[name="participantType"]').selectOption('staff');
   await page.locator('#manager-group-thread-form input[name="participantEmail"]').fill('leah@example.com');
+  await expect(page.locator('#manager-group-create-participant-lookup-status')).toContainText('Leah Builder');
+  await page.locator('#manager-group-thread-form input[name="participantEmail"]').press('Tab');
   await page.locator('#manager-group-thread-form button[type="submit"]').click();
 
   await expect(page.locator('#manager-group-thread-status')).toContainText(/project chat created/i);

@@ -63,7 +63,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 
 ## Tooling And Quality
 
-- [ ] Resolve the remaining local Playwright `spawn EPERM` issue and record the first green local `npm run test:e2e:mobile` pass.
+- [x] Resolve the remaining local Playwright `spawn EPERM` issue and record the first green local `npm run test:e2e:mobile` pass.
 - [x] Refresh the shipped gallery asset set by repointing the premium image pipeline and `gallery.js` fallbacks to the current bathroom, kitchen and exterior source images while keeping stable brochure-facing `/Gallery/premium/...` output paths.
 - [x] Make `scripts/run-playwright.js` resilient to parallel local runs; today the static server binds fixed port `4173`, so concurrent Playwright commands can fail with `EADDRINUSE`.
 - [x] Run a first Sonar cleanup pass across dashboard/browser modules and shared utils: replace `window` with `globalThis`, adopt `node:` imports, use `Object.hasOwn`, simplify direct optional checks and modernise a few low-risk helper patterns.
