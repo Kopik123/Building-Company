@@ -4,6 +4,13 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 
 ## Now
 
+- [ ] Decide one target authenticated web surface for the next phase: keep `client-dashboard.html` / `manager-dashboard.html` as the main product, or start moving real feature work into `apps/web-v2` instead of maintaining both in parallel.
+- [ ] Unify auth/session ownership across legacy web and `api/v2`; today legacy pages keep `ll_auth_token` / `ll_auth_user`, while `web-v2` uses `ll_v2_access_token` / `ll_v2_refresh_token` and a different session lifecycle.
+- [ ] Integrate `apps/web-v2` into the real runtime delivery path or mark it explicitly as scaffold-only until cutover work starts; it currently builds green but is not served by the Express app.
+- [ ] Remove the hardcoded production fallback from `apps/mobile-v1/src/api.js` and switch mobile API base selection to explicit local/staging/production config.
+- [ ] Add one shared contract layer for `api/v2`, `web-v2` and `mobile-v1` (`TypeScript` types plus `OpenAPI` or `Zod`) before the next larger feature wave, so portable web/mobile work stops drifting.
+- [ ] Decide whether DB migrations should continue running automatically on every app boot or move to deploy-time only before any multi-instance/staging->prod cutover growth.
+- [ ] Either wire `models.ensureIndexes()` into a deliberate startup/deploy path or remove it and keep index ownership exclusively in migrations, because the current strategy is ambiguous.
 - [x] Save the launch-ready design/SEO execution plan under `Plans/Plan poprawy designu i SEO dla gotowej strony Level Lines Studio.md` and register it in `Plans/Plan History.md`.
 - [x] Remove helper/filler copy from the main public brochure surfaces (`Home`, `Services`, `Gallery`, `Quote`, `Contact`, legal pages) and tighten auth/workspace shell copy to task-led labels only.
 - [x] Extend the public page content/generator model with launch-ready SEO fields (`primaryKeyword`, `searchIntent`, `summaryLine`, `proofPoints`, `internalLinks`, `suppressHelperCopy`) so generated service/location pages keep one consistent search-intent contract.

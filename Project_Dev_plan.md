@@ -434,3 +434,11 @@
 - Added `tests/api-v2/public-seo-contract.test.js` as an automated launch-ready SEO/content contract: it enforces unique public `title`/`meta description`, correct `canonical`, one `H1`, correct `index`/`noindex` rules, sitemap inclusion/exclusion, JSON-LD presence and the removal of the old helper-copy phrases from the brochure HTML.
 - Updated `tests/playwright/mobile-smoke.spec.js` to match the renamed client-dashboard `Quick Access` heading, then re-ran the focused and full suites so the new public/content/SEO pass stays covered end to end.
 - Re-ran `npm.cmd run generate:public-pages:content`, `npm.cmd run verify:generated`, `node --check brand.js`, `node --check site.js`, `node --check scripts/generate-service-pages.js`, `node --check scripts/generate-location-pages.js`, `node --test tests/api-v2/public-seo-contract.test.js`, the focused public/mobile Playwright suites, and `npm.cmd run test:ci`; all passed after the launch-ready design and SEO implementation.
+
+## 2026-03-22
+
+- Performed a repo-level project analysis covering the current runtime architecture, legacy/public surfaces, `api/v2`, `apps/web-v2`, `apps/mobile-v1`, migrations, deploy tooling and test coverage.
+- Read the main runtime entry points (`app.js`, `server.js`, `api/v2/index.js`, core legacy routes, model associations and the v2 auth/session flow) to map the actual product shape instead of relying only on README notes.
+- Verified the current execution baseline locally with `npm.cmd run test:ci`, `npm.cmd run test:e2e:mobile` and `npm.cmd run build` in `apps/web-v2`; all passed on `2026-03-22`.
+- Recorded the analysis as `Plans/Analiza Projektu Building Company - Stan, Ryzyka I Kierunek.md` and registered it in `Plans/Plan History.md`.
+- Added the main architecture follow-up items to `Project_todos.md`: choose one target authenticated web surface, unify auth/session ownership, decide the real role of `apps/web-v2`, remove the mobile production URL fallback, introduce a shared typed contract layer, decide migration ownership timing, and clarify the index-management strategy.
