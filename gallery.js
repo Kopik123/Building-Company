@@ -102,25 +102,25 @@
       {
         name: 'Bathrooms',
         images: [
-          { src: '/Gallery/bathrooms/The Slate Suite.png', label: 'The Slate Suite' },
-          { src: '/Gallery/bathrooms/Gemini_Generated_Image_9cq5ti9cq5ti9cq5.png', label: 'Bathroom concept detail' },
-          { src: '/Gallery/bathrooms/wet-room-tile-geometry.jpg', label: 'Wet-room tile geometry' }
+          { src: '/Gallery/premium/bathroom-main.jpg', label: 'The Slate Suite' },
+          { src: '/Gallery/premium/bathroom-bathtub.jpg', label: 'Bathroom suite detail' },
+          { src: '/Gallery/premium/bathroom-tiles.jpg', label: 'Wet-room tile geometry' }
         ]
       },
       {
         name: 'Kitchens',
         images: [
-          { src: '/Gallery/kitchens/Alabaster Horizon.png', label: 'Alabaster Horizon' },
-          { src: '/Gallery/kitchens/Midnight Marble.png', label: 'Midnight Marble' },
-          { src: '/Gallery/kitchens/Obsidian Oak.png', label: 'Obsidian Oak' }
+          { src: '/Gallery/premium/kitchen-panorama-left.jpg', label: 'Alabaster Horizon' },
+          { src: '/Gallery/premium/kitchen-panorama-main.jpg', label: 'Midnight Marble' },
+          { src: '/Gallery/premium/kitchen-panorama-right.jpg', label: 'Obsidian Oak' }
         ]
       },
       {
         name: 'Exteriors',
         images: [
-          { src: '/Gallery/exteriors/Rendering.jpg', label: 'Rendering' },
-          { src: '/Gallery/exteriors/White brickslips.png', label: 'White brickslips' },
-          { src: '/Gallery/exteriors/charcoal brickslips.jpg', label: 'Charcoal brickslips' }
+          { src: '/Gallery/premium/exterior-front.jpg', label: 'Rendering' },
+          { src: '/Gallery/premium/exterior-wood-gables.jpg', label: 'White brickslips' },
+          { src: '/Gallery/premium/brick-detail-charcoal.jpg', label: 'Charcoal brickslips' }
         ]
       }
     ]

@@ -145,3 +145,23 @@ test('createApp disables browser storage for iterated frontend assets after depl
   assert.match(htmlResponse.text, /\/site\.js\?v=/);
   assert.match(htmlResponse.text, /\/assets\/optimized\/brand\/title\.png\?v=/);
 });
+
+test('createApp exposes the web-v2 rollout shell under /app-v2 with client-side route fallback', async () => {
+  mockModels(createModelsStub());
+
+  const { createApp } = loadRoute('app.js');
+  const app = createApp();
+
+  const routeResponse = await request(app)
+    .get('/app-v2')
+    .expect(200);
+
+  const nestedRouteResponse = await request(app)
+    .get('/app-v2/projects')
+    .expect(200);
+
+  assert.equal(routeResponse.headers['cache-control'], 'no-store');
+  assert.match(routeResponse.text, /levels\+lines Control Panel v2/i);
+  assert.match(routeResponse.text, /\/app-v2\/assets\//);
+  assert.match(nestedRouteResponse.text, /<div id="root"><\/div>/);
+});

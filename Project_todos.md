@@ -5,11 +5,11 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 ## Now
 
 - [x] Decide one target authenticated web surface for the next phase: `apps/web-v2` is now the target authenticated web app, while `client-dashboard.html` / `manager-dashboard.html` stay only as a transitional compatibility layer until controlled cutover.
-- [ ] Expose `apps/web-v2` through the real Express runtime under a controlled rollout route (`/app-v2` or `/workspace-v2`) before any default redirect/cutover work.
+- [x] Expose `apps/web-v2` through the real Express runtime under a controlled rollout route (`/app-v2` or `/workspace-v2`) before any default redirect/cutover work.
 - [ ] Prepare a feature-parity map from legacy dashboards to `web-v2` covering `projects`, `quotes`, `messages`, `notifications`, `crm`, `inventory`, file upload and role-aware navigation.
 - [ ] Move new authenticated web feature work to `apps/web-v2` first unless the task is explicitly legacy-only or cutover-critical.
 - [ ] Unify auth/session ownership across legacy web and `api/v2`; today legacy pages keep `ll_auth_token` / `ll_auth_user`, while `web-v2` uses `ll_v2_access_token` / `ll_v2_refresh_token` and a different session lifecycle.
-- [ ] Integrate `apps/web-v2` into the real runtime delivery path or mark it explicitly as scaffold-only until cutover work starts; it currently builds green but is not served by the Express app.
+- [x] Integrate `apps/web-v2` into the real runtime delivery path under `/app-v2`; the next step is parity work and deciding when account redirects/cutover should start using it by default.
 - [ ] Remove the hardcoded production fallback from `apps/mobile-v1/src/api.js` and switch mobile API base selection to explicit local/staging/production config.
 - [ ] Add one shared contract layer for `api/v2`, `web-v2` and `mobile-v1` (`TypeScript` types plus `OpenAPI` or `Zod`) before the next larger feature wave, so portable web/mobile work stops drifting.
 - [ ] Decide whether DB migrations should continue running automatically on every app boot or move to deploy-time only before any multi-instance/staging->prod cutover growth.
@@ -58,7 +58,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 
 ## Next Engineering
 
-- [ ] Add a runtime mount for built `web-v2` assets and route handling, keeping legacy dashboards online during the first staged rollout.
+- [x] Add a runtime mount for built `web-v2` assets and route handling, keeping legacy dashboards online during the first staged rollout.
 - [ ] Introduce a shared typed contract layer for auth/session, project summaries, quotes, thread summaries and notifications before migrating larger dashboard domains into `web-v2`.
 - [ ] Start `web-v2` parity implementation with `projects`, `quotes` and `notifications`, then migrate `messages`, `crm` and `inventory`.
 - [x] Continue splitting `manager-dashboard.js` into feature modules: `messages` after the `projects`, `quotes`, `services`, `materials`, `clients`, `staff` and `estimates` domain extraction.

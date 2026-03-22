@@ -37,13 +37,13 @@ const manifest = {
     },
     "/Gallery/premium/bathroom-bathtub.jpg": {
       "fallback": "/Gallery/premium/bathroom-bathtub.jpg",
-      "fallbackSet": "/Gallery/premium/bathroom-bathtub-960.jpg 960w, /Gallery/premium/bathroom-bathtub-1600.jpg 1600w, /Gallery/premium/bathroom-bathtub.jpg 2390w",
+      "fallbackSet": "/Gallery/premium/bathroom-bathtub-960.jpg 960w, /Gallery/premium/bathroom-bathtub-1600.jpg 1600w, /Gallery/premium/bathroom-bathtub.jpg 1792w",
       "webp": "/Gallery/premium/bathroom-bathtub.webp",
-      "webpSet": "/Gallery/premium/bathroom-bathtub-960.webp 960w, /Gallery/premium/bathroom-bathtub-1600.webp 1600w, /Gallery/premium/bathroom-bathtub.webp 2390w",
+      "webpSet": "/Gallery/premium/bathroom-bathtub-960.webp 960w, /Gallery/premium/bathroom-bathtub-1600.webp 1600w, /Gallery/premium/bathroom-bathtub.webp 1792w",
       "avif": "/Gallery/premium/bathroom-bathtub.avif",
-      "avifSet": "/Gallery/premium/bathroom-bathtub-960.avif 960w, /Gallery/premium/bathroom-bathtub-1600.avif 1600w, /Gallery/premium/bathroom-bathtub.avif 2390w",
-      "width": 2390,
-      "height": 1792,
+      "avifSet": "/Gallery/premium/bathroom-bathtub-960.avif 960w, /Gallery/premium/bathroom-bathtub-1600.avif 1600w, /Gallery/premium/bathroom-bathtub.avif 1792w",
+      "width": 1792,
+      "height": 2390,
       "sizes": "(max-width: 640px) 88vw, (max-width: 992px) 92vw, 66vw",
       "thumbnailSizes": "(max-width: 640px) 42vw, 96px"
     },

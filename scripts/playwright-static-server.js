@@ -4,6 +4,8 @@ const { createAssetVersion, createVersionedHtmlMiddleware } = require('../utils/
 const { findAvailablePort } = require('./playwright-port');
 
 const root = path.join(__dirname, '..');
+const webV2DistDir = path.join(root, 'apps', 'web-v2', 'dist');
+const webV2IndexPath = path.join(webV2DistDir, 'index.html');
 
 const createStaticApp = () => {
   const app = express();
@@ -30,6 +32,17 @@ const createStaticApp = () => {
     assetVersion,
     cacheControl: 'no-store'
   }));
+  if (require('node:fs').existsSync(webV2IndexPath)) {
+    app.use('/app-v2', express.static(webV2DistDir, { index: false, redirect: false }));
+    app.get(['/app-v2', '/app-v2/*'], (req, res, next) => {
+      if (path.extname(req.path)) {
+        next();
+        return;
+      }
+      res.setHeader('Cache-Control', 'no-store');
+      res.sendFile(webV2IndexPath);
+    });
+  }
   app.use(express.static(root));
   return app;
 };

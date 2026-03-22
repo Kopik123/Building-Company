@@ -32,7 +32,7 @@ const galleryAssets = [
   },
   {
     publicPath: '/Gallery/premium/bathroom-bathtub.jpg',
-    source: root('Gallery', 'bathrooms', 'Gemini_Generated_Image_9cq5ti9cq5ti9cq5.png'),
+    source: root('Gallery', 'bathrooms', 'The Slate Suite.png'),
     outputBase: root('Gallery', 'premium', 'bathroom-bathtub'),
     widths: [960, 1600]
   },

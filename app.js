@@ -1,3 +1,4 @@
+const fs = require('fs');
 const path = require('path');
 const express = require('express');
 const compression = require('compression');
@@ -49,6 +50,54 @@ const setStaticCacheHeaders = (res, filePath) => {
   if (['.pdf', '.doc', '.docx'].includes(ext)) {
     res.setHeader('Cache-Control', 'public, max-age=3600');
   }
+};
+
+const DEFAULT_WEB_V2_MOUNT_PATH = '/app-v2';
+
+const normalizeMountPath = (value, fallback = DEFAULT_WEB_V2_MOUNT_PATH) => {
+  const raw = String(value || fallback).trim();
+  if (!raw || raw === '/') return fallback;
+  const normalized = `/${raw.replace(/^\/+/, '').replace(/\/+$/, '')}`;
+  return normalized === '/' ? fallback : normalized;
+};
+
+const mountWebV2 = (app) => {
+  const mountPath = normalizeMountPath(process.env.WEB_V2_MOUNT_PATH);
+  const distDir = path.join(__dirname, 'apps', 'web-v2', 'dist');
+  const indexPath = path.join(distDir, 'index.html');
+
+  if (!fs.existsSync(indexPath)) {
+    return;
+  }
+
+  const sendIndex = (req, res, next) => {
+    if (!['GET', 'HEAD'].includes(req.method)) {
+      next();
+      return;
+    }
+
+    if (path.extname(req.path)) {
+      next();
+      return;
+    }
+
+    res.setHeader('Cache-Control', 'no-store');
+    if (req.method === 'HEAD') {
+      res.status(200).end();
+      return;
+    }
+
+    res.sendFile(indexPath);
+  };
+
+  app.locals.webV2MountPath = mountPath;
+  app.use(mountPath, express.static(distDir, {
+    index: false,
+    redirect: false,
+    setHeaders: setStaticCacheHeaders
+  }));
+  app.get(mountPath, sendIndex);
+  app.get(`${mountPath}/*`, sendIndex);
 };
 
 const createApp = () => {
@@ -133,6 +182,7 @@ const createApp = () => {
   app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
     setHeaders: setStaticCacheHeaders
   }));
+  mountWebV2(app);
   app.use(createVersionedHtmlMiddleware({
     rootDir: __dirname,
     assetVersion,
