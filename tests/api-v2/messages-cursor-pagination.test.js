@@ -45,7 +45,16 @@ const createStubs = () => {
           return 0;
         }
       },
-      GroupThread: {},
+      GroupThread: {
+        async findByPk(id) {
+          if (id !== threadId) return null;
+          return {
+            id,
+            name: 'Manager coordination thread',
+            members: [{ id: 'membership-1', userId: users['11111111-1111-4111-8111-111111111111'].id, role: 'admin' }]
+          };
+        }
+      },
       GroupMessage: {
         async findAll({ where = {}, order = [], limit = 20 }) {
           let rows = timeline.filter((message) => message.groupThreadId === where.groupThreadId);

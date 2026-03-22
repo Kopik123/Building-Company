@@ -6,7 +6,11 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 
 - [x] Decide one target authenticated web surface for the next phase: `apps/web-v2` is now the target authenticated web app, while `client-dashboard.html` / `manager-dashboard.html` stay only as a transitional compatibility layer until controlled cutover.
 - [x] Expose `apps/web-v2` through the real Express runtime under a controlled rollout route (`/app-v2` or `/workspace-v2`) before any default redirect/cutover work.
-- [ ] Prepare a feature-parity map from legacy dashboards to `web-v2` covering `projects`, `quotes`, `messages`, `notifications`, `crm`, `inventory`, file upload and role-aware navigation.
+- [x] Prepare a feature-parity map from legacy dashboards to `web-v2` covering `projects`, `quotes`, `messages`, `notifications`, `crm`, `inventory`, file upload and role-aware navigation.
+- [x] Ship the first parity sprint in `web-v2`: role-aware overview, richer `projects` / `quotes` summaries, actionable `notifications`, and a real group-thread inbox with text + file send.
+- [ ] Extend `web-v2` parity beyond group/project chat by adding direct/private threads, participant management, unread-state ownership and thread-creation flows on `api/v2`.
+- [ ] Extend `web-v2` CRUD parity so `projects`, `quotes`, `crm` and `inventory` stop being read-only boards and can replace the remaining legacy manager actions.
+- [ ] Add one aggregated `api/v2/overview` contract (or equivalent typed dashboard summary layer) before default cutover so `web-v2` stops composing the top board from many separate requests.
 - [ ] Move new authenticated web feature work to `apps/web-v2` first unless the task is explicitly legacy-only or cutover-critical.
 - [ ] Unify auth/session ownership across legacy web and `api/v2`; today legacy pages keep `ll_auth_token` / `ll_auth_user`, while `web-v2` uses `ll_v2_access_token` / `ll_v2_refresh_token` and a different session lifecycle.
 - [x] Integrate `apps/web-v2` into the real runtime delivery path under `/app-v2`; the next step is parity work and deciding when account redirects/cutover should start using it by default.
@@ -60,7 +64,8 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 
 - [x] Add a runtime mount for built `web-v2` assets and route handling, keeping legacy dashboards online during the first staged rollout.
 - [ ] Introduce a shared typed contract layer for auth/session, project summaries, quotes, thread summaries and notifications before migrating larger dashboard domains into `web-v2`.
-- [ ] Start `web-v2` parity implementation with `projects`, `quotes` and `notifications`, then migrate `messages`, `crm` and `inventory`.
+- [x] Start `web-v2` parity implementation with `overview`, richer `projects` / `quotes`, actionable `notifications`, and the first real `messages` workflow under `/app-v2`.
+- [ ] Continue the next `web-v2` parity wave with direct/private messaging, manager CRUD actions and deeper `crm` / `inventory` operations.
 - [x] Continue splitting `manager-dashboard.js` into feature modules: `messages` after the `projects`, `quotes`, `services`, `materials`, `clients`, `staff` and `estimates` domain extraction.
 - [x] Trim `manager-dashboard.js` down to a thin orchestration shell now that `projects`, `quotes`, `services/materials`, `clients/staff`, `estimates` and `messages` all live in dedicated controllers.
 - [x] Extract `overview` and `projects/documents` from `client-dashboard.js` into dedicated controllers and wire them through the shared client workspace shell.

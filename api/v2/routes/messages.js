@@ -1,15 +1,32 @@
 const express = require('express');
 const { Op } = require('sequelize');
 const { body, param, query, validationResult } = require('express-validator');
-const { GroupMember, GroupMessage, GroupThread, User } = require('../../../models');
+const { GroupMember, GroupMessage, GroupThread, Project, Quote, User } = require('../../../models');
 const { upload, DEFAULT_ATTACHMENT_BODY } = require('../../../utils/upload');
 const asyncHandler = require('../../../utils/asyncHandler');
 const { authV2 } = require('../middleware/auth');
 const { ok, fail } = require('../utils/response');
+const { attachGroupThreadSummaries } = require('../../../utils/threadSummaries');
 
 const router = express.Router();
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
+const senderAttributes = ['id', 'name', 'email', 'role'];
+const threadUserAttributes = ['id', 'name', 'email', 'role'];
+const projectThreadAttributes = ['id', 'title', 'location', 'status', 'quoteId', 'clientId', 'assignedManagerId'];
+const quoteThreadAttributes = ['id', 'projectType', 'location', 'status', 'clientId', 'assignedManagerId'];
+
+const threadIncludes = [
+  { model: User, as: 'creator', attributes: ['id', 'name', 'email'] },
+  { model: Quote, as: 'quote', attributes: quoteThreadAttributes, required: false },
+  { model: Project, as: 'project', attributes: projectThreadAttributes, required: false },
+  {
+    model: GroupMember,
+    as: 'members',
+    required: false,
+    include: [{ model: User, as: 'user', attributes: threadUserAttributes }]
+  }
+];
 
 const getPagination = (req) => {
   const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
@@ -52,6 +69,28 @@ const getCursorPagination = (req) => {
   };
 };
 
+const getCurrentMembershipRole = (thread, userId) =>
+  thread?.members?.find((member) => member.userId === userId)?.role || null;
+
+const serializeThread = (thread, userId) => {
+  const payload = thread?.toJSON ? thread.toJSON() : thread;
+  return {
+    ...payload,
+    memberCount: Array.isArray(payload?.members) ? payload.members.length : 0,
+    currentUserMembershipRole: getCurrentMembershipRole(payload, userId)
+  };
+};
+
+const formatMessageWithSender = (message, user) => ({
+  ...(message?.toJSON ? message.toJSON() : message),
+  sender: {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role
+  }
+});
+
 router.get(
   '/threads',
   [
@@ -67,16 +106,24 @@ router.get(
     const [memberships, total] = await Promise.all([
       GroupMember.findAll({
         where: { userId: req.v2User.id },
-        include: [{ model: GroupThread, as: 'thread' }],
-        order: [['createdAt', 'DESC']],
+        include: [{ model: GroupThread, as: 'thread', include: threadIncludes }],
+        order: [[{ model: GroupThread, as: 'thread' }, 'updatedAt', 'DESC']],
         limit: pageSize,
         offset
       }),
       GroupMember.count({ where: { userId: req.v2User.id } })
     ]);
 
-    const threads = memberships.map((membership) => membership.thread).filter(Boolean);
-    return ok(res, { threads }, { page, pageSize, total, totalPages: Math.max(1, Math.ceil(total / pageSize)) });
+    const threads = memberships
+      .map((membership) => (membership.thread ? serializeThread(membership.thread, req.v2User.id) : null))
+      .filter(Boolean);
+    const summarizedThreads = await attachGroupThreadSummaries({
+      threads,
+      GroupMessage,
+      User,
+      senderAttributes
+    });
+    return ok(res, { threads: summarizedThreads }, { page, pageSize, total, totalPages: Math.max(1, Math.ceil(total / pageSize)) });
   })
 );
 
@@ -98,6 +145,13 @@ router.get(
       where: { groupThreadId: req.params.id, userId: req.v2User.id }
     });
     if (!membership) return fail(res, 403, 'access_denied', 'Access denied');
+
+    const thread = await GroupThread.findByPk(req.params.id, {
+      include: threadIncludes
+    });
+    if (!thread) return fail(res, 404, 'thread_not_found', 'Thread not found');
+
+    const serializedThread = serializeThread(thread, req.v2User.id);
 
     const cursorPaging = getCursorPagination(req);
     if (cursorPaging.error) {
@@ -127,14 +181,14 @@ router.get(
       const messages = hasMore ? rows.slice(0, cursorPaging.limit) : rows;
       const nextCursor = hasMore && messages.length ? encodeCursor(messages[messages.length - 1]) : null;
 
-      return ok(res, { messages }, { mode: 'cursor', limit: cursorPaging.limit, nextCursor });
+      return ok(res, { thread: serializedThread, messages }, { mode: 'cursor', limit: cursorPaging.limit, nextCursor });
     }
 
     const { page, pageSize, offset } = getPagination(req);
     const [messages, total] = await Promise.all([
       GroupMessage.findAll({
         where,
-        include: [{ model: User, as: 'sender', attributes: ['id', 'name', 'email', 'role'] }],
+        include: [{ model: User, as: 'sender', attributes: senderAttributes }],
         order: [['createdAt', 'ASC']],
         limit: pageSize,
         offset
@@ -142,7 +196,7 @@ router.get(
       GroupMessage.count({ where: { groupThreadId: req.params.id } })
     ]);
 
-    return ok(res, { messages }, { page, pageSize, total, totalPages: Math.max(1, Math.ceil(total / pageSize)) });
+    return ok(res, { thread: serializedThread, messages }, { page, pageSize, total, totalPages: Math.max(1, Math.ceil(total / pageSize)) });
   })
 );
 
@@ -165,7 +219,7 @@ router.post(
       attachments: []
     });
 
-    return ok(res, { message }, {}, 201);
+    return ok(res, { message: formatMessageWithSender(message, req.v2User) }, {}, 201);
   })
 );
 
@@ -201,7 +255,7 @@ router.post(
       attachments
     });
 
-    return ok(res, { message }, {}, 201);
+    return ok(res, { message: formatMessageWithSender(message, req.v2User) }, {}, 201);
   })
 );
 

@@ -14,6 +14,16 @@ const parseError = (payload) => {
   return 'Request failed';
 };
 
+const toQueryString = (params = {}) => {
+  const query = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (typeof value === 'undefined' || value === null || value === '') return;
+    query.set(key, String(value));
+  });
+  const rendered = query.toString();
+  return rendered ? `?${rendered}` : '';
+};
+
 const request = async (path, options = {}) => {
   const response = await fetch(`${API_BASE}${path}`, options);
   const payload = await response.json().catch(() => ({}));
@@ -94,25 +104,63 @@ export const sessionApi = {
 };
 
 export const v2Api = {
-  async getProjects() {
-    const payload = await withAuth('/projects?page=1&pageSize=50');
+  async getProjects(params = {}) {
+    const payload = await withAuth(`/projects${toQueryString({ page: 1, pageSize: 50, ...params })}`);
     return payload.data?.projects || [];
   },
-  async getQuotes() {
-    const payload = await withAuth('/quotes?page=1&pageSize=50');
+  async getQuotes(params = {}) {
+    const payload = await withAuth(`/quotes${toQueryString({ page: 1, pageSize: 50, ...params })}`);
     return payload.data?.quotes || [];
   },
-  async getThreads() {
-    const payload = await withAuth('/messages/threads?page=1&pageSize=50');
+  async getThreads(params = {}) {
+    const payload = await withAuth(`/messages/threads${toQueryString({ page: 1, pageSize: 50, ...params })}`);
     return payload.data?.threads || [];
   },
-  async getNotifications() {
-    const payload = await withAuth('/notifications?page=1&pageSize=50');
+  async getThreadMessages(threadId, params = {}) {
+    const payload = await withAuth(`/messages/threads/${threadId}/messages${toQueryString({ page: 1, pageSize: 100, ...params })}`);
+    return {
+      thread: payload.data?.thread || null,
+      messages: payload.data?.messages || [],
+      meta: payload.meta || {}
+    };
+  },
+  async sendThreadMessage(threadId, body) {
+    const payload = await withAuth(`/messages/threads/${threadId}/messages`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ body })
+    });
+    return payload.data?.message || null;
+  },
+  async uploadThreadMessage(threadId, { body = '', files = [] } = {}) {
+    const formData = new FormData();
+    if (body) formData.set('body', body);
+    Array.from(files || []).forEach((file) => formData.append('files', file));
+    const payload = await withAuth(`/messages/threads/${threadId}/messages/upload`, {
+      method: 'POST',
+      body: formData
+    });
+    return payload.data?.message || null;
+  },
+  async getNotifications(params = {}) {
+    const payload = await withAuth(`/notifications${toQueryString({ page: 1, pageSize: 50, ...params })}`);
     return payload.data?.notifications || [];
   },
   async getNotificationsUnreadCount() {
     const payload = await withAuth('/notifications/unread-count');
     return payload.data?.count || 0;
+  },
+  async markNotificationRead(notificationId) {
+    const payload = await withAuth(`/notifications/${notificationId}/read`, {
+      method: 'PATCH'
+    });
+    return payload.data?.notification || null;
+  },
+  async markAllNotificationsRead() {
+    const payload = await withAuth('/notifications/read-all', {
+      method: 'PATCH'
+    });
+    return payload.data?.updated || 0;
   },
   async getCrmClients() {
     const payload = await withAuth('/crm/clients?page=1&pageSize=50');
