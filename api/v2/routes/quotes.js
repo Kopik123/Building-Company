@@ -6,6 +6,7 @@ const asyncHandler = require('../../../utils/asyncHandler');
 const { authV2 } = require('../middleware/auth');
 const { roleCheckV2 } = require('../middleware/roles');
 const { ok, fail } = require('../utils/response');
+const { QUOTE_PRIORITIES, QUOTE_STATUSES } = require('../../../shared/contracts/v2');
 
 const router = express.Router();
 const DEFAULT_PAGE_SIZE = 25;
@@ -28,8 +29,8 @@ router.get(
   [
     authV2,
     roleCheckV2('client', 'employee', 'manager', 'admin'),
-    query('status').optional().isIn(['pending', 'in_progress', 'responded', 'closed']),
-    query('priority').optional().isIn(['low', 'medium', 'high']),
+    query('status').optional().isIn(QUOTE_STATUSES),
+    query('priority').optional().isIn(QUOTE_PRIORITIES),
     query('q').optional().trim().isLength({ min: 1, max: 255 }),
     query('page').optional().isInt({ min: 1 }).toInt(),
     query('pageSize').optional().isInt({ min: 1, max: MAX_PAGE_SIZE }).toInt()
@@ -80,8 +81,8 @@ router.patch(
     authV2,
     roleCheckV2('manager', 'admin'),
     param('id').isUUID(),
-    body('status').optional().isIn(['pending', 'in_progress', 'responded', 'closed']),
-    body('priority').optional().isIn(['low', 'medium', 'high'])
+    body('status').optional().isIn(QUOTE_STATUSES),
+    body('priority').optional().isIn(QUOTE_PRIORITIES)
   ],
   asyncHandler(async (req, res) => {
     const errors = validationResult(req);

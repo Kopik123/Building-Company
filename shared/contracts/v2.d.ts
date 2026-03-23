@@ -1,0 +1,189 @@
+export type ProjectStatus = 'planning' | 'in_progress' | 'completed' | 'on_hold';
+export type QuoteStatus = 'pending' | 'in_progress' | 'responded' | 'closed';
+export type QuotePriority = 'low' | 'medium' | 'high';
+export type ServiceCategory = 'bathroom' | 'kitchen' | 'interior' | 'outdoor' | 'other';
+export type MaterialCategory = 'tiles' | 'plumbing' | 'electrical' | 'joinery' | 'paint' | 'hardware' | 'other';
+export type StaffRole = 'employee' | 'manager' | 'admin';
+export type StaffCreationRole = 'employee' | 'manager';
+
+export interface UserSummary {
+  id: string;
+  name: string | null;
+  email: string | null;
+  role: string | null;
+  phone: string | null;
+  companyName: string | null;
+  isActive: boolean;
+  createdAt: string | null;
+  updatedAt: string | null;
+}
+
+export interface MessageAttachment {
+  name: string | null;
+  url: string | null;
+  size: number | null;
+  mimeType: string | null;
+}
+
+export interface ThreadMessage {
+  id: string;
+  threadId: string | null;
+  senderId: string | null;
+  recipientId: string | null;
+  body: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+  isRead: boolean;
+  sender: UserSummary;
+  attachments: MessageAttachment[];
+}
+
+export interface QuoteSummary {
+  id: string;
+  projectType: string | null;
+  location: string | null;
+  status: QuoteStatus;
+  priority: QuotePriority;
+  description: string | null;
+  guestName: string | null;
+  guestEmail: string | null;
+  postcode: string | null;
+  assignedManagerId: string | null;
+  clientId: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+  client: UserSummary;
+  assignedManager: UserSummary;
+}
+
+export interface ProjectSummary {
+  id: string;
+  title: string | null;
+  location: string | null;
+  status: ProjectStatus;
+  clientId: string | null;
+  assignedManagerId: string | null;
+  quoteId: string | null;
+  description: string | null;
+  budgetEstimate: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  showInGallery: boolean;
+  galleryOrder: number;
+  isActive: boolean;
+  imageCount: number;
+  documentCount: number;
+  createdAt: string | null;
+  updatedAt: string | null;
+  client: UserSummary;
+  assignedManager: UserSummary;
+  quote: QuoteSummary | null;
+  media: Array<{ id: string; mediaType: string | null; url: string | null; filename: string | null }>;
+}
+
+export interface ThreadSummary {
+  id: string;
+  name: string | null;
+  subject: string | null;
+  latestMessagePreview: string | null;
+  latestMessageAt: string | null;
+  latestMessageSenderId: string | null;
+  messageCount: number;
+  memberCount: number;
+  currentUserMembershipRole: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+  latestMessageSender: UserSummary;
+  project: ProjectSummary | null;
+  quote: QuoteSummary | null;
+}
+
+export interface DirectThreadSummary {
+  id: string;
+  subject: string | null;
+  participantAId: string | null;
+  participantBId: string | null;
+  participantCount: number;
+  latestMessagePreview: string | null;
+  latestMessageAt: string | null;
+  latestMessageSenderId: string | null;
+  unreadCount: number;
+  createdAt: string | null;
+  updatedAt: string | null;
+  counterparty: UserSummary;
+  participantA: UserSummary;
+  participantB: UserSummary;
+}
+
+export interface NotificationSummary {
+  id: string;
+  type: string | null;
+  title: string | null;
+  body: string | null;
+  isRead: boolean;
+  createdAt: string | null;
+  updatedAt: string | null;
+}
+
+export interface CrmClient extends UserSummary {
+  role: 'client';
+}
+
+export interface CrmStaffMember extends UserSummary {
+  role: StaffRole;
+}
+
+export interface InventoryService {
+  id: string;
+  slug: string | null;
+  title: string | null;
+  shortDescription: string | null;
+  fullDescription: string | null;
+  category: ServiceCategory;
+  basePriceFrom: number | null;
+  heroImageUrl: string | null;
+  isFeatured: boolean;
+  showOnWebsite: boolean;
+  displayOrder: number;
+  isActive: boolean;
+  createdAt: string | null;
+  updatedAt: string | null;
+}
+
+export interface InventoryMaterial {
+  id: string;
+  sku: string | null;
+  name: string | null;
+  category: MaterialCategory;
+  unit: string;
+  stockQty: number;
+  minStockQty: number;
+  unitCost: number | null;
+  supplier: string | null;
+  notes: string | null;
+  isActive: boolean;
+  createdAt: string | null;
+  updatedAt: string | null;
+}
+
+export const PROJECT_STATUSES: readonly ProjectStatus[];
+export const QUOTE_STATUSES: readonly QuoteStatus[];
+export const QUOTE_PRIORITIES: readonly QuotePriority[];
+export const SERVICE_CATEGORIES: readonly ServiceCategory[];
+export const MATERIAL_CATEGORIES: readonly MaterialCategory[];
+export const STAFF_ROLES: readonly StaffRole[];
+export const STAFF_CREATION_ROLES: readonly StaffCreationRole[];
+
+export function normalizeUserSummary(value: unknown): UserSummary;
+export function normalizeThreadMessage(value: unknown): ThreadMessage;
+export function normalizeProjectSummary(value: unknown): ProjectSummary;
+export function normalizeQuoteSummary(value: unknown): QuoteSummary;
+export function normalizeThreadSummary(value: unknown): ThreadSummary;
+export function normalizeDirectThreadSummary(value: unknown): DirectThreadSummary;
+export function normalizeNotification(value: unknown): NotificationSummary;
+export function normalizeCrmClient(value: unknown): CrmClient;
+export function normalizeCrmStaffMember(value: unknown): CrmStaffMember;
+export function normalizeInventoryService(value: unknown): InventoryService;
+export function normalizeInventoryMaterial(value: unknown): InventoryMaterial;
+export function normalizeListResponse<T>(payload: unknown, key: string, normalizer: (value: unknown) => T): T[];
+export function normalizeItemResponse<T>(payload: unknown, key: string, normalizer: (value: unknown) => T): T | null;

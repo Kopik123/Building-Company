@@ -1,11 +1,12 @@
 const express = require('express');
 const { Op, fn, col, where: sqlWhere } = require('sequelize');
-const { query, validationResult } = require('express-validator');
+const { body, query, validationResult } = require('express-validator');
 const { User } = require('../../../models');
 const asyncHandler = require('../../../utils/asyncHandler');
 const { authV2 } = require('../middleware/auth');
 const { roleCheckV2 } = require('../middleware/roles');
 const { ok, fail } = require('../utils/response');
+const { STAFF_CREATION_ROLES, STAFF_ROLES } = require('../../../shared/contracts/v2');
 
 const router = express.Router();
 const DEFAULT_PAGE_SIZE = 25;
@@ -75,7 +76,7 @@ router.get(
       return fail(res, 400, 'validation_failed', 'Validation failed', errors.array());
     }
 
-    const where = { role: { [Op.in]: ['employee', 'manager', 'admin'] }, isActive: true };
+    const where = { role: { [Op.in]: STAFF_ROLES }, isActive: true };
     if (req.query.q) {
       const needle = `%${escapeLike(String(req.query.q).trim().toLowerCase())}%`;
       where[Op.or] = [
@@ -94,6 +95,47 @@ router.get(
     });
 
     return ok(res, { staff: rows }, { page, pageSize, total: count, totalPages: Math.max(1, Math.ceil(count / pageSize)) });
+  })
+);
+
+router.post(
+  '/staff',
+  [
+    authV2,
+    roleCheckV2('manager', 'admin'),
+    body('email').isEmail(),
+    body('password').isLength({ min: 8 }),
+    body('name').trim().notEmpty(),
+    body('role').isIn(STAFF_CREATION_ROLES),
+    body('phone').optional().trim()
+  ],
+  asyncHandler(async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return fail(res, 400, 'validation_failed', 'Validation failed', errors.array());
+    }
+
+    const email = String(req.body.email || '').trim().toLowerCase();
+    const role = req.body.role;
+
+    if (role === 'manager' && req.v2User.role !== 'admin') {
+      return fail(res, 403, 'access_denied', 'Only admins can create manager accounts');
+    }
+
+    const existing = await User.findOne({ where: { email } });
+    if (existing) {
+      return fail(res, 409, 'email_taken', 'Email already registered');
+    }
+
+    const staffMember = await User.create({
+      email,
+      password: req.body.password,
+      name: String(req.body.name || '').trim(),
+      phone: req.body.phone ? String(req.body.phone).trim() : null,
+      role
+    });
+
+    return ok(res, { staff: staffMember }, {}, 201);
   })
 );
 

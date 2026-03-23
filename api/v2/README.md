@@ -22,6 +22,7 @@ Unified API contract for web v2 and mobile v1.
 - `GET /api/v2/gallery/services`
 - `GET /api/v2/crm/clients`
 - `GET /api/v2/crm/staff`
+- `POST /api/v2/crm/staff`
 - `GET /api/v2/projects`
 - `GET /api/v2/projects/:id`
 - `POST /api/v2/projects`

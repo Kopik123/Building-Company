@@ -7,12 +7,11 @@ const { authV2 } = require('../middleware/auth');
 const { roleCheckV2 } = require('../middleware/roles');
 const { ok, fail } = require('../utils/response');
 const { clearGalleryCache } = require('../utils/publicCache');
+const { PROJECT_STATUSES } = require('../../../shared/contracts/v2');
 
 const router = express.Router();
 const DEFAULT_PAGE_SIZE = 25;
 const MAX_PAGE_SIZE = 100;
-const PROJECT_STATUSES = ['planning', 'in_progress', 'completed', 'on_hold'];
-
 const getPagination = (req) => {
   const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
   const pageSize = Math.min(MAX_PAGE_SIZE, Math.max(1, Number.parseInt(req.query.pageSize, 10) || DEFAULT_PAGE_SIZE));

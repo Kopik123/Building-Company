@@ -464,6 +464,16 @@
 
 ## 2026-03-23
 
+- Saved `Plans/Web-v2 Parity Sprint - Manager CRUD, Rollout Coverage And Shared Contracts.md`, registered it in `Plans/Plan History.md`, and updated `Project_todos.md` so this round clearly separates what is now done from the remaining parity/contract follow-up work.
+- Added `shared/contracts/v2.js` and `shared/contracts/v2.d.ts` as the first shared contract layer for `api/v2` and `web-v2`, centralising portable enums plus response normalizers for projects, quotes, messaging, notifications, CRM and inventory while keeping the current runtime stack JavaScript-first.
+- Reused the new shared contract constants inside `api/v2/routes/projects.js`, `api/v2/routes/quotes.js` and `api/v2/routes/inventory.js`, reducing enum drift between backend validation and the rollout shell before future mobile/native clients start consuming the same domains.
+- Extended `api/v2/routes/crm.js` with manager/admin staff creation (`POST /api/v2/crm/staff`), shared role validation and the right manager-vs-admin permission split, then documented the new route in `api/v2/README.md`.
+- Reworked `apps/web-v2/src/lib/api.js` to consume the shared contract layer and expose the first real manager operations client for `projects`, `quotes`, `crm` and `inventory`, instead of keeping those rollout sections read-only.
+- Rebuilt `apps/web-v2/src/App.jsx` and `apps/web-v2/src/styles.css` so the manager-facing `Projects`, `Quotes`, `CRM` and `Inventory` routes now support selection, create/update/delete workflows, role-aware forms and mobile-safe editing surfaces through `/app-v2`.
+- Fixed the rollout messaging loading loop in `Private Inbox` and `Project Chat` by stabilising the thread-loading effect dependencies around the source thread collections instead of recomputed filtered arrays, which keeps both views responsive while the new `/app-v2` Playwright coverage exercises them directly.
+- Updated `apps/web-v2/vite.config.js` so the Vite build/dev pipeline can safely import the repo-root shared contract module, then rebuilt the tracked `apps/web-v2/dist` bundle for the latest `/app-v2` rollout assets.
+- Added `tests/api-v2/crm-rbac-crud.test.js` to lock in the new manager/admin CRM staff-creation rules and added `tests/playwright/web-v2-rollout.spec.js` to cover `/app-v2/private-inbox`, `/app-v2/messages` and the first manager operations flows directly in the rollout shell.
+- Re-ran `node --test tests/api-v2/crm-rbac-crud.test.js`, `npm.cmd run build` in `apps/web-v2`, the focused `web-v2-rollout` Playwright suite, `npm.cmd run test:ci`, and the full `npm.cmd run test:e2e:mobile`; all passed after the manager parity, rollout coverage and shared-contract work.
 - Saved `Plans/Web-v2 Parity Sprint - Private Inbox And Direct Messaging.md`, registered it in `Plans/Plan History.md`, and translated the sprint outcome into updated checklist items in `Project_todos.md`.
 - Extended `api/v2/routes/messages.js` with direct/private thread endpoints for list, create, history, send, attachment upload and mark-read flows, keeping the responses aligned with the v2 `ok/fail` contract and optimistic sender payloads.
 - Documented the new private-thread contract in `api/v2/README.md` so the rollout shell and future mobile/native clients have one explicit API surface to follow.

@@ -9,14 +9,16 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [x] Prepare a feature-parity map from legacy dashboards to `web-v2` covering `projects`, `quotes`, `messages`, `notifications`, `crm`, `inventory`, file upload and role-aware navigation.
 - [x] Ship the first parity sprint in `web-v2`: role-aware overview, richer `projects` / `quotes` summaries, actionable `notifications`, and a real group-thread inbox with text + file send.
 - [x] Extend `web-v2` parity beyond group/project chat by adding direct/private threads, unread-state ownership and thread-creation flows on `api/v2`, plus a real `Private Inbox` surface in `apps/web-v2`.
-- [ ] Extend `web-v2` CRUD parity so `projects`, `quotes`, `crm` and `inventory` stop being read-only boards and can replace the remaining legacy manager actions.
+- [x] Ship the first `web-v2` manager CRUD parity wave so `projects`, `quotes`, `crm` and `inventory` stop being read-only rollout boards and cover core create/update/delete paths through `api/v2`.
+- [ ] Finish the remaining manager parity gaps in `web-v2`: quote creation, richer project lifecycle actions, CRM editing flows, and delete/archive paths that still live only in legacy dashboards.
 - [ ] Add one aggregated `api/v2/overview` contract (or equivalent typed dashboard summary layer) before default cutover so `web-v2` stops composing the top board from many separate requests.
-- [ ] Add direct `/app-v2` UI regression coverage for `Private Inbox` and `Project Chat`, including attachment-first direct-thread creation, so rollout-shell messaging is covered outside legacy dashboard smoke tests.
+- [x] Add direct `/app-v2` UI regression coverage for `Private Inbox` and `Project Chat`, including attachment-first direct-thread creation, so rollout-shell messaging is covered outside legacy dashboard smoke tests.
 - [ ] Move new authenticated web feature work to `apps/web-v2` first unless the task is explicitly legacy-only or cutover-critical.
 - [ ] Unify auth/session ownership across legacy web and `api/v2`; today legacy pages keep `ll_auth_token` / `ll_auth_user`, while `web-v2` uses `ll_v2_access_token` / `ll_v2_refresh_token` and a different session lifecycle.
 - [x] Integrate `apps/web-v2` into the real runtime delivery path under `/app-v2`; the next step is parity work and deciding when account redirects/cutover should start using it by default.
 - [ ] Remove the hardcoded production fallback from `apps/mobile-v1/src/api.js` and switch mobile API base selection to explicit local/staging/production config.
-- [ ] Add one shared contract layer for `api/v2`, `web-v2` and `mobile-v1` (`TypeScript` types plus `OpenAPI` or `Zod`) before the next larger feature wave, so portable web/mobile work stops drifting.
+- [x] Add an initial shared contract layer for `api/v2`, `web-v2` and future mobile clients by centralising enums and response normalizers in `shared/contracts/v2`, with TS-ready declarations for the first portable dashboard domains.
+- [ ] Promote the initial shared contract layer into a generated `TypeScript + Zod` or `TypeScript + OpenAPI` package shared by backend, `web-v2` and `mobile-v1` once the current parity wave settles.
 - [ ] Decide whether DB migrations should continue running automatically on every app boot or move to deploy-time only before any multi-instance/staging->prod cutover growth.
 - [ ] Either wire `models.ensureIndexes()` into a deliberate startup/deploy path or remove it and keep index ownership exclusively in migrations, because the current strategy is ambiguous.
 - [x] Save the launch-ready design/SEO execution plan under `Plans/Plan poprawy designu i SEO dla gotowej strony Level Lines Studio.md` and register it in `Plans/Plan History.md`.
@@ -64,10 +66,12 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 ## Next Engineering
 
 - [x] Add a runtime mount for built `web-v2` assets and route handling, keeping legacy dashboards online during the first staged rollout.
-- [ ] Introduce a shared typed contract layer for auth/session, project summaries, quotes, thread summaries and notifications before migrating larger dashboard domains into `web-v2`.
+- [x] Introduce an initial shared typed contract layer for auth/session, project summaries, quotes, thread summaries, notifications, CRM and inventory before migrating larger dashboard domains into `web-v2`.
+- [ ] Promote the initial shared contract layer into a real generated source-of-truth package for backend, `web-v2` and `mobile-v1` once the first manager parity wave is stable.
 - [x] Start `web-v2` parity implementation with `overview`, richer `projects` / `quotes`, actionable `notifications`, and the first real `messages` workflow under `/app-v2`.
 - [x] Continue the next `web-v2` parity wave with direct/private messaging by shipping `api/v2` private-thread contracts and `web-v2` `Private Inbox`.
-- [ ] Continue the next `web-v2` parity wave with manager CRUD actions and deeper `crm` / `inventory` operations now that direct/private messaging parity is in place.
+- [x] Continue the next `web-v2` parity wave with manager CRUD actions and deeper `crm` / `inventory` operations now that direct/private messaging parity is in place.
+- [ ] Continue the following `web-v2` parity wave with the remaining manager gaps: quote creation, richer project operations, CRM editing and broader legacy-action replacement.
 - [x] Continue splitting `manager-dashboard.js` into feature modules: `messages` after the `projects`, `quotes`, `services`, `materials`, `clients`, `staff` and `estimates` domain extraction.
 - [x] Trim `manager-dashboard.js` down to a thin orchestration shell now that `projects`, `quotes`, `services/materials`, `clients/staff`, `estimates` and `messages` all live in dedicated controllers.
 - [x] Extract `overview` and `projects/documents` from `client-dashboard.js` into dedicated controllers and wire them through the shared client workspace shell.

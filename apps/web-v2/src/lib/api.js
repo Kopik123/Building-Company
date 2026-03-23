@@ -1,3 +1,20 @@
+import contractKit from '../../../../shared/contracts/v2.js';
+
+const {
+  normalizeCrmClient,
+  normalizeCrmStaffMember,
+  normalizeDirectThreadSummary,
+  normalizeInventoryMaterial,
+  normalizeInventoryService,
+  normalizeItemResponse,
+  normalizeListResponse,
+  normalizeNotification,
+  normalizeProjectSummary,
+  normalizeQuoteSummary,
+  normalizeThreadMessage,
+  normalizeThreadSummary
+} = contractKit;
+
 const API_BASE = import.meta.env.VITE_API_BASE || '/api/v2';
 const ACCESS_KEY = 'll_v2_access_token';
 const REFRESH_KEY = 'll_v2_refresh_token';
@@ -103,65 +120,83 @@ export const sessionApi = {
   }
 };
 
+const toJsonOptions = (method, body) => ({
+  method,
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(body)
+});
+
+const toMessageResponse = (payload, key = 'message') => normalizeItemResponse(payload, key, normalizeThreadMessage);
+
 export const v2Api = {
   async getProjects(params = {}) {
     const payload = await withAuth(`/projects${toQueryString({ page: 1, pageSize: 50, ...params })}`);
-    return payload.data?.projects || [];
+    return normalizeListResponse(payload, 'projects', normalizeProjectSummary);
+  },
+  async getProject(projectId) {
+    const payload = await withAuth(`/projects/${projectId}`);
+    return normalizeItemResponse(payload, 'project', normalizeProjectSummary);
+  },
+  async createProject(input) {
+    const payload = await withAuth('/projects', toJsonOptions('POST', input));
+    return normalizeItemResponse(payload, 'project', normalizeProjectSummary);
+  },
+  async updateProject(projectId, input) {
+    const payload = await withAuth(`/projects/${projectId}`, toJsonOptions('PATCH', input));
+    return normalizeItemResponse(payload, 'project', normalizeProjectSummary);
   },
   async getQuotes(params = {}) {
     const payload = await withAuth(`/quotes${toQueryString({ page: 1, pageSize: 50, ...params })}`);
-    return payload.data?.quotes || [];
+    return normalizeListResponse(payload, 'quotes', normalizeQuoteSummary);
+  },
+  async updateQuote(quoteId, input) {
+    const payload = await withAuth(`/quotes/${quoteId}`, toJsonOptions('PATCH', input));
+    return normalizeItemResponse(payload, 'quote', normalizeQuoteSummary);
   },
   async getThreads(params = {}) {
     const payload = await withAuth(`/messages/threads${toQueryString({ page: 1, pageSize: 50, ...params })}`);
-    return payload.data?.threads || [];
+    return normalizeListResponse(payload, 'threads', normalizeThreadSummary);
   },
   async getDirectThreads(params = {}) {
     const payload = await withAuth(`/messages/direct-threads${toQueryString({ page: 1, pageSize: 50, ...params })}`);
-    return payload.data?.threads || [];
+    return normalizeListResponse(payload, 'threads', normalizeDirectThreadSummary);
   },
   async getThreadMessages(threadId, params = {}) {
     const payload = await withAuth(`/messages/threads/${threadId}/messages${toQueryString({ page: 1, pageSize: 100, ...params })}`);
     return {
-      thread: payload.data?.thread || null,
-      messages: payload.data?.messages || [],
+      thread: normalizeItemResponse(payload, 'thread', normalizeThreadSummary),
+      messages: normalizeListResponse(payload, 'messages', normalizeThreadMessage),
       meta: payload.meta || {}
     };
   },
   async getDirectThreadMessages(threadId, params = {}) {
     const payload = await withAuth(`/messages/direct-threads/${threadId}/messages${toQueryString({ page: 1, pageSize: 100, ...params })}`);
     return {
-      thread: payload.data?.thread || null,
-      messages: payload.data?.messages || [],
+      thread: normalizeItemResponse(payload, 'thread', normalizeDirectThreadSummary),
+      messages: normalizeListResponse(payload, 'messages', normalizeThreadMessage),
       meta: payload.meta || {}
     };
   },
   async createDirectThread({ recipientUserId, subject, body = '', createOnly = false, quoteId = '' }) {
-    const payload = await withAuth('/messages/direct-threads', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ recipientUserId, subject, body, createOnly, quoteId: quoteId || undefined })
-    });
+    const payload = await withAuth('/messages/direct-threads', toJsonOptions('POST', {
+      recipientUserId,
+      subject,
+      body,
+      createOnly,
+      quoteId: quoteId || undefined
+    }));
     return {
-      thread: payload.data?.thread || null,
-      message: payload.data?.message || null
+      thread: normalizeItemResponse(payload, 'thread', normalizeDirectThreadSummary),
+      message: toMessageResponse(payload)
     };
   },
   async sendThreadMessage(threadId, body) {
-    const payload = await withAuth(`/messages/threads/${threadId}/messages`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ body })
-    });
-    return payload.data?.message || null;
+    const payload = await withAuth(`/messages/threads/${threadId}/messages`, toJsonOptions('POST', { body }));
+    return toMessageResponse(payload);
   },
   async sendDirectThreadMessage(threadId, body) {
-    const payload = await withAuth(`/messages/direct-threads/${threadId}/messages`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ body })
-    });
-    return payload.data?.message || null;
+    const payload = await withAuth(`/messages/direct-threads/${threadId}/messages`, toJsonOptions('POST', { body }));
+    return toMessageResponse(payload);
   },
   async uploadThreadMessage(threadId, { body = '', files = [] } = {}) {
     const formData = new FormData();
@@ -171,7 +206,7 @@ export const v2Api = {
       method: 'POST',
       body: formData
     });
-    return payload.data?.message || null;
+    return toMessageResponse(payload);
   },
   async uploadDirectThreadMessage(threadId, { body = '', files = [] } = {}) {
     const formData = new FormData();
@@ -181,52 +216,84 @@ export const v2Api = {
       method: 'POST',
       body: formData
     });
-    return payload.data?.message || null;
+    return toMessageResponse(payload);
   },
   async markDirectThreadRead(threadId) {
     const payload = await withAuth(`/messages/direct-threads/${threadId}/read`, {
       method: 'PATCH'
     });
-    return payload.data?.markedReadCount || 0;
+    return Number(payload.data?.markedReadCount || 0);
   },
   async getNotifications(params = {}) {
     const payload = await withAuth(`/notifications${toQueryString({ page: 1, pageSize: 50, ...params })}`);
-    return payload.data?.notifications || [];
+    return normalizeListResponse(payload, 'notifications', normalizeNotification);
   },
   async getNotificationsUnreadCount() {
     const payload = await withAuth('/notifications/unread-count');
-    return payload.data?.count || 0;
+    return Number(payload.data?.count || 0);
   },
   async markNotificationRead(notificationId) {
     const payload = await withAuth(`/notifications/${notificationId}/read`, {
       method: 'PATCH'
     });
-    return payload.data?.notification || null;
+    return normalizeItemResponse(payload, 'notification', normalizeNotification);
   },
   async markAllNotificationsRead() {
     const payload = await withAuth('/notifications/read-all', {
       method: 'PATCH'
     });
-    return payload.data?.updated || 0;
+    return Number(payload.data?.updated || 0);
   },
-  async getCrmClients() {
-    const payload = await withAuth('/crm/clients?page=1&pageSize=50');
-    return payload.data?.clients || [];
+  async getCrmClients(params = {}) {
+    const payload = await withAuth(`/crm/clients${toQueryString({ page: 1, pageSize: 50, ...params })}`);
+    return normalizeListResponse(payload, 'clients', normalizeCrmClient);
   },
-  async getCrmStaff() {
-    const payload = await withAuth('/crm/staff?page=1&pageSize=50');
-    return payload.data?.staff || [];
+  async getCrmStaff(params = {}) {
+    const payload = await withAuth(`/crm/staff${toQueryString({ page: 1, pageSize: 50, ...params })}`);
+    return normalizeListResponse(payload, 'staff', normalizeCrmStaffMember);
   },
-  async getInventoryServices() {
-    const payload = await withAuth('/inventory/services?page=1&pageSize=50');
-    return payload.data?.services || [];
+  async createCrmStaff(input) {
+    const payload = await withAuth('/crm/staff', toJsonOptions('POST', input));
+    return normalizeItemResponse(payload, 'staff', normalizeCrmStaffMember);
   },
-  async getInventoryMaterials() {
-    const payload = await withAuth('/inventory/materials?page=1&pageSize=50');
-    return payload.data?.materials || [];
+  async getInventoryServices(params = {}) {
+    const payload = await withAuth(`/inventory/services${toQueryString({ page: 1, pageSize: 50, ...params })}`);
+    return normalizeListResponse(payload, 'services', normalizeInventoryService);
+  },
+  async createInventoryService(input) {
+    const payload = await withAuth('/inventory/services', toJsonOptions('POST', input));
+    return normalizeItemResponse(payload, 'service', normalizeInventoryService);
+  },
+  async updateInventoryService(serviceId, input) {
+    const payload = await withAuth(`/inventory/services/${serviceId}`, toJsonOptions('PATCH', input));
+    return normalizeItemResponse(payload, 'service', normalizeInventoryService);
+  },
+  async deleteInventoryService(serviceId) {
+    const payload = await withAuth(`/inventory/services/${serviceId}`, {
+      method: 'DELETE'
+    });
+    return Boolean(payload.data?.deleted);
+  },
+  async getInventoryMaterials(params = {}) {
+    const payload = await withAuth(`/inventory/materials${toQueryString({ page: 1, pageSize: 50, ...params })}`);
+    return normalizeListResponse(payload, 'materials', normalizeInventoryMaterial);
+  },
+  async createInventoryMaterial(input) {
+    const payload = await withAuth('/inventory/materials', toJsonOptions('POST', input));
+    return normalizeItemResponse(payload, 'material', normalizeInventoryMaterial);
+  },
+  async updateInventoryMaterial(materialId, input) {
+    const payload = await withAuth(`/inventory/materials/${materialId}`, toJsonOptions('PATCH', input));
+    return normalizeItemResponse(payload, 'material', normalizeInventoryMaterial);
+  },
+  async deleteInventoryMaterial(materialId) {
+    const payload = await withAuth(`/inventory/materials/${materialId}`, {
+      method: 'DELETE'
+    });
+    return Boolean(payload.data?.deleted);
   },
   async getPublicServices() {
     const payload = await request('/services');
-    return payload.data?.services || [];
+    return normalizeListResponse(payload, 'services', normalizeInventoryService);
   }
 };

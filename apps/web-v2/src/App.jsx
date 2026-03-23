@@ -1,7 +1,17 @@
 import React from 'react';
 import { Link, NavLink, Navigate, Route, Routes } from 'react-router-dom';
+import contractKit from '../../../shared/contracts/v2.js';
 import { useAuth } from './lib/auth.jsx';
 import { v2Api } from './lib/api';
+
+const {
+  MATERIAL_CATEGORIES,
+  PROJECT_STATUSES,
+  QUOTE_PRIORITIES,
+  QUOTE_STATUSES,
+  SERVICE_CATEGORIES,
+  STAFF_CREATION_ROLES
+} = contractKit;
 
 const roleLabels = {
   client: 'Client Workspace',
@@ -152,6 +162,124 @@ const updateDirectThreadAfterSend = (threads, threadId, message) => {
   return sortByRecent(nextThreads, ['latestMessageAt', 'updatedAt', 'createdAt']);
 };
 
+const toInputValue = (value) => (value === null || typeof value === 'undefined' ? '' : String(value));
+
+const createProjectFormState = (overrides = {}) => ({
+  title: '',
+  location: '',
+  description: '',
+  status: PROJECT_STATUSES[0],
+  clientId: '',
+  assignedManagerId: '',
+  quoteId: '',
+  budgetEstimate: '',
+  startDate: '',
+  endDate: '',
+  showInGallery: false,
+  galleryOrder: '0',
+  isActive: true,
+  ...overrides
+});
+
+const projectToFormState = (project) =>
+  createProjectFormState({
+    title: project?.title || '',
+    location: project?.location || '',
+    description: project?.description || '',
+    status: project?.status || PROJECT_STATUSES[0],
+    clientId: project?.clientId || '',
+    assignedManagerId: project?.assignedManagerId || '',
+    quoteId: project?.quoteId || '',
+    budgetEstimate: project?.budgetEstimate || '',
+    startDate: project?.startDate ? String(project.startDate).slice(0, 10) : '',
+    endDate: project?.endDate ? String(project.endDate).slice(0, 10) : '',
+    showInGallery: Boolean(project?.showInGallery),
+    galleryOrder: toInputValue(project?.galleryOrder || 0),
+    isActive: typeof project?.isActive === 'boolean' ? project.isActive : true
+  });
+
+const createQuoteUpdateState = (quote) => ({
+  status: quote?.status || QUOTE_STATUSES[0],
+  priority: quote?.priority || QUOTE_PRIORITIES[0]
+});
+
+const createStaffFormState = (overrides = {}) => ({
+  name: '',
+  email: '',
+  password: '',
+  phone: '',
+  role: STAFF_CREATION_ROLES[0],
+  ...overrides
+});
+
+const createServiceFormState = (overrides = {}) => ({
+  title: '',
+  slug: '',
+  category: SERVICE_CATEGORIES[0],
+  shortDescription: '',
+  fullDescription: '',
+  basePriceFrom: '',
+  heroImageUrl: '',
+  displayOrder: '0',
+  showOnWebsite: true,
+  isFeatured: false,
+  isActive: true,
+  ...overrides
+});
+
+const serviceToFormState = (service) =>
+  createServiceFormState({
+    title: service?.title || '',
+    slug: service?.slug || '',
+    category: service?.category || SERVICE_CATEGORIES[0],
+    shortDescription: service?.shortDescription || '',
+    fullDescription: service?.fullDescription || '',
+    basePriceFrom: toInputValue(service?.basePriceFrom),
+    heroImageUrl: service?.heroImageUrl || '',
+    displayOrder: toInputValue(service?.displayOrder || 0),
+    showOnWebsite: typeof service?.showOnWebsite === 'boolean' ? service.showOnWebsite : true,
+    isFeatured: Boolean(service?.isFeatured),
+    isActive: typeof service?.isActive === 'boolean' ? service.isActive : true
+  });
+
+const createMaterialFormState = (overrides = {}) => ({
+  name: '',
+  sku: '',
+  category: MATERIAL_CATEGORIES[0],
+  unit: 'pcs',
+  stockQty: '0',
+  minStockQty: '0',
+  unitCost: '',
+  supplier: '',
+  notes: '',
+  isActive: true,
+  ...overrides
+});
+
+const materialToFormState = (material) =>
+  createMaterialFormState({
+    name: material?.name || '',
+    sku: material?.sku || '',
+    category: material?.category || MATERIAL_CATEGORIES[0],
+    unit: material?.unit || 'pcs',
+    stockQty: toInputValue(material?.stockQty ?? 0),
+    minStockQty: toInputValue(material?.minStockQty ?? 0),
+    unitCost: toInputValue(material?.unitCost),
+    supplier: material?.supplier || '',
+    notes: material?.notes || '',
+    isActive: typeof material?.isActive === 'boolean' ? material.isActive : true
+  });
+
+const toNullablePayload = (value) => {
+  const trimmed = String(value || '').trim();
+  return trimmed ? trimmed : null;
+};
+
+const toNumberPayload = (value, fallback = 0) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
 function useAsyncState(loader, deps = [], initialData) {
   const [reloadKey, setReloadKey] = React.useState(0);
   const [state, setState] = React.useState({
@@ -279,6 +407,14 @@ function QuickLinkCard({ to, label, detail, meta }) {
       <span>{detail}</span>
       {meta ? <small>{meta}</small> : null}
     </Link>
+  );
+}
+
+function SelectableCard({ selected, onSelect, children }) {
+  return (
+    <button type="button" className={`stack-select ${selected ? 'stack-select--active' : ''}`.trim()} onClick={onSelect}>
+      {children}
+    </button>
   );
 }
 
@@ -670,8 +806,20 @@ function OverviewPage() {
 }
 
 function ProjectsPage() {
+  const { user } = useAuth();
+  const role = normalizeText(user?.role || 'client');
+  const staffMode = isStaffRole(role);
   const projects = useAsyncState(() => v2Api.getProjects(), [], []);
+  const clients = useAsyncState(() => (staffMode ? v2Api.getCrmClients() : Promise.resolve([])), [staffMode], []);
+  const staff = useAsyncState(() => (staffMode ? v2Api.getCrmStaff() : Promise.resolve([])), [staffMode], []);
+  const quotes = useAsyncState(() => (staffMode ? v2Api.getQuotes() : Promise.resolve([])), [staffMode], []);
   const [search, setSearch] = React.useState('');
+  const [selectedProjectId, setSelectedProjectId] = React.useState('');
+  const [isCreatingNew, setIsCreatingNew] = React.useState(false);
+  const [form, setForm] = React.useState(() => createProjectFormState({ assignedManagerId: user?.id || '' }));
+  const [saving, setSaving] = React.useState(false);
+  const [actionError, setActionError] = React.useState('');
+  const [actionMessage, setActionMessage] = React.useState('');
   const deferredSearch = React.useDeferredValue(search);
 
   const filteredProjects = sortByRecent(projects.data, ['updatedAt', 'endDate', 'startDate', 'createdAt']).filter((project) => {
@@ -683,44 +831,413 @@ function ProjectsPage() {
       .includes(needle);
   });
 
+  React.useEffect(() => {
+    if (!staffMode || isCreatingNew) return;
+    if (!filteredProjects.length) {
+      if (selectedProjectId) setSelectedProjectId('');
+      return;
+    }
+    if (!filteredProjects.some((project) => project.id === selectedProjectId)) {
+      setSelectedProjectId(filteredProjects[0].id);
+    }
+  }, [filteredProjects, selectedProjectId, isCreatingNew, staffMode]);
+
+  React.useEffect(() => {
+    if (!staffMode || isCreatingNew) return;
+    const selectedProject = projects.data.find((project) => project.id === selectedProjectId);
+    if (!selectedProject) return;
+    setForm(projectToFormState(selectedProject));
+  }, [selectedProjectId, projects.data, isCreatingNew, staffMode]);
+
+  const selectedProject = projects.data.find((project) => project.id === selectedProjectId) || null;
+
+  const onFieldChange = (key) => (event) => {
+    const nextValue = event?.target?.type === 'checkbox' ? event.target.checked : event.target.value;
+    setForm((prev) => ({ ...prev, [key]: nextValue }));
+  };
+
+  const startNewProject = () => {
+    setIsCreatingNew(true);
+    setSelectedProjectId('');
+    setForm(createProjectFormState({ assignedManagerId: user?.id || '' }));
+    setActionError('');
+    setActionMessage('');
+  };
+
+  const selectProject = (project) => {
+    setIsCreatingNew(false);
+    setSelectedProjectId(project.id);
+    setForm(projectToFormState(project));
+    setActionError('');
+    setActionMessage('');
+  };
+
+  const onSubmit = async (event) => {
+    event.preventDefault();
+    if (saving) return;
+
+    setSaving(true);
+    setActionError('');
+    setActionMessage('');
+
+    try {
+      const payload = {
+        title: String(form.title || '').trim(),
+        location: toNullablePayload(form.location),
+        description: toNullablePayload(form.description),
+        status: form.status,
+        clientId: form.clientId || null,
+        assignedManagerId: form.assignedManagerId || null,
+        quoteId: form.quoteId || null,
+        budgetEstimate: toNullablePayload(form.budgetEstimate),
+        startDate: form.startDate || null,
+        endDate: form.endDate || null,
+        showInGallery: Boolean(form.showInGallery),
+        galleryOrder: toNumberPayload(form.galleryOrder, 0),
+        isActive: Boolean(form.isActive)
+      };
+
+      const savedProject = selectedProjectId
+        ? await v2Api.updateProject(selectedProjectId, payload)
+        : await v2Api.createProject(payload);
+      const hydratedProject = savedProject?.id ? await v2Api.getProject(savedProject.id) : savedProject;
+
+      if (!hydratedProject?.id) throw new Error('Project response missing payload');
+
+      projects.setData((prev) =>
+        sortByRecent(
+          [hydratedProject, ...prev.filter((project) => project.id !== hydratedProject.id)],
+          ['updatedAt', 'endDate', 'startDate', 'createdAt']
+        )
+      );
+      setIsCreatingNew(false);
+      setSelectedProjectId(hydratedProject.id);
+      setForm(projectToFormState(hydratedProject));
+      setActionMessage(selectedProjectId ? 'Project saved.' : 'Project created.');
+    } catch (error) {
+      setActionError(error.message || 'Could not save project');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!staffMode) {
+    return (
+      <Surface
+        eyebrow="Projects"
+        title="Project board"
+        description="Current v2 project summaries with status, location and media counts."
+        actions={
+          <label className="inline-search">
+            <span>Filter</span>
+            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search project, location or status" />
+          </label>
+        }
+      >
+        {projects.loading ? <p className="muted">Loading projects...</p> : null}
+        {projects.error ? <p className="error">{projects.error}</p> : null}
+        {!projects.loading && !projects.error && !filteredProjects.length ? <EmptyState text="No matching projects in this workspace." /> : null}
+        <div className="stack-list">
+          {filteredProjects.map((project) => (
+            <ProjectCard key={project.id} project={project} />
+          ))}
+        </div>
+      </Surface>
+    );
+  }
+
   return (
-    <Surface
-      eyebrow="Projects"
-      title="Project board"
-      description="Current v2 project summaries with status, location and media counts."
-      actions={
-        <label className="inline-search">
-          <span>Filter</span>
-          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search project, location or status" />
-        </label>
-      }
-    >
-      {projects.loading ? <p className="muted">Loading projects...</p> : null}
-      {projects.error ? <p className="error">{projects.error}</p> : null}
-      {!projects.loading && !projects.error && !filteredProjects.length ? <EmptyState text="No matching projects in this workspace." /> : null}
-      <div className="stack-list">
-        {filteredProjects.map((project) => (
-          <ProjectCard key={project.id} project={project} />
-        ))}
-      </div>
-    </Surface>
+    <div className="grid-two">
+      <Surface
+        eyebrow="Projects"
+        title="Project board"
+        description="Manager-side parity: create and update project routes without leaving the rollout shell."
+        actions={
+          <div className="surface-actions cluster">
+            <label className="inline-search">
+              <span>Filter</span>
+              <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search project, location or client" />
+            </label>
+            <button type="button" className="button-secondary" onClick={startNewProject}>
+              New project
+            </button>
+          </div>
+        }
+      >
+        {projects.loading ? <p className="muted">Loading projects...</p> : null}
+        {projects.error ? <p className="error">{projects.error}</p> : null}
+        {!projects.loading && !projects.error && !filteredProjects.length ? <EmptyState text="No matching projects in this workspace." /> : null}
+        <div className="stack-list">
+          {filteredProjects.map((project) => (
+            <SelectableCard key={project.id} selected={!isCreatingNew && project.id === selectedProjectId} onSelect={() => selectProject(project)}>
+              <ProjectCard project={project} />
+            </SelectableCard>
+          ))}
+        </div>
+      </Surface>
+
+      <Surface
+        eyebrow={selectedProjectId ? 'Edit project' : 'Create project'}
+        title={selectedProjectId ? form.title || 'Edit project' : 'New project'}
+        description="These fields now run through reusable `api/v2` contracts, ready to stay portable for a future native client."
+      >
+        {clients.loading || staff.loading || quotes.loading ? <p className="muted">Loading CRM and quote lookup data...</p> : null}
+        {selectedProject ? <ProjectCard project={selectedProject} /> : null}
+        <form className="editor-form" onSubmit={onSubmit}>
+          <div className="form-grid">
+            <label>
+              Title
+              <input value={form.title} onChange={onFieldChange('title')} placeholder="Project title" required />
+            </label>
+            <label>
+              Status
+              <select value={form.status} onChange={onFieldChange('status')}>
+                {PROJECT_STATUSES.map((status) => (
+                  <option key={status} value={status}>
+                    {titleCase(status)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Client
+              <select value={form.clientId} onChange={onFieldChange('clientId')}>
+                <option value="">Unassigned</option>
+                {clients.data.map((client) => (
+                  <option key={client.id} value={client.id}>
+                    {client.name || client.email || 'Client'}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Assigned manager
+              <select value={form.assignedManagerId} onChange={onFieldChange('assignedManagerId')}>
+                <option value="">Unassigned</option>
+                {staff.data.map((member) => (
+                  <option key={member.id} value={member.id}>
+                    {member.name || member.email || 'Staff'} ({titleCase(member.role || 'employee')})
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Quote link
+              <select value={form.quoteId} onChange={onFieldChange('quoteId')}>
+                <option value="">No quote link</option>
+                {quotes.data.map((quote) => (
+                  <option key={quote.id} value={quote.id}>
+                    {(quote.projectType || 'Quote') + (quote.location ? ` - ${quote.location}` : '')}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Location
+              <input value={form.location} onChange={onFieldChange('location')} placeholder="Manchester" />
+            </label>
+            <label>
+              Budget estimate
+              <input value={form.budgetEstimate} onChange={onFieldChange('budgetEstimate')} placeholder="32000" />
+            </label>
+            <label>
+              Gallery order
+              <input value={form.galleryOrder} onChange={onFieldChange('galleryOrder')} type="number" min="0" />
+            </label>
+            <label>
+              Start date
+              <input value={form.startDate} onChange={onFieldChange('startDate')} type="date" />
+            </label>
+            <label>
+              End date
+              <input value={form.endDate} onChange={onFieldChange('endDate')} type="date" />
+            </label>
+          </div>
+
+          <label>
+            Description
+            <textarea value={form.description} onChange={onFieldChange('description')} rows={5} placeholder="Project summary, scope or delivery note." />
+          </label>
+
+          <div className="checkbox-row">
+            <label>
+              <input checked={form.showInGallery} onChange={onFieldChange('showInGallery')} type="checkbox" />
+              Show in gallery
+            </label>
+            <label>
+              <input checked={form.isActive} onChange={onFieldChange('isActive')} type="checkbox" />
+              Active project
+            </label>
+          </div>
+
+          <div className="action-row">
+            <button type="submit" disabled={saving}>
+              {saving ? 'Saving...' : selectedProjectId ? 'Save project' : 'Create project'}
+            </button>
+            {!isCreatingNew ? (
+              <button type="button" className="button-secondary" onClick={startNewProject}>
+                Duplicate into new draft
+              </button>
+            ) : null}
+          </div>
+          {actionMessage ? <p className="muted">{actionMessage}</p> : null}
+          {actionError ? <p className="error">{actionError}</p> : null}
+        </form>
+      </Surface>
+    </div>
   );
 }
 
 function QuotesPage() {
+  const { user } = useAuth();
+  const role = normalizeText(user?.role || 'client');
+  const canEditQuotes = ['manager', 'admin'].includes(role);
   const quotes = useAsyncState(() => v2Api.getQuotes(), [], []);
+  const [search, setSearch] = React.useState('');
+  const [selectedQuoteId, setSelectedQuoteId] = React.useState('');
+  const [saving, setSaving] = React.useState(false);
+  const [actionError, setActionError] = React.useState('');
+  const [actionMessage, setActionMessage] = React.useState('');
+  const [form, setForm] = React.useState(() => createQuoteUpdateState(null));
+  const deferredSearch = React.useDeferredValue(search);
+
+  const filteredQuotes = sortByRecent(quotes.data, ['updatedAt', 'createdAt']).filter((quote) => {
+    const needle = normalizeText(deferredSearch);
+    if (!needle) return true;
+    return [quote?.projectType, quote?.location, quote?.status, quote?.priority, quote?.guestName, quote?.guestEmail, quote?.client?.email]
+      .join(' ')
+      .toLowerCase()
+      .includes(needle);
+  });
+
+  React.useEffect(() => {
+    if (!canEditQuotes) return;
+    if (!filteredQuotes.length) {
+      if (selectedQuoteId) setSelectedQuoteId('');
+      return;
+    }
+    if (!filteredQuotes.some((quote) => quote.id === selectedQuoteId)) {
+      setSelectedQuoteId(filteredQuotes[0].id);
+    }
+  }, [filteredQuotes, selectedQuoteId, canEditQuotes]);
+
+  React.useEffect(() => {
+    if (!canEditQuotes) return;
+    const selectedQuote = quotes.data.find((quote) => quote.id === selectedQuoteId);
+    if (!selectedQuote) return;
+    setForm(createQuoteUpdateState(selectedQuote));
+  }, [selectedQuoteId, quotes.data, canEditQuotes]);
+
+  const selectedQuote = quotes.data.find((quote) => quote.id === selectedQuoteId) || null;
+
+  const onSubmit = async (event) => {
+    event.preventDefault();
+    if (!selectedQuoteId || saving) return;
+
+    setSaving(true);
+    setActionError('');
+    setActionMessage('');
+
+    try {
+      const updatedQuote = await v2Api.updateQuote(selectedQuoteId, {
+        status: form.status,
+        priority: form.priority
+      });
+      if (!updatedQuote?.id) throw new Error('Quote response missing payload');
+
+      const mergedQuote = { ...selectedQuote, ...updatedQuote };
+      quotes.setData((prev) =>
+        sortByRecent(
+          prev.map((quote) => (quote.id === mergedQuote.id ? mergedQuote : quote)),
+          ['updatedAt', 'createdAt']
+        )
+      );
+      setActionMessage('Quote saved.');
+    } catch (error) {
+      setActionError(error.message || 'Could not save quote');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
-    <Surface eyebrow="Quotes" title="Quote board" description="Portable quote summaries from `api/v2`, shared between web and the future mobile app.">
-      {quotes.loading ? <p className="muted">Loading quotes...</p> : null}
-      {quotes.error ? <p className="error">{quotes.error}</p> : null}
-      {!quotes.loading && !quotes.error && !quotes.data.length ? <EmptyState text="No quote routes are available right now." /> : null}
-      <div className="stack-list">
-        {sortByRecent(quotes.data, ['updatedAt', 'createdAt']).map((quote) => (
-          <QuoteCard key={quote.id} quote={quote} />
-        ))}
-      </div>
-    </Surface>
+    <div className={canEditQuotes ? 'grid-two' : ''}>
+      <Surface
+        eyebrow="Quotes"
+        title="Quote board"
+        description={canEditQuotes ? 'Manager-side status and priority updates now stay in the rollout shell.' : 'Portable quote summaries from `api/v2`, shared between web and the future mobile app.'}
+        actions={
+          <label className="inline-search">
+            <span>Filter</span>
+            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search quote, location or guest" />
+          </label>
+        }
+      >
+        {quotes.loading ? <p className="muted">Loading quotes...</p> : null}
+        {quotes.error ? <p className="error">{quotes.error}</p> : null}
+        {!quotes.loading && !quotes.error && !filteredQuotes.length ? <EmptyState text="No quote routes are available right now." /> : null}
+        <div className="stack-list">
+          {filteredQuotes.map((quote) =>
+            canEditQuotes ? (
+              <SelectableCard key={quote.id} selected={quote.id === selectedQuoteId} onSelect={() => setSelectedQuoteId(quote.id)}>
+                <QuoteCard quote={quote} />
+              </SelectableCard>
+            ) : (
+              <QuoteCard key={quote.id} quote={quote} />
+            )
+          )}
+        </div>
+      </Surface>
+
+      {canEditQuotes ? (
+        <Surface
+          eyebrow="Quote actions"
+          title={selectedQuote?.projectType || 'Select a quote'}
+          description={selectedQuote ? `Guest: ${selectedQuote.guestName || selectedQuote.guestEmail || 'Known contact'}` : 'Select a quote to update status and priority.'}
+        >
+          {!selectedQuote ? <EmptyState text="No quote selected." /> : null}
+          {selectedQuote ? <QuoteCard quote={selectedQuote} /> : null}
+          {selectedQuote ? (
+            <form className="editor-form" onSubmit={onSubmit}>
+              <div className="form-grid">
+                <label>
+                  Status
+                  <select value={form.status} onChange={(event) => setForm((prev) => ({ ...prev, status: event.target.value }))}>
+                    {QUOTE_STATUSES.map((status) => (
+                      <option key={status} value={status}>
+                        {titleCase(status)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Priority
+                  <select value={form.priority} onChange={(event) => setForm((prev) => ({ ...prev, priority: event.target.value }))}>
+                    {QUOTE_PRIORITIES.map((priority) => (
+                      <option key={priority} value={priority}>
+                        {titleCase(priority)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              <div className="meta-wrap">
+                <span>Client: {selectedQuote.client?.email || 'Guest quote'}</span>
+                <span>Assigned manager: {selectedQuote.assignedManager?.email || 'Unassigned'}</span>
+                <span>Created: {formatDateTime(selectedQuote.createdAt)}</span>
+              </div>
+              <div className="action-row">
+                <button type="submit" disabled={saving}>
+                  {saving ? 'Saving...' : 'Save quote'}
+                </button>
+              </div>
+              {actionMessage ? <p className="muted">{actionMessage}</p> : null}
+              {actionError ? <p className="error">{actionError}</p> : null}
+            </form>
+          ) : null}
+        </Surface>
+      ) : null}
+    </div>
   );
 }
 
@@ -815,20 +1332,22 @@ function PrivateInboxPage() {
     v2Api
       .getDirectThreadMessages(selectedThreadId)
       .then((payload) => {
+        const nextSelectedThread = directThreads.data.find((thread) => thread.id === selectedThreadId) || null;
         if (!active) return;
         setMessageState({
           threadId: selectedThreadId,
-          thread: payload.thread || filteredThreads.find((thread) => thread.id === selectedThreadId) || null,
+          thread: payload.thread || nextSelectedThread,
           loading: false,
           error: '',
           messages: sortByRecent(payload.messages, ['createdAt']).reverse()
         });
       })
       .catch((error) => {
+        const nextSelectedThread = directThreads.data.find((thread) => thread.id === selectedThreadId) || null;
         if (!active) return;
         setMessageState({
           threadId: selectedThreadId,
-          thread: filteredThreads.find((thread) => thread.id === selectedThreadId) || null,
+          thread: nextSelectedThread,
           loading: false,
           error: error.message || 'Could not load private messages',
           messages: []
@@ -838,7 +1357,7 @@ function PrivateInboxPage() {
     return () => {
       active = false;
     };
-  }, [selectedThreadId, filteredThreads]);
+  }, [selectedThreadId, directThreads.data]);
 
   React.useEffect(() => {
     if (!selectedThreadId) return;
@@ -1163,20 +1682,22 @@ function MessagesPage() {
     v2Api
       .getThreadMessages(selectedThreadId)
       .then((payload) => {
+        const nextSelectedThread = threads.data.find((thread) => thread.id === selectedThreadId) || null;
         if (!active) return;
         setMessageState({
           threadId: selectedThreadId,
-          thread: payload.thread || filteredThreads.find((thread) => thread.id === selectedThreadId) || null,
+          thread: payload.thread || nextSelectedThread,
           loading: false,
           error: '',
           messages: sortByRecent(payload.messages, ['createdAt']).reverse()
         });
       })
       .catch((error) => {
+        const nextSelectedThread = threads.data.find((thread) => thread.id === selectedThreadId) || null;
         if (!active) return;
         setMessageState({
           threadId: selectedThreadId,
-          thread: filteredThreads.find((thread) => thread.id === selectedThreadId) || null,
+          thread: nextSelectedThread,
           loading: false,
           error: error.message || 'Could not load messages',
           messages: []
@@ -1186,7 +1707,7 @@ function MessagesPage() {
     return () => {
       active = false;
     };
-  }, [selectedThreadId, filteredThreads]);
+  }, [selectedThreadId, threads.data]);
 
   const selectedThread = filteredThreads.find((thread) => thread.id === selectedThreadId) || messageState.thread;
 
@@ -1394,99 +1915,607 @@ function NotificationsPage() {
 }
 
 function CrmPage() {
+  const { user } = useAuth();
+  const role = normalizeText(user?.role || 'employee');
+  const canCreateStaff = ['manager', 'admin'].includes(role);
   const clients = useAsyncState(() => v2Api.getCrmClients(), [], []);
   const staff = useAsyncState(() => v2Api.getCrmStaff(), [], []);
+  const [search, setSearch] = React.useState('');
+  const [staffForm, setStaffForm] = React.useState(() => createStaffFormState());
+  const [saving, setSaving] = React.useState(false);
+  const [actionError, setActionError] = React.useState('');
+  const [actionMessage, setActionMessage] = React.useState('');
+  const deferredSearch = React.useDeferredValue(search);
+
+  const filteredClients = clients.data.filter((client) =>
+    [client?.name, client?.email, client?.phone, client?.companyName].join(' ').toLowerCase().includes(normalizeText(deferredSearch))
+  );
+  const filteredStaff = staff.data.filter((member) =>
+    [member?.name, member?.email, member?.role].join(' ').toLowerCase().includes(normalizeText(deferredSearch))
+  );
+
+  const onStaffFieldChange = (key) => (event) => {
+    const nextValue = event?.target?.type === 'checkbox' ? event.target.checked : event.target.value;
+    setStaffForm((prev) => ({ ...prev, [key]: nextValue }));
+  };
+
+  const onCreateStaff = async (event) => {
+    event.preventDefault();
+    if (!canCreateStaff || saving) return;
+
+    setSaving(true);
+    setActionError('');
+    setActionMessage('');
+
+    try {
+      const createdStaff = await v2Api.createCrmStaff({
+        name: String(staffForm.name || '').trim(),
+        email: String(staffForm.email || '').trim(),
+        password: staffForm.password,
+        phone: toNullablePayload(staffForm.phone),
+        role: staffForm.role
+      });
+
+      if (!createdStaff?.id) throw new Error('Staff response missing payload');
+
+      staff.setData((prev) => sortByRecent([createdStaff, ...prev.filter((member) => member.id !== createdStaff.id)], ['createdAt', 'updatedAt']));
+      setStaffForm(createStaffFormState());
+      setActionMessage('Staff member created.');
+    } catch (error) {
+      setActionError(error.message || 'Could not create staff member');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
-    <div className="grid-two">
-      <Surface eyebrow="CRM" title="Clients" description="Current client records exposed by the v2 CRM contract.">
-        {clients.loading ? <p className="muted">Loading clients...</p> : null}
-        {clients.error ? <p className="error">{clients.error}</p> : null}
-        {!clients.loading && !clients.error && !clients.data.length ? <EmptyState text="No clients found." /> : null}
-        <div className="stack-list">
-          {clients.data.map((client) => (
-            <article key={client.id} className="summary-row">
-              <div>
-                <strong>{client.name || 'Client'}</strong>
-                <p>{client.email || 'No email available'}</p>
-              </div>
-              <div className="summary-row-meta">
-                <span>{client.phone || 'No phone'}</span>
-              </div>
-            </article>
-          ))}
+    <div className="page-stack">
+      <Surface
+        eyebrow="CRM"
+        title="People directory"
+        description="`CRM` now covers search-ready people lists for assignment workflows, plus v2-native staff creation for managers and admins."
+        actions={
+          <label className="inline-search">
+            <span>Filter people</span>
+            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search name, email or phone" />
+          </label>
+        }
+      >
+        <div className="mini-grid">
+          <MetricCard label="Clients" value={clients.data.length} detail="Live client records" />
+          <MetricCard label="Staff" value={staff.data.length} detail="Employee, manager and admin profiles" tone="accent" />
         </div>
       </Surface>
 
-      <Surface eyebrow="CRM" title="Staff" description="Employee, manager and admin profiles currently loaded.">
-        {staff.loading ? <p className="muted">Loading staff...</p> : null}
-        {staff.error ? <p className="error">{staff.error}</p> : null}
-        {!staff.loading && !staff.error && !staff.data.length ? <EmptyState text="No staff records found." /> : null}
-        <div className="stack-list">
-          {staff.data.map((member) => (
-            <article key={member.id} className="summary-row">
-              <div>
-                <strong>{member.name || 'Staff member'}</strong>
-                <p>{member.email || 'No email available'}</p>
-              </div>
-              <div className="summary-row-meta">
-                <StatusPill tone="accent">{titleCase(member.role || 'staff')}</StatusPill>
-              </div>
-            </article>
-          ))}
-        </div>
-      </Surface>
+      {canCreateStaff ? (
+        <Surface eyebrow="CRM actions" title="Create staff member" description="This manager/admin action now runs through `api/v2/crm/staff` instead of the legacy manager shell.">
+          <form className="editor-form" onSubmit={onCreateStaff}>
+            <div className="form-grid">
+              <label>
+                Name
+                <input value={staffForm.name} onChange={onStaffFieldChange('name')} placeholder="Leah Builder" required />
+              </label>
+              <label>
+                Email
+                <input value={staffForm.email} onChange={onStaffFieldChange('email')} type="email" placeholder="leah@example.com" required />
+              </label>
+              <label>
+                Password
+                <input value={staffForm.password} onChange={onStaffFieldChange('password')} type="password" minLength={8} required />
+              </label>
+              <label>
+                Phone
+                <input value={staffForm.phone} onChange={onStaffFieldChange('phone')} placeholder="+44 ..." />
+              </label>
+              <label>
+                Role
+                <select value={staffForm.role} onChange={onStaffFieldChange('role')}>
+                  {STAFF_CREATION_ROLES.filter((staffRole) => role === 'admin' || staffRole !== 'manager').map((staffRole) => (
+                    <option key={staffRole} value={staffRole}>
+                      {titleCase(staffRole)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <div className="action-row">
+              <button type="submit" disabled={saving}>
+                {saving ? 'Saving...' : 'Create staff member'}
+              </button>
+            </div>
+            {actionMessage ? <p className="muted">{actionMessage}</p> : null}
+            {actionError ? <p className="error">{actionError}</p> : null}
+          </form>
+        </Surface>
+      ) : null}
+
+      <div className="grid-two">
+        <Surface eyebrow="CRM" title="Clients" description="Current client records exposed by the v2 CRM contract.">
+          {clients.loading ? <p className="muted">Loading clients...</p> : null}
+          {clients.error ? <p className="error">{clients.error}</p> : null}
+          {!clients.loading && !clients.error && !filteredClients.length ? <EmptyState text="No clients found." /> : null}
+          <div className="stack-list">
+            {filteredClients.map((client) => (
+              <article key={client.id} className="summary-row">
+                <div>
+                  <strong>{client.name || 'Client'}</strong>
+                  <p>{client.email || 'No email available'}</p>
+                </div>
+                <div className="summary-row-meta">
+                  <span>{client.phone || 'No phone'}</span>
+                  {client.companyName ? <span>{client.companyName}</span> : null}
+                </div>
+              </article>
+            ))}
+          </div>
+        </Surface>
+
+        <Surface eyebrow="CRM" title="Staff" description="Employee, manager and admin profiles currently loaded.">
+          {staff.loading ? <p className="muted">Loading staff...</p> : null}
+          {staff.error ? <p className="error">{staff.error}</p> : null}
+          {!staff.loading && !staff.error && !filteredStaff.length ? <EmptyState text="No staff records found." /> : null}
+          <div className="stack-list">
+            {filteredStaff.map((member) => (
+              <article key={member.id} className="summary-row">
+                <div>
+                  <strong>{member.name || 'Staff member'}</strong>
+                  <p>{member.email || 'No email available'}</p>
+                </div>
+                <div className="summary-row-meta">
+                  <StatusPill tone="accent">{titleCase(member.role || 'staff')}</StatusPill>
+                  <span>{member.phone || 'No phone'}</span>
+                </div>
+              </article>
+            ))}
+          </div>
+        </Surface>
+      </div>
     </div>
   );
 }
 
 function InventoryPage() {
+  const { user } = useAuth();
+  const role = normalizeText(user?.role || 'employee');
+  const canDelete = ['manager', 'admin'].includes(role);
   const services = useAsyncState(() => v2Api.getInventoryServices(), [], []);
   const materials = useAsyncState(() => v2Api.getInventoryMaterials(), [], []);
+  const [serviceSearch, setServiceSearch] = React.useState('');
+  const [materialSearch, setMaterialSearch] = React.useState('');
+  const [selectedServiceId, setSelectedServiceId] = React.useState('');
+  const [selectedMaterialId, setSelectedMaterialId] = React.useState('');
+  const [isCreatingService, setIsCreatingService] = React.useState(false);
+  const [isCreatingMaterial, setIsCreatingMaterial] = React.useState(false);
+  const [serviceForm, setServiceForm] = React.useState(() => createServiceFormState());
+  const [materialForm, setMaterialForm] = React.useState(() => createMaterialFormState());
+  const [serviceSaving, setServiceSaving] = React.useState(false);
+  const [materialSaving, setMaterialSaving] = React.useState(false);
+  const [serviceStatus, setServiceStatus] = React.useState('');
+  const [serviceError, setServiceError] = React.useState('');
+  const [materialStatus, setMaterialStatus] = React.useState('');
+  const [materialError, setMaterialError] = React.useState('');
+
+  const filteredServices = services.data.filter((service) =>
+    [service?.title, service?.slug, service?.category, service?.shortDescription].join(' ').toLowerCase().includes(normalizeText(serviceSearch))
+  );
+  const filteredMaterials = materials.data.filter((material) =>
+    [material?.name, material?.sku, material?.category, material?.supplier].join(' ').toLowerCase().includes(normalizeText(materialSearch))
+  );
+
+  React.useEffect(() => {
+    if (isCreatingService) return;
+    if (!filteredServices.length) {
+      if (selectedServiceId) setSelectedServiceId('');
+      return;
+    }
+    if (!filteredServices.some((service) => service.id === selectedServiceId)) {
+      setSelectedServiceId(filteredServices[0].id);
+    }
+  }, [filteredServices, selectedServiceId, isCreatingService]);
+
+  React.useEffect(() => {
+    if (isCreatingMaterial) return;
+    if (!filteredMaterials.length) {
+      if (selectedMaterialId) setSelectedMaterialId('');
+      return;
+    }
+    if (!filteredMaterials.some((material) => material.id === selectedMaterialId)) {
+      setSelectedMaterialId(filteredMaterials[0].id);
+    }
+  }, [filteredMaterials, selectedMaterialId, isCreatingMaterial]);
+
+  React.useEffect(() => {
+    if (isCreatingService) return;
+    const selectedService = services.data.find((service) => service.id === selectedServiceId);
+    if (!selectedService) return;
+    setServiceForm(serviceToFormState(selectedService));
+  }, [selectedServiceId, services.data, isCreatingService]);
+
+  React.useEffect(() => {
+    if (isCreatingMaterial) return;
+    const selectedMaterial = materials.data.find((material) => material.id === selectedMaterialId);
+    if (!selectedMaterial) return;
+    setMaterialForm(materialToFormState(selectedMaterial));
+  }, [selectedMaterialId, materials.data, isCreatingMaterial]);
+
+  const onServiceFieldChange = (key) => (event) => {
+    const nextValue = event?.target?.type === 'checkbox' ? event.target.checked : event.target.value;
+    setServiceForm((prev) => ({ ...prev, [key]: nextValue }));
+  };
+
+  const onMaterialFieldChange = (key) => (event) => {
+    const nextValue = event?.target?.type === 'checkbox' ? event.target.checked : event.target.value;
+    setMaterialForm((prev) => ({ ...prev, [key]: nextValue }));
+  };
+
+  const startNewService = () => {
+    setIsCreatingService(true);
+    setSelectedServiceId('');
+    setServiceForm(createServiceFormState());
+    setServiceStatus('');
+    setServiceError('');
+  };
+
+  const startNewMaterial = () => {
+    setIsCreatingMaterial(true);
+    setSelectedMaterialId('');
+    setMaterialForm(createMaterialFormState());
+    setMaterialStatus('');
+    setMaterialError('');
+  };
+
+  const selectService = (service) => {
+    setIsCreatingService(false);
+    setSelectedServiceId(service.id);
+    setServiceForm(serviceToFormState(service));
+    setServiceStatus('');
+    setServiceError('');
+  };
+
+  const selectMaterial = (material) => {
+    setIsCreatingMaterial(false);
+    setSelectedMaterialId(material.id);
+    setMaterialForm(materialToFormState(material));
+    setMaterialStatus('');
+    setMaterialError('');
+  };
+
+  const saveService = async (event) => {
+    event.preventDefault();
+    if (serviceSaving) return;
+
+    setServiceSaving(true);
+    setServiceStatus('');
+    setServiceError('');
+
+    try {
+      const payload = {
+        title: String(serviceForm.title || '').trim(),
+        slug: toNullablePayload(serviceForm.slug),
+        category: serviceForm.category,
+        shortDescription: toNullablePayload(serviceForm.shortDescription),
+        fullDescription: toNullablePayload(serviceForm.fullDescription),
+        basePriceFrom: serviceForm.basePriceFrom === '' ? null : Number(serviceForm.basePriceFrom),
+        heroImageUrl: toNullablePayload(serviceForm.heroImageUrl),
+        displayOrder: toNumberPayload(serviceForm.displayOrder, 0),
+        showOnWebsite: Boolean(serviceForm.showOnWebsite),
+        isFeatured: Boolean(serviceForm.isFeatured),
+        isActive: Boolean(serviceForm.isActive)
+      };
+      const savedService = selectedServiceId
+        ? await v2Api.updateInventoryService(selectedServiceId, payload)
+        : await v2Api.createInventoryService(payload);
+      if (!savedService?.id) throw new Error('Service response missing payload');
+
+      services.setData((prev) =>
+        [...prev.filter((service) => service.id !== savedService.id), savedService]
+          .sort((left, right) => (left.displayOrder || 0) - (right.displayOrder || 0) || String(left.title || '').localeCompare(String(right.title || '')))
+      );
+      setIsCreatingService(false);
+      setSelectedServiceId(savedService.id);
+      setServiceForm(serviceToFormState(savedService));
+      setServiceStatus(selectedServiceId ? 'Service saved.' : 'Service created.');
+    } catch (error) {
+      setServiceError(error.message || 'Could not save service');
+    } finally {
+      setServiceSaving(false);
+    }
+  };
+
+  const deleteService = async () => {
+    if (!selectedServiceId || !canDelete || serviceSaving) return;
+
+    setServiceSaving(true);
+    setServiceStatus('');
+    setServiceError('');
+    try {
+      await v2Api.deleteInventoryService(selectedServiceId);
+      services.setData((prev) => prev.filter((service) => service.id !== selectedServiceId));
+      setSelectedServiceId('');
+      setIsCreatingService(true);
+      setServiceForm(createServiceFormState());
+      setServiceStatus('Service deleted.');
+    } catch (error) {
+      setServiceError(error.message || 'Could not delete service');
+    } finally {
+      setServiceSaving(false);
+    }
+  };
+
+  const saveMaterial = async (event) => {
+    event.preventDefault();
+    if (materialSaving) return;
+
+    setMaterialSaving(true);
+    setMaterialStatus('');
+    setMaterialError('');
+
+    try {
+      const payload = {
+        name: String(materialForm.name || '').trim(),
+        sku: toNullablePayload(materialForm.sku),
+        category: materialForm.category,
+        unit: String(materialForm.unit || 'pcs').trim() || 'pcs',
+        stockQty: Number(materialForm.stockQty || 0),
+        minStockQty: Number(materialForm.minStockQty || 0),
+        unitCost: materialForm.unitCost === '' ? null : Number(materialForm.unitCost),
+        supplier: toNullablePayload(materialForm.supplier),
+        notes: toNullablePayload(materialForm.notes),
+        isActive: Boolean(materialForm.isActive)
+      };
+      const savedMaterial = selectedMaterialId
+        ? await v2Api.updateInventoryMaterial(selectedMaterialId, payload)
+        : await v2Api.createInventoryMaterial(payload);
+      if (!savedMaterial?.id) throw new Error('Material response missing payload');
+
+      materials.setData((prev) =>
+        [...prev.filter((material) => material.id !== savedMaterial.id), savedMaterial]
+          .sort((left, right) => String(left.category || '').localeCompare(String(right.category || '')) || String(left.name || '').localeCompare(String(right.name || '')))
+      );
+      setIsCreatingMaterial(false);
+      setSelectedMaterialId(savedMaterial.id);
+      setMaterialForm(materialToFormState(savedMaterial));
+      setMaterialStatus(selectedMaterialId ? 'Material saved.' : 'Material created.');
+    } catch (error) {
+      setMaterialError(error.message || 'Could not save material');
+    } finally {
+      setMaterialSaving(false);
+    }
+  };
+
+  const deleteMaterial = async () => {
+    if (!selectedMaterialId || !canDelete || materialSaving) return;
+
+    setMaterialSaving(true);
+    setMaterialStatus('');
+    setMaterialError('');
+    try {
+      await v2Api.deleteInventoryMaterial(selectedMaterialId);
+      materials.setData((prev) => prev.filter((material) => material.id !== selectedMaterialId));
+      setSelectedMaterialId('');
+      setIsCreatingMaterial(true);
+      setMaterialForm(createMaterialFormState());
+      setMaterialStatus('Material deleted.');
+    } catch (error) {
+      setMaterialError(error.message || 'Could not delete material');
+    } finally {
+      setMaterialSaving(false);
+    }
+  };
 
   return (
     <div className="grid-two">
-      <Surface eyebrow="Inventory" title="Services" description="Inventory-side service catalogue rows.">
+      <Surface
+        eyebrow="Inventory"
+        title="Services"
+        description="Create, tune and retire service catalogue rows directly in the rollout shell."
+        actions={
+          <div className="surface-actions cluster">
+            <label className="inline-search">
+              <span>Filter</span>
+              <input value={serviceSearch} onChange={(event) => setServiceSearch(event.target.value)} placeholder="Search title, slug or category" />
+            </label>
+            <button type="button" className="button-secondary" onClick={startNewService}>
+              New service
+            </button>
+          </div>
+        }
+      >
         {services.loading ? <p className="muted">Loading services...</p> : null}
         {services.error ? <p className="error">{services.error}</p> : null}
-        {!services.loading && !services.error && !services.data.length ? <EmptyState text="No service inventory rows found." /> : null}
+        {!services.loading && !services.error && !filteredServices.length ? <EmptyState text="No service inventory rows found." /> : null}
         <div className="stack-list">
-          {services.data.map((service) => (
-            <article key={service.id} className="summary-row">
-              <div>
-                <strong>{service.title}</strong>
-                <p>{service.category || 'Uncategorised'}</p>
-              </div>
-              <div className="summary-row-meta">
-                <span>{service.slug || 'No slug'}</span>
-              </div>
-            </article>
-          ))}
-        </div>
-      </Surface>
-
-      <Surface eyebrow="Inventory" title="Materials" description="Live stock figures with low-stock signals.">
-        {materials.loading ? <p className="muted">Loading materials...</p> : null}
-        {materials.error ? <p className="error">{materials.error}</p> : null}
-        {!materials.loading && !materials.error && !materials.data.length ? <EmptyState text="No material records found." /> : null}
-        <div className="stack-list">
-          {materials.data.map((material) => {
-            const lowStock = Number(material?.stockQty || 0) <= Number(material?.minStockQty || 0);
-            return (
-              <article key={material.id} className="summary-row">
+          {filteredServices.map((service) => (
+            <SelectableCard key={service.id} selected={!isCreatingService && service.id === selectedServiceId} onSelect={() => selectService(service)}>
+              <article className="summary-row">
                 <div>
-                  <strong>{material.name}</strong>
-                  <p>SKU {material.sku || 'pending'}</p>
+                  <strong>{service.title}</strong>
+                  <p>{service.category || 'Uncategorised'}</p>
                 </div>
                 <div className="summary-row-meta">
-                  <StatusPill tone={lowStock ? 'danger' : 'neutral'}>
-                    {material.stockQty}/{material.minStockQty}
-                  </StatusPill>
+                  <span>{service.slug || 'No slug'}</span>
+                  <StatusPill tone={service.showOnWebsite ? 'accent' : 'neutral'}>{service.showOnWebsite ? 'Live' : 'Hidden'}</StatusPill>
                 </div>
               </article>
+            </SelectableCard>
+          ))}
+        </div>
+
+        <form className="editor-form" onSubmit={saveService}>
+          <div className="form-grid">
+            <label>
+              Title
+              <input value={serviceForm.title} onChange={onServiceFieldChange('title')} placeholder="Bathrooms Premium" required />
+            </label>
+            <label>
+              Slug
+              <input value={serviceForm.slug} onChange={onServiceFieldChange('slug')} placeholder="bathrooms-premium" />
+            </label>
+            <label>
+              Category
+              <select value={serviceForm.category} onChange={onServiceFieldChange('category')}>
+                {SERVICE_CATEGORIES.map((category) => (
+                  <option key={category} value={category}>
+                    {titleCase(category)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Base price from
+              <input value={serviceForm.basePriceFrom} onChange={onServiceFieldChange('basePriceFrom')} type="number" min="0" step="0.01" />
+            </label>
+            <label>
+              Display order
+              <input value={serviceForm.displayOrder} onChange={onServiceFieldChange('displayOrder')} type="number" min="0" />
+            </label>
+            <label>
+              Hero image URL
+              <input value={serviceForm.heroImageUrl} onChange={onServiceFieldChange('heroImageUrl')} placeholder="/Gallery/premium/..." />
+            </label>
+          </div>
+          <label>
+            Short description
+            <textarea value={serviceForm.shortDescription} onChange={onServiceFieldChange('shortDescription')} rows={3} placeholder="Short brochure-facing summary." />
+          </label>
+          <label>
+            Full description
+            <textarea value={serviceForm.fullDescription} onChange={onServiceFieldChange('fullDescription')} rows={4} placeholder="Longer internal/brochure copy." />
+          </label>
+          <div className="checkbox-row">
+            <label>
+              <input checked={serviceForm.showOnWebsite} onChange={onServiceFieldChange('showOnWebsite')} type="checkbox" />
+              Show on website
+            </label>
+            <label>
+              <input checked={serviceForm.isFeatured} onChange={onServiceFieldChange('isFeatured')} type="checkbox" />
+              Featured service
+            </label>
+            <label>
+              <input checked={serviceForm.isActive} onChange={onServiceFieldChange('isActive')} type="checkbox" />
+              Active
+            </label>
+          </div>
+          <div className="action-row">
+            <button type="submit" disabled={serviceSaving}>
+              {serviceSaving ? 'Saving...' : selectedServiceId ? 'Save service' : 'Create service'}
+            </button>
+            {canDelete && selectedServiceId ? (
+              <button type="button" className="button-secondary" onClick={deleteService} disabled={serviceSaving}>
+                Delete service
+              </button>
+            ) : null}
+          </div>
+          {serviceStatus ? <p className="muted">{serviceStatus}</p> : null}
+          {serviceError ? <p className="error">{serviceError}</p> : null}
+        </form>
+      </Surface>
+
+      <Surface
+        eyebrow="Inventory"
+        title="Materials"
+        description="Create and maintain stock rows, thresholds and supplier details under the same v2 contract."
+        actions={
+          <div className="surface-actions cluster">
+            <label className="inline-search">
+              <span>Filter</span>
+              <input value={materialSearch} onChange={(event) => setMaterialSearch(event.target.value)} placeholder="Search name, SKU or supplier" />
+            </label>
+            <button type="button" className="button-secondary" onClick={startNewMaterial}>
+              New material
+            </button>
+          </div>
+        }
+      >
+        {materials.loading ? <p className="muted">Loading materials...</p> : null}
+        {materials.error ? <p className="error">{materials.error}</p> : null}
+        {!materials.loading && !materials.error && !filteredMaterials.length ? <EmptyState text="No material records found." /> : null}
+        <div className="stack-list">
+          {filteredMaterials.map((material) => {
+            const lowStock = Number(material?.stockQty || 0) <= Number(material?.minStockQty || 0);
+            return (
+              <SelectableCard key={material.id} selected={!isCreatingMaterial && material.id === selectedMaterialId} onSelect={() => selectMaterial(material)}>
+                <article className="summary-row">
+                  <div>
+                    <strong>{material.name}</strong>
+                    <p>SKU {material.sku || 'pending'}</p>
+                  </div>
+                  <div className="summary-row-meta">
+                    <StatusPill tone={lowStock ? 'danger' : 'neutral'}>
+                      {material.stockQty}/{material.minStockQty}
+                    </StatusPill>
+                    <span>{material.supplier || 'No supplier'}</span>
+                  </div>
+                </article>
+              </SelectableCard>
             );
           })}
         </div>
+
+        <form className="editor-form" onSubmit={saveMaterial}>
+          <div className="form-grid">
+            <label>
+              Name
+              <input value={materialForm.name} onChange={onMaterialFieldChange('name')} placeholder="Calacatta Slab" required />
+            </label>
+            <label>
+              SKU
+              <input value={materialForm.sku} onChange={onMaterialFieldChange('sku')} placeholder="MAR-001" />
+            </label>
+            <label>
+              Category
+              <select value={materialForm.category} onChange={onMaterialFieldChange('category')}>
+                {MATERIAL_CATEGORIES.map((category) => (
+                  <option key={category} value={category}>
+                    {titleCase(category)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Unit
+              <input value={materialForm.unit} onChange={onMaterialFieldChange('unit')} placeholder="pcs" />
+            </label>
+            <label>
+              Stock quantity
+              <input value={materialForm.stockQty} onChange={onMaterialFieldChange('stockQty')} type="number" step="0.01" />
+            </label>
+            <label>
+              Minimum stock
+              <input value={materialForm.minStockQty} onChange={onMaterialFieldChange('minStockQty')} type="number" step="0.01" />
+            </label>
+            <label>
+              Unit cost
+              <input value={materialForm.unitCost} onChange={onMaterialFieldChange('unitCost')} type="number" min="0" step="0.01" />
+            </label>
+            <label>
+              Supplier
+              <input value={materialForm.supplier} onChange={onMaterialFieldChange('supplier')} placeholder="Stone House" />
+            </label>
+          </div>
+          <label>
+            Notes
+            <textarea value={materialForm.notes} onChange={onMaterialFieldChange('notes')} rows={4} placeholder="Delivery note or stock remark." />
+          </label>
+          <div className="checkbox-row">
+            <label>
+              <input checked={materialForm.isActive} onChange={onMaterialFieldChange('isActive')} type="checkbox" />
+              Active
+            </label>
+          </div>
+          <div className="action-row">
+            <button type="submit" disabled={materialSaving}>
+              {materialSaving ? 'Saving...' : selectedMaterialId ? 'Save material' : 'Create material'}
+            </button>
+            {canDelete && selectedMaterialId ? (
+              <button type="button" className="button-secondary" onClick={deleteMaterial} disabled={materialSaving}>
+                Delete material
+              </button>
+            ) : null}
+          </div>
+          {materialStatus ? <p className="muted">{materialStatus}</p> : null}
+          {materialError ? <p className="error">{materialError}</p> : null}
+        </form>
       </Surface>
     </div>
   );
