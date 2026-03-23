@@ -1,6 +1,9 @@
 const path = require('path');
+const { listFolderGallerySourceImagesSync } = require('../utils/folderGallery');
 
 const root = (...segments) => path.join(__dirname, '..', ...segments);
+const galleryRoot = root('Gallery');
+const optimizedGalleryRoot = root('Gallery', 'optimized');
 
 const brandAssets = [
   {
@@ -23,7 +26,7 @@ const brandAssets = [
   }
 ];
 
-const galleryAssets = [
+const premiumGalleryAssets = [
   {
     publicPath: '/Gallery/premium/bathroom-main.jpg',
     source: root('Gallery', 'bathroom', 'The Slate Suite.png'),
@@ -97,6 +100,23 @@ const galleryAssets = [
     widths: [960, 1600]
   }
 ];
+
+const buildOptimizedGalleryOutputBase = ({ folderName, fileName }) => {
+  const parsed = path.parse(fileName);
+  const safeBaseName = `${parsed.name}-${parsed.ext.replace(/^\./, '').toLowerCase()}`
+    .replace(/[<>:"/\\|?*]+/g, '-')
+    .trim();
+  return path.join(optimizedGalleryRoot, folderName, safeBaseName);
+};
+
+const folderGalleryAssets = listFolderGallerySourceImagesSync(galleryRoot).map((entry) => ({
+  publicPath: entry.publicPath,
+  source: entry.sourcePath,
+  outputBase: buildOptimizedGalleryOutputBase(entry),
+  widths: [960, 1600]
+}));
+
+const galleryAssets = premiumGalleryAssets.concat(folderGalleryAssets);
 
 module.exports = {
   brandAssets,

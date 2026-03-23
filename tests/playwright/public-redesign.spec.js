@@ -176,6 +176,8 @@ test('core brochure pages render about, services, gallery, contact and quote rou
   await expect(page.locator('[data-gallery-active-project-title]')).toHaveText(/^bathroom$/i);
   await expect(page.locator('[data-gallery-active-project-meta]')).toBeVisible();
   await expect(page.locator('[data-gallery-status]')).toContainText(/bathroom \/ Rustic Harmony \/ photo 1 of 2/i);
+  await expect(page.locator('.roller-card.is-center picture source[type="image/avif"]').first()).toHaveAttribute('srcset', /\/Gallery\/optimized\/bathroom\//);
+  await expect(page.locator('.roller-card.is-center .roller-image').first()).toHaveAttribute('srcset', /\/Gallery\/optimized\/bathroom\//);
   await page.locator('[data-gallery-next]').click();
   await expect(page.locator('[data-gallery-status]')).toContainText(/bathroom \/ The Slate Suite \/ photo 2 of 2/i);
   await expect.poll(async () => page.locator('.gallery-stage').evaluate((node) => getComputedStyle(node).backgroundImage)).toContain('mainbackground.png');

@@ -129,7 +129,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 ## Later
 
 - [ ] Replace the current runtime query-param cache-busting plus `no-store` iteration mode with hashed asset filenames or manifest-driven immutable caching once the public shell/design iteration stabilises and performance caching matters more than instant refresh behavior.
-- [ ] Fold the folder-based `Gallery/<service>/` image sets into the `sharp` asset pipeline so fullscreen and service-gallery views can use responsive AVIF/WebP variants instead of copied JPG-only source files.
+- [x] Fold the folder-based `Gallery/<service>/` image sets into the `sharp` asset pipeline so fullscreen and service-gallery views can use responsive AVIF/WebP variants instead of copied JPG-only source files.
 - [ ] Revisit whether a CDN/media platform is worth introducing later if the runtime gallery/media set grows beyond the current `sharp` pipeline.
 - [ ] If exact chronology becomes important, replace the derived `Company Events` overview in `manager-dashboard` with a persisted audit/event timeline.
 - [ ] Decide later whether `header.png` should remain only as a historical/supporting asset now that `title.png` is the shared public shell lockup.

@@ -166,6 +166,138 @@ const manifest = {
       "height": 2448,
       "sizes": "(max-width: 640px) 88vw, (max-width: 992px) 92vw, 66vw",
       "thumbnailSizes": "(max-width: 640px) 42vw, 96px"
+    },
+    "/Gallery/bathroom/Rustic%20Harmony.png": {
+      "fallback": "/Gallery/optimized/bathroom/Rustic%20Harmony-png.jpg",
+      "fallbackSet": "/Gallery/optimized/bathroom/Rustic%20Harmony-png-960.jpg 960w, /Gallery/optimized/bathroom/Rustic%20Harmony-png-1600.jpg 1600w, /Gallery/optimized/bathroom/Rustic%20Harmony-png.jpg 1792w",
+      "webp": "/Gallery/optimized/bathroom/Rustic%20Harmony-png.webp",
+      "webpSet": "/Gallery/optimized/bathroom/Rustic%20Harmony-png-960.webp 960w, /Gallery/optimized/bathroom/Rustic%20Harmony-png-1600.webp 1600w, /Gallery/optimized/bathroom/Rustic%20Harmony-png.webp 1792w",
+      "avif": "/Gallery/optimized/bathroom/Rustic%20Harmony-png.avif",
+      "avifSet": "/Gallery/optimized/bathroom/Rustic%20Harmony-png-960.avif 960w, /Gallery/optimized/bathroom/Rustic%20Harmony-png-1600.avif 1600w, /Gallery/optimized/bathroom/Rustic%20Harmony-png.avif 1792w",
+      "width": 1792,
+      "height": 2396,
+      "sizes": "(max-width: 640px) 88vw, (max-width: 992px) 92vw, 66vw",
+      "thumbnailSizes": "(max-width: 640px) 42vw, 96px"
+    },
+    "/Gallery/bathroom/The%20Slate%20Suite.png": {
+      "fallback": "/Gallery/optimized/bathroom/The%20Slate%20Suite-png.jpg",
+      "fallbackSet": "/Gallery/optimized/bathroom/The%20Slate%20Suite-png-960.jpg 960w, /Gallery/optimized/bathroom/The%20Slate%20Suite-png-1600.jpg 1600w, /Gallery/optimized/bathroom/The%20Slate%20Suite-png.jpg 1792w",
+      "webp": "/Gallery/optimized/bathroom/The%20Slate%20Suite-png.webp",
+      "webpSet": "/Gallery/optimized/bathroom/The%20Slate%20Suite-png-960.webp 960w, /Gallery/optimized/bathroom/The%20Slate%20Suite-png-1600.webp 1600w, /Gallery/optimized/bathroom/The%20Slate%20Suite-png.webp 1792w",
+      "avif": "/Gallery/optimized/bathroom/The%20Slate%20Suite-png.avif",
+      "avifSet": "/Gallery/optimized/bathroom/The%20Slate%20Suite-png-960.avif 960w, /Gallery/optimized/bathroom/The%20Slate%20Suite-png-1600.avif 1600w, /Gallery/optimized/bathroom/The%20Slate%20Suite-png.avif 1792w",
+      "width": 1792,
+      "height": 2390,
+      "sizes": "(max-width: 640px) 88vw, (max-width: 992px) 92vw, 66vw",
+      "thumbnailSizes": "(max-width: 640px) 42vw, 96px"
+    },
+    "/Gallery/exterior/Brick%20veneers.jpg": {
+      "fallback": "/Gallery/optimized/exterior/Brick%20veneers-jpg.jpg",
+      "fallbackSet": "/Gallery/optimized/exterior/Brick%20veneers-jpg-960.jpg 960w, /Gallery/optimized/exterior/Brick%20veneers-jpg-1600.jpg 1600w, /Gallery/optimized/exterior/Brick%20veneers-jpg.jpg 3264w",
+      "webp": "/Gallery/optimized/exterior/Brick%20veneers-jpg.webp",
+      "webpSet": "/Gallery/optimized/exterior/Brick%20veneers-jpg-960.webp 960w, /Gallery/optimized/exterior/Brick%20veneers-jpg-1600.webp 1600w, /Gallery/optimized/exterior/Brick%20veneers-jpg.webp 3264w",
+      "avif": "/Gallery/optimized/exterior/Brick%20veneers-jpg.avif",
+      "avifSet": "/Gallery/optimized/exterior/Brick%20veneers-jpg-960.avif 960w, /Gallery/optimized/exterior/Brick%20veneers-jpg-1600.avif 1600w, /Gallery/optimized/exterior/Brick%20veneers-jpg.avif 3264w",
+      "width": 3264,
+      "height": 2448,
+      "sizes": "(max-width: 640px) 88vw, (max-width: 992px) 92vw, 66vw",
+      "thumbnailSizes": "(max-width: 640px) 42vw, 96px"
+    },
+    "/Gallery/exterior/charcoal%20brickslips.jpg": {
+      "fallback": "/Gallery/optimized/exterior/charcoal%20brickslips-jpg.jpg",
+      "fallbackSet": "/Gallery/optimized/exterior/charcoal%20brickslips-jpg-960.jpg 960w, /Gallery/optimized/exterior/charcoal%20brickslips-jpg-1600.jpg 1600w, /Gallery/optimized/exterior/charcoal%20brickslips-jpg.jpg 3264w",
+      "webp": "/Gallery/optimized/exterior/charcoal%20brickslips-jpg.webp",
+      "webpSet": "/Gallery/optimized/exterior/charcoal%20brickslips-jpg-960.webp 960w, /Gallery/optimized/exterior/charcoal%20brickslips-jpg-1600.webp 1600w, /Gallery/optimized/exterior/charcoal%20brickslips-jpg.webp 3264w",
+      "avif": "/Gallery/optimized/exterior/charcoal%20brickslips-jpg.avif",
+      "avifSet": "/Gallery/optimized/exterior/charcoal%20brickslips-jpg-960.avif 960w, /Gallery/optimized/exterior/charcoal%20brickslips-jpg-1600.avif 1600w, /Gallery/optimized/exterior/charcoal%20brickslips-jpg.avif 3264w",
+      "width": 3264,
+      "height": 2448,
+      "sizes": "(max-width: 640px) 88vw, (max-width: 992px) 92vw, 66vw",
+      "thumbnailSizes": "(max-width: 640px) 42vw, 96px"
+    },
+    "/Gallery/exterior/charcoal%20brickslips.png": {
+      "fallback": "/Gallery/optimized/exterior/charcoal%20brickslips-png.jpg",
+      "fallbackSet": "/Gallery/optimized/exterior/charcoal%20brickslips-png-960.jpg 960w, /Gallery/optimized/exterior/charcoal%20brickslips-png-1600.jpg 1600w, /Gallery/optimized/exterior/charcoal%20brickslips-png.jpg 1792w",
+      "webp": "/Gallery/optimized/exterior/charcoal%20brickslips-png.webp",
+      "webpSet": "/Gallery/optimized/exterior/charcoal%20brickslips-png-960.webp 960w, /Gallery/optimized/exterior/charcoal%20brickslips-png-1600.webp 1600w, /Gallery/optimized/exterior/charcoal%20brickslips-png.webp 1792w",
+      "avif": "/Gallery/optimized/exterior/charcoal%20brickslips-png.avif",
+      "avifSet": "/Gallery/optimized/exterior/charcoal%20brickslips-png-960.avif 960w, /Gallery/optimized/exterior/charcoal%20brickslips-png-1600.avif 1600w, /Gallery/optimized/exterior/charcoal%20brickslips-png.avif 1792w",
+      "width": 1792,
+      "height": 2390,
+      "sizes": "(max-width: 640px) 88vw, (max-width: 992px) 92vw, 66vw",
+      "thumbnailSizes": "(max-width: 640px) 42vw, 96px"
+    },
+    "/Gallery/exterior/Rendering.jpg": {
+      "fallback": "/Gallery/optimized/exterior/Rendering-jpg.jpg",
+      "fallbackSet": "/Gallery/optimized/exterior/Rendering-jpg-960.jpg 960w, /Gallery/optimized/exterior/Rendering-jpg-1600.jpg 1600w, /Gallery/optimized/exterior/Rendering-jpg.jpg 4096w",
+      "webp": "/Gallery/optimized/exterior/Rendering-jpg.webp",
+      "webpSet": "/Gallery/optimized/exterior/Rendering-jpg-960.webp 960w, /Gallery/optimized/exterior/Rendering-jpg-1600.webp 1600w, /Gallery/optimized/exterior/Rendering-jpg.webp 4096w",
+      "avif": "/Gallery/optimized/exterior/Rendering-jpg.avif",
+      "avifSet": "/Gallery/optimized/exterior/Rendering-jpg-960.avif 960w, /Gallery/optimized/exterior/Rendering-jpg-1600.avif 1600w, /Gallery/optimized/exterior/Rendering-jpg.avif 4096w",
+      "width": 4096,
+      "height": 3072,
+      "sizes": "(max-width: 640px) 88vw, (max-width: 992px) 92vw, 66vw",
+      "thumbnailSizes": "(max-width: 640px) 42vw, 96px"
+    },
+    "/Gallery/exterior/Rendering.png": {
+      "fallback": "/Gallery/optimized/exterior/Rendering-png.jpg",
+      "fallbackSet": "/Gallery/optimized/exterior/Rendering-png-960.jpg 960w, /Gallery/optimized/exterior/Rendering-png-1600.jpg 1600w, /Gallery/optimized/exterior/Rendering-png.jpg 1792w",
+      "webp": "/Gallery/optimized/exterior/Rendering-png.webp",
+      "webpSet": "/Gallery/optimized/exterior/Rendering-png-960.webp 960w, /Gallery/optimized/exterior/Rendering-png-1600.webp 1600w, /Gallery/optimized/exterior/Rendering-png.webp 1792w",
+      "avif": "/Gallery/optimized/exterior/Rendering-png.avif",
+      "avifSet": "/Gallery/optimized/exterior/Rendering-png-960.avif 960w, /Gallery/optimized/exterior/Rendering-png-1600.avif 1600w, /Gallery/optimized/exterior/Rendering-png.avif 1792w",
+      "width": 1792,
+      "height": 2390,
+      "sizes": "(max-width: 640px) 88vw, (max-width: 992px) 92vw, 66vw",
+      "thumbnailSizes": "(max-width: 640px) 42vw, 96px"
+    },
+    "/Gallery/exterior/White%20brickslips.png": {
+      "fallback": "/Gallery/optimized/exterior/White%20brickslips-png.jpg",
+      "fallbackSet": "/Gallery/optimized/exterior/White%20brickslips-png-960.jpg 960w, /Gallery/optimized/exterior/White%20brickslips-png-1600.jpg 1600w, /Gallery/optimized/exterior/White%20brickslips-png.jpg 2390w",
+      "webp": "/Gallery/optimized/exterior/White%20brickslips-png.webp",
+      "webpSet": "/Gallery/optimized/exterior/White%20brickslips-png-960.webp 960w, /Gallery/optimized/exterior/White%20brickslips-png-1600.webp 1600w, /Gallery/optimized/exterior/White%20brickslips-png.webp 2390w",
+      "avif": "/Gallery/optimized/exterior/White%20brickslips-png.avif",
+      "avifSet": "/Gallery/optimized/exterior/White%20brickslips-png-960.avif 960w, /Gallery/optimized/exterior/White%20brickslips-png-1600.avif 1600w, /Gallery/optimized/exterior/White%20brickslips-png.avif 2390w",
+      "width": 2390,
+      "height": 1792,
+      "sizes": "(max-width: 640px) 88vw, (max-width: 992px) 92vw, 66vw",
+      "thumbnailSizes": "(max-width: 640px) 42vw, 96px"
+    },
+    "/Gallery/kitchen/Alabaster%20Horizon.png": {
+      "fallback": "/Gallery/optimized/kitchen/Alabaster%20Horizon-png.jpg",
+      "fallbackSet": "/Gallery/optimized/kitchen/Alabaster%20Horizon-png-960.jpg 960w, /Gallery/optimized/kitchen/Alabaster%20Horizon-png-1600.jpg 1600w, /Gallery/optimized/kitchen/Alabaster%20Horizon-png.jpg 3640w",
+      "webp": "/Gallery/optimized/kitchen/Alabaster%20Horizon-png.webp",
+      "webpSet": "/Gallery/optimized/kitchen/Alabaster%20Horizon-png-960.webp 960w, /Gallery/optimized/kitchen/Alabaster%20Horizon-png-1600.webp 1600w, /Gallery/optimized/kitchen/Alabaster%20Horizon-png.webp 3640w",
+      "avif": "/Gallery/optimized/kitchen/Alabaster%20Horizon-png.avif",
+      "avifSet": "/Gallery/optimized/kitchen/Alabaster%20Horizon-png-960.avif 960w, /Gallery/optimized/kitchen/Alabaster%20Horizon-png-1600.avif 1600w, /Gallery/optimized/kitchen/Alabaster%20Horizon-png.avif 3640w",
+      "width": 3640,
+      "height": 1152,
+      "sizes": "(max-width: 640px) 88vw, (max-width: 992px) 92vw, 66vw",
+      "thumbnailSizes": "(max-width: 640px) 42vw, 96px"
+    },
+    "/Gallery/kitchen/Midnight%20Marble.png": {
+      "fallback": "/Gallery/optimized/kitchen/Midnight%20Marble-png.jpg",
+      "fallbackSet": "/Gallery/optimized/kitchen/Midnight%20Marble-png-960.jpg 960w, /Gallery/optimized/kitchen/Midnight%20Marble-png-1536.jpg 1536w, /Gallery/optimized/kitchen/Midnight%20Marble-png.jpg 1536w",
+      "webp": "/Gallery/optimized/kitchen/Midnight%20Marble-png.webp",
+      "webpSet": "/Gallery/optimized/kitchen/Midnight%20Marble-png-960.webp 960w, /Gallery/optimized/kitchen/Midnight%20Marble-png-1536.webp 1536w, /Gallery/optimized/kitchen/Midnight%20Marble-png.webp 1536w",
+      "avif": "/Gallery/optimized/kitchen/Midnight%20Marble-png.avif",
+      "avifSet": "/Gallery/optimized/kitchen/Midnight%20Marble-png-960.avif 960w, /Gallery/optimized/kitchen/Midnight%20Marble-png-1536.avif 1536w, /Gallery/optimized/kitchen/Midnight%20Marble-png.avif 1536w",
+      "width": 1536,
+      "height": 1024,
+      "sizes": "(max-width: 640px) 88vw, (max-width: 992px) 92vw, 66vw",
+      "thumbnailSizes": "(max-width: 640px) 42vw, 96px"
+    },
+    "/Gallery/kitchen/Obsidian%20Oak.png": {
+      "fallback": "/Gallery/optimized/kitchen/Obsidian%20Oak-png.jpg",
+      "fallbackSet": "/Gallery/optimized/kitchen/Obsidian%20Oak-png-960.jpg 960w, /Gallery/optimized/kitchen/Obsidian%20Oak-png-1600.jpg 1600w, /Gallery/optimized/kitchen/Obsidian%20Oak-png.jpg 2396w",
+      "webp": "/Gallery/optimized/kitchen/Obsidian%20Oak-png.webp",
+      "webpSet": "/Gallery/optimized/kitchen/Obsidian%20Oak-png-960.webp 960w, /Gallery/optimized/kitchen/Obsidian%20Oak-png-1600.webp 1600w, /Gallery/optimized/kitchen/Obsidian%20Oak-png.webp 2396w",
+      "avif": "/Gallery/optimized/kitchen/Obsidian%20Oak-png.avif",
+      "avifSet": "/Gallery/optimized/kitchen/Obsidian%20Oak-png-960.avif 960w, /Gallery/optimized/kitchen/Obsidian%20Oak-png-1600.avif 1600w, /Gallery/optimized/kitchen/Obsidian%20Oak-png.avif 2396w",
+      "width": 2396,
+      "height": 1792,
+      "sizes": "(max-width: 640px) 88vw, (max-width: 992px) 92vw, 66vw",
+      "thumbnailSizes": "(max-width: 640px) 42vw, 96px"
     }
   }
 };

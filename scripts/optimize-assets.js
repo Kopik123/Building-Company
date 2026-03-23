@@ -7,7 +7,11 @@ const ensureDir = async (filePath) => {
   await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
 };
 
-const toPublicPath = (filePath) => `/${path.relative(path.join(__dirname, '..'), filePath).replace(/\\/g, '/')}`;
+const toPublicPath = (filePath) =>
+  `/${path.relative(path.join(__dirname, '..'), filePath)
+    .split(path.sep)
+    .map((segment) => encodeURIComponent(segment))
+    .join('/')}`;
 
 const withWidthSuffix = (basePath, width) => `${basePath}-${width}`;
 

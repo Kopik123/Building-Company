@@ -2,7 +2,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const GALLERY_IMAGE_PATTERN = /\.(jpg|jpeg|png|gif|webp)$/i;
-const GALLERY_IGNORED_FOLDERS = new Set(['premium']);
+const GALLERY_IGNORED_FOLDERS = new Set(['premium', 'optimized']);
 
 const sortAlpha = (left, right) =>
   String(left || '').localeCompare(String(right || ''), undefined, {
@@ -79,9 +79,29 @@ const readFolderGalleryProjectsSync = (galleryPath, { galleryDirName = path.base
   );
 };
 
+const listFolderGallerySourceImagesSync = (galleryPath, { galleryDirName = path.basename(galleryPath) } = {}) => {
+  const entries = fs.readdirSync(galleryPath, { withFileTypes: true });
+
+  return normalizeFolderEntries(entries).flatMap((folder) => {
+    const folderPath = path.join(galleryPath, folder.name);
+    const files = fs.readdirSync(folderPath);
+
+    return files
+      .filter((file) => GALLERY_IMAGE_PATTERN.test(file))
+      .sort(sortAlpha)
+      .map((file) => ({
+        folderName: folder.name,
+        fileName: file,
+        sourcePath: path.join(folderPath, file),
+        publicPath: createPublicGalleryPath(galleryDirName, folder.name, file)
+      }));
+  });
+};
+
 module.exports = {
   createPublicGalleryPath,
   labelFromFilename,
+  listFolderGallerySourceImagesSync,
   readFolderGalleryProjects,
   readFolderGalleryProjectsSync,
   sortAlpha

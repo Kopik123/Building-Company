@@ -121,6 +121,7 @@ test('legacy /api/gallery/services returns raw folder names in alphabetical orde
         if (String(targetPath).endsWith('\\Gallery') && options?.withFileTypes) {
           return [
             { name: 'premium', isDirectory: () => true },
+            { name: 'optimized', isDirectory: () => true },
             { name: 'kitchen', isDirectory: () => true },
             { name: 'interior', isDirectory: () => true },
             { name: 'bathroom', isDirectory: () => true },
