@@ -29,6 +29,12 @@ Unified API contract for web v2 and mobile v1.
 - `GET /api/v2/quotes`
 - `PATCH /api/v2/quotes/:id`
 - `GET /api/v2/messages/threads`
+- `GET /api/v2/messages/direct-threads`
+- `POST /api/v2/messages/direct-threads`
+- `GET /api/v2/messages/direct-threads/:id/messages`
+- `POST /api/v2/messages/direct-threads/:id/messages`
+- `POST /api/v2/messages/direct-threads/:id/messages/upload`
+- `PATCH /api/v2/messages/direct-threads/:id/read`
 - `GET /api/v2/messages/threads/:id/messages`
 - `POST /api/v2/messages/threads/:id/messages`
 - `POST /api/v2/messages/threads/:id/messages/upload`

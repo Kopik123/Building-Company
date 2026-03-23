@@ -116,6 +116,10 @@ export const v2Api = {
     const payload = await withAuth(`/messages/threads${toQueryString({ page: 1, pageSize: 50, ...params })}`);
     return payload.data?.threads || [];
   },
+  async getDirectThreads(params = {}) {
+    const payload = await withAuth(`/messages/direct-threads${toQueryString({ page: 1, pageSize: 50, ...params })}`);
+    return payload.data?.threads || [];
+  },
   async getThreadMessages(threadId, params = {}) {
     const payload = await withAuth(`/messages/threads/${threadId}/messages${toQueryString({ page: 1, pageSize: 100, ...params })}`);
     return {
@@ -124,8 +128,35 @@ export const v2Api = {
       meta: payload.meta || {}
     };
   },
+  async getDirectThreadMessages(threadId, params = {}) {
+    const payload = await withAuth(`/messages/direct-threads/${threadId}/messages${toQueryString({ page: 1, pageSize: 100, ...params })}`);
+    return {
+      thread: payload.data?.thread || null,
+      messages: payload.data?.messages || [],
+      meta: payload.meta || {}
+    };
+  },
+  async createDirectThread({ recipientUserId, subject, body = '', createOnly = false, quoteId = '' }) {
+    const payload = await withAuth('/messages/direct-threads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ recipientUserId, subject, body, createOnly, quoteId: quoteId || undefined })
+    });
+    return {
+      thread: payload.data?.thread || null,
+      message: payload.data?.message || null
+    };
+  },
   async sendThreadMessage(threadId, body) {
     const payload = await withAuth(`/messages/threads/${threadId}/messages`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ body })
+    });
+    return payload.data?.message || null;
+  },
+  async sendDirectThreadMessage(threadId, body) {
+    const payload = await withAuth(`/messages/direct-threads/${threadId}/messages`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ body })
@@ -141,6 +172,22 @@ export const v2Api = {
       body: formData
     });
     return payload.data?.message || null;
+  },
+  async uploadDirectThreadMessage(threadId, { body = '', files = [] } = {}) {
+    const formData = new FormData();
+    if (body) formData.set('body', body);
+    Array.from(files || []).forEach((file) => formData.append('files', file));
+    const payload = await withAuth(`/messages/direct-threads/${threadId}/messages/upload`, {
+      method: 'POST',
+      body: formData
+    });
+    return payload.data?.message || null;
+  },
+  async markDirectThreadRead(threadId) {
+    const payload = await withAuth(`/messages/direct-threads/${threadId}/read`, {
+      method: 'PATCH'
+    });
+    return payload.data?.markedReadCount || 0;
   },
   async getNotifications(params = {}) {
     const payload = await withAuth(`/notifications${toQueryString({ page: 1, pageSize: 50, ...params })}`);

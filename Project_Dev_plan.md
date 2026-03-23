@@ -461,3 +461,14 @@
 - Added `tests/api-v2/messages-thread-summaries.test.js` to lock in the richer v2 thread-summary contract and optimistic message sender payload, and updated `tests/api-v2/messages-cursor-pagination.test.js` for the new thread lookup dependency.
 - Rebuilt the tracked `apps/web-v2/dist` bundle after the parity sprint, producing the new hashed rollout assets for `/app-v2`.
 - Re-ran `npm.cmd run build` in `apps/web-v2`, `node --test tests/api-v2/messages-thread-summaries.test.js`, `npm.cmd run test:ci` and the full `npm.cmd run test:e2e:mobile`; all passed after the parity sprint.
+
+## 2026-03-23
+
+- Saved `Plans/Web-v2 Parity Sprint - Private Inbox And Direct Messaging.md`, registered it in `Plans/Plan History.md`, and translated the sprint outcome into updated checklist items in `Project_todos.md`.
+- Extended `api/v2/routes/messages.js` with direct/private thread endpoints for list, create, history, send, attachment upload and mark-read flows, keeping the responses aligned with the v2 `ok/fail` contract and optimistic sender payloads.
+- Documented the new private-thread contract in `api/v2/README.md` so the rollout shell and future mobile/native clients have one explicit API surface to follow.
+- Expanded `apps/web-v2/src/lib/api.js` with the missing private-thread client helpers so `web-v2` can open direct routes, load history, send text, upload attachments and clear unread state through `api/v2`.
+- Reworked `apps/web-v2/src/App.jsx` to add a real `Private Inbox` route, direct-thread summary cards, role-aware direct-thread creation, attachment-first private-thread creation, and overview/navigation updates that distinguish `Private Inbox` from `Project Chat`.
+- Added `tests/api-v2/direct-thread-contract.test.js` to lock in latest-preview, unread-count, counterparty, create-only and attachment-upload behavior for the new v2 private-thread surface.
+- Rebuilt the tracked `apps/web-v2/dist` bundle so the shipped `/app-v2` rollout assets include the new private-inbox experience.
+- Re-ran `npm.cmd run build` in `apps/web-v2`, `node --test tests/api-v2/direct-thread-contract.test.js`, `npm.cmd run test:ci` and the full `npm.cmd run test:e2e:mobile`; all passed after the private-inbox parity sprint.

@@ -78,6 +78,30 @@ const getThreadPreview = (thread) => {
   return 'Open the thread to review the latest coordination.';
 };
 
+const getDirectCounterparty = (thread, currentUserId) => {
+  if (thread?.counterparty) return thread.counterparty;
+  if (thread?.participantAId === currentUserId) return thread?.participantB || null;
+  if (thread?.participantBId === currentUserId) return thread?.participantA || null;
+  return thread?.participantA || thread?.participantB || null;
+};
+
+const getDirectThreadTitle = (thread, currentUserId) => {
+  const counterparty = getDirectCounterparty(thread, currentUserId);
+  return counterparty?.name || counterparty?.email || thread?.subject || 'Private thread';
+};
+
+const getDirectThreadPreview = (thread) => thread?.latestMessagePreview || thread?.subject || 'Open the private route to continue the conversation.';
+
+const getDirectThreadMeta = (thread) => {
+  const parts = [];
+  if (thread?.subject) parts.push(thread.subject);
+  if (Number(thread?.unreadCount || 0) > 0) parts.push(`${thread.unreadCount} unread`);
+  if (thread?.latestMessageAt || thread?.updatedAt) {
+    parts.push(`Updated ${formatDateTime(thread.latestMessageAt || thread.updatedAt)}`);
+  }
+  return parts.join(' | ');
+};
+
 const getNotificationTone = (notification) => {
   const type = normalizeText(notification?.type);
   if (type.includes('error') || type.includes('urgent') || type.includes('overdue')) return 'danger';
@@ -105,6 +129,24 @@ const updateThreadAfterSend = (threads, threadId, message) => {
     latestMessagePreview: message?.body || thread.latestMessagePreview,
     latestMessageSender: message?.sender || thread.latestMessageSender,
     messageCount: Number(thread?.messageCount || 0) + 1
+  };
+
+  return sortByRecent(nextThreads, ['latestMessageAt', 'updatedAt', 'createdAt']);
+};
+
+const updateDirectThreadAfterSend = (threads, threadId, message) => {
+  const nextThreads = Array.isArray(threads) ? [...threads] : [];
+  const targetIndex = nextThreads.findIndex((thread) => thread.id === threadId);
+  if (targetIndex === -1) return nextThreads;
+
+  const thread = nextThreads[targetIndex];
+  nextThreads[targetIndex] = {
+    ...thread,
+    latestMessageAt: message?.createdAt || new Date().toISOString(),
+    updatedAt: message?.createdAt || new Date().toISOString(),
+    latestMessagePreview: message?.body || thread.latestMessagePreview,
+    latestMessageSenderId: message?.sender?.id || thread.latestMessageSenderId,
+    unreadCount: 0
   };
 
   return sortByRecent(nextThreads, ['latestMessageAt', 'updatedAt', 'createdAt']);
@@ -305,6 +347,22 @@ function ThreadRow({ thread, selected, onSelect }) {
   );
 }
 
+function DirectThreadRow({ thread, currentUserId, selected, onSelect }) {
+  return (
+    <button type="button" className={`thread-row ${selected ? 'thread-row--active' : ''}`} onClick={onSelect}>
+      <div className="thread-row-head">
+        <strong>{getDirectThreadTitle(thread, currentUserId)}</strong>
+        <span>{formatDateTime(thread?.latestMessageAt || thread?.updatedAt)}</span>
+      </div>
+      <p>{getDirectThreadPreview(thread)}</p>
+      <div className="meta-wrap">
+        <span>{getDirectThreadMeta(thread) || 'Private route'}</span>
+        {Number(thread?.unreadCount || 0) > 0 ? <StatusPill tone="danger">{thread.unreadCount} unread</StatusPill> : null}
+      </div>
+    </button>
+  );
+}
+
 function MessageBubble({ message, currentUserId }) {
   const isOwnMessage = message?.sender?.id === currentUserId;
   const attachments = Array.isArray(message?.attachments) ? message.attachments : [];
@@ -397,6 +455,7 @@ function OverviewPage() {
   const projects = useAsyncState(() => v2Api.getProjects(), [role], []);
   const quotes = useAsyncState(() => v2Api.getQuotes(), [role], []);
   const threads = useAsyncState(() => v2Api.getThreads(), [role], []);
+  const directThreads = useAsyncState(() => v2Api.getDirectThreads(), [role], []);
   const notifications = useAsyncState(() => v2Api.getNotifications(), [role], []);
   const unreadCount = useAsyncState(() => v2Api.getNotificationsUnreadCount(), [role], 0);
   const clients = useAsyncState(() => (staffMode ? v2Api.getCrmClients() : Promise.resolve([])), [staffMode], []);
@@ -416,12 +475,14 @@ function OverviewPage() {
   const quickLinks = staffMode
     ? [
         { to: '/projects', label: 'Project flow', detail: 'Review live jobs, ownership and media counts.', meta: `${activeProjects.length} active` },
-        { to: '/messages', label: 'Inbox route', detail: 'Open project threads and keep delivery moving.', meta: `${threads.data.length} threads` },
+        { to: '/private-inbox', label: 'Private inbox', detail: 'Run one-to-one client and staff communication routes.', meta: `${directThreads.data.length} private` },
+        { to: '/messages', label: 'Project chat', detail: 'Open project threads and keep delivery moving.', meta: `${threads.data.length} threads` },
         { to: '/quotes', label: 'Quote board', detail: 'Track pending and in-progress quote work.', meta: `${openQuotes.length} open` },
         { to: '/inventory', label: 'Stock watch', detail: 'Spot low-stock items before they block delivery.', meta: `${lowStockMaterials.length} flagged` }
       ]
     : [
         { to: '/projects', label: 'Projects', detail: 'Check progress, media counts and assigned manager routes.', meta: `${activeProjects.length} active` },
+        { to: '/private-inbox', label: 'Direct manager', detail: 'Keep the private route open with your assigned manager.', meta: `${directThreads.data.length} threads` },
         { to: '/messages', label: 'Project chat', detail: 'Open the shared route for delivery questions and updates.', meta: `${threads.data.length} threads` },
         { to: '/quotes', label: 'Quote follow-up', detail: 'Track active quote requests and priorities.', meta: `${openQuotes.length} open` },
         { to: '/notifications', label: 'Alerts', detail: 'Clear unread notifications without losing the project thread.', meta: `${unreadCount.data || 0} unread` }
@@ -445,7 +506,11 @@ function OverviewPage() {
       <div className="metrics-grid">
         <MetricCard label="Projects" value={projects.data.length} detail={`${activeProjects.length} active routes`} tone="accent" />
         <MetricCard label="Quotes" value={quotes.data.length} detail={`${openQuotes.length} open requests`} />
-        <MetricCard label="Threads" value={threads.data.length} detail="Shared message routes across projects and quotes" />
+        <MetricCard
+          label="Inbox routes"
+          value={threads.data.length + directThreads.data.length}
+          detail={`${directThreads.data.length} private / ${threads.data.length} project`}
+        />
         <MetricCard label="Unread alerts" value={unreadCount.data} detail="Notifications still waiting for acknowledgement" tone="danger" />
         {staffMode ? <MetricCard label="Clients" value={clients.data.length} detail={`${staff.data.length} staff profiles loaded`} /> : null}
         {staffMode ? (
@@ -481,11 +546,24 @@ function OverviewPage() {
           actions={<Link to="/messages">Open inbox</Link>}
         >
           <div className="stack-list">
-            {threads.loading ? <p className="muted">Loading thread summaries...</p> : null}
+            {threads.loading || directThreads.loading ? <p className="muted">Loading thread summaries...</p> : null}
             {threads.error ? <p className="error">{threads.error}</p> : null}
-            {!threads.loading && !threads.error && !sortedThreads.length ? (
+            {directThreads.error ? <p className="error">{directThreads.error}</p> : null}
+            {!threads.loading && !threads.error && !directThreads.loading && !directThreads.error && !sortedThreads.length && !directThreads.data.length ? (
               <EmptyState text="Thread previews will appear here once the first project or quote route is created." />
             ) : null}
+            {sortByRecent(directThreads.data, ['latestMessageAt', 'updatedAt', 'createdAt']).slice(0, 2).map((thread) => (
+              <article key={thread.id} className="summary-row">
+                <div>
+                  <strong>{getDirectThreadTitle(thread, user?.id)}</strong>
+                  <p>{getDirectThreadPreview(thread)}</p>
+                </div>
+                <div className="summary-row-meta">
+                  {Number(thread.unreadCount || 0) > 0 ? <StatusPill tone="danger">{thread.unreadCount} unread</StatusPill> : null}
+                  <span>{formatDateTime(thread.latestMessageAt || thread.updatedAt)}</span>
+                </div>
+              </article>
+            ))}
             {sortedThreads.slice(0, 4).map((thread) => (
               <article key={thread.id} className="summary-row">
                 <div>
@@ -646,6 +724,384 @@ function QuotesPage() {
   );
 }
 
+function PrivateInboxPage() {
+  const { user } = useAuth();
+  const role = normalizeText(user?.role || 'client');
+  const staffMode = isStaffRole(role);
+  const directThreads = useAsyncState(() => v2Api.getDirectThreads(), [], []);
+  const projects = useAsyncState(() => (!staffMode ? v2Api.getProjects() : Promise.resolve([])), [staffMode], []);
+  const quotes = useAsyncState(() => (!staffMode ? v2Api.getQuotes() : Promise.resolve([])), [staffMode], []);
+  const clients = useAsyncState(() => (staffMode ? v2Api.getCrmClients() : Promise.resolve([])), [staffMode], []);
+  const staff = useAsyncState(() => (staffMode ? v2Api.getCrmStaff() : Promise.resolve([])), [staffMode], []);
+  const [selectedThreadId, setSelectedThreadId] = React.useState('');
+  const [search, setSearch] = React.useState('');
+  const [draft, setDraft] = React.useState('');
+  const [selectedFiles, setSelectedFiles] = React.useState([]);
+  const [sending, setSending] = React.useState(false);
+  const [composerError, setComposerError] = React.useState('');
+  const [recipientEmail, setRecipientEmail] = React.useState('');
+  const [subject, setSubject] = React.useState('');
+  const [isCreatingNewThread, setIsCreatingNewThread] = React.useState(false);
+  const [messageState, setMessageState] = React.useState({
+    threadId: '',
+    thread: null,
+    loading: false,
+    error: '',
+    messages: []
+  });
+
+  const deferredSearch = React.useDeferredValue(search);
+  const preferredManager =
+    projects.data.map((project) => project?.assignedManager).find((manager) => manager?.id) ||
+    quotes.data.map((quote) => quote?.assignedManager).find((manager) => manager?.id) ||
+    null;
+
+  const peopleDirectory = (() => {
+    if (!staffMode) return preferredManager ? [preferredManager] : [];
+    const seen = new Set();
+    return [...clients.data, ...staff.data]
+      .filter((person) => person?.id && person.id !== user?.id && person?.email)
+      .filter((person) => {
+        const key = normalizeText(person.email);
+        if (!key || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .sort((left, right) =>
+        String(left?.name || left?.email || '').localeCompare(String(right?.name || right?.email || ''))
+      );
+  })();
+
+  const filteredThreads = sortByRecent(directThreads.data, ['latestMessageAt', 'updatedAt', 'createdAt']).filter((thread) => {
+    const needle = normalizeText(deferredSearch);
+    if (!needle) return true;
+    return [getDirectThreadTitle(thread, user?.id), getDirectThreadPreview(thread), getDirectThreadMeta(thread), thread?.subject]
+      .join(' ')
+      .toLowerCase()
+      .includes(needle);
+  });
+
+  React.useEffect(() => {
+    if (isCreatingNewThread) return;
+    if (!filteredThreads.length) {
+      if (selectedThreadId) setSelectedThreadId('');
+      return;
+    }
+    if (!filteredThreads.some((thread) => thread.id === selectedThreadId)) {
+      setSelectedThreadId(filteredThreads[0].id);
+    }
+  }, [filteredThreads, selectedThreadId, isCreatingNewThread]);
+
+  React.useEffect(() => {
+    if (!selectedThreadId) {
+      setMessageState({
+        threadId: '',
+        thread: null,
+        loading: false,
+        error: '',
+        messages: []
+      });
+      return;
+    }
+
+    let active = true;
+    setMessageState((prev) => ({
+      ...prev,
+      threadId: selectedThreadId,
+      loading: true,
+      error: ''
+    }));
+
+    v2Api
+      .getDirectThreadMessages(selectedThreadId)
+      .then((payload) => {
+        if (!active) return;
+        setMessageState({
+          threadId: selectedThreadId,
+          thread: payload.thread || filteredThreads.find((thread) => thread.id === selectedThreadId) || null,
+          loading: false,
+          error: '',
+          messages: sortByRecent(payload.messages, ['createdAt']).reverse()
+        });
+      })
+      .catch((error) => {
+        if (!active) return;
+        setMessageState({
+          threadId: selectedThreadId,
+          thread: filteredThreads.find((thread) => thread.id === selectedThreadId) || null,
+          loading: false,
+          error: error.message || 'Could not load private messages',
+          messages: []
+        });
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [selectedThreadId, filteredThreads]);
+
+  React.useEffect(() => {
+    if (!selectedThreadId) return;
+    const selectedThread = directThreads.data.find((thread) => thread.id === selectedThreadId);
+    if (Number(selectedThread?.unreadCount || 0) <= 0) return;
+
+    let active = true;
+    v2Api
+      .markDirectThreadRead(selectedThreadId)
+      .then(() => {
+        if (!active) return;
+        directThreads.setData((prev) => prev.map((thread) => (thread.id === selectedThreadId ? { ...thread, unreadCount: 0 } : thread)));
+      })
+      .catch(() => {});
+
+    return () => {
+      active = false;
+    };
+  }, [selectedThreadId, directThreads.data]);
+
+  const selectedThread = filteredThreads.find((thread) => thread.id === selectedThreadId) || messageState.thread;
+  const canStartThread = Boolean(staffMode ? peopleDirectory.length : preferredManager?.id);
+  const recipientLabel = preferredManager?.name || preferredManager?.email || 'Assigned manager';
+
+  const resetComposer = () => {
+    setDraft('');
+    setSelectedFiles([]);
+    setComposerError('');
+  };
+
+  const resolveRecipient = () => {
+    if (!staffMode) return preferredManager;
+    return peopleDirectory.find((person) => normalizeText(person?.email) === normalizeText(recipientEmail)) || null;
+  };
+
+  const startNewThread = () => {
+    setIsCreatingNewThread(true);
+    setSelectedThreadId('');
+    setSubject('');
+    setRecipientEmail('');
+    resetComposer();
+  };
+
+  const onSelectThread = (threadId) => {
+    setIsCreatingNewThread(false);
+    setSelectedThreadId(threadId);
+    setComposerError('');
+  };
+
+  const onSubmit = async (event) => {
+    event.preventDefault();
+    if (sending) return;
+
+    const trimmedBody = String(draft || '').trim();
+    if (!trimmedBody && !selectedFiles.length) {
+      setComposerError('Write a message or attach at least one file.');
+      return;
+    }
+
+    setSending(true);
+    setComposerError('');
+
+    try {
+      let threadId = selectedThreadId;
+      let nextMessage = null;
+      let nextThread = selectedThread;
+
+      if (!threadId) {
+        const recipient = resolveRecipient();
+        if (!recipient?.id) {
+          throw new Error(staffMode ? 'Choose an existing client or staff email first.' : 'No assigned manager is available for a private route yet.');
+        }
+
+        const threadSubject = String(subject || '').trim() || `Private conversation - ${recipient.name || recipient.email}`;
+        const created = await v2Api.createDirectThread({
+          recipientUserId: recipient.id,
+          subject: threadSubject,
+          body: selectedFiles.length ? '' : trimmedBody,
+          createOnly: selectedFiles.length > 0
+        });
+
+        if (!created.thread?.id) {
+          throw new Error('Private thread response missing thread payload');
+        }
+
+        threadId = created.thread.id;
+        nextThread = created.thread;
+        nextMessage = created.message || null;
+        directThreads.setData((prev) =>
+          sortByRecent([created.thread, ...prev.filter((thread) => thread.id !== created.thread.id)], ['latestMessageAt', 'updatedAt', 'createdAt'])
+        );
+      }
+
+      if (selectedFiles.length) {
+        nextMessage = await v2Api.uploadDirectThreadMessage(threadId, { body: trimmedBody, files: selectedFiles });
+      } else if (selectedThreadId) {
+        nextMessage = await v2Api.sendDirectThreadMessage(threadId, trimmedBody);
+      }
+
+      if (!nextMessage) {
+        throw new Error('Private message response missing payload');
+      }
+
+      setIsCreatingNewThread(false);
+      setSelectedThreadId(threadId);
+      setRecipientEmail('');
+      setSubject('');
+      resetComposer();
+      setMessageState((prev) => ({
+        ...prev,
+        threadId,
+        thread: nextThread || prev.thread,
+        error: '',
+        loading: false,
+        messages: selectedThreadId ? [...prev.messages, nextMessage] : [nextMessage]
+      }));
+      directThreads.setData((prev) => updateDirectThreadAfterSend(prev, threadId, nextMessage));
+    } catch (error) {
+      setComposerError(error.message || 'Could not send private message');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <div className="messages-shell">
+      <Surface
+        eyebrow="Private inbox"
+        title="Direct conversation routes"
+        description="Private client and staff messaging now runs through `api/v2` instead of staying trapped in the legacy inbox route."
+        className="messages-sidebar-panel"
+        actions={
+          <div className="surface-actions cluster">
+            <label className="inline-search inline-search--wide">
+              <span>Find thread</span>
+              <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search person or subject" />
+            </label>
+            {staffMode ? (
+              <button type="button" className="button-secondary" onClick={startNewThread}>
+                New thread
+              </button>
+            ) : null}
+          </div>
+        }
+      >
+        {directThreads.loading ? <p className="muted">Loading private threads...</p> : null}
+        {directThreads.error ? <p className="error">{directThreads.error}</p> : null}
+        {!directThreads.loading && !directThreads.error && !filteredThreads.length ? (
+          <EmptyState text={staffMode ? 'No private threads yet. Start one from the composer.' : 'No direct manager thread yet.'} />
+        ) : null}
+        <div className="thread-list">
+          {filteredThreads.map((thread) => (
+            <DirectThreadRow
+              key={thread.id}
+              thread={thread}
+              currentUserId={user?.id}
+              selected={thread.id === selectedThreadId}
+              onSelect={() => onSelectThread(thread.id)}
+            />
+          ))}
+        </div>
+      </Surface>
+
+      <Surface
+        eyebrow="Conversation"
+        title={selectedThread ? getDirectThreadTitle(selectedThread, user?.id) : 'Start private route'}
+        description={
+          selectedThread
+            ? getDirectThreadMeta(selectedThread) || 'Open the thread and continue the private route.'
+            : staffMode
+              ? 'Pick an existing person and write the opening message.'
+              : canStartThread
+                ? `Your private route will open with ${recipientLabel}.`
+                : 'A direct route becomes available once a manager is assigned.'
+        }
+        className="messages-thread-panel"
+      >
+        {!selectedThread && !canStartThread ? <EmptyState text="No private route can be opened yet." /> : null}
+        {selectedThread && messageState.loading ? <p className="muted">Loading private messages...</p> : null}
+        {selectedThread && messageState.error ? <p className="error">{messageState.error}</p> : null}
+        {selectedThread && !messageState.loading && !messageState.error && !messageState.messages.length ? (
+          <EmptyState text="This private thread has no messages yet." />
+        ) : null}
+        {selectedThread ? (
+          <div className="message-list">
+            {messageState.messages.map((message) => (
+              <MessageBubble key={message.id} message={message} currentUserId={user?.id} />
+            ))}
+          </div>
+        ) : null}
+
+        {canStartThread ? (
+          <form className="composer" onSubmit={onSubmit}>
+            {!selectedThread ? (
+              <>
+                {staffMode ? (
+                  <label>
+                    Recipient email
+                    <input
+                      value={recipientEmail}
+                      onChange={(event) => setRecipientEmail(event.target.value)}
+                      list="private-inbox-people"
+                      placeholder="Choose an existing client or staff email"
+                    />
+                    <datalist id="private-inbox-people">
+                      {peopleDirectory.map((person) => (
+                        <option key={person.id} value={person.email}>
+                          {person.name || person.email}
+                        </option>
+                      ))}
+                    </datalist>
+                  </label>
+                ) : (
+                  <p className="muted">Recipient: {recipientLabel}</p>
+                )}
+                {staffMode ? (
+                  <label>
+                    Subject
+                    <input
+                      value={subject}
+                      onChange={(event) => setSubject(event.target.value)}
+                      placeholder="Private conversation subject"
+                    />
+                  </label>
+                ) : null}
+              </>
+            ) : null}
+
+            <label>
+              Message
+              <textarea
+                value={draft}
+                onChange={(event) => setDraft(event.target.value)}
+                placeholder={selectedThread ? 'Write the next private update or decision.' : 'Write the opening private message.'}
+                rows={4}
+              />
+            </label>
+            <div className="composer-actions">
+              <label className="file-input">
+                <span>Attach files</span>
+                <input type="file" multiple onChange={(event) => setSelectedFiles(Array.from(event.target.files || []))} />
+              </label>
+              <button type="submit" disabled={sending}>
+                {sending ? 'Sending...' : selectedThread ? 'Send private update' : 'Open private route'}
+              </button>
+            </div>
+            {selectedFiles.length ? (
+              <div className="attachment-list">
+                {selectedFiles.map((file) => (
+                  <span key={`${file.name}-${file.size}`} className="attachment-chip attachment-chip--muted">
+                    {file.name}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+            {composerError ? <p className="error">{composerError}</p> : null}
+          </form>
+        ) : null}
+      </Surface>
+    </div>
+  );
+}
+
 function MessagesPage() {
   const { user } = useAuth();
   const threads = useAsyncState(() => v2Api.getThreads(), [], []);
@@ -779,9 +1235,9 @@ function MessagesPage() {
   return (
     <div className="messages-shell">
       <Surface
-        eyebrow="Inbox"
+        eyebrow="Project chat"
         title="Threaded project communication"
-        description="The first real parity step after rollout: thread summaries, message history and text/file send flow now live in `web-v2`."
+        description="Group/project thread summaries, history and text/file send flow under the rollout shell."
         className="messages-sidebar-panel"
         actions={
           <label className="inline-search inline-search--wide">
@@ -1089,8 +1545,11 @@ function WorkspaceLayout() {
           <NavLink to="/quotes" className={({ isActive }) => `nav-link ${isActive ? 'nav-link--active' : ''}`.trim()}>
             Quotes
           </NavLink>
+          <NavLink to="/private-inbox" className={({ isActive }) => `nav-link ${isActive ? 'nav-link--active' : ''}`.trim()}>
+            Private Inbox
+          </NavLink>
           <NavLink to="/messages" className={({ isActive }) => `nav-link ${isActive ? 'nav-link--active' : ''}`.trim()}>
-            Inbox
+            Project Chat
           </NavLink>
           <NavLink to="/notifications" className={({ isActive }) => `nav-link ${isActive ? 'nav-link--active' : ''}`.trim()}>
             Notifications
@@ -1122,6 +1581,7 @@ function WorkspaceLayout() {
           <Route path="/account" element={<AccountPage />} />
           <Route path="/projects" element={<ProjectsPage />} />
           <Route path="/quotes" element={<QuotesPage />} />
+          <Route path="/private-inbox" element={<PrivateInboxPage />} />
           <Route path="/messages" element={<MessagesPage />} />
           <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/services-catalogue" element={<ServiceCataloguePage />} />
