@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { readFolderGalleryProjectsSync } = require('../utils/folderGallery');
 const { shared, pages } = require('./servicePages.data');
 const {
   renderPublicPage,
@@ -10,179 +11,15 @@ const {
   renderFaqSection,
   renderLinkClusterSection
 } = require('./publicPageRenderer');
-const {
-  buildAreaItems,
-  buildFaqJsonLd,
-  buildLinksByLabel
-} = require('./publicPageBuild.shared');
+const { buildFaqJsonLd } = require('./publicPageBuild.shared');
 
 const projectRoot = path.resolve(__dirname, '..');
+const galleryPath = path.join(projectRoot, 'Gallery');
 
-const SERVICE_BOARD_CONFIG = {
-  'premium-bathrooms-manchester.html': {
-    headingTitle: 'Bathrooms',
-    relatedLabels: [
-      'Full Bathroom Renovations',
-      'Tiling incl. Large Format / Wet Showers / Exterior',
-      'Carpentry',
-      'Interior and Exterior Wall'
-    ],
-    projects: [
-      {
-        name: 'Didsbury Ensuite Rebuild',
-        images: [
-          '/Gallery/premium/bathroom-main.jpg',
-          '/Gallery/premium/bathroom-bathtub.jpg',
-          '/Gallery/premium/bathroom-tiles.jpg'
-        ]
-      },
-      {
-        name: 'Wet-Room Tile Detail',
-        images: [
-          '/Gallery/premium/bathroom-tiles.jpg',
-          '/Gallery/premium/bathroom-main.jpg',
-          '/Gallery/premium/bathroom-bathtub.jpg'
-        ]
-      },
-      {
-        name: 'Brass and Storage Composition',
-        images: [
-          '/Gallery/premium/bathroom-bathtub.jpg',
-          '/Gallery/premium/bathroom-main.jpg',
-          '/Gallery/premium/bathroom-tiles.jpg'
-        ]
-      }
-    ]
-  },
-  'premium-kitchens-manchester.html': {
-    headingTitle: 'Kitchens',
-    relatedLabels: [
-      'Kitchen Installation and Refurbishment',
-      'Carpentry',
-      'Tiling incl. Large Format / Wet Showers / Exterior',
-      'Interior and Exterior Wall'
-    ],
-    projects: [
-      {
-        name: 'Altrincham Kitchen Overhaul',
-        images: [
-          '/Gallery/premium/kitchen-panorama-main.jpg',
-          '/Gallery/premium/kitchen-panorama-left.jpg',
-          '/Gallery/premium/kitchen-panorama-right.jpg'
-        ]
-      },
-      {
-        name: 'Island and Lighting Composition',
-        images: [
-          '/Gallery/premium/kitchen-panorama-right.jpg',
-          '/Gallery/premium/kitchen-panorama-main.jpg',
-          '/Gallery/premium/kitchen-panorama-left.jpg'
-        ]
-      },
-      {
-        name: 'Cabinet Alignment Detail',
-        images: [
-          '/Gallery/premium/kitchen-panorama-left.jpg',
-          '/Gallery/premium/kitchen-panorama-main.jpg',
-          '/Gallery/premium/kitchen-panorama-right.jpg'
-        ]
-      }
-    ]
-  },
-  'interior-renovations-manchester.html': {
-    headingTitle: 'Interiors | Wall Systems',
-    relatedLabels: [
-      'Carpentry',
-      'Interior and Exterior Wall',
-      'Full Bathroom Renovations',
-      'Kitchen Installation and Refurbishment'
-    ],
-    projects: [
-      {
-        name: 'North West Interior Refresh',
-        images: [
-          '/Gallery/premium/brick-detail-charcoal.jpg',
-          '/Gallery/premium/exterior-wood-gables.jpg',
-          '/Gallery/premium/exterior-front.jpg'
-        ]
-      },
-      {
-        name: 'Envelope and Material Pairing',
-        images: [
-          '/Gallery/premium/exterior-front.jpg',
-          '/Gallery/premium/exterior-chimney.jpg',
-          '/Gallery/premium/exterior-wood-gables.jpg'
-        ]
-      },
-      {
-        name: 'Joinery and Surface Control',
-        images: [
-          '/Gallery/premium/brick-dark-main.jpg',
-          '/Gallery/premium/brick-detail-charcoal.jpg',
-          '/Gallery/premium/brick-detail-red.jpg'
-        ]
-      }
-    ]
-  }
-};
+const buildServicePages = () => {
+  const galleryProjects = readFolderGalleryProjectsSync(galleryPath);
 
-const buildServiceBoard = (page) => {
-  const config = SERVICE_BOARD_CONFIG[page.fileName];
-
-  return {
-    boardVariant: 'studio-board',
-    boardHeading: {
-      eyebrow: `Premium service | ${page.consultation.locationValue}`,
-      title: config.headingTitle,
-      lead: page.summaryLine || page.hero.title
-    },
-    boardClaim: {
-      eyebrow: 'Plan | Design | Craft',
-      title: shared.claim
-    },
-    proofPoints: page.proofPoints || [],
-    galleryProjects: config.projects,
-    summarySections: [
-      {
-        type: 'areas',
-        eyebrow: 'Coverage',
-        title: 'North West coverage kept close enough for direct studio oversight.',
-        region: shared.region,
-        items: buildAreaItems(shared.serviceAreas, page.consultation.locationValue)
-      },
-      {
-        type: 'links',
-        eyebrow: 'Services',
-        title: 'Connected scopes handled inside the same premium studio offer.',
-        links: buildLinksByLabel(shared.serviceLinks, config.relatedLabels)
-      },
-      {
-        type: 'contact',
-        eyebrow: 'Contact Details',
-        title: 'Direct studio contact'
-      }
-    ],
-    fastQuoteDefaults: {
-      eyebrow: 'Private Consultation',
-      title: shared.enquiryTitle,
-      lead: shared.enquiryLead,
-      formContext: page.consultation.formContext,
-      locationValue: page.consultation.locationValue,
-      selectedProjectType: page.consultation.selectedProjectType
-    },
-    galleryEyebrow: 'Selected Project',
-    galleryTitle: 'Selected image',
-    projectsEyebrow: 'Projects',
-    projectsTitle: config.projects[0]?.name || 'Selected project',
-    projectsLead: '',
-    galleryCtaHref: '#consultation',
-    galleryCtaLabel: shared.consultationCtaLabel,
-    motionProfile: 'subtle'
-  };
-};
-
-const buildServicePages = () =>
-  pages.map((page) => ({
+  return pages.map((page) => ({
     fileName: page.fileName,
     html: renderPublicPage({
       shared,
@@ -205,6 +42,7 @@ const buildServicePages = () =>
         buildFaqJsonLd(`${shared.siteUrl}/${page.fileName}`, page.faq.items)
       ],
       hero: page.hero,
+      galleryProjects,
       sections: [
         renderIntroSection({
           eyebrow: page.intro.eyebrow,
@@ -241,6 +79,7 @@ const buildServicePages = () =>
       consultation: page.consultation
     })
   }));
+};
 
 const writeServicePages = () => {
   const outputs = buildServicePages();

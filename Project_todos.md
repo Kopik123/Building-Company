@@ -64,6 +64,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [x] Standardise local shell snippets for Windows PowerShell 5.1 (`;` or `cmd /c`) because `&&` chaining is not supported in the current local shell.
 - [ ] Decide whether the current live cache contract should stay as `HTML no-store + versioned assets cached for 7 days`, or whether versioned `CSS`/`JS`/image assets should also move to `no-store` during active brochure iteration.
 - [x] Add HTML asset cache-busting so deploys emit versioned CSS/JS/image URLs without manually editing every brochure/dashboard HTML file.
+- [x] Make the folder-backed gallery the source of truth for `/api/gallery/services` and folder-driven gallery views, using raw folder names plus alphabetical folder/file ordering instead of curated service bundles.
 
 ## Next Engineering
 

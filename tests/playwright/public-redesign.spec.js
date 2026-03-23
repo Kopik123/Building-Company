@@ -53,6 +53,43 @@ const mockPublicClientSession = async (page) => {
   });
 };
 
+const mockFolderGalleryServices = async (page) => {
+  await page.route('**/api/gallery/services', async (route) => {
+    await route.fulfill({
+      json: {
+        services: [
+          {
+            id: 'bathroom',
+            name: 'bathroom',
+            images: [
+              { src: '/Gallery/bathroom/Rustic%20Harmony.png', label: 'Rustic Harmony' },
+              { src: '/Gallery/bathroom/The%20Slate%20Suite.png', label: 'The Slate Suite' }
+            ]
+          },
+          {
+            id: 'exterior',
+            name: 'exterior',
+            images: [
+              { src: '/Gallery/exterior/Brick%20veneers.jpg', label: 'Brick Veneers' },
+              { src: '/Gallery/exterior/charcoal%20brickslips.jpg', label: 'Charcoal Brickslips' },
+              { src: '/Gallery/exterior/Rendering.jpg', label: 'Rendering' }
+            ]
+          },
+          {
+            id: 'kitchen',
+            name: 'kitchen',
+            images: [
+              { src: '/Gallery/kitchen/Alabaster%20Horizon.png', label: 'Alabaster Horizon' },
+              { src: '/Gallery/kitchen/Midnight%20Marble.png', label: 'Midnight Marble' },
+              { src: '/Gallery/kitchen/Obsidian%20Oak.png', label: 'Obsidian Oak' }
+            ]
+          }
+        ]
+      }
+    });
+  });
+};
+
 const managerQuickAccessLabels = [
   'Create Project',
   'ProjectManager',
@@ -129,13 +166,18 @@ test('core brochure pages render about, services, gallery, contact and quote rou
   await expect(page.getByRole('heading', { name: /^Full Bathroom Renovations$/i })).toBeVisible();
   await expect(page.getByRole('heading', { name: /^Interior and Exterior Wall$/i })).toBeVisible();
 
+  await mockFolderGalleryServices(page);
   await page.goto('/gallery.html');
   await expect(page.locator('body.public-site.page-gallery')).toBeVisible();
-  await expect(page.locator('.gallery-service-switcher .gallery-service-button')).toHaveCount(5);
-  await expect(page.locator('.gallery-service-switcher .gallery-service-button').first()).toContainText(/full bathroom renovations/i);
-  await expect(page.locator('[data-gallery-active-project-title]')).toBeVisible();
+  await expect(page.locator('.gallery-service-switcher .gallery-service-button')).toHaveCount(3);
+  await expect(page.locator('.gallery-service-switcher .gallery-service-button').nth(0)).toContainText(/^bathroom$/i);
+  await expect(page.locator('.gallery-service-switcher .gallery-service-button').nth(1)).toContainText(/^exterior$/i);
+  await expect(page.locator('.gallery-service-switcher .gallery-service-button').nth(2)).toContainText(/^kitchen$/i);
+  await expect(page.locator('[data-gallery-active-project-title]')).toHaveText(/^bathroom$/i);
   await expect(page.locator('[data-gallery-active-project-meta]')).toBeVisible();
-  await expect(page.locator('[data-gallery-status]')).toBeVisible();
+  await expect(page.locator('[data-gallery-status]')).toContainText(/bathroom \/ Rustic Harmony \/ photo 1 of 2/i);
+  await page.locator('[data-gallery-next]').click();
+  await expect(page.locator('[data-gallery-status]')).toContainText(/bathroom \/ The Slate Suite \/ photo 2 of 2/i);
   await expect.poll(async () => page.locator('.gallery-stage').evaluate((node) => getComputedStyle(node).backgroundImage)).toContain('mainbackground.png');
   const galleryRailTop = await page.locator('#gallery').evaluate((node) => node.getBoundingClientRect().top);
   const galleryIntroTop = await page.locator('.page-intro-grid').evaluate((node) => node.getBoundingClientRect().top);
@@ -156,10 +198,12 @@ test('core brochure pages render about, services, gallery, contact and quote rou
 
 test('gallery collapses intro and side previews cleanly on narrower desktop widths', async ({ page }) => {
   await page.setViewportSize({ width: 900, height: 1200 });
+  await mockFolderGalleryServices(page);
   await page.goto('/gallery.html');
 
   await expect(page.locator('body.public-site.page-gallery')).toBeVisible();
   await expectNoHorizontalScroll(page);
+  await page.getByRole('button', { name: /show service exterior/i }).click();
 
   const galleryIntroColumns = await page.locator('.page-intro-grid').evaluate((node) => getComputedStyle(node).gridTemplateColumns);
   expect(galleryIntroColumns.trim().split(/\s+/).length).toBe(1);
@@ -171,7 +215,9 @@ test('gallery collapses intro and side previews cleanly on narrower desktop widt
 
 test('gallery uses contain for the center image and cover for side previews on wide desktop', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1200 });
+  await mockFolderGalleryServices(page);
   await page.goto('/gallery.html');
+  await page.getByRole('button', { name: /show service exterior/i }).click();
 
   await expect(page.locator('.roller-card.is-center')).toBeVisible();
   await expect.poll(async () => page.locator('.roller-card.is-left').evaluate((node) => getComputedStyle(node).visibility)).toBe('visible');

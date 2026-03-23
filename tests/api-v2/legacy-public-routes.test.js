@@ -66,6 +66,7 @@ test('legacy /api/gallery returns managed projects with flattened image list', a
     }
   ]));
 
+  loadRoute('utils/folderGallery.js');
   loadRoute('utils/publicGallery.js');
   const createLegacyGalleryRouter = loadRoute('routes/gallery.js');
   const app = buildExpressApp('/api/gallery', createLegacyGalleryRouter({ galleryPath: 'C:\\fake\\Gallery' }));
@@ -112,32 +113,45 @@ test('legacy /api/gallery falls back to filesystem images when no managed projec
   });
 });
 
-test('legacy /api/gallery/services returns service folders grouped by service name', async () => {
+test('legacy /api/gallery/services returns raw folder names in alphabetical order and skips empty folders', async () => {
   mockModels(createGalleryModelsStub([]));
-  mock('fs', {
+  const folderFsMock = {
     promises: {
       async readdir(targetPath, options) {
         if (String(targetPath).endsWith('\\Gallery') && options?.withFileTypes) {
           return [
             { name: 'premium', isDirectory: () => true },
-            { name: 'bathrooms', isDirectory: () => true },
-            { name: 'kitchens', isDirectory: () => true }
+            { name: 'kitchen', isDirectory: () => true },
+            { name: 'interior', isDirectory: () => true },
+            { name: 'bathroom', isDirectory: () => true },
+            { name: 'exterior', isDirectory: () => true }
           ];
         }
 
-        if (String(targetPath).endsWith('\\Gallery\\bathrooms')) {
-          return ['primary-suite-overview.jpg', 'wet-room-tile-geometry.jpg'];
+        if (String(targetPath).endsWith('\\Gallery\\bathroom')) {
+          return ['The Slate Suite.png', 'Rustic Harmony.png'];
         }
 
-        if (String(targetPath).endsWith('\\Gallery\\kitchens')) {
-          return ['finish-right-run.jpg'];
+        if (String(targetPath).endsWith('\\Gallery\\exterior')) {
+          return ['White brickslips.png', 'Brick veneers.jpg', 'charcoal brickslips.png'];
+        }
+
+        if (String(targetPath).endsWith('\\Gallery\\interior')) {
+          return ['notes.txt'];
+        }
+
+        if (String(targetPath).endsWith('\\Gallery\\kitchen')) {
+          return ['Obsidian Oak.png', 'Alabaster Horizon.png'];
         }
 
         return [];
       }
     }
-  });
+  };
+  mock('fs', folderFsMock);
+  mock('node:fs', folderFsMock);
 
+  loadRoute('utils/folderGallery.js');
   loadRoute('utils/publicGallery.js');
   const createLegacyGalleryRouter = loadRoute('routes/gallery.js');
   const app = buildExpressApp('/api/gallery', createLegacyGalleryRouter({ galleryPath: 'C:\\fake\\Gallery' }));
@@ -150,26 +164,48 @@ test('legacy /api/gallery/services returns service folders grouped by service na
   assert.deepEqual(response.body, {
     services: [
       {
-        id: 'bathrooms',
-        name: 'Bathrooms',
+        id: 'bathroom',
+        name: 'bathroom',
         images: [
           {
-            src: '/Gallery/bathrooms/primary-suite-overview.jpg',
-            label: 'Primary Suite Overview'
+            src: '/Gallery/bathroom/Rustic%20Harmony.png',
+            label: 'Rustic Harmony'
           },
           {
-            src: '/Gallery/bathrooms/wet-room-tile-geometry.jpg',
-            label: 'Wet Room Tile Geometry'
+            src: '/Gallery/bathroom/The%20Slate%20Suite.png',
+            label: 'The Slate Suite'
           }
         ]
       },
       {
-        id: 'kitchens',
-        name: 'Kitchens',
+        id: 'exterior',
+        name: 'exterior',
         images: [
           {
-            src: '/Gallery/kitchens/finish-right-run.jpg',
-            label: 'Finish Right Run'
+            src: '/Gallery/exterior/Brick%20veneers.jpg',
+            label: 'Brick Veneers'
+          },
+          {
+            src: '/Gallery/exterior/charcoal%20brickslips.png',
+            label: 'Charcoal Brickslips'
+          },
+          {
+            src: '/Gallery/exterior/White%20brickslips.png',
+            label: 'White Brickslips'
+          }
+        ]
+      },
+      {
+        id: 'kitchen',
+        name: 'kitchen',
+        images: [
+          {
+            src: '/Gallery/kitchen/Alabaster%20Horizon.png',
+            label: 'Alabaster Horizon'
+          },
+          {
+            src: '/Gallery/kitchen/Obsidian%20Oak.png',
+            label: 'Obsidian Oak'
           }
         ]
       }

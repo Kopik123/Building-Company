@@ -1,7 +1,7 @@
 const fs = require('fs');
-const path = require('path');
 const { Project, ProjectMedia } = require('../models');
 const { galleryCache, getCached, setCached } = require('./publicCache');
+const { readFolderGalleryProjects } = require('./folderGallery');
 
 const galleryFilesCacheTtlRaw = Number(process.env.GALLERY_CACHE_TTL_MS);
 const GALLERY_FILES_CACHE_TTL_MS = Number.isFinite(galleryFilesCacheTtlRaw) && galleryFilesCacheTtlRaw > 0
@@ -16,8 +16,6 @@ const PUBLIC_GALLERY_TTL_MS = Number.isFinite(publicGalleryTtlRaw) && publicGall
 const MANAGED_GALLERY_CACHE_KEY = 'managed-projects';
 const SERVICE_GALLERY_CACHE_KEY = 'service-folders';
 const GALLERY_IMAGE_PATTERN = /\.(jpg|jpeg|png|gif|webp)$/i;
-const GALLERY_IGNORED_FOLDERS = new Set(['premium']);
-const GALLERY_SERVICE_ORDER = ['bathrooms', 'kitchens', 'interiors', 'exteriors', 'finishes'];
 
 let galleryFilesCache = {
   galleryPath: '',
@@ -30,25 +28,6 @@ const getDateTokenFromFilename = (filename) => filename.match(/\d{8}/)?.[0] || '
 const applyPublicGalleryCacheHeaders = (res, ttlMs = PUBLIC_GALLERY_TTL_MS) => {
   const maxAgeSeconds = Math.max(1, Math.floor(ttlMs / 1000));
   res.set('Cache-Control', `public, max-age=${maxAgeSeconds}, stale-while-revalidate=${maxAgeSeconds * 2}`);
-};
-
-const titleCase = (value) =>
-  String(value || '')
-    .replace(/[_-]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .replace(/\b\w/g, (char) => char.toUpperCase());
-
-const createPublicGalleryPath = (...parts) => `/${parts.map((part) => encodeURIComponent(String(part))).join('/')}`;
-
-const mapServiceSortOrder = (serviceName) => {
-  const index = GALLERY_SERVICE_ORDER.indexOf(serviceName);
-  return index === -1 ? Number.MAX_SAFE_INTEGER : index;
-};
-
-const labelFromFilename = (filename) => {
-  const base = String(filename || '').replace(/\.[a-z0-9]+$/i, '');
-  return titleCase(base);
 };
 
 const mapManagedGalleryProjects = (projects) =>
@@ -117,40 +96,7 @@ const fetchManagedGalleryProjectsCached = async () => {
   };
 };
 
-const fetchServiceGalleryFolders = async (galleryPath) => {
-  const entries = await fs.promises.readdir(galleryPath, { withFileTypes: true });
-  const serviceFolders = entries
-    .filter((entry) => entry.isDirectory() && !GALLERY_IGNORED_FOLDERS.has(entry.name))
-    .sort((a, b) => {
-      const orderDelta = mapServiceSortOrder(a.name) - mapServiceSortOrder(b.name);
-      if (orderDelta !== 0) return orderDelta;
-      return a.name.localeCompare(b.name);
-    });
-
-  const services = [];
-
-  for (const folder of serviceFolders) {
-    const folderPath = path.join(galleryPath, folder.name);
-    const files = await fs.promises.readdir(folderPath);
-    const images = files
-      .filter((file) => GALLERY_IMAGE_PATTERN.test(file))
-      .sort((a, b) => a.localeCompare(b))
-      .map((file) => ({
-        src: createPublicGalleryPath(path.basename(galleryPath), folder.name, file),
-        label: labelFromFilename(file)
-      }));
-
-    if (!images.length) continue;
-
-    services.push({
-      id: folder.name,
-      name: titleCase(folder.name),
-      images
-    });
-  }
-
-  return services;
-};
+const fetchServiceGalleryFolders = async (galleryPath) => readFolderGalleryProjects(galleryPath);
 
 const fetchServiceGalleryFoldersCached = async (galleryPath) => {
   const cacheKey = `${SERVICE_GALLERY_CACHE_KEY}:${galleryPath}`;

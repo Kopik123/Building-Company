@@ -609,6 +609,7 @@ const renderPublicPage = ({
   robotsContent = 'index,follow,max-image-preview:large',
   hero,
   board,
+  galleryProjects,
   sections,
   contact,
   consultation,
@@ -666,6 +667,9 @@ ${renderConsultationSection({ ...consultation, shared })}`}
   </main>
 
 ${renderFooter(shared)}
+${!board && Array.isArray(galleryProjects) && galleryProjects.length
+  ? `  <script type="application/json" data-gallery-projects-json>${escapeScriptJson(galleryProjects)}</script>`
+  : ''}
   <script src="/asset-manifest.js" defer></script>
   <script src="/brand.js" defer></script>
   <script src="/runtime.js" defer></script>

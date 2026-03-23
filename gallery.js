@@ -100,63 +100,33 @@
     ],
     services: [
       {
-        name: 'Bathrooms',
+        name: 'bathroom',
         images: [
-          { src: '/Gallery/premium/bathroom-main.jpg', label: 'The Slate Suite' },
-          { src: '/Gallery/premium/bathroom-bathtub.jpg', label: 'Bathroom suite detail' },
-          { src: '/Gallery/premium/bathroom-tiles.jpg', label: 'Wet-room tile geometry' }
+          { src: '/Gallery/bathroom/Rustic%20Harmony.png', label: 'Rustic Harmony' },
+          { src: '/Gallery/bathroom/The%20Slate%20Suite.png', label: 'The Slate Suite' }
         ]
       },
       {
-        name: 'Kitchens',
+        name: 'exterior',
         images: [
-          { src: '/Gallery/premium/kitchen-panorama-left.jpg', label: 'Alabaster Horizon' },
-          { src: '/Gallery/premium/kitchen-panorama-main.jpg', label: 'Midnight Marble' },
-          { src: '/Gallery/premium/kitchen-panorama-right.jpg', label: 'Obsidian Oak' }
+          { src: '/Gallery/exterior/Brick%20veneers.jpg', label: 'Brick Veneers' },
+          { src: '/Gallery/exterior/charcoal%20brickslips.jpg', label: 'Charcoal Brickslips' },
+          { src: '/Gallery/exterior/charcoal%20brickslips.png', label: 'Charcoal Brickslips' },
+          { src: '/Gallery/exterior/Rendering.jpg', label: 'Rendering' },
+          { src: '/Gallery/exterior/Rendering.png', label: 'Rendering' },
+          { src: '/Gallery/exterior/White%20brickslips.png', label: 'White Brickslips' }
         ]
       },
       {
-        name: 'Exteriors',
+        name: 'kitchen',
         images: [
-          { src: '/Gallery/premium/exterior-front.jpg', label: 'Rendering' },
-          { src: '/Gallery/premium/exterior-wood-gables.jpg', label: 'White brickslips' },
-          { src: '/Gallery/premium/brick-detail-charcoal.jpg', label: 'Charcoal brickslips' }
+          { src: '/Gallery/kitchen/Alabaster%20Horizon.png', label: 'Alabaster Horizon' },
+          { src: '/Gallery/kitchen/Midnight%20Marble.png', label: 'Midnight Marble' },
+          { src: '/Gallery/kitchen/Obsidian%20Oak.png', label: 'Obsidian Oak' }
         ]
       }
     ]
   };
-  const SERVICE_COLLECTION_DEFINITIONS = [
-    {
-      key: 'full-bathroom-renovations',
-      title: 'Full Bathroom Renovations',
-      description: 'Wet rooms, bathing layouts and bathroom finish details.',
-      sources: ['bathrooms']
-    },
-    {
-      key: 'kitchen-installation-and-refurbishment',
-      title: 'Kitchen Installation and Refurbishment',
-      description: 'Joinery runs, worktops and kitchen installation sequences.',
-      sources: ['kitchens']
-    },
-    {
-      key: 'tiling-large-format-wet-showers-exterior',
-      title: 'Tiling incl. Large Format / Wet Showers / Exterior',
-      description: 'Large-format tiling, wet-shower geometry and exterior finish details.',
-      sources: ['bathrooms', 'exteriors']
-    },
-    {
-      key: 'carpentry',
-      title: 'Carpentry',
-      description: 'Joinery, timber detailing and trim-led carpentry work.',
-      sources: ['kitchens', 'exteriors']
-    },
-    {
-      key: 'interior-and-exterior-wall',
-      title: 'Interior and Exterior Wall',
-      description: 'Interior wall work, external surfaces and finish consistency across both.',
-      sources: ['interiors', 'exteriors']
-    }
-  ];
   let projects = [];
 
   const MOTION_PROFILES = {
@@ -249,7 +219,7 @@
       .join(' ');
 
   const labelFromImagePath = (src) => {
-    const filename = String(src || '').split('/').pop() || '';
+    const filename = decodeURIComponent(String(src || '').split('/').pop() || '');
     const base = filename.replace(/\.[a-z0-9]+$/i, '');
     return toTitleCase(base.replace(/[-_]+/g, ' ')) || 'Selected image';
   };
@@ -261,7 +231,7 @@
       const normalizedValue = String(value || 'Service').trim() || 'Service';
       return {
         title: normalizedValue,
-        subtitle: 'Completed service gallery'
+        subtitle: 'Folder-driven gallery'
       };
     }
 
@@ -307,46 +277,6 @@
         images: (Array.isArray(project?.images) ? project.images : []).map(normalizeImageItem).filter(Boolean)
       }))
       .filter((project) => project.images.length);
-
-  const buildCuratedServiceCollections = (collections) => {
-    const normalizedCollections = normalizeProjects(collections);
-    const collectionsById = new Map();
-
-    normalizedCollections.forEach((collection) => {
-      const normalizedId = String(collection.id || collection.name || '').trim().toLowerCase();
-      if (!normalizedId) return;
-      collectionsById.set(normalizedId, collection);
-    });
-
-    const appendUniqueSourceImages = (images, source, seenSources) => {
-      if (!source) return;
-      source.images.forEach((image) => {
-        const imageKey = String(image.src || image.media?.fallback || '').trim();
-        if (!imageKey || seenSources.has(imageKey)) return;
-        seenSources.add(imageKey);
-        images.push(image);
-      });
-    };
-
-    const curated = SERVICE_COLLECTION_DEFINITIONS.map((definition) => {
-      const images = [];
-      const seenSources = new Set();
-
-      definition.sources.forEach((sourceKey) => {
-        const source = collectionsById.get(String(sourceKey || '').trim().toLowerCase());
-        appendUniqueSourceImages(images, source, seenSources);
-      });
-
-      return {
-        id: definition.key,
-        name: definition.title,
-        description: definition.description,
-        images
-      };
-    }).filter((collection) => collection.images.length);
-
-    return curated.length ? curated : normalizedCollections;
-  };
 
   const normalizeIndex = (value, size) => {
     if (size <= 0) return 0;
@@ -798,9 +728,7 @@
   };
 
   const getDefaultProjects = () => (
-    gallerySource === 'services'
-      ? buildCuratedServiceCollections(defaultCollectionsBySource.services)
-      : normalizeProjects(defaultCollectionsBySource[gallerySource] || defaultCollectionsBySource.projects)
+    normalizeProjects(defaultCollectionsBySource[gallerySource] || defaultCollectionsBySource.projects)
   );
 
   const loadRemoteProjects = async () => {
@@ -809,11 +737,6 @@
       return;
     }
     await loadManagedProjects();
-  };
-
-  const finalizeServiceProjects = () => {
-    if (gallerySource !== 'services') return;
-    projects = buildCuratedServiceCollections(projects);
   };
 
   const setGalleryDisabledState = () => {
@@ -889,8 +812,6 @@
     if (!hasInlineProjects) {
       await loadRemoteProjects();
     }
-
-    finalizeServiceProjects();
 
     if (!projects.length) {
       setGalleryDisabledState();
