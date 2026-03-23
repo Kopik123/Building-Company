@@ -1,18 +1,28 @@
 import contractKit from '../../../../shared/contracts/v2.js';
 
 const {
+  crmClientSchema,
+  crmStaffMemberSchema,
+  directThreadSummarySchema,
+  inventoryMaterialSchema,
+  inventoryServiceSchema,
   normalizeCrmClient,
   normalizeCrmStaffMember,
-  normalizeDirectThreadSummary,
-  normalizeInventoryMaterial,
-  normalizeInventoryService,
   normalizeItemResponse,
   normalizeListResponse,
   normalizeNotification,
   normalizeProjectSummary,
   normalizeQuoteSummary,
+  normalizeDirectThreadSummary,
+  normalizeInventoryMaterial,
+  normalizeInventoryService,
   normalizeThreadMessage,
-  normalizeThreadSummary
+  normalizeThreadSummary,
+  notificationSchema,
+  projectSummarySchema,
+  quoteSummarySchema,
+  threadMessageSchema,
+  threadSummarySchema
 } = contractKit;
 
 const API_BASE = import.meta.env.VITE_API_BASE || '/api/v2';
@@ -126,54 +136,58 @@ const toJsonOptions = (method, body) => ({
   body: JSON.stringify(body)
 });
 
-const toMessageResponse = (payload, key = 'message') => normalizeItemResponse(payload, key, normalizeThreadMessage);
+const toMessageResponse = (payload, key = 'message') => normalizeItemResponse(payload, key, normalizeThreadMessage, threadMessageSchema);
 
 export const v2Api = {
   async getProjects(params = {}) {
     const payload = await withAuth(`/projects${toQueryString({ page: 1, pageSize: 50, ...params })}`);
-    return normalizeListResponse(payload, 'projects', normalizeProjectSummary);
+    return normalizeListResponse(payload, 'projects', normalizeProjectSummary, projectSummarySchema);
   },
   async getProject(projectId) {
     const payload = await withAuth(`/projects/${projectId}`);
-    return normalizeItemResponse(payload, 'project', normalizeProjectSummary);
+    return normalizeItemResponse(payload, 'project', normalizeProjectSummary, projectSummarySchema);
   },
   async createProject(input) {
     const payload = await withAuth('/projects', toJsonOptions('POST', input));
-    return normalizeItemResponse(payload, 'project', normalizeProjectSummary);
+    return normalizeItemResponse(payload, 'project', normalizeProjectSummary, projectSummarySchema);
   },
   async updateProject(projectId, input) {
     const payload = await withAuth(`/projects/${projectId}`, toJsonOptions('PATCH', input));
-    return normalizeItemResponse(payload, 'project', normalizeProjectSummary);
+    return normalizeItemResponse(payload, 'project', normalizeProjectSummary, projectSummarySchema);
   },
   async getQuotes(params = {}) {
     const payload = await withAuth(`/quotes${toQueryString({ page: 1, pageSize: 50, ...params })}`);
-    return normalizeListResponse(payload, 'quotes', normalizeQuoteSummary);
+    return normalizeListResponse(payload, 'quotes', normalizeQuoteSummary, quoteSummarySchema);
+  },
+  async createQuote(input) {
+    const payload = await withAuth('/quotes', toJsonOptions('POST', input));
+    return normalizeItemResponse(payload, 'quote', normalizeQuoteSummary, quoteSummarySchema);
   },
   async updateQuote(quoteId, input) {
     const payload = await withAuth(`/quotes/${quoteId}`, toJsonOptions('PATCH', input));
-    return normalizeItemResponse(payload, 'quote', normalizeQuoteSummary);
+    return normalizeItemResponse(payload, 'quote', normalizeQuoteSummary, quoteSummarySchema);
   },
   async getThreads(params = {}) {
     const payload = await withAuth(`/messages/threads${toQueryString({ page: 1, pageSize: 50, ...params })}`);
-    return normalizeListResponse(payload, 'threads', normalizeThreadSummary);
+    return normalizeListResponse(payload, 'threads', normalizeThreadSummary, threadSummarySchema);
   },
   async getDirectThreads(params = {}) {
     const payload = await withAuth(`/messages/direct-threads${toQueryString({ page: 1, pageSize: 50, ...params })}`);
-    return normalizeListResponse(payload, 'threads', normalizeDirectThreadSummary);
+    return normalizeListResponse(payload, 'threads', normalizeDirectThreadSummary, directThreadSummarySchema);
   },
   async getThreadMessages(threadId, params = {}) {
     const payload = await withAuth(`/messages/threads/${threadId}/messages${toQueryString({ page: 1, pageSize: 100, ...params })}`);
     return {
-      thread: normalizeItemResponse(payload, 'thread', normalizeThreadSummary),
-      messages: normalizeListResponse(payload, 'messages', normalizeThreadMessage),
+      thread: normalizeItemResponse(payload, 'thread', normalizeThreadSummary, threadSummarySchema),
+      messages: normalizeListResponse(payload, 'messages', normalizeThreadMessage, threadMessageSchema),
       meta: payload.meta || {}
     };
   },
   async getDirectThreadMessages(threadId, params = {}) {
     const payload = await withAuth(`/messages/direct-threads/${threadId}/messages${toQueryString({ page: 1, pageSize: 100, ...params })}`);
     return {
-      thread: normalizeItemResponse(payload, 'thread', normalizeDirectThreadSummary),
-      messages: normalizeListResponse(payload, 'messages', normalizeThreadMessage),
+      thread: normalizeItemResponse(payload, 'thread', normalizeDirectThreadSummary, directThreadSummarySchema),
+      messages: normalizeListResponse(payload, 'messages', normalizeThreadMessage, threadMessageSchema),
       meta: payload.meta || {}
     };
   },
@@ -186,7 +200,7 @@ export const v2Api = {
       quoteId: quoteId || undefined
     }));
     return {
-      thread: normalizeItemResponse(payload, 'thread', normalizeDirectThreadSummary),
+      thread: normalizeItemResponse(payload, 'thread', normalizeDirectThreadSummary, directThreadSummarySchema),
       message: toMessageResponse(payload)
     };
   },
@@ -226,7 +240,7 @@ export const v2Api = {
   },
   async getNotifications(params = {}) {
     const payload = await withAuth(`/notifications${toQueryString({ page: 1, pageSize: 50, ...params })}`);
-    return normalizeListResponse(payload, 'notifications', normalizeNotification);
+    return normalizeListResponse(payload, 'notifications', normalizeNotification, notificationSchema);
   },
   async getNotificationsUnreadCount() {
     const payload = await withAuth('/notifications/unread-count');
@@ -236,7 +250,7 @@ export const v2Api = {
     const payload = await withAuth(`/notifications/${notificationId}/read`, {
       method: 'PATCH'
     });
-    return normalizeItemResponse(payload, 'notification', normalizeNotification);
+    return normalizeItemResponse(payload, 'notification', normalizeNotification, notificationSchema);
   },
   async markAllNotificationsRead() {
     const payload = await withAuth('/notifications/read-all', {
@@ -246,27 +260,35 @@ export const v2Api = {
   },
   async getCrmClients(params = {}) {
     const payload = await withAuth(`/crm/clients${toQueryString({ page: 1, pageSize: 50, ...params })}`);
-    return normalizeListResponse(payload, 'clients', normalizeCrmClient);
+    return normalizeListResponse(payload, 'clients', normalizeCrmClient, crmClientSchema);
   },
   async getCrmStaff(params = {}) {
     const payload = await withAuth(`/crm/staff${toQueryString({ page: 1, pageSize: 50, ...params })}`);
-    return normalizeListResponse(payload, 'staff', normalizeCrmStaffMember);
+    return normalizeListResponse(payload, 'staff', normalizeCrmStaffMember, crmStaffMemberSchema);
   },
   async createCrmStaff(input) {
     const payload = await withAuth('/crm/staff', toJsonOptions('POST', input));
-    return normalizeItemResponse(payload, 'staff', normalizeCrmStaffMember);
+    return normalizeItemResponse(payload, 'staff', normalizeCrmStaffMember, crmStaffMemberSchema);
+  },
+  async updateCrmClient(clientId, input) {
+    const payload = await withAuth(`/crm/clients/${clientId}`, toJsonOptions('PATCH', input));
+    return normalizeItemResponse(payload, 'client', normalizeCrmClient, crmClientSchema);
+  },
+  async updateCrmStaff(staffId, input) {
+    const payload = await withAuth(`/crm/staff/${staffId}`, toJsonOptions('PATCH', input));
+    return normalizeItemResponse(payload, 'staff', normalizeCrmStaffMember, crmStaffMemberSchema);
   },
   async getInventoryServices(params = {}) {
     const payload = await withAuth(`/inventory/services${toQueryString({ page: 1, pageSize: 50, ...params })}`);
-    return normalizeListResponse(payload, 'services', normalizeInventoryService);
+    return normalizeListResponse(payload, 'services', normalizeInventoryService, inventoryServiceSchema);
   },
   async createInventoryService(input) {
     const payload = await withAuth('/inventory/services', toJsonOptions('POST', input));
-    return normalizeItemResponse(payload, 'service', normalizeInventoryService);
+    return normalizeItemResponse(payload, 'service', normalizeInventoryService, inventoryServiceSchema);
   },
   async updateInventoryService(serviceId, input) {
     const payload = await withAuth(`/inventory/services/${serviceId}`, toJsonOptions('PATCH', input));
-    return normalizeItemResponse(payload, 'service', normalizeInventoryService);
+    return normalizeItemResponse(payload, 'service', normalizeInventoryService, inventoryServiceSchema);
   },
   async deleteInventoryService(serviceId) {
     const payload = await withAuth(`/inventory/services/${serviceId}`, {
@@ -276,15 +298,15 @@ export const v2Api = {
   },
   async getInventoryMaterials(params = {}) {
     const payload = await withAuth(`/inventory/materials${toQueryString({ page: 1, pageSize: 50, ...params })}`);
-    return normalizeListResponse(payload, 'materials', normalizeInventoryMaterial);
+    return normalizeListResponse(payload, 'materials', normalizeInventoryMaterial, inventoryMaterialSchema);
   },
   async createInventoryMaterial(input) {
     const payload = await withAuth('/inventory/materials', toJsonOptions('POST', input));
-    return normalizeItemResponse(payload, 'material', normalizeInventoryMaterial);
+    return normalizeItemResponse(payload, 'material', normalizeInventoryMaterial, inventoryMaterialSchema);
   },
   async updateInventoryMaterial(materialId, input) {
     const payload = await withAuth(`/inventory/materials/${materialId}`, toJsonOptions('PATCH', input));
-    return normalizeItemResponse(payload, 'material', normalizeInventoryMaterial);
+    return normalizeItemResponse(payload, 'material', normalizeInventoryMaterial, inventoryMaterialSchema);
   },
   async deleteInventoryMaterial(materialId) {
     const payload = await withAuth(`/inventory/materials/${materialId}`, {
@@ -294,6 +316,6 @@ export const v2Api = {
   },
   async getPublicServices() {
     const payload = await request('/services');
-    return normalizeListResponse(payload, 'services', normalizeInventoryService);
+    return normalizeListResponse(payload, 'services', normalizeInventoryService, inventoryServiceSchema);
   }
 };

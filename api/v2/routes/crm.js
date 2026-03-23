@@ -1,6 +1,6 @@
 const express = require('express');
 const { Op, fn, col, where: sqlWhere } = require('sequelize');
-const { body, query, validationResult } = require('express-validator');
+const { body, param, query, validationResult } = require('express-validator');
 const { User } = require('../../../models');
 const asyncHandler = require('../../../utils/asyncHandler');
 const { authV2 } = require('../middleware/auth');
@@ -23,6 +23,10 @@ const getPagination = (req) => {
 };
 
 const escapeLike = (value) => String(value || '').replace(/[\\%_]/g, '\\$&');
+const toNullableString = (value) => {
+  const trimmed = String(value || '').trim();
+  return trimmed ? trimmed : null;
+};
 
 router.get(
   '/clients',
@@ -51,7 +55,7 @@ router.get(
     const { page, pageSize, offset } = getPagination(req);
     const { rows, count } = await User.findAndCountAll({
       where,
-      attributes: ['id', 'name', 'email', 'phone', 'companyName', 'isActive', 'createdAt'],
+      attributes: ['id', 'name', 'email', 'phone', 'companyName', 'isActive', 'createdAt', 'updatedAt'],
       order: [['email', 'ASC']],
       limit: pageSize,
       offset
@@ -88,13 +92,45 @@ router.get(
     const { page, pageSize, offset } = getPagination(req);
     const { rows, count } = await User.findAndCountAll({
       where,
-      attributes: ['id', 'name', 'email', 'role', 'isActive', 'createdAt'],
+      attributes: ['id', 'name', 'email', 'phone', 'role', 'isActive', 'createdAt', 'updatedAt'],
       order: [['email', 'ASC']],
       limit: pageSize,
       offset
     });
 
     return ok(res, { staff: rows }, { page, pageSize, total: count, totalPages: Math.max(1, Math.ceil(count / pageSize)) });
+  })
+);
+
+router.patch(
+  '/clients/:id',
+  [
+    authV2,
+    roleCheckV2('manager', 'admin'),
+    param('id').isUUID(),
+    body('name').optional().trim().notEmpty(),
+    body('phone').optional({ nullable: true }).trim(),
+    body('companyName').optional({ nullable: true }).trim(),
+    body('isActive').optional().isBoolean()
+  ],
+  asyncHandler(async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return fail(res, 400, 'validation_failed', 'Validation failed', errors.array());
+    }
+
+    const client = await User.findByPk(req.params.id);
+    if (!client || client.role !== 'client') return fail(res, 404, 'client_not_found', 'Client not found');
+
+    const payload = {};
+    if (Object.prototype.hasOwnProperty.call(req.body, 'name')) payload.name = String(req.body.name || '').trim();
+    if (Object.prototype.hasOwnProperty.call(req.body, 'phone')) payload.phone = toNullableString(req.body.phone);
+    if (Object.prototype.hasOwnProperty.call(req.body, 'companyName')) payload.companyName = toNullableString(req.body.companyName);
+    if (Object.prototype.hasOwnProperty.call(req.body, 'isActive')) payload.isActive = req.body.isActive;
+    if (!Object.keys(payload).length) return fail(res, 400, 'no_changes', 'No changes provided');
+
+    await client.update(payload);
+    return ok(res, { client });
   })
 );
 
@@ -136,6 +172,50 @@ router.post(
     });
 
     return ok(res, { staff: staffMember }, {}, 201);
+  })
+);
+
+router.patch(
+  '/staff/:id',
+  [
+    authV2,
+    roleCheckV2('manager', 'admin'),
+    param('id').isUUID(),
+    body('name').optional().trim().notEmpty(),
+    body('phone').optional({ nullable: true }).trim(),
+    body('role').optional().isIn(STAFF_ROLES),
+    body('isActive').optional().isBoolean()
+  ],
+  asyncHandler(async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return fail(res, 400, 'validation_failed', 'Validation failed', errors.array());
+    }
+
+    const staffMember = await User.findByPk(req.params.id);
+    if (!staffMember || !STAFF_ROLES.includes(staffMember.role)) {
+      return fail(res, 404, 'staff_not_found', 'Staff member not found');
+    }
+
+    if (req.v2User.role !== 'admin' && staffMember.role !== 'employee' && staffMember.id !== req.v2User.id) {
+      return fail(res, 403, 'access_denied', 'Only admins can update other manager/admin accounts');
+    }
+    if (Object.prototype.hasOwnProperty.call(req.body, 'role') && req.v2User.role !== 'admin') {
+      return fail(res, 403, 'access_denied', 'Only admins can change staff roles');
+    }
+    if (req.v2User.role !== 'admin' && staffMember.id === req.v2User.id && req.body.isActive === false) {
+      return fail(res, 400, 'self_deactivate_forbidden', 'You cannot deactivate your own account');
+    }
+
+    const payload = {};
+    if (Object.prototype.hasOwnProperty.call(req.body, 'name')) payload.name = String(req.body.name || '').trim();
+    if (Object.prototype.hasOwnProperty.call(req.body, 'phone')) payload.phone = toNullableString(req.body.phone);
+    if (Object.prototype.hasOwnProperty.call(req.body, 'role')) payload.role = req.body.role;
+    if (Object.prototype.hasOwnProperty.call(req.body, 'isActive')) payload.isActive = req.body.isActive;
+    if (!Object.keys(payload).length) return fail(res, 400, 'no_changes', 'No changes provided');
+
+    await staffMember.update(payload);
+    return ok(res, { staff: staffMember });
   })
 );
 

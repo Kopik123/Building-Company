@@ -6,3 +6,4 @@
 - 2026-03-22 20:27 | Web-v2 Parity Sprint - Overview, Inbox And Notifications | Plans/Web-v2 Parity Sprint - Overview, Inbox And Notifications.md
 - 2026-03-23 18:07 | Web-v2 Parity Sprint - Private Inbox And Direct Messaging | Plans/Web-v2 Parity Sprint - Private Inbox And Direct Messaging.md
 - 2026-03-23 19:37 | Web-v2 Parity Sprint - Manager CRUD, Rollout Coverage And Shared Contracts | Plans/Web-v2 Parity Sprint - Manager CRUD, Rollout Coverage And Shared Contracts.md
+- 2026-03-23 20:58 | Web-v2 Parity Sprint - Quote Creation, CRM Editing And Zod Contracts | Plans/Web-v2 Parity Sprint - Quote Creation, CRM Editing And Zod Contracts.md

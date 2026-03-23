@@ -21,13 +21,16 @@ Unified API contract for web v2 and mobile v1.
 - `GET /api/v2/gallery/projects`
 - `GET /api/v2/gallery/services`
 - `GET /api/v2/crm/clients`
+- `PATCH /api/v2/crm/clients/:id`
 - `GET /api/v2/crm/staff`
 - `POST /api/v2/crm/staff`
+- `PATCH /api/v2/crm/staff/:id`
 - `GET /api/v2/projects`
 - `GET /api/v2/projects/:id`
 - `POST /api/v2/projects`
 - `PATCH /api/v2/projects/:id`
 - `GET /api/v2/quotes`
+- `POST /api/v2/quotes`
 - `PATCH /api/v2/quotes/:id`
 - `GET /api/v2/messages/threads`
 - `GET /api/v2/messages/direct-threads`

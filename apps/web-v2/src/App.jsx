@@ -6,11 +6,14 @@ import { v2Api } from './lib/api';
 
 const {
   MATERIAL_CATEGORIES,
+  QUOTE_CONTACT_METHODS,
   PROJECT_STATUSES,
   QUOTE_PRIORITIES,
+  QUOTE_PROJECT_TYPES,
   QUOTE_STATUSES,
   SERVICE_CATEGORIES,
-  STAFF_CREATION_ROLES
+  STAFF_CREATION_ROLES,
+  STAFF_ROLES
 } = contractKit;
 
 const roleLabels = {
@@ -198,10 +201,43 @@ const projectToFormState = (project) =>
     isActive: typeof project?.isActive === 'boolean' ? project.isActive : true
   });
 
-const createQuoteUpdateState = (quote) => ({
-  status: quote?.status || QUOTE_STATUSES[0],
-  priority: quote?.priority || QUOTE_PRIORITIES[0]
+const createQuoteFormState = (overrides = {}) => ({
+  projectType: QUOTE_PROJECT_TYPES[0],
+  location: '',
+  description: '',
+  status: QUOTE_STATUSES[0],
+  priority: QUOTE_PRIORITIES[0],
+  clientId: '',
+  assignedManagerId: '',
+  guestName: '',
+  guestEmail: '',
+  guestPhone: '',
+  contactMethod: QUOTE_CONTACT_METHODS[0],
+  postcode: '',
+  budgetRange: '',
+  contactEmail: '',
+  contactPhone: '',
+  ...overrides
 });
+
+const quoteToFormState = (quote) =>
+  createQuoteFormState({
+    projectType: quote?.projectType || QUOTE_PROJECT_TYPES[0],
+    location: quote?.location || '',
+    description: quote?.description || '',
+    status: quote?.status || QUOTE_STATUSES[0],
+    priority: quote?.priority || QUOTE_PRIORITIES[0],
+    clientId: quote?.clientId || '',
+    assignedManagerId: quote?.assignedManagerId || '',
+    guestName: quote?.guestName || '',
+    guestEmail: quote?.guestEmail || '',
+    guestPhone: quote?.guestPhone || '',
+    contactMethod: quote?.contactMethod || QUOTE_CONTACT_METHODS[0],
+    postcode: quote?.postcode || '',
+    budgetRange: quote?.budgetRange || '',
+    contactEmail: quote?.contactEmail || '',
+    contactPhone: quote?.contactPhone || ''
+  });
 
 const createStaffFormState = (overrides = {}) => ({
   name: '',
@@ -211,6 +247,38 @@ const createStaffFormState = (overrides = {}) => ({
   role: STAFF_CREATION_ROLES[0],
   ...overrides
 });
+
+const createClientEditorState = (overrides = {}) => ({
+  name: '',
+  phone: '',
+  companyName: '',
+  isActive: true,
+  ...overrides
+});
+
+const clientToFormState = (client) =>
+  createClientEditorState({
+    name: client?.name || '',
+    phone: client?.phone || '',
+    companyName: client?.companyName || '',
+    isActive: typeof client?.isActive === 'boolean' ? client.isActive : true
+  });
+
+const createStaffEditorState = (overrides = {}) => ({
+  name: '',
+  phone: '',
+  role: STAFF_ROLES[0],
+  isActive: true,
+  ...overrides
+});
+
+const staffToFormState = (member) =>
+  createStaffEditorState({
+    name: member?.name || '',
+    phone: member?.phone || '',
+    role: member?.role || STAFF_ROLES[0],
+    isActive: typeof member?.isActive === 'boolean' ? member.isActive : true
+  });
 
 const createServiceFormState = (overrides = {}) => ({
   title: '',
@@ -1093,18 +1161,32 @@ function QuotesPage() {
   const role = normalizeText(user?.role || 'client');
   const canEditQuotes = ['manager', 'admin'].includes(role);
   const quotes = useAsyncState(() => v2Api.getQuotes(), [], []);
+  const clients = useAsyncState(() => (canEditQuotes ? v2Api.getCrmClients() : Promise.resolve([])), [canEditQuotes], []);
+  const staff = useAsyncState(() => (canEditQuotes ? v2Api.getCrmStaff() : Promise.resolve([])), [canEditQuotes], []);
   const [search, setSearch] = React.useState('');
   const [selectedQuoteId, setSelectedQuoteId] = React.useState('');
+  const [isCreatingQuote, setIsCreatingQuote] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
   const [actionError, setActionError] = React.useState('');
   const [actionMessage, setActionMessage] = React.useState('');
-  const [form, setForm] = React.useState(() => createQuoteUpdateState(null));
+  const [form, setForm] = React.useState(() => createQuoteFormState());
   const deferredSearch = React.useDeferredValue(search);
+  const managerOptions = staff.data.filter((member) => ['manager', 'admin'].includes(normalizeText(member?.role)));
 
   const filteredQuotes = sortByRecent(quotes.data, ['updatedAt', 'createdAt']).filter((quote) => {
     const needle = normalizeText(deferredSearch);
     if (!needle) return true;
-    return [quote?.projectType, quote?.location, quote?.status, quote?.priority, quote?.guestName, quote?.guestEmail, quote?.client?.email]
+    return [
+      quote?.projectType,
+      quote?.location,
+      quote?.status,
+      quote?.priority,
+      quote?.guestName,
+      quote?.guestEmail,
+      quote?.guestPhone,
+      quote?.client?.email,
+      quote?.budgetRange
+    ]
       .join(' ')
       .toLowerCase()
       .includes(needle);
@@ -1112,6 +1194,7 @@ function QuotesPage() {
 
   React.useEffect(() => {
     if (!canEditQuotes) return;
+    if (isCreatingQuote) return;
     if (!filteredQuotes.length) {
       if (selectedQuoteId) setSelectedQuoteId('');
       return;
@@ -1119,40 +1202,77 @@ function QuotesPage() {
     if (!filteredQuotes.some((quote) => quote.id === selectedQuoteId)) {
       setSelectedQuoteId(filteredQuotes[0].id);
     }
-  }, [filteredQuotes, selectedQuoteId, canEditQuotes]);
+  }, [filteredQuotes, selectedQuoteId, canEditQuotes, isCreatingQuote]);
 
   React.useEffect(() => {
     if (!canEditQuotes) return;
+    if (isCreatingQuote) return;
     const selectedQuote = quotes.data.find((quote) => quote.id === selectedQuoteId);
     if (!selectedQuote) return;
-    setForm(createQuoteUpdateState(selectedQuote));
-  }, [selectedQuoteId, quotes.data, canEditQuotes]);
+    setForm(quoteToFormState(selectedQuote));
+  }, [selectedQuoteId, quotes.data, canEditQuotes, isCreatingQuote]);
 
   const selectedQuote = quotes.data.find((quote) => quote.id === selectedQuoteId) || null;
 
+  const startNewQuote = () => {
+    setIsCreatingQuote(true);
+    setSelectedQuoteId('');
+    setForm(
+      createQuoteFormState({
+        assignedManagerId: managerOptions[0]?.id || user?.id || ''
+      })
+    );
+    setActionError('');
+    setActionMessage('');
+  };
+
+  const selectQuote = (quote) => {
+    setIsCreatingQuote(false);
+    setSelectedQuoteId(quote.id);
+    setForm(quoteToFormState(quote));
+    setActionError('');
+    setActionMessage('');
+  };
+
   const onSubmit = async (event) => {
     event.preventDefault();
-    if (!selectedQuoteId || saving) return;
+    if ((!selectedQuoteId && !isCreatingQuote) || saving) return;
 
     setSaving(true);
     setActionError('');
     setActionMessage('');
 
     try {
-      const updatedQuote = await v2Api.updateQuote(selectedQuoteId, {
+      const payload = {
+        projectType: form.projectType,
+        location: String(form.location || '').trim(),
+        description: String(form.description || '').trim(),
         status: form.status,
-        priority: form.priority
-      });
-      if (!updatedQuote?.id) throw new Error('Quote response missing payload');
+        priority: form.priority,
+        clientId: form.clientId || null,
+        assignedManagerId: form.assignedManagerId || null,
+        guestName: toNullablePayload(form.guestName),
+        guestEmail: toNullablePayload(form.guestEmail),
+        guestPhone: toNullablePayload(form.guestPhone),
+        contactMethod: form.contactMethod || null,
+        postcode: toNullablePayload(form.postcode),
+        budgetRange: toNullablePayload(form.budgetRange),
+        contactEmail: toNullablePayload(form.contactEmail),
+        contactPhone: toNullablePayload(form.contactPhone)
+      };
+      const savedQuote = selectedQuoteId ? await v2Api.updateQuote(selectedQuoteId, payload) : await v2Api.createQuote(payload);
+      if (!savedQuote?.id) throw new Error('Quote response missing payload');
 
-      const mergedQuote = { ...selectedQuote, ...updatedQuote };
       quotes.setData((prev) =>
         sortByRecent(
-          prev.map((quote) => (quote.id === mergedQuote.id ? mergedQuote : quote)),
+          [savedQuote, ...prev.filter((quote) => quote.id !== savedQuote.id)],
           ['updatedAt', 'createdAt']
         )
       );
-      setActionMessage('Quote saved.');
+      setIsCreatingQuote(false);
+      setSelectedQuoteId(savedQuote.id);
+      setForm(quoteToFormState(savedQuote));
+      setActionMessage(selectedQuoteId ? 'Quote saved.' : 'Quote created.');
     } catch (error) {
       setActionError(error.message || 'Could not save quote');
     } finally {
@@ -1165,12 +1285,23 @@ function QuotesPage() {
       <Surface
         eyebrow="Quotes"
         title="Quote board"
-        description={canEditQuotes ? 'Manager-side status and priority updates now stay in the rollout shell.' : 'Portable quote summaries from `api/v2`, shared between web and the future mobile app.'}
+        description={
+          canEditQuotes
+            ? 'Manager-side quote create and update flows now stay in the rollout shell.'
+            : 'Portable quote summaries from `api/v2`, shared between web and the future mobile app.'
+        }
         actions={
-          <label className="inline-search">
-            <span>Filter</span>
-            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search quote, location or guest" />
-          </label>
+          <div className="surface-actions cluster">
+            <label className="inline-search">
+              <span>Filter</span>
+              <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search quote, location or guest" />
+            </label>
+            {canEditQuotes ? (
+              <button type="button" className="button-secondary" onClick={startNewQuote}>
+                New quote
+              </button>
+            ) : null}
+          </div>
         }
       >
         {quotes.loading ? <p className="muted">Loading quotes...</p> : null}
@@ -1179,7 +1310,7 @@ function QuotesPage() {
         <div className="stack-list">
           {filteredQuotes.map((quote) =>
             canEditQuotes ? (
-              <SelectableCard key={quote.id} selected={quote.id === selectedQuoteId} onSelect={() => setSelectedQuoteId(quote.id)}>
+              <SelectableCard key={quote.id} selected={!isCreatingQuote && quote.id === selectedQuoteId} onSelect={() => selectQuote(quote)}>
                 <QuoteCard quote={quote} />
               </SelectableCard>
             ) : (
@@ -1192,16 +1323,58 @@ function QuotesPage() {
       {canEditQuotes ? (
         <Surface
           eyebrow="Quote actions"
-          title={selectedQuote?.projectType || 'Select a quote'}
-          description={selectedQuote ? `Guest: ${selectedQuote.guestName || selectedQuote.guestEmail || 'Known contact'}` : 'Select a quote to update status and priority.'}
+          title={isCreatingQuote ? 'New quote' : selectedQuote?.projectType || 'Select a quote'}
+          description={
+            isCreatingQuote
+              ? 'Create an internal or guest quote directly in `web-v2`.'
+              : selectedQuote
+                ? `Guest: ${selectedQuote.guestName || selectedQuote.guestEmail || selectedQuote.client?.email || 'Known contact'}`
+                : 'Select a quote to update it or start a new one.'
+          }
         >
-          {!selectedQuote ? <EmptyState text="No quote selected." /> : null}
-          {selectedQuote ? <QuoteCard quote={selectedQuote} /> : null}
-          {selectedQuote ? (
+          {!selectedQuote && !isCreatingQuote ? <EmptyState text="No quote selected." /> : null}
+          {selectedQuote && !isCreatingQuote ? <QuoteCard quote={selectedQuote} /> : null}
+          {(selectedQuote || isCreatingQuote) ? (
             <form className="editor-form" onSubmit={onSubmit}>
               <div className="form-grid">
                 <label>
-                  Status
+                  Project type
+                  <select value={form.projectType} onChange={(event) => setForm((prev) => ({ ...prev, projectType: event.target.value }))}>
+                    {QUOTE_PROJECT_TYPES.map((projectType) => (
+                      <option key={projectType} value={projectType}>
+                        {titleCase(projectType)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Location
+                  <input value={form.location} onChange={(event) => setForm((prev) => ({ ...prev, location: event.target.value }))} placeholder="Manchester" required />
+                </label>
+                <label>
+                  Client
+                  <select value={form.clientId} onChange={(event) => setForm((prev) => ({ ...prev, clientId: event.target.value }))}>
+                    <option value="">Guest / unlinked quote</option>
+                    {clients.data.map((client) => (
+                      <option key={client.id} value={client.id}>
+                        {client.name || client.email || client.id}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Assigned manager
+                  <select value={form.assignedManagerId} onChange={(event) => setForm((prev) => ({ ...prev, assignedManagerId: event.target.value }))}>
+                    <option value="">Unassigned</option>
+                    {managerOptions.map((member) => (
+                      <option key={member.id} value={member.id}>
+                        {member.name || member.email || member.id}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Quote status
                   <select value={form.status} onChange={(event) => setForm((prev) => ({ ...prev, status: event.target.value }))}>
                     {QUOTE_STATUSES.map((status) => (
                       <option key={status} value={status}>
@@ -1211,7 +1384,7 @@ function QuotesPage() {
                   </select>
                 </label>
                 <label>
-                  Priority
+                  Quote priority
                   <select value={form.priority} onChange={(event) => setForm((prev) => ({ ...prev, priority: event.target.value }))}>
                     {QUOTE_PRIORITIES.map((priority) => (
                       <option key={priority} value={priority}>
@@ -1220,15 +1393,66 @@ function QuotesPage() {
                     ))}
                   </select>
                 </label>
+                <label>
+                  Guest name
+                  <input value={form.guestName} onChange={(event) => setForm((prev) => ({ ...prev, guestName: event.target.value }))} placeholder="Guest or lead name" />
+                </label>
+                <label>
+                  Guest email
+                  <input value={form.guestEmail} onChange={(event) => setForm((prev) => ({ ...prev, guestEmail: event.target.value }))} type="email" placeholder="guest@example.com" />
+                </label>
+                <label>
+                  Guest phone
+                  <input value={form.guestPhone} onChange={(event) => setForm((prev) => ({ ...prev, guestPhone: event.target.value }))} placeholder="+44 ..." />
+                </label>
+                <label>
+                  Contact method
+                  <select value={form.contactMethod} onChange={(event) => setForm((prev) => ({ ...prev, contactMethod: event.target.value }))}>
+                    {QUOTE_CONTACT_METHODS.map((method) => (
+                      <option key={method} value={method}>
+                        {titleCase(method)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Postcode
+                  <input value={form.postcode} onChange={(event) => setForm((prev) => ({ ...prev, postcode: event.target.value }))} placeholder="M20 2AB" />
+                </label>
+                <label>
+                  Budget range
+                  <input value={form.budgetRange} onChange={(event) => setForm((prev) => ({ ...prev, budgetRange: event.target.value }))} placeholder="40k-60k" />
+                </label>
+                <label>
+                  Contact email
+                  <input value={form.contactEmail} onChange={(event) => setForm((prev) => ({ ...prev, contactEmail: event.target.value }))} type="email" placeholder="contact@example.com" />
+                </label>
+                <label>
+                  Contact phone
+                  <input value={form.contactPhone} onChange={(event) => setForm((prev) => ({ ...prev, contactPhone: event.target.value }))} placeholder="+44 ..." />
+                </label>
               </div>
-              <div className="meta-wrap">
-                <span>Client: {selectedQuote.client?.email || 'Guest quote'}</span>
-                <span>Assigned manager: {selectedQuote.assignedManager?.email || 'Unassigned'}</span>
-                <span>Created: {formatDateTime(selectedQuote.createdAt)}</span>
-              </div>
+              <label>
+                Description
+                <textarea
+                  value={form.description}
+                  onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))}
+                  placeholder="Scope, intent and lead context for this quote."
+                  rows={5}
+                  required
+                />
+              </label>
+              {selectedQuote && !isCreatingQuote ? (
+                <div className="meta-wrap">
+                  <span>Client: {selectedQuote.client?.email || 'Guest quote'}</span>
+                  <span>Assigned manager: {selectedQuote.assignedManager?.email || 'Unassigned'}</span>
+                  <span>Created: {formatDateTime(selectedQuote.createdAt)}</span>
+                </div>
+              ) : null}
+              {clients.loading || staff.loading ? <p className="muted">Loading linked CRM people...</p> : null}
               <div className="action-row">
                 <button type="submit" disabled={saving}>
-                  {saving ? 'Saving...' : 'Save quote'}
+                  {saving ? 'Saving...' : selectedQuoteId ? 'Save quote' : 'Create quote'}
                 </button>
               </div>
               {actionMessage ? <p className="muted">{actionMessage}</p> : null}
@@ -1918,13 +2142,24 @@ function CrmPage() {
   const { user } = useAuth();
   const role = normalizeText(user?.role || 'employee');
   const canCreateStaff = ['manager', 'admin'].includes(role);
+  const canEditPeople = ['manager', 'admin'].includes(role);
   const clients = useAsyncState(() => v2Api.getCrmClients(), [], []);
   const staff = useAsyncState(() => v2Api.getCrmStaff(), [], []);
   const [search, setSearch] = React.useState('');
   const [staffForm, setStaffForm] = React.useState(() => createStaffFormState());
+  const [selectedClientId, setSelectedClientId] = React.useState('');
+  const [selectedStaffId, setSelectedStaffId] = React.useState('');
+  const [clientForm, setClientForm] = React.useState(() => createClientEditorState());
+  const [staffEditorForm, setStaffEditorForm] = React.useState(() => createStaffEditorState());
   const [saving, setSaving] = React.useState(false);
+  const [clientSaving, setClientSaving] = React.useState(false);
+  const [staffSaving, setStaffSaving] = React.useState(false);
   const [actionError, setActionError] = React.useState('');
   const [actionMessage, setActionMessage] = React.useState('');
+  const [clientError, setClientError] = React.useState('');
+  const [clientMessage, setClientMessage] = React.useState('');
+  const [staffError, setStaffError] = React.useState('');
+  const [staffMessage, setStaffMessage] = React.useState('');
   const deferredSearch = React.useDeferredValue(search);
 
   const filteredClients = clients.data.filter((client) =>
@@ -1933,11 +2168,55 @@ function CrmPage() {
   const filteredStaff = staff.data.filter((member) =>
     [member?.name, member?.email, member?.role].join(' ').toLowerCase().includes(normalizeText(deferredSearch))
   );
+  const selectedClient = clients.data.find((client) => client.id === selectedClientId) || null;
+  const selectedStaff = staff.data.find((member) => member.id === selectedStaffId) || null;
 
   const onStaffFieldChange = (key) => (event) => {
     const nextValue = event?.target?.type === 'checkbox' ? event.target.checked : event.target.value;
     setStaffForm((prev) => ({ ...prev, [key]: nextValue }));
   };
+
+  const onClientFieldChange = (key) => (event) => {
+    const nextValue = event?.target?.type === 'checkbox' ? event.target.checked : event.target.value;
+    setClientForm((prev) => ({ ...prev, [key]: nextValue }));
+  };
+
+  const onStaffEditorFieldChange = (key) => (event) => {
+    const nextValue = event?.target?.type === 'checkbox' ? event.target.checked : event.target.value;
+    setStaffEditorForm((prev) => ({ ...prev, [key]: nextValue }));
+  };
+
+  React.useEffect(() => {
+    if (!canEditPeople) return;
+    if (!filteredClients.length) {
+      if (selectedClientId) setSelectedClientId('');
+      return;
+    }
+    if (!filteredClients.some((client) => client.id === selectedClientId)) {
+      setSelectedClientId(filteredClients[0].id);
+    }
+  }, [filteredClients, selectedClientId, canEditPeople]);
+
+  React.useEffect(() => {
+    if (!canEditPeople) return;
+    if (!filteredStaff.length) {
+      if (selectedStaffId) setSelectedStaffId('');
+      return;
+    }
+    if (!filteredStaff.some((member) => member.id === selectedStaffId)) {
+      setSelectedStaffId(filteredStaff[0].id);
+    }
+  }, [filteredStaff, selectedStaffId, canEditPeople]);
+
+  React.useEffect(() => {
+    if (!canEditPeople || !selectedClient) return;
+    setClientForm(clientToFormState(selectedClient));
+  }, [selectedClient, canEditPeople]);
+
+  React.useEffect(() => {
+    if (!canEditPeople || !selectedStaff) return;
+    setStaffEditorForm(staffToFormState(selectedStaff));
+  }, [selectedStaff, canEditPeople]);
 
   const onCreateStaff = async (event) => {
     event.preventDefault();
@@ -1968,6 +2247,63 @@ function CrmPage() {
     }
   };
 
+  const onSaveClient = async (event) => {
+    event.preventDefault();
+    if (!selectedClientId || !canEditPeople || clientSaving) return;
+
+    setClientSaving(true);
+    setClientError('');
+    setClientMessage('');
+    try {
+      const updatedClient = await v2Api.updateCrmClient(selectedClientId, {
+        name: String(clientForm.name || '').trim(),
+        phone: toNullablePayload(clientForm.phone),
+        companyName: toNullablePayload(clientForm.companyName),
+        isActive: Boolean(clientForm.isActive)
+      });
+      if (!updatedClient?.id) throw new Error('Client response missing payload');
+
+      clients.setData((prev) => prev.map((client) => (client.id === updatedClient.id ? updatedClient : client)));
+      setClientForm(clientToFormState(updatedClient));
+      setClientMessage('Client saved.');
+    } catch (error) {
+      setClientError(error.message || 'Could not save client');
+    } finally {
+      setClientSaving(false);
+    }
+  };
+
+  const onSaveStaff = async (event) => {
+    event.preventDefault();
+    if (!selectedStaffId || !canEditPeople || staffSaving) return;
+
+    setStaffSaving(true);
+    setStaffError('');
+    setStaffMessage('');
+    try {
+      const payload = {
+        name: String(staffEditorForm.name || '').trim(),
+        phone: toNullablePayload(staffEditorForm.phone),
+        isActive: Boolean(staffEditorForm.isActive)
+      };
+      if (role === 'admin') {
+        payload.role = staffEditorForm.role;
+      }
+      const updatedStaff = await v2Api.updateCrmStaff(selectedStaffId, payload);
+      if (!updatedStaff?.id) throw new Error('Staff response missing payload');
+
+      staff.setData((prev) =>
+        prev.map((member) => (member.id === updatedStaff.id ? updatedStaff : member)).sort((left, right) => String(left.email || '').localeCompare(String(right.email || '')))
+      );
+      setStaffEditorForm(staffToFormState(updatedStaff));
+      setStaffMessage('Staff record saved.');
+    } catch (error) {
+      setStaffError(error.message || 'Could not save staff record');
+    } finally {
+      setStaffSaving(false);
+    }
+  };
+
   return (
     <div className="page-stack">
       <Surface
@@ -1992,23 +2328,23 @@ function CrmPage() {
           <form className="editor-form" onSubmit={onCreateStaff}>
             <div className="form-grid">
               <label>
-                Name
+                Create staff name
                 <input value={staffForm.name} onChange={onStaffFieldChange('name')} placeholder="Leah Builder" required />
               </label>
               <label>
-                Email
+                Create staff email
                 <input value={staffForm.email} onChange={onStaffFieldChange('email')} type="email" placeholder="leah@example.com" required />
               </label>
               <label>
-                Password
+                Temporary password
                 <input value={staffForm.password} onChange={onStaffFieldChange('password')} type="password" minLength={8} required />
               </label>
               <label>
-                Phone
+                Create staff phone
                 <input value={staffForm.phone} onChange={onStaffFieldChange('phone')} placeholder="+44 ..." />
               </label>
               <label>
-                Role
+                Create staff role
                 <select value={staffForm.role} onChange={onStaffFieldChange('role')}>
                   {STAFF_CREATION_ROLES.filter((staffRole) => role === 'admin' || staffRole !== 'manager').map((staffRole) => (
                     <option key={staffRole} value={staffRole}>
@@ -2030,44 +2366,120 @@ function CrmPage() {
       ) : null}
 
       <div className="grid-two">
-        <Surface eyebrow="CRM" title="Clients" description="Current client records exposed by the v2 CRM contract.">
+        <Surface eyebrow="CRM" title="Clients" description="Current client records exposed by the v2 CRM contract, with manager-side editing in the rollout shell.">
           {clients.loading ? <p className="muted">Loading clients...</p> : null}
           {clients.error ? <p className="error">{clients.error}</p> : null}
           {!clients.loading && !clients.error && !filteredClients.length ? <EmptyState text="No clients found." /> : null}
           <div className="stack-list">
             {filteredClients.map((client) => (
-              <article key={client.id} className="summary-row">
-                <div>
-                  <strong>{client.name || 'Client'}</strong>
-                  <p>{client.email || 'No email available'}</p>
-                </div>
-                <div className="summary-row-meta">
-                  <span>{client.phone || 'No phone'}</span>
-                  {client.companyName ? <span>{client.companyName}</span> : null}
-                </div>
-              </article>
+              <SelectableCard key={client.id} selected={client.id === selectedClientId} onSelect={() => setSelectedClientId(client.id)}>
+                <article className="summary-row">
+                  <div>
+                    <strong>{client.name || 'Client'}</strong>
+                    <p>{client.email || 'No email available'}</p>
+                  </div>
+                  <div className="summary-row-meta">
+                    <span>{client.phone || 'No phone'}</span>
+                    {client.companyName ? <span>{client.companyName}</span> : null}
+                  </div>
+                </article>
+              </SelectableCard>
             ))}
           </div>
+          {canEditPeople && selectedClient ? (
+            <form className="editor-form" onSubmit={onSaveClient}>
+              <div className="form-grid">
+                <label>
+                  Client name
+                  <input value={clientForm.name} onChange={onClientFieldChange('name')} required />
+                </label>
+                <label>
+                  Client phone
+                  <input value={clientForm.phone} onChange={onClientFieldChange('phone')} placeholder="+44 ..." />
+                </label>
+                <label>
+                  Company name
+                  <input value={clientForm.companyName} onChange={onClientFieldChange('companyName')} placeholder="Client company" />
+                </label>
+              </div>
+              <label className="checkbox-row">
+                <input type="checkbox" checked={Boolean(clientForm.isActive)} onChange={onClientFieldChange('isActive')} />
+                <span>Client record is active</span>
+              </label>
+              <div className="meta-wrap">
+                <span>Email: {selectedClient.email || 'No email available'}</span>
+                <span>Updated: {formatDateTime(selectedClient.updatedAt || selectedClient.createdAt)}</span>
+              </div>
+              <div className="action-row">
+                <button type="submit" disabled={clientSaving}>
+                  {clientSaving ? 'Saving...' : 'Save client'}
+                </button>
+              </div>
+              {clientMessage ? <p className="muted">{clientMessage}</p> : null}
+              {clientError ? <p className="error">{clientError}</p> : null}
+            </form>
+          ) : null}
         </Surface>
 
-        <Surface eyebrow="CRM" title="Staff" description="Employee, manager and admin profiles currently loaded.">
+        <Surface eyebrow="CRM" title="Staff" description="Employee, manager and admin profiles currently loaded, with manager/admin patch flows in `web-v2`.">
           {staff.loading ? <p className="muted">Loading staff...</p> : null}
           {staff.error ? <p className="error">{staff.error}</p> : null}
           {!staff.loading && !staff.error && !filteredStaff.length ? <EmptyState text="No staff records found." /> : null}
           <div className="stack-list">
             {filteredStaff.map((member) => (
-              <article key={member.id} className="summary-row">
-                <div>
-                  <strong>{member.name || 'Staff member'}</strong>
-                  <p>{member.email || 'No email available'}</p>
-                </div>
-                <div className="summary-row-meta">
-                  <StatusPill tone="accent">{titleCase(member.role || 'staff')}</StatusPill>
-                  <span>{member.phone || 'No phone'}</span>
-                </div>
-              </article>
+              <SelectableCard key={member.id} selected={member.id === selectedStaffId} onSelect={() => setSelectedStaffId(member.id)}>
+                <article className="summary-row">
+                  <div>
+                    <strong>{member.name || 'Staff member'}</strong>
+                    <p>{member.email || 'No email available'}</p>
+                  </div>
+                  <div className="summary-row-meta">
+                    <StatusPill tone="accent">{titleCase(member.role || 'staff')}</StatusPill>
+                    <span>{member.phone || 'No phone'}</span>
+                  </div>
+                </article>
+              </SelectableCard>
             ))}
           </div>
+          {canEditPeople && selectedStaff ? (
+            <form className="editor-form" onSubmit={onSaveStaff}>
+              <div className="form-grid">
+                <label>
+                  Update staff name
+                  <input value={staffEditorForm.name} onChange={onStaffEditorFieldChange('name')} required />
+                </label>
+                <label>
+                  Update staff phone
+                  <input value={staffEditorForm.phone} onChange={onStaffEditorFieldChange('phone')} placeholder="+44 ..." />
+                </label>
+                <label>
+                  Update staff role
+                  <select value={staffEditorForm.role} onChange={onStaffEditorFieldChange('role')} disabled={role !== 'admin'}>
+                    {STAFF_ROLES.map((staffRole) => (
+                      <option key={staffRole} value={staffRole}>
+                        {titleCase(staffRole)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              <label className="checkbox-row">
+                <input type="checkbox" checked={Boolean(staffEditorForm.isActive)} onChange={onStaffEditorFieldChange('isActive')} />
+                <span>Staff record is active</span>
+              </label>
+              <div className="meta-wrap">
+                <span>Email: {selectedStaff.email || 'No email available'}</span>
+                <span>Updated: {formatDateTime(selectedStaff.updatedAt || selectedStaff.createdAt)}</span>
+              </div>
+              <div className="action-row">
+                <button type="submit" disabled={staffSaving}>
+                  {staffSaving ? 'Saving...' : 'Save staff record'}
+                </button>
+              </div>
+              {staffMessage ? <p className="muted">{staffMessage}</p> : null}
+              {staffError ? <p className="error">{staffError}</p> : null}
+            </form>
+          ) : null}
         </Surface>
       </div>
     </div>

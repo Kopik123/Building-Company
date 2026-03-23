@@ -1,6 +1,10 @@
+import type { z } from 'zod';
+
 export type ProjectStatus = 'planning' | 'in_progress' | 'completed' | 'on_hold';
 export type QuoteStatus = 'pending' | 'in_progress' | 'responded' | 'closed';
 export type QuotePriority = 'low' | 'medium' | 'high';
+export type QuoteProjectType = 'bathroom' | 'kitchen' | 'interior' | 'tiling' | 'extension' | 'joinery' | 'rendering' | 'decorating' | 'other';
+export type QuoteContactMethod = 'email' | 'phone' | 'both';
 export type ServiceCategory = 'bathroom' | 'kitchen' | 'interior' | 'outdoor' | 'other';
 export type MaterialCategory = 'tiles' | 'plumbing' | 'electrical' | 'joinery' | 'paint' | 'hardware' | 'other';
 export type StaffRole = 'employee' | 'manager' | 'admin';
@@ -45,9 +49,15 @@ export interface QuoteSummary {
   status: QuoteStatus;
   priority: QuotePriority;
   description: string | null;
+  isGuest: boolean;
   guestName: string | null;
   guestEmail: string | null;
+  guestPhone: string | null;
+  contactMethod: string | null;
   postcode: string | null;
+  budgetRange: string | null;
+  contactEmail: string | null;
+  contactPhone: string | null;
   assignedManagerId: string | null;
   clientId: string | null;
   createdAt: string | null;
@@ -169,10 +179,25 @@ export interface InventoryMaterial {
 export const PROJECT_STATUSES: readonly ProjectStatus[];
 export const QUOTE_STATUSES: readonly QuoteStatus[];
 export const QUOTE_PRIORITIES: readonly QuotePriority[];
+export const QUOTE_PROJECT_TYPES: readonly QuoteProjectType[];
+export const QUOTE_CONTACT_METHODS: readonly QuoteContactMethod[];
 export const SERVICE_CATEGORIES: readonly ServiceCategory[];
 export const MATERIAL_CATEGORIES: readonly MaterialCategory[];
 export const STAFF_ROLES: readonly StaffRole[];
 export const STAFF_CREATION_ROLES: readonly StaffCreationRole[];
+
+export const userSummarySchema: z.ZodType<UserSummary>;
+export const messageAttachmentSchema: z.ZodType<MessageAttachment>;
+export const threadMessageSchema: z.ZodType<ThreadMessage>;
+export const projectSummarySchema: z.ZodType<ProjectSummary>;
+export const quoteSummarySchema: z.ZodType<QuoteSummary>;
+export const threadSummarySchema: z.ZodType<ThreadSummary>;
+export const directThreadSummarySchema: z.ZodType<DirectThreadSummary>;
+export const notificationSchema: z.ZodType<NotificationSummary>;
+export const crmClientSchema: z.ZodType<CrmClient>;
+export const crmStaffMemberSchema: z.ZodType<CrmStaffMember>;
+export const inventoryServiceSchema: z.ZodType<InventoryService>;
+export const inventoryMaterialSchema: z.ZodType<InventoryMaterial>;
 
 export function normalizeUserSummary(value: unknown): UserSummary;
 export function normalizeThreadMessage(value: unknown): ThreadMessage;
@@ -185,5 +210,5 @@ export function normalizeCrmClient(value: unknown): CrmClient;
 export function normalizeCrmStaffMember(value: unknown): CrmStaffMember;
 export function normalizeInventoryService(value: unknown): InventoryService;
 export function normalizeInventoryMaterial(value: unknown): InventoryMaterial;
-export function normalizeListResponse<T>(payload: unknown, key: string, normalizer: (value: unknown) => T): T[];
-export function normalizeItemResponse<T>(payload: unknown, key: string, normalizer: (value: unknown) => T): T | null;
+export function normalizeListResponse<T>(payload: unknown, key: string, normalizer: (value: unknown) => T, schema?: z.ZodType<T>): T[];
+export function normalizeItemResponse<T>(payload: unknown, key: string, normalizer: (value: unknown) => T, schema?: z.ZodType<T>): T | null;

@@ -304,7 +304,7 @@ test('web-v2 manager operations surfaces can create projects, update quotes, cre
   const quotes = [
     {
       id: 'quote-1',
-      projectType: 'Kitchen remodel',
+      projectType: 'kitchen',
       location: 'Manchester',
       status: 'pending',
       priority: 'high',
@@ -342,6 +342,7 @@ test('web-v2 manager operations surfaces can create projects, update quotes, cre
     }
   ];
   let projectCounter = 2;
+  let quoteCounter = 2;
   let serviceCounter = 2;
   let materialCounter = 2;
   let staffCounter = 2;
@@ -377,6 +378,20 @@ test('web-v2 manager operations surfaces can create projects, update quotes, cre
   await page.route(/\/api\/v2\/quotes(?:\?.*)?$/, async (route) => {
     await fulfillJson(route, { data: { quotes } });
   });
+  await page.route(/\/api\/v2\/quotes$/, async (route) => {
+    await handleRouteMethod(route, 'POST', async () => {
+      const payload = route.request().postDataJSON();
+      const createdQuote = {
+        id: `quote-${quoteCounter++}`,
+        ...payload,
+        isGuest: !payload.clientId,
+        client: clients.find((client) => client.id === payload.clientId) || null,
+        assignedManager: staff.find((member) => member.id === payload.assignedManagerId) || managerUser
+      };
+      quotes.unshift(createdQuote);
+      await fulfillJson(route, { data: { quote: createdQuote } }, 201);
+    });
+  });
   await page.route(/\/api\/v2\/quotes\/[^/]+$/, async (route) => {
     await handleRouteMethod(route, 'PATCH', async () => {
       const quoteId = route.request().url().match(/quotes\/([^/?]+)/)?.[1] || '';
@@ -406,6 +421,24 @@ test('web-v2 manager operations surfaces can create projects, update quotes, cre
       };
       staff.push(createdStaff);
       await fulfillJson(route, { data: { staff: createdStaff } }, 201);
+    });
+  });
+  await page.route(/\/api\/v2\/crm\/clients\/[^/]+$/, async (route) => {
+    await handleRouteMethod(route, 'PATCH', async () => {
+      const clientId = route.request().url().match(/clients\/([^/?]+)/)?.[1] || '';
+      const payload = route.request().postDataJSON();
+      const client = clients.find((item) => item.id === clientId);
+      Object.assign(client, payload);
+      await fulfillJson(route, { data: { client } });
+    });
+  });
+  await page.route(/\/api\/v2\/crm\/staff\/[^/]+$/, async (route) => {
+    await handleRouteMethod(route, 'PATCH', async () => {
+      const staffId = route.request().url().match(/staff\/([^/?]+)/)?.[1] || '';
+      const payload = route.request().postDataJSON();
+      const member = staff.find((item) => item.id === staffId);
+      Object.assign(member, payload);
+      await fulfillJson(route, { data: { staff: member } });
     });
   });
 
@@ -450,17 +483,30 @@ test('web-v2 manager operations surfaces can create projects, update quotes, cre
   await expect(page.locator('.stack-list')).toContainText('Gallery Penthouse Fit-out');
 
   await page.goto('/app-v2/quotes');
-  await page.getByLabel('Status').selectOption('responded');
+  await page.getByRole('button', { name: 'New quote' }).click();
+  await page.getByLabel('Project type').selectOption('bathroom');
+  await page.getByLabel('Location').fill('Leeds');
+  await page.getByLabel('Guest email').fill('newlead@example.com');
+  await page.getByLabel('Description').fill('Guest-led marble bathroom renovation scope.');
+  await page.getByRole('button', { name: 'Create quote' }).click();
+  await expect(page.locator('.stack-list')).toContainText('Leeds');
+  await page.getByLabel('Quote status').selectOption('responded');
   await page.getByRole('button', { name: 'Save quote' }).click();
   await expect(page.locator('.stack-list')).toContainText('Responded');
 
   await page.goto('/app-v2/crm');
-  await page.getByLabel('Name').fill('Leah Builder');
-  await page.getByLabel('Email').fill('leah@example.com');
-  await page.getByLabel('Password').fill('StrongPassword123!');
-  await page.getByLabel('Role').selectOption('employee');
+  await page.getByLabel('Create staff name').fill('Leah Builder');
+  await page.getByLabel('Create staff email').fill('leah@example.com');
+  await page.getByLabel('Temporary password').fill('StrongPassword123!');
+  await page.getByLabel('Create staff role').selectOption('employee');
   await page.getByRole('button', { name: 'Create staff member' }).click();
   await expect(page.locator('.grid-two .stack-list').nth(1)).toContainText('Leah Builder');
+  await page.getByLabel('Client name').fill('Marta Client Updated');
+  await page.getByRole('button', { name: 'Save client' }).click();
+  await expect(page.locator('.grid-two .stack-list').first()).toContainText('Marta Client Updated');
+  await page.getByLabel('Update staff name').fill('Daniel Manager Updated');
+  await page.getByRole('button', { name: 'Save staff record' }).click();
+  await expect(page.locator('.grid-two .stack-list').nth(1)).toContainText('Daniel Manager Updated');
 
   await page.goto('/app-v2/inventory');
   await page.getByRole('button', { name: 'New service' }).click();
