@@ -34,6 +34,7 @@ const roleDescriptions = {
 
 const activeProjectStatuses = new Set(['planning', 'in_progress', 'on_hold']);
 const openQuoteStatuses = new Set(['pending', 'in_progress']);
+const MAX_QUOTE_PHOTO_FILES = 8;
 
 const isStaffRole = (role) => ['employee', 'manager', 'admin'].includes(String(role || '').toLowerCase());
 
@@ -546,6 +547,7 @@ function QuoteCard({ quote }) {
       <div className="meta-wrap">
         <span>Status: {titleCase(quote?.workflowStatus || quote?.status || 'pending')}</span>
         <span>Manager: {managerName}</span>
+        <span>Photos: {quote?.attachmentCount || 0}</span>
         <span>Estimates: {quote?.estimateCount || 0}</span>
         {latestEstimate ? <span>Latest offer: {titleCase(latestEstimate.decisionStatus || latestEstimate.status || 'draft')}</span> : null}
         <span>Created: {formatDateTime(quote?.createdAt)}</span>
@@ -647,6 +649,30 @@ function MessageBubble({ message, currentUserId }) {
         </div>
       ) : null}
     </article>
+  );
+}
+
+function QuoteAttachmentList({ attachments, emptyText = 'No quote photos attached yet.' }) {
+  const items = Array.isArray(attachments) ? attachments : [];
+
+  if (!items.length) {
+    return <EmptyState text={emptyText} />;
+  }
+
+  return (
+    <div className="attachment-list">
+      {items.map((attachment, index) => (
+        <a
+          key={`${attachment?.url || attachment?.name || 'quote-attachment'}-${index}`}
+          className="attachment-chip"
+          href={attachment?.url}
+          target="_blank"
+          rel="noreferrer"
+        >
+          {attachment?.name || 'Quote photo'}
+        </a>
+      ))}
+    </div>
   );
 }
 
@@ -1226,6 +1252,7 @@ function QuotesPage() {
   const [actionError, setActionError] = React.useState('');
   const [actionMessage, setActionMessage] = React.useState('');
   const [form, setForm] = React.useState(() => createQuoteFormState());
+  const [quoteFiles, setQuoteFiles] = React.useState([]);
   const [estimateForm, setEstimateForm] = React.useState(() => createEstimateFormState());
   const [responseNote, setResponseNote] = React.useState('');
   const [detailState, setDetailState] = React.useState({
@@ -1266,6 +1293,22 @@ function QuotesPage() {
         ['updatedAt', 'createdAt']
       )
     );
+  };
+
+  const onQuoteFilesChange = (event) => {
+    const nextFiles = Array.from(event.target.files || []);
+    if (nextFiles.length > MAX_QUOTE_PHOTO_FILES) {
+      setActionError(`Attach up to ${MAX_QUOTE_PHOTO_FILES} photos per quote.`);
+      setQuoteFiles(nextFiles.slice(0, MAX_QUOTE_PHOTO_FILES));
+      return;
+    }
+    if (nextFiles.some((file) => !String(file.type || '').toLowerCase().startsWith('image/'))) {
+      setActionError('Only image files are allowed for quote photo attachments.');
+      setQuoteFiles([]);
+      return;
+    }
+    setActionError('');
+    setQuoteFiles(nextFiles);
   };
 
   const loadQuoteWorkspace = async (quoteId = selectedQuoteId) => {
@@ -1374,6 +1417,7 @@ function QuotesPage() {
       })
     );
     setEstimateForm(createEstimateFormState());
+    setQuoteFiles([]);
     setResponseNote('');
     setDetailState({ loading: false, error: '', quote: null, estimates: [], events: [] });
     setActionError('');
@@ -1383,6 +1427,7 @@ function QuotesPage() {
   const selectQuote = (quote) => {
     setIsCreatingQuote(false);
     setSelectedQuoteId(quote.id);
+    setQuoteFiles([]);
     if (canManageQuotes) setForm(quoteToFormState(quote));
     setActionError('');
     setActionMessage('');
@@ -1391,12 +1436,17 @@ function QuotesPage() {
   const onSubmit = async (event) => {
     event.preventDefault();
     if ((!selectedQuoteId && !isCreatingQuote) || saving) return;
+    if (quoteFiles.length > MAX_QUOTE_PHOTO_FILES) {
+      setActionError(`Attach up to ${MAX_QUOTE_PHOTO_FILES} photos per quote.`);
+      return;
+    }
 
     setSaving(true);
     setActionError('');
     setActionMessage('');
 
     try {
+      const selectedQuoteFiles = [...quoteFiles];
       const payload = {
         projectType: form.projectType,
         location: String(form.location || '').trim(),
@@ -1418,15 +1468,37 @@ function QuotesPage() {
           contactEmail: toNullablePayload(form.contactEmail)
         });
       }
-      const savedQuote = selectedQuoteId ? await v2Api.updateQuote(selectedQuoteId, payload) : await v2Api.createQuote(payload);
+      let savedQuote = selectedQuoteId ? await v2Api.updateQuote(selectedQuoteId, payload) : await v2Api.createQuote(payload);
       if (!savedQuote?.id) throw new Error('Quote response missing payload');
+
+      let uploadedPhotoCount = 0;
+      if (selectedQuoteFiles.length) {
+        try {
+          const attachmentResult = await v2Api.uploadQuoteAttachments(savedQuote.id, { files: selectedQuoteFiles });
+          if (attachmentResult?.quote?.id) {
+            savedQuote = attachmentResult.quote;
+          }
+          uploadedPhotoCount = selectedQuoteFiles.length;
+          setQuoteFiles([]);
+        } catch (uploadError) {
+          setActionError(`Quote saved, but photo upload failed: ${uploadError.message || 'Try again.'}`);
+        }
+      }
 
       upsertQuote(savedQuote);
       setIsCreatingQuote(false);
       setSelectedQuoteId(savedQuote.id);
       if (canManageQuotes) setForm(quoteToFormState(savedQuote));
       await loadQuoteWorkspace(savedQuote.id);
-      setActionMessage(selectedQuoteId ? 'Quote saved.' : 'Quote created.');
+      setActionMessage(
+        uploadedPhotoCount
+          ? selectedQuoteId
+            ? `Quote saved and ${uploadedPhotoCount} photo(s) uploaded.`
+            : `Quote created with ${uploadedPhotoCount} photo(s).`
+          : selectedQuoteId
+            ? 'Quote saved.'
+            : 'Quote created.'
+      );
     } catch (error) {
       setActionError(error.message || 'Could not save quote');
     } finally {
@@ -1708,11 +1780,27 @@ function QuotesPage() {
                   required
                 />
               </label>
+              <label className="file-input">
+                <span>Reference photos</span>
+                <input type="file" accept="image/*" multiple onChange={onQuoteFilesChange} />
+              </label>
+              {quoteFiles.length ? (
+                <div className="attachment-list">
+                  {quoteFiles.map((file) => (
+                    <span key={`${file.name}-${file.size}`} className="attachment-chip attachment-chip--muted">
+                      {file.name}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="muted">Optional: attach up to {MAX_QUOTE_PHOTO_FILES} reference photos.</p>
+              )}
               {selectedQuote && !isCreatingQuote ? (
                 <div className="meta-wrap">
                   <span>Workflow: {titleCase(selectedQuote.workflowStatus || 'submitted')}</span>
                   <span>Client: {selectedQuote.client?.email || 'Guest quote'}</span>
                   <span>Assigned manager: {selectedQuote.assignedManager?.email || 'Unassigned'}</span>
+                  <span>Photos: {selectedQuote.attachmentCount || 0}</span>
                   <span>Created: {formatDateTime(selectedQuote.createdAt)}</span>
                 </div>
               ) : null}
@@ -1740,6 +1828,7 @@ function QuotesPage() {
               <div className="meta-wrap">
                 <span>Workflow: {titleCase(selectedQuote.workflowStatus || 'submitted')}</span>
                 <span>Source: {titleCase(selectedQuote.sourceChannel || 'portal')}</span>
+                <span>Photos: {selectedQuote.attachmentCount || 0}</span>
                 <span>Current estimate: {currentEstimate ? `v${currentEstimate.versionNumber || 1}` : 'Not sent yet'}</span>
                 <span>Assigned manager: {selectedQuote.assignedManager?.name || selectedQuote.assignedManager?.email || 'Pending assignment'}</span>
               </div>
@@ -1748,6 +1837,20 @@ function QuotesPage() {
           {actionMessage ? <p className="muted">{actionMessage}</p> : null}
           {actionError ? <p className="error">{actionError}</p> : null}
         </Surface>
+
+        {selectedQuote && !isCreatingQuote ? (
+          <Surface
+            eyebrow="Attachments"
+            title="Quote photos"
+            description={
+              canManageQuotes
+                ? 'Reference images attached by the client or operations team for this quote.'
+                : 'Reference images attached to your quote request.'
+            }
+          >
+            <QuoteAttachmentList attachments={selectedQuote.attachments} />
+          </Surface>
+        ) : null}
 
         {selectedQuote && !isCreatingQuote ? (
           <Surface

@@ -188,6 +188,8 @@ const quoteSummarySchema = z.object({
   convertedAt: nullableStringSchema,
   closedAt: nullableStringSchema,
   lossReason: nullableStringSchema,
+  attachmentCount: z.number(),
+  attachments: z.array(messageAttachmentSchema),
   estimateCount: z.number(),
   canConvertToProject: z.boolean(),
   createdAt: nullableStringSchema,
@@ -423,6 +425,7 @@ const normalizeProjectSummary = (value) => {
 
 const normalizeQuoteSummary = (value) => {
   const plain = toPlainObject(value);
+  const attachments = toArray(plain.attachments).map(normalizeMessageAttachment);
   return {
     id: toStringOr(plain.id),
     projectType: toNullableString(plain.projectType),
@@ -450,6 +453,8 @@ const normalizeQuoteSummary = (value) => {
     convertedAt: toNullableString(plain.convertedAt),
     closedAt: toNullableString(plain.closedAt),
     lossReason: toNullableString(plain.lossReason),
+    attachmentCount: toNullableNumber(plain.attachmentCount) ?? attachments.length,
+    attachments,
     estimateCount: toNullableNumber(plain.estimateCount) ?? (Array.isArray(plain.estimates) ? plain.estimates.length : 0),
     canConvertToProject: toBoolean(plain.canConvertToProject, false),
     createdAt: toNullableString(plain.createdAt),

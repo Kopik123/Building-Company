@@ -15,3 +15,4 @@
 - 2026-03-24 20:14 | Public Guest Quote Compatibility Fallback | Plans/Public Guest Quote Compatibility Fallback.md
 - 2026-03-24 20:49 | Quotes ClientId Nullability Production Hotfix | Plans/Quotes ClientId Nullability Production Hotfix.md
 - 2026-03-24 20:57 | Quotes ClientId Force Drop Not Null Hotfix | Plans/Quotes ClientId Force Drop Not Null Hotfix.md
+- 2026-03-24 21:24 | Quote Photo Attachments For Public And Web-v2 Intake | Plans/Quote Photo Attachments For Public And Web-v2 Intake.md

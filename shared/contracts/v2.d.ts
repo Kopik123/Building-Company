@@ -81,6 +81,8 @@ export interface QuoteSummary {
   convertedAt: string | null;
   closedAt: string | null;
   lossReason: string | null;
+  attachmentCount: number;
+  attachments: MessageAttachment[];
   estimateCount: number;
   canConvertToProject: boolean;
   createdAt: string | null;

@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const fs = require('node:fs/promises');
 const test = require('node:test');
 const request = require('supertest');
 const { clearPublicCaches } = require('../../utils/publicCache');
@@ -23,6 +24,13 @@ const restoreContactEnv = () => {
     process.env[key] = value;
   });
 };
+const uploadCleanupPaths = new Set();
+
+const registerUploadCleanup = (attachments = []) => {
+  attachments.forEach((attachment) => {
+    if (attachment?.storagePath) uploadCleanupPaths.add(attachment.storagePath);
+  });
+};
 
 const createGalleryModelsStub = (projects) => ({
   Project: {
@@ -38,6 +46,7 @@ const createGuestQuoteModelsStub = (overrides = {}) => {
     createdQuotes: [],
     createPayloads: [],
     updatedQuotes: [],
+    createdAttachments: [],
     createdEvents: [],
     notificationBatches: [],
     managers: [{
@@ -89,10 +98,30 @@ const createGuestQuoteModelsStub = (overrides = {}) => {
     }
   };
 
+  const QuoteAttachment = {
+    async bulkCreate(rows) {
+      const attachments = rows.map((row, index) => ({
+        id: `quote-attachment-${state.createdAttachments.length + index + 1}`,
+        createdAt: '2026-03-24T21:00:00Z',
+        updatedAt: '2026-03-24T21:00:00Z',
+        ...row
+      }));
+      state.createdAttachments.push(...attachments);
+      registerUploadCleanup(attachments);
+      return attachments;
+    }
+  };
+
   return {
     state,
     models: {
+      sequelize: {
+        async transaction(handler) {
+          return handler({ id: 'test-transaction' });
+        }
+      },
       Quote,
+      QuoteAttachment,
       QuoteClaimToken: {
         async destroy() {},
         async create() {},
@@ -112,6 +141,18 @@ test.afterEach(() => {
   clearPublicCaches();
   restoreContactEnv();
   mock.stopAll();
+});
+
+test.afterEach(async () => {
+  const paths = [...uploadCleanupPaths];
+  uploadCleanupPaths.clear();
+  await Promise.all(paths.map(async (targetPath) => {
+    try {
+      await fs.unlink(targetPath);
+    } catch (_error) {
+      // Uploaded test fixtures are best-effort cleanup only.
+    }
+  }));
 });
 
 test('legacy /api/gallery returns managed projects with flattened image list', async () => {
@@ -384,6 +425,35 @@ test('legacy /api/quotes/guest creates a guest quote and manager notifications f
   assert.equal(state.notificationBatches.length, 1);
   assert.equal(state.notificationBatches[0][0].type, 'new_quote');
   assert.equal(state.notificationBatches[0][0].quoteId, 'quote-1');
+});
+
+test('legacy /api/quotes/guest accepts attached quote photos and returns attachment metadata', async () => {
+  const { state, models } = createGuestQuoteModelsStub();
+  mockModels(models);
+
+  const quotesRouter = loadRoute('routes/quotes.js');
+  const app = buildExpressApp('/api/quotes', quotesRouter);
+
+  const response = await request(app)
+    .post('/api/quotes/guest')
+    .field('guestName', 'Olivia Reed')
+    .field('guestPhone', '07395448487')
+    .field('guestEmail', 'olivia@example.com')
+    .field('projectType', 'kitchen')
+    .field('budgetRange', '£8,000-£12,000')
+    .field('description', 'Kitchen installation and refurbishment with bespoke joinery.')
+    .field('location', 'Manchester and the North West')
+    .attach('files', Buffer.from('fake-image-a'), { filename: 'room-a.jpg', contentType: 'image/jpeg' })
+    .attach('files', Buffer.from('fake-image-b'), { filename: 'room-b.png', contentType: 'image/png' })
+    .expect(201);
+
+  assert.equal(response.body?.quoteId, 'quote-1');
+  assert.equal(response.body?.attachmentCount, 2);
+  assert.equal(Array.isArray(response.body?.attachments), true);
+  assert.equal(response.body.attachments.length, 2);
+  assert.equal(state.createdAttachments.length, 2);
+  assert.equal(state.createdEvents[0]?.data?.attachmentCount, 2);
+  assert.equal(state.notificationBatches[0][0]?.data?.attachmentCount, 2);
 });
 
 test('legacy /api/quotes/guest still succeeds when quote side effects fail', async () => {

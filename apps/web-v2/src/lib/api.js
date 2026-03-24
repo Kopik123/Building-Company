@@ -175,6 +175,20 @@ export const v2Api = {
     const payload = await withAuth(`/quotes/${quoteId}`, toJsonOptions('PATCH', input));
     return normalizeItemResponse(payload, 'quote', normalizeQuoteSummary, quoteSummarySchema);
   },
+  async uploadQuoteAttachments(quoteId, { files = [] } = {}) {
+    const formData = new FormData();
+    Array.from(files || []).forEach((file) => formData.append('files', file));
+    const payload = await withAuth(`/quotes/${quoteId}/attachments`, {
+      method: 'POST',
+      body: formData
+    });
+    return {
+      quote: normalizeItemResponse(payload, 'quote', normalizeQuoteSummary, quoteSummarySchema),
+      attachments: Array.isArray(payload.data?.attachments)
+        ? payload.data.attachments.map((attachment) => contractKit.normalizeMessageAttachment(attachment))
+        : []
+    };
+  },
   async assignQuote(quoteId, input = {}) {
     const payload = await withAuth(`/quotes/${quoteId}/assign`, toJsonOptions('POST', input));
     return {

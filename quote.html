@@ -97,15 +97,17 @@
           <div class="form-grid">
             <label>Name<input type="text" name="name" autocomplete="name" required /></label>
             <label>Phone<input type="tel" name="phone" autocomplete="tel" /></label>
-            <label>Email<input type="email" name="email" autocomplete="email" required /></label>
+            <label>Email<input type="email" name="email" autocomplete="email" /></label>
             <label>Project type
               <select name="projectType" required data-brand-project-type-select data-default-label="Select"></select>
             </label>
             <label>Budget
               <select name="budget" data-brand-budget-select data-default-label="Select"></select>
             </label>
+            <label class="span-2">Reference photos<input type="file" name="files" accept="image/*" multiple /></label>
             <label class="span-2">Project brief<textarea name="message" rows="6" required placeholder="Tell us about the rooms, finish ambition and timing."></textarea></label>
           </div>
+          <p class="page-aside-copy" data-quote-files-status>Optional: attach up to 8 reference photos.</p>
           <button class="btn btn-gold btn-block" type="submit">Send Enquiry</button>
           <p class="form-status" aria-live="polite"></p>
         </form>

@@ -7,6 +7,7 @@ const performanceSearch = require('../../migrations/202603090000-performance-sea
 const quoteWorkflowAndEvents = require('../../migrations/202603240001-quote-workflow-and-events.js');
 const relaxQuotesClientIdNullability = require('../../migrations/202603240002-relax-quotes-clientid-nullability.js');
 const forceDropQuotesClientIdNotNull = require('../../migrations/202603240003-force-drop-quotes-clientid-not-null.js');
+const quoteAttachmentsMigration = require('../../migrations/202603240004-quote-attachments.js');
 
 const createQueryInterfaceStub = (tables) => {
   const queries = [];
@@ -43,6 +44,15 @@ const createQueryInterfaceStub = (tables) => {
       async addColumn(tableName, columnName, definition) {
         tables[tableName] = tables[tableName] || {};
         tables[tableName][columnName] = definition;
+      },
+      async createTable(tableName, definition) {
+        tables[tableName] = definition;
+      },
+      async dropTable(tableName) {
+        delete tables[tableName];
+      },
+      async removeIndex() {
+        return undefined;
       }
     }
   };
@@ -397,4 +407,38 @@ test('quotes clientId force-drop hotfix executes a raw ALTER TABLE DROP NOT NULL
   assert.deepEqual(queries, [
     'ALTER TABLE "Quotes" ALTER COLUMN "clientId" DROP NOT NULL'
   ]);
+});
+
+test('quote attachments migration creates the table and both supporting indexes when missing', async () => {
+  const { queryInterface, addedIndexes } = createQueryInterfaceStub({
+    Quotes: {
+      id: {}
+    },
+    Users: {
+      id: {}
+    }
+  });
+
+  await assert.doesNotReject(() =>
+    quoteAttachmentsMigration.up(queryInterface, {
+      fn: (name) => ({ fn: name }),
+      DataTypes: {
+        UUID: 'UUID',
+        STRING: 'STRING',
+        INTEGER: 'INTEGER',
+        DATE: 'DATE'
+      }
+    })
+  );
+
+  assert.equal(typeof queryInterface.describeTable, 'function');
+  await assert.doesNotReject(() => queryInterface.describeTable('QuoteAttachments'));
+  assert.equal(
+    addedIndexes.some((item) => item.options?.name === 'quote_attachments_quote_created_idx'),
+    true
+  );
+  assert.equal(
+    addedIndexes.some((item) => item.options?.name === 'quote_attachments_uploader_idx'),
+    true
+  );
 });

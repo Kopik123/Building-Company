@@ -1,6 +1,7 @@
 const sequelize = require('../config/database');
 const User = require('./User');
 const Quote = require('./Quote');
+const QuoteAttachment = require('./QuoteAttachment');
 const QuoteEvent = require('./QuoteEvent');
 const QuoteMessage = require('./QuoteMessage');
 const InboxThread = require('./InboxThread');
@@ -22,6 +23,10 @@ const DevicePushToken = require('./DevicePushToken');
 User.hasMany(Quote, { foreignKey: 'clientId', as: 'quotes' });
 Quote.belongsTo(User, { foreignKey: 'clientId', as: 'client' });
 Quote.belongsTo(User, { foreignKey: 'assignedManagerId', as: 'assignedManager' });
+Quote.hasMany(QuoteAttachment, { foreignKey: 'quoteId', as: 'attachments', onDelete: 'CASCADE', hooks: true });
+QuoteAttachment.belongsTo(Quote, { foreignKey: 'quoteId', as: 'quote' });
+QuoteAttachment.belongsTo(User, { foreignKey: 'uploadedByUserId', as: 'uploader' });
+User.hasMany(QuoteAttachment, { foreignKey: 'uploadedByUserId', as: 'quoteAttachments' });
 Quote.hasMany(QuoteEvent, { foreignKey: 'quoteId', as: 'events', onDelete: 'CASCADE', hooks: true });
 QuoteEvent.belongsTo(Quote, { foreignKey: 'quoteId', as: 'quote' });
 QuoteEvent.belongsTo(User, { foreignKey: 'actorUserId', as: 'actor' });
@@ -146,6 +151,8 @@ const ensureIndexes = async () => {
     { table: Quote.getTableName(), name: 'quotes_assigned_manager_idx', fields: ['assignedManagerId'] },
     { table: Quote.getTableName(), name: 'quotes_current_estimate_idx', fields: ['currentEstimateId'] },
     { table: Quote.getTableName(), name: 'quotes_converted_project_idx', fields: ['convertedProjectId'] },
+    { table: QuoteAttachment.getTableName(), name: 'quote_attachments_quote_created_idx', fields: ['quoteId', 'createdAt'] },
+    { table: QuoteAttachment.getTableName(), name: 'quote_attachments_uploader_idx', fields: ['uploadedByUserId'] },
     { table: QuoteEvent.getTableName(), name: 'quote_events_quote_created_idx', fields: ['quoteId', 'createdAt'] },
     { table: QuoteEvent.getTableName(), name: 'quote_events_quote_visibility_idx', fields: ['quoteId', 'visibility', 'createdAt'] },
     { table: User.getTableName(), name: 'users_role_active_idx', fields: ['role', 'isActive'] },
@@ -192,6 +199,7 @@ module.exports = {
   sequelize,
   User,
   Quote,
+  QuoteAttachment,
   QuoteEvent,
   QuoteMessage,
   InboxThread,

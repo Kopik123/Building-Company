@@ -3,7 +3,24 @@ const express = require('express');
 const nodemailer = require('nodemailer');
 const { Op } = require('sequelize');
 const { body, validationResult, param } = require('express-validator');
-const { Quote, QuoteClaimToken, User, Notification, QuoteEvent } = require('../models');
+const { upload } = require('../utils/upload');
+const {
+  MAX_QUOTE_ATTACHMENT_FILES,
+  cleanupUploadedFiles,
+  createQuoteAttachmentRows,
+  sortQuoteAttachments,
+  toQuoteAttachmentSummary,
+  validateQuoteAttachmentFiles
+} = require('../utils/quoteAttachments');
+const {
+  sequelize,
+  Quote,
+  QuoteAttachment,
+  QuoteClaimToken,
+  User,
+  Notification,
+  QuoteEvent
+} = require('../models');
 const { auth } = require('../middleware/auth');
 const asyncHandler = require('../utils/asyncHandler');
 const { deriveLegacyQuoteStatus } = require('../utils/quoteWorkflow');
@@ -34,7 +51,30 @@ const logBlockingQuoteFailure = (scope, error, meta = {}) => {
   });
 };
 
-const createGuestQuoteRecord = async (basePayload) => {
+const withQuoteTransaction = async (handler) => {
+  if (typeof sequelize?.transaction !== 'function') {
+    return handler(null);
+  }
+
+  return sequelize.transaction(async (transaction) => handler(transaction));
+};
+
+const persistQuoteAttachments = async ({ quoteId, files, uploadedByUserId = null, source = null, transaction = null }) => {
+  if (!quoteId || typeof QuoteAttachment?.bulkCreate !== 'function') return [];
+
+  const rows = createQuoteAttachmentRows({
+    quoteId,
+    files,
+    uploadedByUserId,
+    source
+  });
+
+  if (!rows.length) return [];
+
+  return QuoteAttachment.bulkCreate(rows, transaction ? { transaction } : undefined);
+};
+
+const createGuestQuoteRecord = async (basePayload, options = {}) => {
   const workflowPayload = {
     workflowStatus: 'submitted',
     sourceChannel: 'public_web',
@@ -45,7 +85,7 @@ const createGuestQuoteRecord = async (basePayload) => {
     return await Quote.create({
       ...basePayload,
       ...workflowPayload
-    });
+    }, options);
   } catch (error) {
     console.warn('Guest quote compatibility fallback engaged.', {
       message: error?.message || String(error)
@@ -53,7 +93,7 @@ const createGuestQuoteRecord = async (basePayload) => {
 
     let quote;
     try {
-      quote = await Quote.create(basePayload);
+      quote = await Quote.create(basePayload, options);
     } catch (fallbackError) {
       logBlockingQuoteFailure('guest_quote_create', fallbackError, {
         initialMessage: error?.message || String(error)
@@ -63,7 +103,7 @@ const createGuestQuoteRecord = async (basePayload) => {
 
     if (typeof quote?.update === 'function') {
       try {
-        await quote.update(workflowPayload);
+        await quote.update(workflowPayload, options);
       } catch (updateError) {
         logNonBlockingQuoteFailure('guest_quote_workflow_backfill', updateError, { quoteId: quote.id });
       }
@@ -151,6 +191,7 @@ const sendClaimCodeByPhone = async (phone, code) => {
 
 router.post(
   '/guest',
+  upload.array('files', MAX_QUOTE_ATTACHMENT_FILES),
   [
     body('projectType').isIn(['bathroom', 'kitchen', 'interior', 'tiling', 'extension', 'joinery', 'rendering', 'decorating', 'other']),
     body('location').optional({ checkFalsy: true }).trim(),
@@ -162,8 +203,10 @@ router.post(
     body('budgetRange').optional().trim()
   ],
   asyncHandler(async (req, res) => {
+    const files = Array.isArray(req.files) ? req.files : [];
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      await cleanupUploadedFiles(files);
       return res.status(400).json({ errors: errors.array() });
     }
 
@@ -177,27 +220,59 @@ router.post(
     const postcode = String(req.body.postcode || '').trim() || null;
 
     if (!guestEmail && !guestPhone) {
+      await cleanupUploadedFiles(files);
       return res.status(400).json({ error: 'Provide guestEmail or guestPhone' });
     }
 
-    const contactMethod = guestEmail && guestPhone ? 'both' : guestEmail ? 'email' : 'phone';
+    const attachmentValidationError = validateQuoteAttachmentFiles(files);
+    if (attachmentValidationError) {
+      await cleanupUploadedFiles(files);
+      return res.status(400).json({ error: attachmentValidationError });
+    }
 
-    const quote = await createGuestQuoteRecord({
-      isGuest: true,
-      guestName,
-      guestEmail: guestEmail || null,
-      guestPhone: guestPhone || null,
-      contactMethod,
-      publicToken: createPublicToken(),
-      projectType,
-      location,
-      postcode: postcode || null,
-      description,
-      budgetRange,
-      contactEmail: guestEmail || null,
-      contactPhone: guestPhone || null,
-      status: deriveLegacyQuoteStatus('submitted')
-    });
+    const contactMethod = guestEmail && guestPhone ? 'both' : guestEmail ? 'email' : 'phone';
+    let quote;
+    let attachments = [];
+
+    try {
+      const persisted = await withQuoteTransaction(async (transaction) => {
+        const createdQuote = await createGuestQuoteRecord({
+          isGuest: true,
+          guestName,
+          guestEmail: guestEmail || null,
+          guestPhone: guestPhone || null,
+          contactMethod,
+          publicToken: createPublicToken(),
+          projectType,
+          location,
+          postcode: postcode || null,
+          description,
+          budgetRange,
+          contactEmail: guestEmail || null,
+          contactPhone: guestPhone || null,
+          status: deriveLegacyQuoteStatus('submitted')
+        }, transaction ? { transaction } : undefined);
+
+        const createdAttachments = await persistQuoteAttachments({
+          quoteId: createdQuote.id,
+          files,
+          uploadedByUserId: null,
+          source: 'public_guest_quote',
+          transaction
+        });
+
+        return {
+          quote: createdQuote,
+          attachments: sortQuoteAttachments(createdAttachments)
+        };
+      });
+
+      quote = persisted.quote;
+      attachments = persisted.attachments;
+    } catch (error) {
+      await cleanupUploadedFiles(files);
+      throw error;
+    }
 
     if (typeof QuoteEvent?.create === 'function') {
       try {
@@ -206,9 +281,13 @@ router.post(
           actorUserId: null,
           eventType: 'quote_submitted',
           visibility: 'public',
-          message: 'Guest submitted a new quote request.',
+          message: attachments.length
+            ? `Guest submitted a new quote request with ${attachments.length} attached photo(s).`
+            : 'Guest submitted a new quote request.',
           data: {
-            sourceChannel: 'public_web'
+            sourceChannel: 'public_web',
+            attachmentCount: attachments.length,
+            attachments: attachments.map(toQuoteAttachmentSummary)
           }
         });
       } catch (error) {
@@ -226,6 +305,7 @@ router.post(
       guestEmail ? `Email: ${guestEmail}` : null,
       guestPhone ? `Phone: ${guestPhone}` : null,
       budgetRange ? `Budget: ${budgetRange}` : null,
+      attachments.length ? `Photos attached: ${attachments.length}` : null,
       `Description: ${description}`
     ].filter(Boolean).join('\n');
 
@@ -247,7 +327,8 @@ router.post(
               guestPhone: guestPhone || null,
               postcode,
               location,
-              projectType
+              projectType,
+              attachmentCount: attachments.length
             }
           }))
         );
@@ -259,7 +340,9 @@ router.post(
     return res.status(201).json({
       quoteId: quote.id,
       publicToken: quote.publicToken,
-      status: quote.status
+      status: quote.status,
+      attachmentCount: attachments.length,
+      attachments: attachments.map(toQuoteAttachmentSummary)
     });
   })
 );

@@ -12,6 +12,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [x] Ship the first `web-v2` manager CRUD parity wave so `projects`, `quotes`, `crm` and `inventory` stop being read-only rollout boards and cover core create/update/delete paths through `api/v2`.
 - [x] Close the next manager parity gaps in `web-v2` by shipping quote creation and CRM patch flows for clients/staff, so those operations no longer depend on legacy dashboards.
 - [x] Ship the first end-to-end quote lifecycle in `api/v2` and `web-v2` for logged-in clients and managers: quote submit, manager ownership, estimate draft/send, client response and manual project conversion after approval.
+- [x] Add quote photo attachments across the current website intake flow so clients can send up to 8 reference images from public quote forms and the authenticated `web-v2` quote surface, while managers can review those photos inside quote detail.
 - [x] Align legacy guest quote intake with the new lifecycle metadata by storing workflow state, submission timestamps and quote events without breaking the current public/claim flow.
 - [x] Harden `202603240001-quote-workflow-and-events.js` for production recovery so a partial first-run migration can resume cleanly and the workflow-status backfill uses an explicit Postgres enum cast instead of a text-only `CASE`.
 - [x] Harden legacy `/api/quotes/guest` so customer intake still succeeds when non-critical side effects like `QuoteEvent.create` or manager notification fan-out fail.
@@ -101,6 +102,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [ ] Design and implement a durable activity/audit feed for company, client and project timelines.
 - [ ] Close the operational gap in `quote -> estimate -> approval -> project` so estimate approvals are explicit, versioned and portable to mobile clients.
 - [ ] Finish public guest quote portal parity on a v2 contract (`submit`, `preview`, `claim`, later response access) so guest quote UX no longer depends on legacy-only routes.
+- [ ] Extend the future claimed/guest quote portal so customers can add follow-up quote photos after the initial submission, not only during the first send.
 - [ ] Consolidate manual public pages and generated SEO pages onto one content model/source so brochure copy, metadata, FAQ and CTA logic stop drifting.
 - [ ] Create a shared web/mobile contract layer for auth/session, project summaries, thread summaries, notifications and estimate state before expanding `mobile-v1` further.
 - [ ] Keep every new feature review aligned with future Android/iOS app readiness, especially API contracts, auth/session handling, messaging and media flows.

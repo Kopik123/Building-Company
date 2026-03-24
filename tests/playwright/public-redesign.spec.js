@@ -193,6 +193,8 @@ test('core brochure pages render about, services, gallery, contact and quote rou
   await expect(page.locator('body.public-site.page-quote')).toBeVisible();
   await expect(page.getByRole('heading', { name: /send one private enquiry for bathrooms, kitchens/i })).toBeVisible();
   await expect(page.locator('form.js-quote-form')).toBeVisible();
+  await expect(page.locator('form.js-quote-form input[type="file"][name="files"]')).toHaveAttribute('accept', /image\/\*/i);
+  await expect(page.locator('[data-quote-files-status]')).toContainText(/attach up to 8 reference photos/i);
   const quoteCardTop = await page.locator('#quote-card').evaluate((node) => node.getBoundingClientRect().top);
   const quoteIntroTop = await page.locator('main h1').first().evaluate((node) => node.getBoundingClientRect().top);
   expect(quoteCardTop).toBeLessThan(quoteIntroTop);
@@ -290,6 +292,7 @@ test('service, location and legal pages keep the same shell and single primary c
   await expect(page.locator('[data-nav-menu] a[href="/quote.html"]')).toBeVisible();
   await expect(page.locator('[data-nav-menu] a[href="/auth.html"]')).toBeVisible();
   await expect(page.locator('form.js-quote-form')).toHaveCount(1);
+  await expect(page.locator('form.js-quote-form input[type="file"][name="files"]')).toHaveAttribute('accept', /image\/\*/i);
 
   await page.goto('/premium-renovations-chorlton.html');
   await expect(page.locator('body.public-site.page-location')).toBeVisible();

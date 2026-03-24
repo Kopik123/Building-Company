@@ -2,6 +2,15 @@ const crypto = require('crypto');
 const express = require('express');
 const { Op, fn, col, where: sqlWhere } = require('sequelize');
 const { body, param, query, validationResult } = require('express-validator');
+const { upload } = require('../../../utils/upload');
+const {
+  MAX_QUOTE_ATTACHMENT_FILES,
+  cleanupUploadedFiles,
+  createQuoteAttachmentRows,
+  sortQuoteAttachments,
+  toQuoteAttachmentSummary,
+  validateQuoteAttachmentFiles
+} = require('../../../utils/quoteAttachments');
 const {
   Estimate,
   EstimateLine,
@@ -10,6 +19,7 @@ const {
   Notification,
   Project,
   Quote,
+  QuoteAttachment,
   QuoteEvent,
   User
 } = require('../../../models');
@@ -65,6 +75,14 @@ const quoteIncludes = [
     attributes: ['id', 'quoteId', 'title', 'status', 'decisionStatus', 'versionNumber', 'isCurrentVersion', 'notes', 'clientMessage', 'subtotal', 'total', 'sentAt', 'viewedAt', 'respondedAt', 'approvedAt', 'declinedAt', 'createdAt', 'updatedAt'],
     required: false,
     include: [{ model: User, as: 'creator', attributes: ['id', 'name', 'email'], required: false }]
+  },
+  {
+    model: QuoteAttachment,
+    as: 'attachments',
+    attributes: ['id', 'filename', 'url', 'mimeType', 'sizeBytes', 'createdAt', 'updatedAt'],
+    required: false,
+    separate: true,
+    order: [['createdAt', 'ASC']]
   }
 ];
 
@@ -106,15 +124,18 @@ const normalizedCanConvert = ({ workflowStatus, currentEstimate, convertedProjec
   && normalizeWorkflowStatus(workflowStatus) === 'approved_ready_for_project'
   && normalizeEstimateDecisionStatus(currentEstimate?.decisionStatus) === 'accepted';
 
-const loadQuote = async (id) => {
-  const quote = await Quote.findByPk(id, {
-    include: quoteIncludes
-  });
-  if (!quote) return null;
-  const plain = typeof quote.toJSON === 'function' ? quote.toJSON() : { ...quote };
+const normalizeAttachmentList = (attachments) =>
+  sortQuoteAttachments(attachments).map(toQuoteAttachmentSummary);
+
+const hydrateQuotePayload = (quote) => {
+  const plain = typeof quote?.toJSON === 'function' ? quote.toJSON() : { ...(quote || {}) };
   const latestEstimate = plain.currentEstimate || null;
+  const attachments = normalizeAttachmentList(plain.attachments);
+
   return {
     ...plain,
+    attachments,
+    attachmentCount: attachments.length,
     latestEstimate,
     estimateCount: Number(plain.estimateCount || (latestEstimate ? 1 : 0)),
     canConvertToProject: normalizedCanConvert({
@@ -123,6 +144,34 @@ const loadQuote = async (id) => {
       convertedProjectId: plain.convertedProjectId
     })
   };
+};
+
+const persistQuoteAttachments = async ({ quoteId, files, uploadedByUserId = null, source = null }) => {
+  if (!quoteId || typeof QuoteAttachment?.bulkCreate !== 'function') return [];
+
+  const rows = createQuoteAttachmentRows({
+    quoteId,
+    files,
+    uploadedByUserId,
+    source
+  });
+
+  if (!rows.length) return [];
+  return QuoteAttachment.bulkCreate(rows);
+};
+
+const canAccessQuote = (quote, user) => {
+  if (!quote || !user) return false;
+  if (user.role === 'client') return quote.clientId === user.id;
+  return ['employee', 'manager', 'admin'].includes(String(user.role || '').toLowerCase());
+};
+
+const loadQuote = async (id) => {
+  const quote = await Quote.findByPk(id, {
+    include: quoteIncludes
+  });
+  if (!quote) return null;
+  return hydrateQuotePayload(quote);
 };
 
 const loadQuoteEvents = async (quoteId, visibility) => {
@@ -248,20 +297,7 @@ router.get(
       offset
     });
 
-    const quotes = rows.map((quote) => {
-      const plain = typeof quote.toJSON === 'function' ? quote.toJSON() : quote;
-      const latestEstimate = plain.currentEstimate || null;
-      return {
-        ...plain,
-        latestEstimate,
-        estimateCount: Number(plain.estimateCount || (latestEstimate ? 1 : 0)),
-        canConvertToProject: normalizedCanConvert({
-          workflowStatus: plain.workflowStatus,
-          currentEstimate: latestEstimate,
-          convertedProjectId: plain.convertedProjectId
-        })
-      };
-    });
+    const quotes = rows.map(hydrateQuotePayload);
 
     return ok(res, { quotes }, { page, pageSize, total: count, totalPages: Math.max(1, Math.ceil(count / pageSize)) });
   })
@@ -283,6 +319,80 @@ router.get(
     }
 
     return ok(res, { quote });
+  })
+);
+
+router.post(
+  '/:id/attachments',
+  [
+    authV2,
+    roleCheckV2('client', 'manager', 'admin'),
+    param('id').isUUID(),
+    upload.array('files', MAX_QUOTE_ATTACHMENT_FILES)
+  ],
+  asyncHandler(async (req, res) => {
+    const files = Array.isArray(req.files) ? req.files : [];
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      await cleanupUploadedFiles(files);
+      return fail(res, 400, 'validation_failed', 'Validation failed', errors.array());
+    }
+
+    const quote = await Quote.findByPk(req.params.id, { include: quoteIncludes });
+    if (!quote) {
+      await cleanupUploadedFiles(files);
+      return fail(res, 404, 'quote_not_found', 'Quote not found');
+    }
+    if (!canAccessQuote(quote, req.v2User)) {
+      await cleanupUploadedFiles(files);
+      return fail(res, 404, 'quote_not_found', 'Quote not found');
+    }
+
+    const attachmentValidationError = validateQuoteAttachmentFiles(files);
+    if (attachmentValidationError) {
+      await cleanupUploadedFiles(files);
+      return fail(res, 400, 'invalid_attachments', attachmentValidationError);
+    }
+
+    if (!files.length) {
+      await cleanupUploadedFiles(files);
+      return fail(res, 400, 'missing_attachments', 'Attach at least one photo');
+    }
+
+    let attachments = [];
+    try {
+      attachments = await persistQuoteAttachments({
+        quoteId: quote.id,
+        files,
+        uploadedByUserId: req.v2User.id,
+        source: req.v2User.role === 'client' ? 'client_portal_quote' : 'staff_quote'
+      });
+    } catch (error) {
+      await cleanupUploadedFiles(files);
+      throw error;
+    }
+
+    try {
+      await createQuoteEvent({
+        quoteId: quote.id,
+        actorUserId: req.v2User.id,
+        eventType: 'quote_attachments_added',
+        visibility: 'client',
+        message: `${attachments.length} quote attachment(s) added.`,
+        data: {
+          attachmentCount: attachments.length,
+          attachments: attachments.map(toQuoteAttachmentSummary)
+        }
+      });
+    } catch (error) {
+      console.warn('Non-blocking quote attachment event failure:', {
+        quoteId: quote.id,
+        message: error?.message || String(error)
+      });
+    }
+
+    const hydratedQuote = await attachEstimateMeta(quote);
+    return ok(res, { quote: hydratedQuote, attachments: normalizeAttachmentList(attachments) }, {}, 201);
   })
 );
 

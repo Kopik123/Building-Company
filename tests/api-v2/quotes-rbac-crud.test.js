@@ -1,10 +1,12 @@
 const assert = require('node:assert/strict');
+const fs = require('node:fs/promises');
 const test = require('node:test');
 const request = require('supertest');
 const { Op } = require('sequelize');
 const { buildExpressApp, loadRoute, mock, mockModels, signAccessToken } = require('./_helpers');
 
 process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-secret-v2';
+const uploadedAttachmentPaths = new Set();
 
 const createQuoteStubs = () => {
   const users = {
@@ -38,6 +40,7 @@ const createQuoteStubs = () => {
   const quotes = [];
   const estimates = [];
   const projects = [];
+  const quoteAttachments = [];
   const quoteEvents = [];
   const notifications = [];
   const groupThreads = [];
@@ -62,7 +65,8 @@ const createQuoteStubs = () => {
         ...this,
         client: this.clientId ? users[this.clientId] || null : null,
         assignedManager: this.assignedManagerId ? users[this.assignedManagerId] || null : null,
-        currentEstimate: this.currentEstimateId ? estimates.find((estimate) => estimate.id === this.currentEstimateId) || null : null
+        currentEstimate: this.currentEstimateId ? estimates.find((estimate) => estimate.id === this.currentEstimateId) || null : null,
+        attachments: quoteAttachments.filter((attachment) => attachment.quoteId === this.id)
       };
     }
   });
@@ -127,6 +131,7 @@ const createQuoteStubs = () => {
         convertedAt: payload.convertedAt || null,
         closedAt: payload.closedAt || null,
         lossReason: payload.lossReason || null,
+        attachments: [],
         priority: payload.priority || 'medium',
         createdAt: '2026-03-24T09:00:00Z',
         updatedAt: '2026-03-24T09:00:00Z'
@@ -199,6 +204,22 @@ const createQuoteStubs = () => {
   const EstimateLine = {
     async create() {
       return { id: `estimate-line-${Date.now()}` };
+    }
+  };
+
+  const QuoteAttachment = {
+    async bulkCreate(rows) {
+      const created = rows.map((row, index) => ({
+        id: `quote-attachment-${quoteAttachments.length + index + 1}`,
+        createdAt: '2026-03-24T09:06:00Z',
+        updatedAt: '2026-03-24T09:06:00Z',
+        ...row
+      }));
+      quoteAttachments.push(...created);
+      created.forEach((attachment) => {
+        if (attachment.storagePath) uploadedAttachmentPaths.add(attachment.storagePath);
+      });
+      return created;
     }
   };
 
@@ -285,6 +306,7 @@ const createQuoteStubs = () => {
     projects,
     models: {
       Quote,
+      QuoteAttachment,
       Estimate,
       EstimateLine,
       QuoteEvent,
@@ -299,6 +321,18 @@ const createQuoteStubs = () => {
 
 test.afterEach(() => {
   mock.stopAll();
+});
+
+test.afterEach(async () => {
+  const paths = [...uploadedAttachmentPaths];
+  uploadedAttachmentPaths.clear();
+  await Promise.all(paths.map(async (targetPath) => {
+    try {
+      await fs.unlink(targetPath);
+    } catch (_error) {
+      // Best-effort cleanup for uploaded test files only.
+    }
+  }));
 });
 
 test('quotes v2 supports client submit, manager assignment, estimate approval and project conversion', async () => {
@@ -379,4 +413,38 @@ test('quotes v2 supports client submit, manager assignment, estimate approval an
   assert.equal(convertResponse.body?.data?.quote?.workflowStatus, 'converted_to_project');
   assert.equal(stubs.projects.length, 1);
   assert.equal(stubs.quoteEvents.length >= 4, true);
+});
+
+test('quotes v2 lets a client attach reference photos to an existing quote', async () => {
+  const stubs = createQuoteStubs();
+  mockModels(stubs.models);
+
+  const route = loadRoute('api/v2/routes/quotes.js');
+  const app = buildExpressApp('/api/v2/quotes', route);
+
+  const clientToken = signAccessToken('33333333-3333-4333-8333-333333333333', 'client');
+
+  const createResponse = await request(app)
+    .post('/api/v2/quotes')
+    .set('Authorization', `Bearer ${clientToken}`)
+    .send({
+      projectType: 'kitchen',
+      location: 'Manchester',
+      description: 'Kitchen quote with image references.'
+    })
+    .expect(201);
+
+  const quoteId = createResponse.body?.data?.quote?.id;
+  assert.ok(quoteId);
+
+  const attachResponse = await request(app)
+    .post(`/api/v2/quotes/${quoteId}/attachments`)
+    .set('Authorization', `Bearer ${clientToken}`)
+    .attach('files', Buffer.from('fake-image-a'), { filename: 'kitchen-a.jpg', contentType: 'image/jpeg' })
+    .attach('files', Buffer.from('fake-image-b'), { filename: 'kitchen-b.png', contentType: 'image/png' })
+    .expect(201);
+
+  assert.equal(attachResponse.body?.data?.quote?.attachmentCount, 2);
+  assert.equal(attachResponse.body?.data?.attachments?.length, 2);
+  assert.equal(stubs.quoteEvents.some((event) => event.eventType === 'quote_attachments_added'), true);
 });
