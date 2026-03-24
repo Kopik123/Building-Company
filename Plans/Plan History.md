@@ -9,3 +9,4 @@
 - 2026-03-23 20:58 | Web-v2 Parity Sprint - Quote Creation, CRM Editing And Zod Contracts | Plans/Web-v2 Parity Sprint - Quote Creation, CRM Editing And Zod Contracts.md
 - 2026-03-23 21:37 | Folder Names As Gallery Source Of Truth | Plans/Folder Names As Gallery Source Of Truth.md
 - 2026-03-23 21:54 | Responsive Folder Gallery Media Pipeline | Plans/Responsive Folder Gallery Media Pipeline.md
+- 2026-03-24 19:16 | Quotes Lifecycle System - Client Portal, Manager Workflow And Project Conversion | Plans/Quotes Lifecycle System - Client Portal, Manager Workflow And Project Conversion.md

@@ -1,6 +1,7 @@
 const sequelize = require('../config/database');
 const User = require('./User');
 const Quote = require('./Quote');
+const QuoteEvent = require('./QuoteEvent');
 const QuoteMessage = require('./QuoteMessage');
 const InboxThread = require('./InboxThread');
 const InboxMessage = require('./InboxMessage');
@@ -21,6 +22,9 @@ const DevicePushToken = require('./DevicePushToken');
 User.hasMany(Quote, { foreignKey: 'clientId', as: 'quotes' });
 Quote.belongsTo(User, { foreignKey: 'clientId', as: 'client' });
 Quote.belongsTo(User, { foreignKey: 'assignedManagerId', as: 'assignedManager' });
+Quote.hasMany(QuoteEvent, { foreignKey: 'quoteId', as: 'events', onDelete: 'CASCADE', hooks: true });
+QuoteEvent.belongsTo(Quote, { foreignKey: 'quoteId', as: 'quote' });
+QuoteEvent.belongsTo(User, { foreignKey: 'actorUserId', as: 'actor' });
 
 Quote.hasMany(QuoteMessage, { foreignKey: 'quoteId', as: 'messages' });
 QuoteMessage.belongsTo(Quote, { foreignKey: 'quoteId', as: 'quote' });
@@ -68,6 +72,9 @@ Project.hasMany(Estimate, { foreignKey: 'projectId', as: 'estimates' });
 Estimate.belongsTo(Project, { foreignKey: 'projectId', as: 'project' });
 Quote.hasMany(Estimate, { foreignKey: 'quoteId', as: 'estimates' });
 Estimate.belongsTo(Quote, { foreignKey: 'quoteId', as: 'quote' });
+Quote.belongsTo(Estimate, { foreignKey: 'currentEstimateId', as: 'currentEstimate' });
+Quote.belongsTo(Project, { foreignKey: 'convertedProjectId', as: 'convertedProject' });
+Project.belongsTo(Estimate, { foreignKey: 'acceptedEstimateId', as: 'acceptedEstimate' });
 User.hasMany(Estimate, { foreignKey: 'createdById', as: 'createdEstimates' });
 Estimate.belongsTo(User, { foreignKey: 'createdById', as: 'creator' });
 Estimate.hasMany(EstimateLine, { foreignKey: 'estimateId', as: 'lines', onDelete: 'CASCADE', hooks: true });
@@ -133,9 +140,14 @@ const ensureIndexes = async () => {
     { table: Notification.getTableName(), name: 'notifications_user_read_created_idx', fields: ['userId', 'isRead', 'createdAt'] },
     { table: Notification.getTableName(), name: 'notifications_user_created_idx', fields: ['userId', 'createdAt'] },
     { table: Quote.getTableName(), name: 'quotes_status_created_idx', fields: ['status', 'createdAt'] },
+    { table: Quote.getTableName(), name: 'quotes_workflow_status_created_idx', fields: ['workflowStatus', 'createdAt'] },
     { table: Quote.getTableName(), name: 'quotes_priority_created_idx', fields: ['priority', 'createdAt'] },
     { table: Quote.getTableName(), name: 'quotes_project_type_created_idx', fields: ['projectType', 'createdAt'] },
     { table: Quote.getTableName(), name: 'quotes_assigned_manager_idx', fields: ['assignedManagerId'] },
+    { table: Quote.getTableName(), name: 'quotes_current_estimate_idx', fields: ['currentEstimateId'] },
+    { table: Quote.getTableName(), name: 'quotes_converted_project_idx', fields: ['convertedProjectId'] },
+    { table: QuoteEvent.getTableName(), name: 'quote_events_quote_created_idx', fields: ['quoteId', 'createdAt'] },
+    { table: QuoteEvent.getTableName(), name: 'quote_events_quote_visibility_idx', fields: ['quoteId', 'visibility', 'createdAt'] },
     { table: User.getTableName(), name: 'users_role_active_idx', fields: ['role', 'isActive'] },
     { table: InboxThread.getTableName(), name: 'inbox_threads_participant_a_updated_idx', fields: ['participantAId', 'updatedAt'] },
     { table: InboxThread.getTableName(), name: 'inbox_threads_participant_b_updated_idx', fields: ['participantBId', 'updatedAt'] },
@@ -151,6 +163,7 @@ const ensureIndexes = async () => {
     { table: Project.getTableName(), name: 'projects_status_created_idx', fields: ['status', 'createdAt'] },
     { table: Project.getTableName(), name: 'projects_client_status_idx', fields: ['clientId', 'status'] },
     { table: Project.getTableName(), name: 'projects_manager_status_idx', fields: ['assignedManagerId', 'status'] },
+    { table: Project.getTableName(), name: 'projects_accepted_estimate_idx', fields: ['acceptedEstimateId'] },
     { table: ProjectMedia.getTableName(), name: 'project_media_project_type_idx', fields: ['projectId', 'mediaType'] },
     { table: ProjectMedia.getTableName(), name: 'project_media_gallery_idx', fields: ['projectId', 'showInGallery', 'galleryOrder'] },
     { table: ServiceOffering.getTableName(), name: 'service_offerings_public_order_idx', fields: ['showOnWebsite', 'displayOrder'] },
@@ -159,6 +172,8 @@ const ensureIndexes = async () => {
     { table: Material.getTableName(), name: 'materials_stock_min_idx', fields: ['stockQty', 'minStockQty'] },
     { table: Estimate.getTableName(), name: 'estimates_project_status_idx', fields: ['projectId', 'status'] },
     { table: Estimate.getTableName(), name: 'estimates_quote_status_idx', fields: ['quoteId', 'status'] },
+    { table: Estimate.getTableName(), name: 'estimates_quote_version_idx', fields: ['quoteId', 'versionNumber'] },
+    { table: Estimate.getTableName(), name: 'estimates_quote_current_idx', fields: ['quoteId', 'isCurrentVersion'] },
     { table: Estimate.getTableName(), name: 'estimates_creator_created_idx', fields: ['createdById', 'createdAt'] },
     { table: EstimateLine.getTableName(), name: 'estimate_lines_estimate_order_idx', fields: ['estimateId', 'sortOrder'] },
     { table: EstimateLine.getTableName(), name: 'estimate_lines_service_idx', fields: ['serviceId'] },
@@ -177,6 +192,7 @@ module.exports = {
   sequelize,
   User,
   Quote,
+  QuoteEvent,
   QuoteMessage,
   InboxThread,
   InboxMessage,

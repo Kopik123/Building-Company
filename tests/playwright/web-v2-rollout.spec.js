@@ -307,13 +307,39 @@ test('web-v2 manager operations surfaces can create projects, update quotes, cre
       projectType: 'kitchen',
       location: 'Manchester',
       status: 'pending',
+      workflowStatus: 'submitted',
       priority: 'high',
       guestName: 'Olivia Reed',
       guestEmail: 'olivia@example.com',
+      isGuest: true,
+      estimateCount: 0,
+      canConvertToProject: false,
+      createdAt: '2026-03-23T09:00:00Z',
+      updatedAt: '2026-03-23T09:00:00Z',
       assignedManager: managerUser,
       client: null
     }
   ];
+  const quoteEventsById = {
+    'quote-1': []
+  };
+  const quoteEstimatesById = {
+    'quote-1': []
+  };
+  const enrichQuote = (quote) => ({
+    sourceChannel: 'manager_created_guest',
+    currentEstimateId: null,
+    convertedProjectId: null,
+    submittedAt: quote.createdAt || '2026-03-23T09:00:00Z',
+    assignedAt: quote.assignedManagerId ? (quote.updatedAt || quote.createdAt || '2026-03-23T09:00:00Z') : null,
+    convertedAt: null,
+    closedAt: null,
+    lossReason: null,
+    estimateCount: Array.isArray(quoteEstimatesById[quote.id]) ? quoteEstimatesById[quote.id].length : 0,
+    canConvertToProject: false,
+    latestEstimate: Array.isArray(quoteEstimatesById[quote.id]) ? quoteEstimatesById[quote.id][0] || null : null,
+    ...quote
+  });
   const services = [
     {
       id: 'service-1',
@@ -376,30 +402,62 @@ test('web-v2 manager operations surfaces can create projects, update quotes, cre
   });
 
   await page.route(/\/api\/v2\/quotes(?:\?.*)?$/, async (route) => {
-    await fulfillJson(route, { data: { quotes } });
-  });
-  await page.route(/\/api\/v2\/quotes$/, async (route) => {
-    await handleRouteMethod(route, 'POST', async () => {
+    if (route.request().method() === 'GET') {
+      await fulfillJson(route, { data: { quotes: quotes.map(enrichQuote) } });
+      return;
+    }
+    if (route.request().method() === 'POST') {
       const payload = route.request().postDataJSON();
       const createdQuote = {
         id: `quote-${quoteCounter++}`,
         ...payload,
+        status: payload.status || 'pending',
+        workflowStatus: 'submitted',
         isGuest: !payload.clientId,
+        estimateCount: 0,
+        canConvertToProject: false,
+        createdAt: '2026-03-23T10:20:00Z',
+        updatedAt: '2026-03-23T10:20:00Z',
         client: clients.find((client) => client.id === payload.clientId) || null,
         assignedManager: staff.find((member) => member.id === payload.assignedManagerId) || managerUser
       };
       quotes.unshift(createdQuote);
-      await fulfillJson(route, { data: { quote: createdQuote } }, 201);
-    });
+      quoteEventsById[createdQuote.id] = [];
+      quoteEstimatesById[createdQuote.id] = [];
+      await fulfillJson(route, { data: { quote: enrichQuote(createdQuote) } }, 201);
+      return;
+    }
+    await route.fallback();
   });
   await page.route(/\/api\/v2\/quotes\/[^/]+$/, async (route) => {
-    await handleRouteMethod(route, 'PATCH', async () => {
+    if (route.request().method() === 'GET') {
+      const quoteId = route.request().url().match(/quotes\/([^/?]+)/)?.[1] || '';
+      const quote = quotes.find((item) => item.id === quoteId) || null;
+      await fulfillJson(route, { data: { quote: quote ? enrichQuote(quote) : null } });
+      return;
+    }
+    if (route.request().method() === 'PATCH') {
       const quoteId = route.request().url().match(/quotes\/([^/?]+)/)?.[1] || '';
       const payload = route.request().postDataJSON();
       const quote = quotes.find((item) => item.id === quoteId);
-      Object.assign(quote, payload);
-      await fulfillJson(route, { data: { quote } });
-    });
+      Object.assign(quote, payload, {
+        updatedAt: '2026-03-23T10:25:00Z'
+      });
+      if (payload.status === 'responded') {
+        quote.workflowStatus = 'estimate_sent';
+      }
+      await fulfillJson(route, { data: { quote: enrichQuote(quote) } });
+      return;
+    }
+    await route.fallback();
+  });
+  await page.route(/\/api\/v2\/quotes\/[^/]+\/timeline$/, async (route) => {
+    const quoteId = route.request().url().match(/quotes\/([^/]+)\/timeline/)?.[1] || '';
+    await fulfillJson(route, { data: { events: quoteEventsById[quoteId] || [] } });
+  });
+  await page.route(/\/api\/v2\/quotes\/[^/]+\/estimates$/, async (route) => {
+    const quoteId = route.request().url().match(/quotes\/([^/]+)\/estimates/)?.[1] || '';
+    await fulfillJson(route, { data: { estimates: quoteEstimatesById[quoteId] || [] } });
   });
 
   await page.route(/\/api\/v2\/crm\/clients(?:\?.*)?$/, async (route) => {
@@ -483,16 +541,17 @@ test('web-v2 manager operations surfaces can create projects, update quotes, cre
   await expect(page.locator('.stack-list')).toContainText('Gallery Penthouse Fit-out');
 
   await page.goto('/app-v2/quotes');
-  await page.getByRole('button', { name: 'New quote' }).click();
+  const quoteBoardList = page.locator('.grid-two > .surface').first().locator('.stack-list');
+  await page.getByRole('button', { name: 'New quote' }).evaluate((node) => node.click());
   await page.getByLabel('Project type').selectOption('bathroom');
   await page.getByLabel('Location').fill('Leeds');
   await page.getByLabel('Guest email').fill('newlead@example.com');
   await page.getByLabel('Description').fill('Guest-led marble bathroom renovation scope.');
   await page.getByRole('button', { name: 'Create quote' }).click();
-  await expect(page.locator('.stack-list')).toContainText('Leeds');
+  await expect(quoteBoardList).toContainText('Leeds');
   await page.getByLabel('Quote status').selectOption('responded');
   await page.getByRole('button', { name: 'Save quote' }).click();
-  await expect(page.locator('.stack-list')).toContainText('Responded');
+  await expect(quoteBoardList).toContainText('Estimate Sent');
 
   await page.goto('/app-v2/crm');
   await page.getByLabel('Create staff name').fill('Leah Builder');
@@ -520,4 +579,192 @@ test('web-v2 manager operations surfaces can create projects, update quotes, cre
   await page.getByLabel('SKU').fill('BRASS-TRIM');
   await page.getByRole('button', { name: 'Create material' }).click();
   await expect(page.locator('.stack-list').nth(1)).toContainText('Brushed brass trim');
+});
+
+test('web-v2 client quotes surface can accept an estimate and submit a fresh quote request', async ({ page }) => {
+  const clientUser = {
+    id: 'client-1',
+    name: 'Marta Client',
+    email: 'client@example.com',
+    role: 'client',
+    phone: '+44 7000 000 000'
+  };
+  const managerUser = {
+    id: 'manager-1',
+    name: 'Daniel Manager',
+    email: 'manager@example.com',
+    role: 'manager'
+  };
+  const quoteEventsById = {
+    'quote-1': [
+      {
+        id: 'event-1',
+        quoteId: 'quote-1',
+        actorUserId: 'manager-1',
+        eventType: 'estimate_sent',
+        visibility: 'client',
+        message: 'Estimate v1 sent to client.',
+        createdAt: '2026-03-23T10:00:00Z',
+        actor: managerUser,
+        data: { estimateId: 'estimate-1' }
+      }
+    ]
+  };
+  const quoteEstimatesById = {
+    'quote-1': [
+      {
+        id: 'estimate-1',
+        quoteId: 'quote-1',
+        title: 'Bathroom Offer',
+        status: 'sent',
+        decisionStatus: 'pending',
+        versionNumber: 1,
+        isCurrentVersion: true,
+        total: 12500,
+        subtotal: 12500,
+        clientMessage: 'Please review the commercial offer.',
+        createdAt: '2026-03-23T10:00:00Z',
+        updatedAt: '2026-03-23T10:00:00Z',
+        creator: managerUser
+      }
+    ]
+  };
+  const quotes = [
+    {
+      id: 'quote-1',
+      projectType: 'bathroom',
+      location: 'Manchester',
+      status: 'responded',
+      workflowStatus: 'estimate_sent',
+      priority: 'high',
+      description: 'Premium bathroom redesign with brass detailing.',
+      isGuest: false,
+      clientId: 'client-1',
+      assignedManagerId: 'manager-1',
+      sourceChannel: 'client_portal',
+      currentEstimateId: 'estimate-1',
+      estimateCount: 1,
+      canConvertToProject: false,
+      createdAt: '2026-03-23T09:30:00Z',
+      updatedAt: '2026-03-23T10:00:00Z',
+      client: clientUser,
+      assignedManager: managerUser
+    }
+  ];
+  let quoteCounter = 2;
+
+  const enrichQuote = (quote) => ({
+    submittedAt: quote.createdAt || '2026-03-23T09:30:00Z',
+    assignedAt: quote.assignedManagerId ? (quote.updatedAt || quote.createdAt || '2026-03-23T09:30:00Z') : null,
+    convertedAt: null,
+    closedAt: null,
+    lossReason: null,
+    estimateCount: (quoteEstimatesById[quote.id] || []).length,
+    latestEstimate: (quoteEstimatesById[quote.id] || [])[0] || null,
+    ...quote
+  });
+
+  await mockWebV2Auth(page, clientUser);
+
+  await page.route(/\/api\/v2\/quotes(?:\?.*)?$/, async (route) => {
+    if (route.request().method() === 'GET') {
+      await fulfillJson(route, { data: { quotes: quotes.map(enrichQuote) } });
+      return;
+    }
+    if (route.request().method() === 'POST') {
+      const payload = route.request().postDataJSON();
+      const createdQuote = {
+        id: `quote-${quoteCounter++}`,
+        ...payload,
+        status: 'pending',
+        workflowStatus: 'submitted',
+        isGuest: false,
+        clientId: clientUser.id,
+        assignedManagerId: null,
+        sourceChannel: 'client_portal',
+        currentEstimateId: null,
+        estimateCount: 0,
+        canConvertToProject: false,
+        createdAt: '2026-03-23T11:00:00Z',
+        updatedAt: '2026-03-23T11:00:00Z',
+        client: clientUser,
+        assignedManager: null
+      };
+      quotes.unshift(createdQuote);
+      quoteEventsById[createdQuote.id] = [];
+      quoteEstimatesById[createdQuote.id] = [];
+      await fulfillJson(route, { data: { quote: enrichQuote(createdQuote) } }, 201);
+      return;
+    }
+    await route.fallback();
+  });
+
+  await page.route(/\/api\/v2\/quotes\/estimates\/[^/]+\/respond$/, async (route) => {
+    const estimateId = route.request().url().match(/quotes\/estimates\/([^/]+)\/respond/)?.[1] || '';
+    const payload = route.request().postDataJSON();
+    const quote = quotes.find((item) => item.currentEstimateId === estimateId);
+    const estimate = (quoteEstimatesById[quote?.id] || []).find((item) => item.id === estimateId);
+    estimate.decisionStatus = payload.decision;
+    estimate.status = payload.decision === 'accepted' ? 'approved' : estimate.status;
+    estimate.clientMessage = payload.note || null;
+    estimate.updatedAt = '2026-03-23T11:05:00Z';
+    quote.workflowStatus = payload.decision === 'accepted' ? 'approved_ready_for_project' : 'estimate_in_progress';
+    quote.status = payload.decision === 'accepted' ? 'responded' : quote.status;
+    quote.updatedAt = '2026-03-23T11:05:00Z';
+    quoteEventsById[quote.id] = [
+      ...(quoteEventsById[quote.id] || []),
+      {
+        id: `event-${quoteEventsById[quote.id].length + 1}`,
+        quoteId: quote.id,
+        actorUserId: clientUser.id,
+        eventType: `estimate_${payload.decision}`,
+        visibility: 'client',
+        message: `Client ${String(payload.decision).replaceAll('_', ' ')} the estimate.`,
+        createdAt: '2026-03-23T11:05:00Z',
+        actor: clientUser,
+        data: { estimateId }
+      }
+    ];
+    await fulfillJson(route, {
+      data: {
+        quote: enrichQuote(quote),
+        estimate
+      }
+    });
+  });
+
+  await page.route(/\/api\/v2\/quotes\/[^/]+$/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.fallback();
+      return;
+    }
+    const quoteId = route.request().url().match(/quotes\/([^/?]+)/)?.[1] || '';
+    const quote = quotes.find((item) => item.id === quoteId) || null;
+    await fulfillJson(route, { data: { quote: quote ? enrichQuote(quote) : null } });
+  });
+  await page.route(/\/api\/v2\/quotes\/[^/]+\/timeline$/, async (route) => {
+    const quoteId = route.request().url().match(/quotes\/([^/]+)\/timeline/)?.[1] || '';
+    await fulfillJson(route, { data: { events: quoteEventsById[quoteId] || [] } });
+  });
+  await page.route(/\/api\/v2\/quotes\/[^/]+\/estimates$/, async (route) => {
+    const quoteId = route.request().url().match(/quotes\/([^/]+)\/estimates/)?.[1] || '';
+    await fulfillJson(route, { data: { estimates: quoteEstimatesById[quoteId] || [] } });
+  });
+
+  await page.goto('/app-v2/quotes');
+
+  const quoteBoardList = page.locator('.grid-two > .surface').first().locator('.stack-list');
+  await expect(page.getByRole('heading', { name: 'Quote board' })).toBeVisible();
+  await expect(quoteBoardList).toContainText('Manchester');
+  await page.getByLabel('Response note').fill('Please lock the March installation slot.');
+  await page.getByRole('button', { name: 'Accept estimate' }).click();
+  await expect(quoteBoardList).toContainText('Approved Ready For Project');
+
+  await page.getByRole('button', { name: 'New quote' }).click();
+  await page.getByLabel('Project type').selectOption('kitchen');
+  await page.getByLabel('Location').fill('Leeds');
+  await page.getByLabel('Contact phone').fill('+44 7000 111 222');
+  await page.getByLabel('Description').fill('Client portal request for a new kitchen renovation.');
+  await page.getByRole('button', { name: 'Create quote' }).click();
+  await expect(quoteBoardList).toContainText('Leeds');
 });

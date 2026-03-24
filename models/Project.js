@@ -15,6 +15,10 @@ const Project = sequelize.define('Project', {
     type: DataTypes.UUID,
     allowNull: true
   },
+  acceptedEstimateId: {
+    type: DataTypes.UUID,
+    allowNull: true
+  },
   clientId: {
     type: DataTypes.UUID,
     allowNull: true

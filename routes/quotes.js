@@ -3,9 +3,10 @@ const express = require('express');
 const nodemailer = require('nodemailer');
 const { Op } = require('sequelize');
 const { body, validationResult, param } = require('express-validator');
-const { Quote, QuoteClaimToken, User, Notification } = require('../models');
+const { Quote, QuoteClaimToken, User, Notification, QuoteEvent } = require('../models');
 const { auth } = require('../middleware/auth');
 const asyncHandler = require('../utils/asyncHandler');
+const { deriveLegacyQuoteStatus } = require('../utils/quoteWorkflow');
 
 const router = express.Router();
 
@@ -141,8 +142,25 @@ router.post(
       description,
       budgetRange,
       contactEmail: guestEmail || null,
-      contactPhone: guestPhone || null
+      contactPhone: guestPhone || null,
+      status: deriveLegacyQuoteStatus('submitted'),
+      workflowStatus: 'submitted',
+      sourceChannel: 'public_web',
+      submittedAt: new Date()
     });
+
+    if (typeof QuoteEvent?.create === 'function') {
+      await QuoteEvent.create({
+        quoteId: quote.id,
+        actorUserId: null,
+        eventType: 'quote_submitted',
+        visibility: 'public',
+        message: 'Guest submitted a new quote request.',
+        data: {
+          sourceChannel: 'public_web'
+        }
+      });
+    }
 
     // Notify all managers via internal notification
     const managers = await User.findAll({ where: { role: { [Op.in]: ['manager', 'admin'] }, isActive: true } });
@@ -199,7 +217,7 @@ router.get('/guest/:publicToken', [param('publicToken').isLength({ min: 16 })], 
       publicToken: req.params.publicToken,
       isGuest: true
     },
-    attributes: ['id', 'projectType', 'location', 'status', 'priority', 'createdAt', 'updatedAt']
+    attributes: ['id', 'projectType', 'location', 'status', 'workflowStatus', 'priority', 'createdAt', 'updatedAt', 'submittedAt', 'assignedAt', 'convertedAt', 'closedAt']
   });
 
   if (!quote) {
@@ -347,6 +365,19 @@ router.post(
       clientId: req.user.id,
       publicToken: null
     });
+
+    if (typeof QuoteEvent?.create === 'function') {
+      await QuoteEvent.create({
+        quoteId: quote.id,
+        actorUserId: req.user.id,
+        eventType: 'quote_claimed',
+        visibility: 'client',
+        message: 'Guest quote claimed into an authenticated account.',
+        data: {
+          clientId: req.user.id
+        }
+      });
+    }
 
     return res.json({ message: 'Quote claimed successfully', quoteId: quote.id, clientId: req.user.id });
   })

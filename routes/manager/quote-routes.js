@@ -1,4 +1,5 @@
 const express = require('express');
+const { deriveLegacyQuoteStatus } = require('../../utils/quoteWorkflow');
 
 const QUOTE_STATUSES = ['pending', 'in_progress', 'responded', 'closed'];
 const QUOTE_PROJECT_TYPES = ['bathroom', 'kitchen', 'interior', 'tiling', 'extension', 'joinery', 'rendering', 'decorating', 'other'];
@@ -49,7 +50,9 @@ module.exports = function createQuoteRoutes({
 
       await quote.update({
         assignedManagerId: req.user.id,
-        status: 'in_progress'
+        status: deriveLegacyQuoteStatus('assigned'),
+        workflowStatus: 'assigned',
+        assignedAt: new Date()
       });
 
       const projectName = `${quote.projectType} - ${quote.guestName || (quote.client && quote.client.name) || 'Project'} (${quote.postcode || quote.location})`;

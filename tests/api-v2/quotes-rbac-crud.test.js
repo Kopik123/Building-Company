@@ -1,6 +1,7 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
 const request = require('supertest');
+const { Op } = require('sequelize');
 const { buildExpressApp, loadRoute, mock, mockModels, signAccessToken } = require('./_helpers');
 
 process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-secret-v2';
@@ -35,25 +36,48 @@ const createQuoteStubs = () => {
   };
 
   const quotes = [];
+  const estimates = [];
+  const projects = [];
+  const quoteEvents = [];
+  const notifications = [];
+  const groupThreads = [];
+  const groupMembers = [];
 
-  const hydrateQuote = (quote) => {
-    if (!quote) return null;
-    quote.client = quote.clientId ? users[quote.clientId] || null : null;
-    quote.assignedManager = quote.assignedManagerId ? users[quote.assignedManagerId] || null : null;
-    return quote;
+  const readOpValue = (candidate, symbol) => {
+    if (!candidate || typeof candidate !== 'object') return undefined;
+    if (Object.prototype.hasOwnProperty.call(candidate, symbol)) return candidate[symbol];
+    const matchingSymbol = Object.getOwnPropertySymbols(candidate).find((entry) => entry === symbol);
+    return matchingSymbol ? candidate[matchingSymbol] : undefined;
   };
 
   const attachQuoteMethods = (quote) => ({
     ...quote,
     async update(payload) {
-      Object.assign(this, payload, { updatedAt: '2026-03-23T20:10:00Z' });
+      Object.assign(quote, payload, { updatedAt: '2026-03-24T09:10:00Z' });
+      Object.assign(this, quote);
       return this;
     },
     toJSON() {
       return {
         ...this,
-        client: this.client || null,
-        assignedManager: this.assignedManager || null
+        client: this.clientId ? users[this.clientId] || null : null,
+        assignedManager: this.assignedManagerId ? users[this.assignedManagerId] || null : null,
+        currentEstimate: this.currentEstimateId ? estimates.find((estimate) => estimate.id === this.currentEstimateId) || null : null
+      };
+    }
+  });
+
+  const attachEstimateMethods = (estimate) => ({
+    ...estimate,
+    async update(payload) {
+      Object.assign(estimate, payload, { updatedAt: '2026-03-24T09:20:00Z' });
+      Object.assign(this, estimate);
+      return this;
+    },
+    toJSON() {
+      return {
+        ...this,
+        creator: users[this.createdById] || null
       };
     }
   });
@@ -64,14 +88,16 @@ const createQuoteStubs = () => {
         .filter((quote) => {
           if (where.clientId && quote.clientId !== where.clientId) return false;
           if (where.status && quote.status !== where.status) return false;
+          if (where.workflowStatus && quote.workflowStatus !== where.workflowStatus) return false;
           if (where.priority && quote.priority !== where.priority) return false;
           return true;
         })
-        .map((quote) => hydrateQuote(quote));
+        .map((quote) => attachQuoteMethods(quote));
       return { rows, count: rows.length };
     },
     async findByPk(id) {
-      return hydrateQuote(quotes.find((quote) => quote.id === id) || null);
+      const quote = quotes.find((item) => item.id === id) || null;
+      return quote ? attachQuoteMethods(quote) : null;
     },
     async create(payload) {
       const created = attachQuoteMethods({
@@ -82,6 +108,7 @@ const createQuoteStubs = () => {
         guestEmail: payload.guestEmail || null,
         guestPhone: payload.guestPhone || null,
         contactMethod: payload.contactMethod || null,
+        publicToken: payload.publicToken || null,
         projectType: payload.projectType,
         location: payload.location,
         postcode: payload.postcode || null,
@@ -90,28 +117,181 @@ const createQuoteStubs = () => {
         contactEmail: payload.contactEmail || null,
         contactPhone: payload.contactPhone || null,
         status: payload.status || 'pending',
+        workflowStatus: payload.workflowStatus || 'submitted',
+        sourceChannel: payload.sourceChannel || null,
         assignedManagerId: payload.assignedManagerId || null,
+        currentEstimateId: payload.currentEstimateId || null,
+        convertedProjectId: payload.convertedProjectId || null,
+        submittedAt: payload.submittedAt || '2026-03-24T09:00:00Z',
+        assignedAt: payload.assignedAt || null,
+        convertedAt: payload.convertedAt || null,
+        closedAt: payload.closedAt || null,
+        lossReason: payload.lossReason || null,
         priority: payload.priority || 'medium',
-        createdAt: '2026-03-23T20:00:00Z',
-        updatedAt: '2026-03-23T20:00:00Z',
-        client: null,
-        assignedManager: null
+        createdAt: '2026-03-24T09:00:00Z',
+        updatedAt: '2026-03-24T09:00:00Z'
       });
       quotes.push(created);
-      return hydrateQuote(created);
+      return created;
+    }
+  };
+
+  const Estimate = {
+    async findAll({ where = {} }) {
+      return estimates
+        .filter((estimate) => {
+          if (where.quoteId && estimate.quoteId !== where.quoteId) return false;
+          const notEqualStatus = readOpValue(where.status, Op.ne);
+          if (notEqualStatus && estimate.status === notEqualStatus) return false;
+          return true;
+        })
+        .map((estimate) => attachEstimateMethods(estimate));
+    },
+    async findByPk(id) {
+      const estimate = estimates.find((item) => item.id === id) || null;
+      return estimate ? attachEstimateMethods(estimate) : null;
+    },
+    async findOne({ where = {} }) {
+      const estimate = estimates.find((item) => {
+        if (where.quoteId && item.quoteId !== where.quoteId) return false;
+        if (Object.prototype.hasOwnProperty.call(where, 'isCurrentVersion') && item.isCurrentVersion !== where.isCurrentVersion) return false;
+        return true;
+      }) || null;
+      return estimate ? attachEstimateMethods(estimate) : null;
+    },
+    async create(payload) {
+      const created = attachEstimateMethods({
+        id: `70000000-0000-4000-8000-${String(estimates.length + 1).padStart(12, '0')}`,
+        quoteId: payload.quoteId || null,
+        projectId: payload.projectId || null,
+        createdById: payload.createdById,
+        title: payload.title,
+        status: payload.status || 'draft',
+        decisionStatus: payload.decisionStatus || 'pending',
+        versionNumber: payload.versionNumber || 1,
+        isCurrentVersion: typeof payload.isCurrentVersion === 'boolean' ? payload.isCurrentVersion : true,
+        notes: payload.notes || null,
+        clientMessage: payload.clientMessage || null,
+        subtotal: payload.subtotal || 0,
+        total: payload.total || 0,
+        sentAt: payload.sentAt || null,
+        viewedAt: payload.viewedAt || null,
+        respondedAt: payload.respondedAt || null,
+        approvedAt: payload.approvedAt || null,
+        declinedAt: payload.declinedAt || null,
+        createdAt: '2026-03-24T09:05:00Z',
+        updatedAt: '2026-03-24T09:05:00Z'
+      });
+      estimates.push(created);
+      return created;
+    },
+    async update(payload, { where = {} } = {}) {
+      let updatedCount = 0;
+      estimates.forEach((estimate) => {
+        if (where.quoteId && estimate.quoteId !== where.quoteId) return;
+        Object.assign(estimate, payload);
+        updatedCount += 1;
+      });
+      return [updatedCount];
+    }
+  };
+
+  const EstimateLine = {
+    async create() {
+      return { id: `estimate-line-${Date.now()}` };
+    }
+  };
+
+  const QuoteEvent = {
+    async create(payload) {
+      quoteEvents.push({ id: `event-${quoteEvents.length + 1}`, ...payload });
+      return quoteEvents.at(-1);
+    },
+    async findAll({ where = {} }) {
+      return quoteEvents
+        .filter((event) => {
+          if (event.quoteId !== where.quoteId) return false;
+          const allowedVisibilities = readOpValue(where.visibility, Op.in);
+          if (Array.isArray(allowedVisibilities) && !allowedVisibilities.includes(event.visibility)) return false;
+          return true;
+        })
+        .map((event) => ({
+          ...event,
+          actor: event.actorUserId ? users[event.actorUserId] || null : null
+        }));
+    }
+  };
+
+  const GroupThread = {
+    async findOne({ where = {} }) {
+      return groupThreads.find((thread) => thread.quoteId === where.quoteId && thread.projectId === where.projectId) || null;
+    },
+    async create(payload) {
+      const created = { id: `group-thread-${groupThreads.length + 1}`, ...payload };
+      groupThreads.push(created);
+      return created;
+    }
+  };
+
+  const GroupMember = {
+    async findOrCreate({ where, defaults }) {
+      const existing = groupMembers.find((member) => member.groupThreadId === where.groupThreadId && member.userId === where.userId);
+      if (existing) return [existing, false];
+      groupMembers.push(defaults);
+      return [defaults, true];
+    }
+  };
+
+  const Notification = {
+    async bulkCreate(rows) {
+      notifications.push(...rows);
+      return rows;
+    },
+    async create(row) {
+      notifications.push(row);
+      return row;
+    }
+  };
+
+  const Project = {
+    async create(payload) {
+      const created = { id: `project-${projects.length + 1}`, ...payload };
+      projects.push(created);
+      return created;
     }
   };
 
   const User = {
     async findByPk(id) {
       return users[id] || null;
+    },
+    async findAll({ where = {} } = {}) {
+      return Object.values(users).filter((user) => {
+        const excludedId = readOpValue(where.id, Op.ne);
+        const includedRoles = readOpValue(where.role, Op.in);
+        if (excludedId && user.id === excludedId) return false;
+        if (Array.isArray(includedRoles) && !includedRoles.includes(user.role)) return false;
+        if (Object.prototype.hasOwnProperty.call(where, 'isActive') && user.isActive !== where.isActive) return false;
+        return true;
+      });
     }
   };
 
   return {
     quotes,
+    estimates,
+    quoteEvents,
+    notifications,
+    projects,
     models: {
       Quote,
+      Estimate,
+      EstimateLine,
+      QuoteEvent,
+      GroupThread,
+      GroupMember,
+      Notification,
+      Project,
       User
     }
   };
@@ -121,7 +301,7 @@ test.afterEach(() => {
   mock.stopAll();
 });
 
-test('quotes v2 enforces RBAC and supports manager create/update flows', async () => {
+test('quotes v2 supports client submit, manager assignment, estimate approval and project conversion', async () => {
   const stubs = createQuoteStubs();
   mockModels(stubs.models);
 
@@ -131,65 +311,72 @@ test('quotes v2 enforces RBAC and supports manager create/update flows', async (
   const managerToken = signAccessToken('11111111-1111-4111-8111-111111111111', 'manager');
   const clientToken = signAccessToken('33333333-3333-4333-8333-333333333333', 'client');
 
-  await request(app)
-    .post('/api/v2/quotes')
-    .set('Authorization', `Bearer ${clientToken}`)
-    .send({
-      projectType: 'bathroom',
-      location: 'Manchester',
-      description: 'Client should not create through manager route.'
-    })
-    .expect(403);
-
-  const guestCreateResponse = await request(app)
-    .post('/api/v2/quotes')
-    .set('Authorization', `Bearer ${managerToken}`)
-    .send({
-      projectType: 'bathroom',
-      location: 'Manchester',
-      description: 'Luxury guest enquiry for a marble bathroom.',
-      guestEmail: 'guest@example.com',
-      priority: 'high'
-    })
-    .expect(201);
-
-  assert.equal(guestCreateResponse.body?.data?.quote?.isGuest, true);
-  assert.equal(guestCreateResponse.body?.data?.quote?.assignedManagerId, '11111111-1111-4111-8111-111111111111');
-
   const clientCreateResponse = await request(app)
     .post('/api/v2/quotes')
-    .set('Authorization', `Bearer ${managerToken}`)
+    .set('Authorization', `Bearer ${clientToken}`)
     .send({
-      projectType: 'kitchen',
-      location: 'Stockport',
-      description: 'Client-linked kitchen refurbishment.',
-      clientId: '33333333-3333-4333-8333-333333333333',
-      budgetRange: '60k-80k'
+      projectType: 'bathroom',
+      location: 'Manchester',
+      description: 'Client-led marble bathroom refurbishment.',
+      guestPhone: '+44 7000 100 200'
     })
     .expect(201);
 
-  const clientQuoteId = clientCreateResponse.body?.data?.quote?.id;
-  assert.ok(clientQuoteId);
-  assert.equal(clientCreateResponse.body?.data?.quote?.isGuest, false);
+  const quoteId = clientCreateResponse.body?.data?.quote?.id;
+  assert.ok(quoteId);
+  assert.equal(clientCreateResponse.body?.data?.quote?.clientId, '33333333-3333-4333-8333-333333333333');
+  assert.equal(clientCreateResponse.body?.data?.quote?.workflowStatus, 'submitted');
 
-  const clientListResponse = await request(app)
-    .get('/api/v2/quotes')
-    .set('Authorization', `Bearer ${clientToken}`)
+  const assignResponse = await request(app)
+    .post(`/api/v2/quotes/${quoteId}/assign`)
+    .set('Authorization', `Bearer ${managerToken}`)
+    .send({})
     .expect(200);
 
-  assert.equal(clientListResponse.body?.data?.quotes?.length, 1);
-  assert.equal(clientListResponse.body?.data?.quotes?.[0]?.id, clientQuoteId);
+  assert.equal(assignResponse.body?.data?.quote?.workflowStatus, 'assigned');
 
-  const updateResponse = await request(app)
-    .patch(`/api/v2/quotes/${clientQuoteId}`)
+  const draftEstimateResponse = await request(app)
+    .post(`/api/v2/quotes/${quoteId}/estimates`)
     .set('Authorization', `Bearer ${managerToken}`)
     .send({
-      status: 'responded',
-      priority: 'low',
-      location: 'Wilmslow'
+      title: 'Bathroom Offer',
+      total: 12500,
+      description: 'Premium bathroom fit-out'
+    })
+    .expect(201);
+
+  const estimateId = draftEstimateResponse.body?.data?.estimate?.id;
+  assert.ok(estimateId);
+
+  const sendEstimateResponse = await request(app)
+    .post(`/api/v2/quotes/estimates/${estimateId}/send`)
+    .set('Authorization', `Bearer ${managerToken}`)
+    .send({
+      clientMessage: 'Please review the current offer.'
     })
     .expect(200);
 
-  assert.equal(updateResponse.body?.data?.quote?.status, 'responded');
-  assert.equal(updateResponse.body?.data?.quote?.location, 'Wilmslow');
+  assert.equal(sendEstimateResponse.body?.data?.quote?.workflowStatus, 'estimate_sent');
+
+  const respondResponse = await request(app)
+    .post(`/api/v2/quotes/estimates/${estimateId}/respond`)
+    .set('Authorization', `Bearer ${clientToken}`)
+    .send({
+      decision: 'accepted',
+      note: 'Looks good to proceed.'
+    })
+    .expect(200);
+
+  assert.equal(respondResponse.body?.data?.quote?.workflowStatus, 'approved_ready_for_project');
+
+  const convertResponse = await request(app)
+    .post(`/api/v2/quotes/${quoteId}/convert-to-project`)
+    .set('Authorization', `Bearer ${managerToken}`)
+    .send({})
+    .expect(201);
+
+  assert.ok(convertResponse.body?.data?.project?.id);
+  assert.equal(convertResponse.body?.data?.quote?.workflowStatus, 'converted_to_project');
+  assert.equal(stubs.projects.length, 1);
+  assert.equal(stubs.quoteEvents.length >= 4, true);
 });

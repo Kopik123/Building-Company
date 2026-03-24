@@ -11,6 +11,8 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [x] Extend `web-v2` parity beyond group/project chat by adding direct/private threads, unread-state ownership and thread-creation flows on `api/v2`, plus a real `Private Inbox` surface in `apps/web-v2`.
 - [x] Ship the first `web-v2` manager CRUD parity wave so `projects`, `quotes`, `crm` and `inventory` stop being read-only rollout boards and cover core create/update/delete paths through `api/v2`.
 - [x] Close the next manager parity gaps in `web-v2` by shipping quote creation and CRM patch flows for clients/staff, so those operations no longer depend on legacy dashboards.
+- [x] Ship the first end-to-end quote lifecycle in `api/v2` and `web-v2` for logged-in clients and managers: quote submit, manager ownership, estimate draft/send, client response and manual project conversion after approval.
+- [x] Align legacy guest quote intake with the new lifecycle metadata by storing workflow state, submission timestamps and quote events without breaking the current public/claim flow.
 - [ ] Finish the remaining manager parity gaps in `web-v2`: richer project lifecycle actions, broader delete/archive ownership, and the last legacy-only manager flows.
 - [ ] Add one aggregated `api/v2/overview` contract (or equivalent typed dashboard summary layer) before default cutover so `web-v2` stops composing the top board from many separate requests.
 - [x] Add direct `/app-v2` UI regression coverage for `Private Inbox` and `Project Chat`, including attachment-first direct-thread creation, so rollout-shell messaging is covered outside legacy dashboard smoke tests.
@@ -93,6 +95,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [ ] Add a real project workflow model with `stage`, `milestone`, `task/work package`, `owner` and `due date`.
 - [ ] Design and implement a durable activity/audit feed for company, client and project timelines.
 - [ ] Close the operational gap in `quote -> estimate -> approval -> project` so estimate approvals are explicit, versioned and portable to mobile clients.
+- [ ] Finish public guest quote portal parity on a v2 contract (`submit`, `preview`, `claim`, later response access) so guest quote UX no longer depends on legacy-only routes.
 - [ ] Consolidate manual public pages and generated SEO pages onto one content model/source so brochure copy, metadata, FAQ and CTA logic stop drifting.
 - [ ] Create a shared web/mobile contract layer for auth/session, project summaries, thread summaries, notifications and estimate state before expanding `mobile-v1` further.
 - [ ] Keep every new feature review aligned with future Android/iOS app readiness, especially API contracts, auth/session handling, messaging and media flows.

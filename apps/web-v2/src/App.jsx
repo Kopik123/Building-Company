@@ -5,12 +5,14 @@ import { useAuth } from './lib/auth.jsx';
 import { v2Api } from './lib/api';
 
 const {
+  ESTIMATE_DECISION_STATUSES,
   MATERIAL_CATEGORIES,
   QUOTE_CONTACT_METHODS,
   PROJECT_STATUSES,
   QUOTE_PRIORITIES,
   QUOTE_PROJECT_TYPES,
   QUOTE_STATUSES,
+  QUOTE_WORKFLOW_STATUSES,
   SERVICE_CATEGORIES,
   STAFF_CREATION_ROLES,
   STAFF_ROLES
@@ -348,6 +350,20 @@ const toNumberPayload = (value, fallback = 0) => {
   return Number.isFinite(parsed) ? parsed : fallback;
 };
 
+const formatMoney = (value) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? `GBP ${parsed.toFixed(2)}` : 'Value pending';
+};
+
+const createEstimateFormState = (overrides = {}) => ({
+  title: '',
+  total: '',
+  description: '',
+  notes: '',
+  clientMessage: '',
+  ...overrides
+});
+
 function useAsyncState(loader, deps = [], initialData) {
   const [reloadKey, setReloadKey] = React.useState(0);
   const [state, setState] = React.useState({
@@ -515,6 +531,7 @@ function ProjectCard({ project }) {
 
 function QuoteCard({ quote }) {
   const managerName = quote?.assignedManager?.name || quote?.assignedManager?.email || 'Unassigned';
+  const latestEstimate = quote?.latestEstimate || null;
 
   return (
     <article className="stack-card">
@@ -527,9 +544,45 @@ function QuoteCard({ quote }) {
       </div>
       <p className="stack-card-copy">{quote?.description || 'Structured quote details will replace this summary in the next intake phase.'}</p>
       <div className="meta-wrap">
-        <span>Status: {titleCase(quote?.status || 'pending')}</span>
+        <span>Status: {titleCase(quote?.workflowStatus || quote?.status || 'pending')}</span>
         <span>Manager: {managerName}</span>
+        <span>Estimates: {quote?.estimateCount || 0}</span>
+        {latestEstimate ? <span>Latest offer: {titleCase(latestEstimate.decisionStatus || latestEstimate.status || 'draft')}</span> : null}
         <span>Created: {formatDateTime(quote?.createdAt)}</span>
+      </div>
+    </article>
+  );
+}
+
+function EstimateCard({ estimate, actions = null }) {
+  return (
+    <article className="summary-row">
+      <div>
+        <strong>{estimate?.title || 'Estimate'}</strong>
+        <p>
+          v{estimate?.versionNumber || 1} | {titleCase(estimate?.status || 'draft')} | {titleCase(estimate?.decisionStatus || 'pending')}
+        </p>
+      </div>
+      <div className="summary-row-meta">
+        <span>{estimate?.total != null ? `GBP ${Number(estimate.total).toFixed(2)}` : 'Value pending'}</span>
+        <span>{formatDateTime(estimate?.updatedAt || estimate?.createdAt)}</span>
+        {actions}
+      </div>
+    </article>
+  );
+}
+
+function QuoteEventRow({ event }) {
+  const actorName = event?.actor?.name || event?.actor?.email || 'System';
+  return (
+    <article className="summary-row">
+      <div>
+        <strong>{titleCase(event?.eventType || 'event')}</strong>
+        <p>{event?.message || 'Quote event logged.'}</p>
+      </div>
+      <div className="summary-row-meta">
+        <span>{actorName}</span>
+        <span>{formatDateTime(event?.createdAt)}</span>
       </div>
     </article>
   );
@@ -1159,17 +1212,29 @@ function ProjectsPage() {
 function QuotesPage() {
   const { user } = useAuth();
   const role = normalizeText(user?.role || 'client');
-  const canEditQuotes = ['manager', 'admin'].includes(role);
+  const canManageQuotes = ['manager', 'admin'].includes(role);
+  const canCreateQuotes = canManageQuotes || role === 'client';
+  const canRespondToEstimates = role === 'client';
   const quotes = useAsyncState(() => v2Api.getQuotes(), [], []);
-  const clients = useAsyncState(() => (canEditQuotes ? v2Api.getCrmClients() : Promise.resolve([])), [canEditQuotes], []);
-  const staff = useAsyncState(() => (canEditQuotes ? v2Api.getCrmStaff() : Promise.resolve([])), [canEditQuotes], []);
+  const clients = useAsyncState(() => (canManageQuotes ? v2Api.getCrmClients() : Promise.resolve([])), [canManageQuotes], []);
+  const staff = useAsyncState(() => (canManageQuotes ? v2Api.getCrmStaff() : Promise.resolve([])), [canManageQuotes], []);
   const [search, setSearch] = React.useState('');
   const [selectedQuoteId, setSelectedQuoteId] = React.useState('');
   const [isCreatingQuote, setIsCreatingQuote] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
+  const [secondarySaving, setSecondarySaving] = React.useState(false);
   const [actionError, setActionError] = React.useState('');
   const [actionMessage, setActionMessage] = React.useState('');
   const [form, setForm] = React.useState(() => createQuoteFormState());
+  const [estimateForm, setEstimateForm] = React.useState(() => createEstimateFormState());
+  const [responseNote, setResponseNote] = React.useState('');
+  const [detailState, setDetailState] = React.useState({
+    loading: false,
+    error: '',
+    quote: null,
+    estimates: [],
+    events: []
+  });
   const deferredSearch = React.useDeferredValue(search);
   const managerOptions = staff.data.filter((member) => ['manager', 'admin'].includes(normalizeText(member?.role)));
 
@@ -1179,6 +1244,7 @@ function QuotesPage() {
     return [
       quote?.projectType,
       quote?.location,
+      quote?.workflowStatus,
       quote?.status,
       quote?.priority,
       quote?.guestName,
@@ -1192,8 +1258,56 @@ function QuotesPage() {
       .includes(needle);
   });
 
+  const upsertQuote = (nextQuote) => {
+    if (!nextQuote?.id) return;
+    quotes.setData((prev) =>
+      sortByRecent(
+        [nextQuote, ...(Array.isArray(prev) ? prev.filter((quote) => quote.id !== nextQuote.id) : [])],
+        ['updatedAt', 'createdAt']
+      )
+    );
+  };
+
+  const loadQuoteWorkspace = async (quoteId = selectedQuoteId) => {
+    if (!quoteId) {
+      setDetailState({ loading: false, error: '', quote: null, estimates: [], events: [] });
+      return null;
+    }
+
+    setDetailState((prev) => ({ ...prev, loading: true, error: '' }));
+
+    try {
+      const [initialQuote, events, estimates] = await Promise.all([
+        v2Api.getQuote(quoteId),
+        v2Api.getQuoteTimeline(quoteId),
+        v2Api.getQuoteEstimates(quoteId)
+      ]);
+      const refreshedQuote = await v2Api.getQuote(quoteId).catch(() => initialQuote);
+
+      upsertQuote(refreshedQuote);
+      setDetailState({
+        loading: false,
+        error: '',
+        quote: refreshedQuote,
+        estimates,
+        events
+      });
+      return {
+        quote: refreshedQuote,
+        estimates,
+        events
+      };
+    } catch (error) {
+      setDetailState((prev) => ({
+        ...prev,
+        loading: false,
+        error: error.message || 'Could not load quote workspace'
+      }));
+      return null;
+    }
+  };
+
   React.useEffect(() => {
-    if (!canEditQuotes) return;
     if (isCreatingQuote) return;
     if (!filteredQuotes.length) {
       if (selectedQuoteId) setSelectedQuoteId('');
@@ -1202,26 +1316,66 @@ function QuotesPage() {
     if (!filteredQuotes.some((quote) => quote.id === selectedQuoteId)) {
       setSelectedQuoteId(filteredQuotes[0].id);
     }
-  }, [filteredQuotes, selectedQuoteId, canEditQuotes, isCreatingQuote]);
+  }, [filteredQuotes, selectedQuoteId, isCreatingQuote]);
 
   React.useEffect(() => {
-    if (!canEditQuotes) return;
+    if (!canManageQuotes) return;
     if (isCreatingQuote) return;
     const selectedQuote = quotes.data.find((quote) => quote.id === selectedQuoteId);
     if (!selectedQuote) return;
     setForm(quoteToFormState(selectedQuote));
-  }, [selectedQuoteId, quotes.data, canEditQuotes, isCreatingQuote]);
+  }, [selectedQuoteId, quotes.data, canManageQuotes, isCreatingQuote]);
 
-  const selectedQuote = quotes.data.find((quote) => quote.id === selectedQuoteId) || null;
+  React.useEffect(() => {
+    if (isCreatingQuote || !selectedQuoteId) {
+      if (isCreatingQuote) {
+        setDetailState({ loading: false, error: '', quote: null, estimates: [], events: [] });
+      }
+      return;
+    }
+    loadQuoteWorkspace(selectedQuoteId);
+  }, [selectedQuoteId, isCreatingQuote]);
+
+  const selectedQuote = detailState.quote || quotes.data.find((quote) => quote.id === selectedQuoteId) || null;
+  const currentEstimate =
+    detailState.estimates.find((estimate) => estimate?.isCurrentVersion)
+    || detailState.estimates[0]
+    || selectedQuote?.latestEstimate
+    || null;
+  const clientEstimateNeedsDecision =
+    canRespondToEstimates
+    && currentEstimate
+    && normalizeText(currentEstimate.status) === 'sent'
+    && ['pending', 'viewed', 'revision_requested'].includes(normalizeText(currentEstimate.decisionStatus));
+
+  React.useEffect(() => {
+    if (!selectedQuote || isCreatingQuote) {
+      setEstimateForm(createEstimateFormState());
+      setResponseNote('');
+      return;
+    }
+
+    setEstimateForm((prev) => createEstimateFormState({
+      title: prev.title || `${titleCase(selectedQuote.projectType || 'Quote')} Offer`,
+      total: prev.total,
+      description: prev.description || selectedQuote.description || '',
+      notes: prev.notes,
+      clientMessage: prev.clientMessage
+    }));
+  }, [selectedQuote, isCreatingQuote]);
 
   const startNewQuote = () => {
     setIsCreatingQuote(true);
     setSelectedQuoteId('');
     setForm(
       createQuoteFormState({
-        assignedManagerId: managerOptions[0]?.id || user?.id || ''
+        assignedManagerId: managerOptions[0]?.id || user?.id || '',
+        contactPhone: user?.phone || ''
       })
     );
+    setEstimateForm(createEstimateFormState());
+    setResponseNote('');
+    setDetailState({ loading: false, error: '', quote: null, estimates: [], events: [] });
     setActionError('');
     setActionMessage('');
   };
@@ -1229,7 +1383,7 @@ function QuotesPage() {
   const selectQuote = (quote) => {
     setIsCreatingQuote(false);
     setSelectedQuoteId(quote.id);
-    setForm(quoteToFormState(quote));
+    if (canManageQuotes) setForm(quoteToFormState(quote));
     setActionError('');
     setActionMessage('');
   };
@@ -1247,31 +1401,31 @@ function QuotesPage() {
         projectType: form.projectType,
         location: String(form.location || '').trim(),
         description: String(form.description || '').trim(),
-        status: form.status,
         priority: form.priority,
-        clientId: form.clientId || null,
-        assignedManagerId: form.assignedManagerId || null,
-        guestName: toNullablePayload(form.guestName),
-        guestEmail: toNullablePayload(form.guestEmail),
-        guestPhone: toNullablePayload(form.guestPhone),
         contactMethod: form.contactMethod || null,
         postcode: toNullablePayload(form.postcode),
         budgetRange: toNullablePayload(form.budgetRange),
-        contactEmail: toNullablePayload(form.contactEmail),
         contactPhone: toNullablePayload(form.contactPhone)
       };
+      if (canManageQuotes) {
+        Object.assign(payload, {
+          status: form.status,
+          clientId: form.clientId || null,
+          assignedManagerId: form.assignedManagerId || null,
+          guestName: toNullablePayload(form.guestName),
+          guestEmail: toNullablePayload(form.guestEmail),
+          guestPhone: toNullablePayload(form.guestPhone),
+          contactEmail: toNullablePayload(form.contactEmail)
+        });
+      }
       const savedQuote = selectedQuoteId ? await v2Api.updateQuote(selectedQuoteId, payload) : await v2Api.createQuote(payload);
       if (!savedQuote?.id) throw new Error('Quote response missing payload');
 
-      quotes.setData((prev) =>
-        sortByRecent(
-          [savedQuote, ...prev.filter((quote) => quote.id !== savedQuote.id)],
-          ['updatedAt', 'createdAt']
-        )
-      );
+      upsertQuote(savedQuote);
       setIsCreatingQuote(false);
       setSelectedQuoteId(savedQuote.id);
-      setForm(quoteToFormState(savedQuote));
+      if (canManageQuotes) setForm(quoteToFormState(savedQuote));
+      await loadQuoteWorkspace(savedQuote.id);
       setActionMessage(selectedQuoteId ? 'Quote saved.' : 'Quote created.');
     } catch (error) {
       setActionError(error.message || 'Could not save quote');
@@ -1280,15 +1434,121 @@ function QuotesPage() {
     }
   };
 
+  const onTakeOwnership = async () => {
+    if (!selectedQuote?.id || secondarySaving) return;
+    setSecondarySaving(true);
+    setActionError('');
+    setActionMessage('');
+    try {
+      const result = await v2Api.assignQuote(selectedQuote.id, {});
+      upsertQuote(result.quote);
+      await loadQuoteWorkspace(selectedQuote.id);
+      setActionMessage('Quote ownership updated.');
+    } catch (error) {
+      setActionError(error.message || 'Could not take ownership of this quote');
+    } finally {
+      setSecondarySaving(false);
+    }
+  };
+
+  const onCreateEstimate = async (event) => {
+    event.preventDefault();
+    if (!selectedQuote?.id || secondarySaving) return;
+
+    setSecondarySaving(true);
+    setActionError('');
+    setActionMessage('');
+    try {
+      await v2Api.createQuoteEstimate(selectedQuote.id, {
+        title: String(estimateForm.title || '').trim(),
+        total: toNullablePayload(estimateForm.total),
+        description: toNullablePayload(estimateForm.description),
+        notes: toNullablePayload(estimateForm.notes)
+      });
+      await loadQuoteWorkspace(selectedQuote.id);
+      setEstimateForm((prev) => createEstimateFormState({
+        title: prev.title,
+        description: prev.description || selectedQuote.description || ''
+      }));
+      setActionMessage('Estimate drafted.');
+    } catch (error) {
+      setActionError(error.message || 'Could not draft estimate');
+    } finally {
+      setSecondarySaving(false);
+    }
+  };
+
+  const onSendEstimate = async (estimateId) => {
+    if (!selectedQuote?.id || !estimateId || secondarySaving) return;
+
+    setSecondarySaving(true);
+    setActionError('');
+    setActionMessage('');
+    try {
+      const result = await v2Api.sendQuoteEstimate(estimateId, {
+        clientMessage: toNullablePayload(estimateForm.clientMessage)
+      });
+      upsertQuote(result.quote);
+      await loadQuoteWorkspace(selectedQuote.id);
+      setActionMessage('Estimate sent to client.');
+    } catch (error) {
+      setActionError(error.message || 'Could not send estimate');
+    } finally {
+      setSecondarySaving(false);
+    }
+  };
+
+  const onRespondToEstimate = async (decision) => {
+    if (!currentEstimate?.id || secondarySaving) return;
+
+    setSecondarySaving(true);
+    setActionError('');
+    setActionMessage('');
+    try {
+      const result = await v2Api.respondToEstimate(currentEstimate.id, {
+        decision,
+        note: toNullablePayload(responseNote)
+      });
+      upsertQuote(result.quote);
+      await loadQuoteWorkspace(selectedQuote.id);
+      setResponseNote('');
+      setActionMessage(`Estimate ${decision.replaceAll('_', ' ')}.`);
+    } catch (error) {
+      setActionError(error.message || 'Could not send estimate response');
+    } finally {
+      setSecondarySaving(false);
+    }
+  };
+
+  const onConvertToProject = async () => {
+    if (!selectedQuote?.id || secondarySaving) return;
+
+    setSecondarySaving(true);
+    setActionError('');
+    setActionMessage('');
+    try {
+      const result = await v2Api.convertQuoteToProject(selectedQuote.id);
+      upsertQuote(result.quote);
+      await loadQuoteWorkspace(selectedQuote.id);
+      setActionMessage(`Project created: ${result.project?.title || result.project?.id}.`);
+    } catch (error) {
+      setActionError(error.message || 'Could not convert quote into project');
+    } finally {
+      setSecondarySaving(false);
+    }
+  };
+
   return (
-    <div className={canEditQuotes ? 'grid-two' : ''}>
+    <div className="grid-two">
       <Surface
         eyebrow="Quotes"
         title="Quote board"
         description={
-          canEditQuotes
-            ? 'Manager-side quote create and update flows now stay in the rollout shell.'
-            : 'Portable quote summaries from `api/v2`, shared between web and the future mobile app.'
+          canManageQuotes
+            ? 'Lead intake, ownership, offers and project conversion now live in the rollout shell.'
+            : canRespondToEstimates
+              ? 'Track your requests, review offers and move approved work into project onboarding.'
+              : 'Portable quote summaries from `api/v2`, shared between web and the future mobile app.'
         }
         actions={
           <div className="surface-actions cluster">
@@ -1296,7 +1556,7 @@ function QuotesPage() {
               <span>Filter</span>
               <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search quote, location or guest" />
             </label>
-            {canEditQuotes ? (
+            {canCreateQuotes ? (
               <button type="button" className="button-secondary" onClick={startNewQuote}>
                 New quote
               </button>
@@ -1308,34 +1568,34 @@ function QuotesPage() {
         {quotes.error ? <p className="error">{quotes.error}</p> : null}
         {!quotes.loading && !quotes.error && !filteredQuotes.length ? <EmptyState text="No quote routes are available right now." /> : null}
         <div className="stack-list">
-          {filteredQuotes.map((quote) =>
-            canEditQuotes ? (
-              <SelectableCard key={quote.id} selected={!isCreatingQuote && quote.id === selectedQuoteId} onSelect={() => selectQuote(quote)}>
-                <QuoteCard quote={quote} />
-              </SelectableCard>
-            ) : (
-              <QuoteCard key={quote.id} quote={quote} />
-            )
-          )}
+          {filteredQuotes.map((quote) => (
+            <SelectableCard key={quote.id} selected={!isCreatingQuote && quote.id === selectedQuoteId} onSelect={() => selectQuote(quote)}>
+              <QuoteCard quote={quote} />
+            </SelectableCard>
+          ))}
         </div>
       </Surface>
 
-      {canEditQuotes ? (
+      <div className="page-stack">
         <Surface
-          eyebrow="Quote actions"
+          eyebrow="Quote detail"
           title={isCreatingQuote ? 'New quote' : selectedQuote?.projectType || 'Select a quote'}
           description={
             isCreatingQuote
-              ? 'Create an internal or guest quote directly in `web-v2`.'
+              ? canManageQuotes
+                ? 'Create an internal, guest or linked client quote directly in `web-v2`.'
+                : 'Submit a new quote request from the authenticated client workspace.'
               : selectedQuote
-                ? `Guest: ${selectedQuote.guestName || selectedQuote.guestEmail || selectedQuote.client?.email || 'Known contact'}`
-                : 'Select a quote to update it or start a new one.'
+                ? `Stage: ${titleCase(selectedQuote.workflowStatus || selectedQuote.status || 'submitted')}`
+                : 'Select a quote to review its timeline, offers and next action.'
           }
         >
           {!selectedQuote && !isCreatingQuote ? <EmptyState text="No quote selected." /> : null}
-          {selectedQuote && !isCreatingQuote ? <QuoteCard quote={selectedQuote} /> : null}
-          {(selectedQuote || isCreatingQuote) ? (
+          {detailState.loading && !isCreatingQuote ? <p className="muted">Loading quote workspace...</p> : null}
+          {detailState.error && !isCreatingQuote ? <p className="error">{detailState.error}</p> : null}
+          {(isCreatingQuote || canManageQuotes) && (selectedQuote || isCreatingQuote) ? (
             <form className="editor-form" onSubmit={onSubmit}>
+              {selectedQuote && !isCreatingQuote ? <QuoteCard quote={selectedQuote} /> : null}
               <div className="form-grid">
                 <label>
                   Project type
@@ -1351,60 +1611,64 @@ function QuotesPage() {
                   Location
                   <input value={form.location} onChange={(event) => setForm((prev) => ({ ...prev, location: event.target.value }))} placeholder="Manchester" required />
                 </label>
-                <label>
-                  Client
-                  <select value={form.clientId} onChange={(event) => setForm((prev) => ({ ...prev, clientId: event.target.value }))}>
-                    <option value="">Guest / unlinked quote</option>
-                    {clients.data.map((client) => (
-                      <option key={client.id} value={client.id}>
-                        {client.name || client.email || client.id}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label>
-                  Assigned manager
-                  <select value={form.assignedManagerId} onChange={(event) => setForm((prev) => ({ ...prev, assignedManagerId: event.target.value }))}>
-                    <option value="">Unassigned</option>
-                    {managerOptions.map((member) => (
-                      <option key={member.id} value={member.id}>
-                        {member.name || member.email || member.id}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label>
-                  Quote status
-                  <select value={form.status} onChange={(event) => setForm((prev) => ({ ...prev, status: event.target.value }))}>
-                    {QUOTE_STATUSES.map((status) => (
-                      <option key={status} value={status}>
-                        {titleCase(status)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label>
-                  Quote priority
-                  <select value={form.priority} onChange={(event) => setForm((prev) => ({ ...prev, priority: event.target.value }))}>
-                    {QUOTE_PRIORITIES.map((priority) => (
-                      <option key={priority} value={priority}>
-                        {titleCase(priority)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label>
-                  Guest name
-                  <input value={form.guestName} onChange={(event) => setForm((prev) => ({ ...prev, guestName: event.target.value }))} placeholder="Guest or lead name" />
-                </label>
-                <label>
-                  Guest email
-                  <input value={form.guestEmail} onChange={(event) => setForm((prev) => ({ ...prev, guestEmail: event.target.value }))} type="email" placeholder="guest@example.com" />
-                </label>
-                <label>
-                  Guest phone
-                  <input value={form.guestPhone} onChange={(event) => setForm((prev) => ({ ...prev, guestPhone: event.target.value }))} placeholder="+44 ..." />
-                </label>
+                {canManageQuotes ? (
+                  <>
+                    <label>
+                      Client
+                      <select value={form.clientId} onChange={(event) => setForm((prev) => ({ ...prev, clientId: event.target.value }))}>
+                        <option value="">Guest / unlinked quote</option>
+                        {clients.data.map((client) => (
+                          <option key={client.id} value={client.id}>
+                            {client.name || client.email || client.id}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      Assigned manager
+                      <select value={form.assignedManagerId} onChange={(event) => setForm((prev) => ({ ...prev, assignedManagerId: event.target.value }))}>
+                        <option value="">Unassigned</option>
+                        {managerOptions.map((member) => (
+                          <option key={member.id} value={member.id}>
+                            {member.name || member.email || member.id}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      Quote status
+                      <select value={form.status} onChange={(event) => setForm((prev) => ({ ...prev, status: event.target.value }))}>
+                        {QUOTE_STATUSES.map((status) => (
+                          <option key={status} value={status}>
+                            {titleCase(status)}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      Quote priority
+                      <select value={form.priority} onChange={(event) => setForm((prev) => ({ ...prev, priority: event.target.value }))}>
+                        {QUOTE_PRIORITIES.map((priority) => (
+                          <option key={priority} value={priority}>
+                            {titleCase(priority)}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      Guest name
+                      <input value={form.guestName} onChange={(event) => setForm((prev) => ({ ...prev, guestName: event.target.value }))} placeholder="Guest or lead name" />
+                    </label>
+                    <label>
+                      Guest email
+                      <input value={form.guestEmail} onChange={(event) => setForm((prev) => ({ ...prev, guestEmail: event.target.value }))} type="email" placeholder="guest@example.com" />
+                    </label>
+                    <label>
+                      Guest phone
+                      <input value={form.guestPhone} onChange={(event) => setForm((prev) => ({ ...prev, guestPhone: event.target.value }))} placeholder="+44 ..." />
+                    </label>
+                  </>
+                ) : null}
                 <label>
                   Contact method
                   <select value={form.contactMethod} onChange={(event) => setForm((prev) => ({ ...prev, contactMethod: event.target.value }))}>
@@ -1423,10 +1687,12 @@ function QuotesPage() {
                   Budget range
                   <input value={form.budgetRange} onChange={(event) => setForm((prev) => ({ ...prev, budgetRange: event.target.value }))} placeholder="40k-60k" />
                 </label>
-                <label>
-                  Contact email
-                  <input value={form.contactEmail} onChange={(event) => setForm((prev) => ({ ...prev, contactEmail: event.target.value }))} type="email" placeholder="contact@example.com" />
-                </label>
+                {canManageQuotes ? (
+                  <label>
+                    Contact email
+                    <input value={form.contactEmail} onChange={(event) => setForm((prev) => ({ ...prev, contactEmail: event.target.value }))} type="email" placeholder="contact@example.com" />
+                  </label>
+                ) : null}
                 <label>
                   Contact phone
                   <input value={form.contactPhone} onChange={(event) => setForm((prev) => ({ ...prev, contactPhone: event.target.value }))} placeholder="+44 ..." />
@@ -1444,6 +1710,7 @@ function QuotesPage() {
               </label>
               {selectedQuote && !isCreatingQuote ? (
                 <div className="meta-wrap">
+                  <span>Workflow: {titleCase(selectedQuote.workflowStatus || 'submitted')}</span>
                   <span>Client: {selectedQuote.client?.email || 'Guest quote'}</span>
                   <span>Assigned manager: {selectedQuote.assignedManager?.email || 'Unassigned'}</span>
                   <span>Created: {formatDateTime(selectedQuote.createdAt)}</span>
@@ -1454,13 +1721,170 @@ function QuotesPage() {
                 <button type="submit" disabled={saving}>
                   {saving ? 'Saving...' : selectedQuoteId ? 'Save quote' : 'Create quote'}
                 </button>
+                {canManageQuotes && selectedQuote && !isCreatingQuote ? (
+                  <button type="button" className="button-secondary" onClick={onTakeOwnership} disabled={secondarySaving}>
+                    {secondarySaving ? 'Updating...' : 'Take ownership'}
+                  </button>
+                ) : null}
+                {canManageQuotes && selectedQuote?.canConvertToProject ? (
+                  <button type="button" className="button-secondary" onClick={onConvertToProject} disabled={secondarySaving}>
+                    {secondarySaving ? 'Converting...' : 'Convert to project'}
+                  </button>
+                ) : null}
               </div>
-              {actionMessage ? <p className="muted">{actionMessage}</p> : null}
-              {actionError ? <p className="error">{actionError}</p> : null}
             </form>
           ) : null}
+          {selectedQuote && !isCreatingQuote && !canManageQuotes ? (
+            <div className="stack-list">
+              <QuoteCard quote={selectedQuote} />
+              <div className="meta-wrap">
+                <span>Workflow: {titleCase(selectedQuote.workflowStatus || 'submitted')}</span>
+                <span>Source: {titleCase(selectedQuote.sourceChannel || 'portal')}</span>
+                <span>Current estimate: {currentEstimate ? `v${currentEstimate.versionNumber || 1}` : 'Not sent yet'}</span>
+                <span>Assigned manager: {selectedQuote.assignedManager?.name || selectedQuote.assignedManager?.email || 'Pending assignment'}</span>
+              </div>
+            </div>
+          ) : null}
+          {actionMessage ? <p className="muted">{actionMessage}</p> : null}
+          {actionError ? <p className="error">{actionError}</p> : null}
         </Surface>
-      ) : null}
+
+        {selectedQuote && !isCreatingQuote ? (
+          <Surface
+            eyebrow="Estimates"
+            title="Offers and approvals"
+            description={
+              canManageQuotes
+                ? 'Draft, send and promote the current offer into a live project once the client accepts.'
+                : 'Review the latest commercial offer and send your decision back to the team.'
+            }
+          >
+            {!detailState.estimates.length ? <EmptyState text="No estimates attached to this quote yet." /> : null}
+            <div className="stack-list">
+              {detailState.estimates.map((estimate) => (
+                <EstimateCard
+                  key={estimate.id}
+                  estimate={estimate}
+                  actions={
+                    canManageQuotes && normalizeText(estimate.status) === 'draft' && estimate.isCurrentVersion ? (
+                      <button type="button" className="button-secondary" onClick={() => onSendEstimate(estimate.id)} disabled={secondarySaving}>
+                        Send to client
+                      </button>
+                    ) : null
+                  }
+                />
+              ))}
+            </div>
+
+            {canManageQuotes ? (
+              <form className="editor-form" onSubmit={onCreateEstimate}>
+                <div className="form-grid">
+                  <label>
+                    Estimate title
+                    <input value={estimateForm.title} onChange={(event) => setEstimateForm((prev) => ({ ...prev, title: event.target.value }))} placeholder="Bathroom renovation offer" required />
+                  </label>
+                  <label>
+                    Estimate total
+                    <input value={estimateForm.total} onChange={(event) => setEstimateForm((prev) => ({ ...prev, total: event.target.value }))} placeholder="12500" type="number" min="0" step="0.01" />
+                  </label>
+                  <label>
+                    Client message
+                    <input value={estimateForm.clientMessage} onChange={(event) => setEstimateForm((prev) => ({ ...prev, clientMessage: event.target.value }))} placeholder="What the client should know before review." />
+                  </label>
+                  <label>
+                    Current workflow
+                    <select value={selectedQuote.workflowStatus || QUOTE_WORKFLOW_STATUSES[0]} disabled>
+                      {QUOTE_WORKFLOW_STATUSES.map((status) => (
+                        <option key={status} value={status}>
+                          {titleCase(status)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                <label>
+                  Estimate scope summary
+                  <textarea
+                    value={estimateForm.description}
+                    onChange={(event) => setEstimateForm((prev) => ({ ...prev, description: event.target.value }))}
+                    rows={4}
+                    placeholder="Headline scope and commercial framing for this estimate."
+                  />
+                </label>
+                <label>
+                  Internal notes
+                  <textarea
+                    value={estimateForm.notes}
+                    onChange={(event) => setEstimateForm((prev) => ({ ...prev, notes: event.target.value }))}
+                    rows={3}
+                    placeholder="Internal notes for the sales and delivery team."
+                  />
+                </label>
+                <div className="action-row">
+                  <button type="submit" disabled={secondarySaving}>
+                    {secondarySaving ? 'Saving...' : 'Draft estimate'}
+                  </button>
+                  {selectedQuote.canConvertToProject ? (
+                    <button type="button" className="button-secondary" onClick={onConvertToProject} disabled={secondarySaving}>
+                      Convert to project
+                    </button>
+                  ) : null}
+                </div>
+              </form>
+            ) : null}
+
+            {canRespondToEstimates && currentEstimate ? (
+              <div className="editor-form">
+                <div className="meta-wrap">
+                  <span>Current offer: {currentEstimate.title || 'Estimate'}</span>
+                  <span>Status: {titleCase(currentEstimate.status || 'draft')}</span>
+                  <span>Decision: {titleCase(currentEstimate.decisionStatus || ESTIMATE_DECISION_STATUSES[0])}</span>
+                  <span>Total: {formatMoney(currentEstimate.total)}</span>
+                </div>
+                <label>
+                  Response note
+                  <textarea
+                    value={responseNote}
+                    onChange={(event) => setResponseNote(event.target.value)}
+                    rows={3}
+                    placeholder="Questions, revision requests or approval note."
+                  />
+                </label>
+                <div className="action-row">
+                  <button type="button" onClick={() => onRespondToEstimate('accepted')} disabled={!clientEstimateNeedsDecision || secondarySaving}>
+                    Accept estimate
+                  </button>
+                  <button type="button" className="button-secondary" onClick={() => onRespondToEstimate('revision_requested')} disabled={!clientEstimateNeedsDecision || secondarySaving}>
+                    Request revision
+                  </button>
+                  <button type="button" className="button-secondary" onClick={() => onRespondToEstimate('declined')} disabled={!clientEstimateNeedsDecision || secondarySaving}>
+                    Decline estimate
+                  </button>
+                </div>
+              </div>
+            ) : null}
+          </Surface>
+        ) : null}
+
+        {selectedQuote && !isCreatingQuote ? (
+          <Surface
+            eyebrow="Timeline"
+            title="Quote activity"
+            description={
+              canManageQuotes
+                ? 'Every intake, assignment, offer and conversion event for the current quote.'
+                : 'A client-visible timeline of what happened next.'
+            }
+          >
+            {!detailState.events.length ? <EmptyState text="No quote events have been recorded yet." /> : null}
+            <div className="stack-list">
+              {detailState.events.map((event) => (
+                <QuoteEventRow key={event.id} event={event} />
+              ))}
+            </div>
+          </Surface>
+        ) : null}
+      </div>
     </div>
   );
 }

@@ -503,3 +503,17 @@
 - Hardened `scripts/optimize-assets.js` to encode public asset URLs segment-by-segment, which keeps the new optimized gallery manifest valid even when source filenames contain spaces and are used in `srcset`.
 - Updated `tests/api-v2/legacy-public-routes.test.js` to prove generated folders stay hidden from `/api/gallery/services`, and updated `tests/playwright/public-redesign.spec.js` so the gallery regression now checks that folder-driven rail images render optimized `<picture>` sources from `Gallery/optimized`.
 - Re-ran `npm.cmd run optimize:assets`, `npm.cmd run verify:generated`, `node --test tests/api-v2/legacy-public-routes.test.js`, focused public gallery Playwright coverage, `npm.cmd run test:ci` and the full `npm.cmd run test:e2e:mobile`; all passed after the responsive raw-folder gallery media pipeline rollout.
+
+## 2026-03-24
+
+- Saved `Plans/Quotes Lifecycle System - Client Portal, Manager Workflow And Project Conversion.md`, registered it in `Plans/Plan History.md`, and translated the rollout into new completed/open checklist items in `Project_todos.md`.
+- Added `utils/quoteWorkflow.js` as the shared quote lifecycle helper for workflow statuses, estimate decision statuses, legacy-status bridging and quote/project naming.
+- Extended `models/Quote.js`, `models/Estimate.js`, `models/Project.js` and `models/index.js` with the new lifecycle fields (`workflowStatus`, current estimate, converted project, timestamps, accepted estimate) and added the new `models/QuoteEvent.js` timeline model plus associations.
+- Added `migrations/202603240001-quote-workflow-and-events.js` to create the quote lifecycle columns, quote-event table, project accepted-estimate link and the initial backfill for existing quote rows.
+- Reworked `shared/contracts/v2.js` and `shared/contracts/v2.d.ts` so the shared `api/v2` / `web-v2` contract now carries quote workflow state, estimate summaries, quote timeline events and project conversion metadata, while also removing the brittle browser-side dependency on backend `quoteWorkflow` imports by inlining the workflow constants in the shared contract layer.
+- Expanded `api/v2/routes/quotes.js` into the first real lifecycle router covering client submit, manager ownership, estimate draft/send, client response, quote timeline/estimate reads and manual quote-to-project conversion after approval.
+- Updated legacy quote routes in `routes/quotes.js` and `routes/manager/quote-routes.js` so guest submit/claim plus legacy manager assignment now write the new lifecycle metadata and quote events without breaking the existing public flow.
+- Expanded `apps/web-v2/src/lib/api.js` with quote detail, timeline, estimate, ownership, response and project-conversion helpers for the rollout shell.
+- Rebuilt `apps/web-v2/src/App.jsx` quotes workspace so managers can own/edit quotes, draft/send estimates and convert approved work into projects, while logged-in clients can review estimate state, accept/decline/request revision and submit fresh quote requests inside `/app-v2/quotes`.
+- Added/updated regression coverage in `tests/api-v2/quotes-rbac-crud.test.js` and `tests/playwright/web-v2-rollout.spec.js` for the backend lifecycle plus manager/client rollout-shell quote journeys.
+- Re-ran `node --test tests/api-v2/quotes-rbac-crud.test.js`, `npm.cmd run build` in `apps/web-v2`, focused Playwright quote rollout coverage for manager and client flows, `npm.cmd run test:ci`, and `npm.cmd run test:e2e:mobile`; all passed after the quote lifecycle rollout.

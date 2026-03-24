@@ -1,5 +1,47 @@
 const { z } = require('zod');
 
+const QUOTE_WORKFLOW_STATUSES = Object.freeze([
+  'submitted',
+  'triaged',
+  'assigned',
+  'awaiting_client_info',
+  'estimate_in_progress',
+  'estimate_sent',
+  'client_review',
+  'approved_ready_for_project',
+  'converted_to_project',
+  'closed_lost'
+]);
+
+const ESTIMATE_DECISION_STATUSES = Object.freeze([
+  'pending',
+  'viewed',
+  'revision_requested',
+  'accepted',
+  'declined'
+]);
+
+const LEGACY_TO_WORKFLOW_STATUS = Object.freeze({
+  pending: 'submitted',
+  in_progress: 'assigned',
+  responded: 'estimate_sent',
+  closed: 'closed_lost'
+});
+
+const normalizeWorkflowStatusValue = (value, fallback = QUOTE_WORKFLOW_STATUSES[0]) => {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (QUOTE_WORKFLOW_STATUSES.includes(normalized)) return normalized;
+  if (LEGACY_TO_WORKFLOW_STATUS[normalized]) return LEGACY_TO_WORKFLOW_STATUS[normalized];
+  return fallback;
+};
+
+const normalizeEstimateDecisionStatusValue = (value, fallback = ESTIMATE_DECISION_STATUSES[0]) => {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (ESTIMATE_DECISION_STATUSES.includes(normalized)) return normalized;
+  if (normalized === 'approved') return 'accepted';
+  return fallback;
+};
+
 const PROJECT_STATUSES = Object.freeze(['planning', 'in_progress', 'completed', 'on_hold']);
 const QUOTE_STATUSES = Object.freeze(['pending', 'in_progress', 'responded', 'closed']);
 const QUOTE_PRIORITIES = Object.freeze(['low', 'medium', 'high']);
@@ -37,6 +79,7 @@ const parseContract = (schema, value, label = 'contract') => {
 
 const nullableStringSchema = z.string().nullable();
 const nullableNumberSchema = z.number().nullable();
+const nullableBooleanSchema = z.boolean().nullable();
 
 const userSummarySchema = z.object({
   id: z.string(),
@@ -82,11 +125,48 @@ const normalizeMessageAttachment = (value) => {
   };
 };
 
+const estimateSummarySchema = z.object({
+  id: z.string(),
+  quoteId: nullableStringSchema,
+  projectId: nullableStringSchema,
+  title: nullableStringSchema,
+  status: z.enum(['draft', 'sent', 'approved', 'archived']),
+  decisionStatus: z.enum(ESTIMATE_DECISION_STATUSES),
+  versionNumber: z.number(),
+  isCurrentVersion: z.boolean(),
+  notes: nullableStringSchema,
+  clientMessage: nullableStringSchema,
+  subtotal: nullableNumberSchema,
+  total: nullableNumberSchema,
+  sentAt: nullableStringSchema,
+  viewedAt: nullableStringSchema,
+  respondedAt: nullableStringSchema,
+  approvedAt: nullableStringSchema,
+  declinedAt: nullableStringSchema,
+  createdAt: nullableStringSchema,
+  updatedAt: nullableStringSchema,
+  creator: userSummarySchema
+});
+
+const quoteEventSchema = z.object({
+  id: z.string(),
+  quoteId: nullableStringSchema,
+  actorUserId: nullableStringSchema,
+  eventType: nullableStringSchema,
+  visibility: z.enum(['internal', 'client', 'public']),
+  message: nullableStringSchema,
+  createdAt: nullableStringSchema,
+  updatedAt: nullableStringSchema,
+  actor: userSummarySchema,
+  data: z.record(z.string(), z.any()).nullable()
+});
+
 const quoteSummarySchema = z.object({
   id: z.string(),
   projectType: nullableStringSchema,
   location: nullableStringSchema,
   status: z.enum(QUOTE_STATUSES),
+  workflowStatus: z.enum(QUOTE_WORKFLOW_STATUSES),
   priority: z.enum(QUOTE_PRIORITIES),
   description: nullableStringSchema,
   isGuest: z.boolean(),
@@ -100,10 +180,21 @@ const quoteSummarySchema = z.object({
   contactPhone: nullableStringSchema,
   assignedManagerId: nullableStringSchema,
   clientId: nullableStringSchema,
+  sourceChannel: nullableStringSchema,
+  currentEstimateId: nullableStringSchema,
+  convertedProjectId: nullableStringSchema,
+  submittedAt: nullableStringSchema,
+  assignedAt: nullableStringSchema,
+  convertedAt: nullableStringSchema,
+  closedAt: nullableStringSchema,
+  lossReason: nullableStringSchema,
+  estimateCount: z.number(),
+  canConvertToProject: z.boolean(),
   createdAt: nullableStringSchema,
   updatedAt: nullableStringSchema,
   client: userSummarySchema,
-  assignedManager: userSummarySchema
+  assignedManager: userSummarySchema,
+  latestEstimate: estimateSummarySchema.nullable()
 });
 
 const projectMediaSchema = z.object({
@@ -121,6 +212,7 @@ const projectSummarySchema = z.object({
   clientId: nullableStringSchema,
   assignedManagerId: nullableStringSchema,
   quoteId: nullableStringSchema,
+  acceptedEstimateId: nullableStringSchema,
   description: nullableStringSchema,
   budgetEstimate: nullableStringSchema,
   startDate: nullableStringSchema,
@@ -252,6 +344,49 @@ const normalizeThreadMessage = (value) => {
   };
 };
 
+const normalizeEstimateSummary = (value) => {
+  const plain = toPlainObject(value);
+  return {
+    id: toStringOr(plain.id),
+    quoteId: toNullableString(plain.quoteId),
+    projectId: toNullableString(plain.projectId),
+    title: toNullableString(plain.title),
+    status: toNullableString(plain.status) || 'draft',
+    decisionStatus: normalizeEstimateDecisionStatusValue(plain.decisionStatus),
+    versionNumber: toNullableNumber(plain.versionNumber) ?? 1,
+    isCurrentVersion: toBoolean(plain.isCurrentVersion, false),
+    notes: toNullableString(plain.notes),
+    clientMessage: toNullableString(plain.clientMessage),
+    subtotal: toNullableNumber(plain.subtotal),
+    total: toNullableNumber(plain.total),
+    sentAt: toNullableString(plain.sentAt),
+    viewedAt: toNullableString(plain.viewedAt),
+    respondedAt: toNullableString(plain.respondedAt),
+    approvedAt: toNullableString(plain.approvedAt),
+    declinedAt: toNullableString(plain.declinedAt),
+    createdAt: toNullableString(plain.createdAt),
+    updatedAt: toNullableString(plain.updatedAt),
+    creator: normalizeUserSummary(plain.creator)
+  };
+};
+
+const normalizeQuoteEvent = (value) => {
+  const plain = toPlainObject(value);
+  const data = plain.data && typeof plain.data === 'object' ? plain.data : null;
+  return {
+    id: toStringOr(plain.id),
+    quoteId: toNullableString(plain.quoteId),
+    actorUserId: toNullableString(plain.actorUserId),
+    eventType: toNullableString(plain.eventType),
+    visibility: toNullableString(plain.visibility) || 'internal',
+    message: toNullableString(plain.message),
+    createdAt: toNullableString(plain.createdAt),
+    updatedAt: toNullableString(plain.updatedAt),
+    actor: normalizeUserSummary(plain.actor),
+    data
+  };
+};
+
 const normalizeProjectSummary = (value) => {
   const plain = toPlainObject(value);
   return {
@@ -262,6 +397,7 @@ const normalizeProjectSummary = (value) => {
     clientId: toNullableString(plain.clientId),
     assignedManagerId: toNullableString(plain.assignedManagerId),
     quoteId: toNullableString(plain.quoteId),
+    acceptedEstimateId: toNullableString(plain.acceptedEstimateId),
     description: toNullableString(plain.description),
     budgetEstimate: toNullableString(plain.budgetEstimate),
     startDate: toNullableString(plain.startDate),
@@ -292,6 +428,7 @@ const normalizeQuoteSummary = (value) => {
     projectType: toNullableString(plain.projectType),
     location: toNullableString(plain.location),
     status: toNullableString(plain.status) || QUOTE_STATUSES[0],
+    workflowStatus: normalizeWorkflowStatusValue(plain.workflowStatus || plain.status),
     priority: toNullableString(plain.priority) || QUOTE_PRIORITIES[0],
     description: toNullableString(plain.description),
     isGuest: toBoolean(plain.isGuest, false),
@@ -305,10 +442,24 @@ const normalizeQuoteSummary = (value) => {
     contactPhone: toNullableString(plain.contactPhone),
     assignedManagerId: toNullableString(plain.assignedManagerId),
     clientId: toNullableString(plain.clientId),
+    sourceChannel: toNullableString(plain.sourceChannel),
+    currentEstimateId: toNullableString(plain.currentEstimateId),
+    convertedProjectId: toNullableString(plain.convertedProjectId),
+    submittedAt: toNullableString(plain.submittedAt),
+    assignedAt: toNullableString(plain.assignedAt),
+    convertedAt: toNullableString(plain.convertedAt),
+    closedAt: toNullableString(plain.closedAt),
+    lossReason: toNullableString(plain.lossReason),
+    estimateCount: toNullableNumber(plain.estimateCount) ?? (Array.isArray(plain.estimates) ? plain.estimates.length : 0),
+    canConvertToProject: toBoolean(plain.canConvertToProject, false),
     createdAt: toNullableString(plain.createdAt),
     updatedAt: toNullableString(plain.updatedAt),
     client: normalizeUserSummary(plain.client),
-    assignedManager: normalizeUserSummary(plain.assignedManager)
+    assignedManager: normalizeUserSummary(plain.assignedManager),
+    latestEstimate: normalizeEntity(
+      plain.latestEstimate || (Array.isArray(plain.estimates) ? plain.estimates.find((estimate) => estimate?.isCurrentVersion) || plain.estimates[0] : null),
+      normalizeEstimateSummary
+    )
   };
 };
 
@@ -433,9 +584,11 @@ const normalizeItemResponse = (payload, key, normalizer, schema) =>
 module.exports = {
   PROJECT_STATUSES,
   QUOTE_STATUSES,
+  QUOTE_WORKFLOW_STATUSES,
   QUOTE_PRIORITIES,
   QUOTE_PROJECT_TYPES,
   QUOTE_CONTACT_METHODS,
+  ESTIMATE_DECISION_STATUSES,
   SERVICE_CATEGORIES,
   MATERIAL_CATEGORIES,
   STAFF_ROLES,
@@ -443,6 +596,8 @@ module.exports = {
   userSummarySchema,
   messageAttachmentSchema,
   threadMessageSchema,
+  estimateSummarySchema,
+  quoteEventSchema,
   projectSummarySchema,
   quoteSummarySchema,
   threadSummarySchema,
@@ -455,6 +610,8 @@ module.exports = {
   normalizeUserSummary,
   normalizeMessageAttachment,
   normalizeThreadMessage,
+  normalizeEstimateSummary,
+  normalizeQuoteEvent,
   normalizeProjectSummary,
   normalizeQuoteSummary,
   normalizeThreadSummary,

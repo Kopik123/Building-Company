@@ -8,10 +8,12 @@ const {
   inventoryServiceSchema,
   normalizeCrmClient,
   normalizeCrmStaffMember,
+  normalizeEstimateSummary,
   normalizeItemResponse,
   normalizeListResponse,
   normalizeNotification,
   normalizeProjectSummary,
+  normalizeQuoteEvent,
   normalizeQuoteSummary,
   normalizeDirectThreadSummary,
   normalizeInventoryMaterial,
@@ -20,6 +22,8 @@ const {
   normalizeThreadSummary,
   notificationSchema,
   projectSummarySchema,
+  estimateSummarySchema,
+  quoteEventSchema,
   quoteSummarySchema,
   threadMessageSchema,
   threadSummarySchema
@@ -159,6 +163,10 @@ export const v2Api = {
     const payload = await withAuth(`/quotes${toQueryString({ page: 1, pageSize: 50, ...params })}`);
     return normalizeListResponse(payload, 'quotes', normalizeQuoteSummary, quoteSummarySchema);
   },
+  async getQuote(quoteId) {
+    const payload = await withAuth(`/quotes/${quoteId}`);
+    return normalizeItemResponse(payload, 'quote', normalizeQuoteSummary, quoteSummarySchema);
+  },
   async createQuote(input) {
     const payload = await withAuth('/quotes', toJsonOptions('POST', input));
     return normalizeItemResponse(payload, 'quote', normalizeQuoteSummary, quoteSummarySchema);
@@ -166,6 +174,52 @@ export const v2Api = {
   async updateQuote(quoteId, input) {
     const payload = await withAuth(`/quotes/${quoteId}`, toJsonOptions('PATCH', input));
     return normalizeItemResponse(payload, 'quote', normalizeQuoteSummary, quoteSummarySchema);
+  },
+  async assignQuote(quoteId, input = {}) {
+    const payload = await withAuth(`/quotes/${quoteId}/assign`, toJsonOptions('POST', input));
+    return {
+      quote: normalizeItemResponse(payload, 'quote', normalizeQuoteSummary, quoteSummarySchema),
+      thread: payload.data?.thread || null
+    };
+  },
+  async getQuoteTimeline(quoteId) {
+    const payload = await withAuth(`/quotes/${quoteId}/timeline`);
+    return normalizeListResponse(payload, 'events', normalizeQuoteEvent, quoteEventSchema);
+  },
+  async getQuoteEstimates(quoteId) {
+    const payload = await withAuth(`/quotes/${quoteId}/estimates`);
+    return normalizeListResponse(payload, 'estimates', normalizeEstimateSummary, estimateSummarySchema);
+  },
+  async createQuoteEstimate(quoteId, input) {
+    const payload = await withAuth(`/quotes/${quoteId}/estimates`, toJsonOptions('POST', input));
+    return {
+      estimate: normalizeItemResponse(payload, 'estimate', normalizeEstimateSummary, estimateSummarySchema),
+      estimates: normalizeListResponse(payload, 'estimates', normalizeEstimateSummary, estimateSummarySchema)
+    };
+  },
+  async sendQuoteEstimate(estimateId, input = {}) {
+    const payload = await withAuth(`/quotes/estimates/${estimateId}/send`, toJsonOptions('POST', input));
+    return {
+      quote: normalizeItemResponse(payload, 'quote', normalizeQuoteSummary, quoteSummarySchema),
+      estimate: normalizeItemResponse(payload, 'estimate', normalizeEstimateSummary, estimateSummarySchema)
+    };
+  },
+  async respondToEstimate(estimateId, input) {
+    const payload = await withAuth(`/quotes/estimates/${estimateId}/respond`, toJsonOptions('POST', input));
+    return {
+      quote: normalizeItemResponse(payload, 'quote', normalizeQuoteSummary, quoteSummarySchema),
+      estimate: normalizeItemResponse(payload, 'estimate', normalizeEstimateSummary, estimateSummarySchema)
+    };
+  },
+  async convertQuoteToProject(quoteId) {
+    const payload = await withAuth(`/quotes/${quoteId}/convert-to-project`, {
+      method: 'POST'
+    });
+    return {
+      quote: normalizeItemResponse(payload, 'quote', normalizeQuoteSummary, quoteSummarySchema),
+      project: normalizeItemResponse(payload, 'project', normalizeProjectSummary, projectSummarySchema),
+      thread: payload.data?.thread || null
+    };
   },
   async getThreads(params = {}) {
     const payload = await withAuth(`/messages/threads${toQueryString({ page: 1, pageSize: 50, ...params })}`);
