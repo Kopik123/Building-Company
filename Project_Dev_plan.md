@@ -525,3 +525,7 @@
 - Hardened `routes/quotes.js` so the public `/api/quotes/guest` flow now treats `QuoteEvent.create(...)` and manager notification fan-out as best-effort side effects, logging warnings instead of failing the customer submission after the quote itself is stored.
 - Added public quote regression coverage in `tests/api-v2/legacy-public-routes.test.js` for both the normal guest quote submit path and the degraded path where quote-event / notification side effects throw.
 - Re-ran `node --test tests/api-v2/legacy-public-routes.test.js` and `npm.cmd run test:ci`; both passed after the guest quote submit hardening fix.
+- Saved `Plans/Public Guest Quote Compatibility Fallback.md`, registered it in `Plans/Plan History.md`, and marked the compatibility-fallback item as done in `Project_todos.md`.
+- Added `createGuestQuoteRecord(...)` in `routes/quotes.js` so the public guest quote route now retries with a legacy-safe payload when the initial insert fails on the newer lifecycle columns, then attempts a best-effort lifecycle metadata backfill on the created quote.
+- Extended `tests/api-v2/legacy-public-routes.test.js` with a production-style compatibility regression proving that `/api/quotes/guest` still returns `201` after a first-write failure on `workflowStatus`, followed by a successful fallback insert plus a non-blocking lifecycle update.
+- Re-ran `node --test tests/api-v2/legacy-public-routes.test.js` and `npm.cmd run test:ci`; both passed after the guest quote compatibility fallback fix.

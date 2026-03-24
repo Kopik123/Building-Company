@@ -36,6 +36,8 @@ const createGalleryModelsStub = (projects) => ({
 const createGuestQuoteModelsStub = (overrides = {}) => {
   const state = {
     createdQuotes: [],
+    createPayloads: [],
+    updatedQuotes: [],
     createdEvents: [],
     notificationBatches: [],
     managers: [{
@@ -47,11 +49,17 @@ const createGuestQuoteModelsStub = (overrides = {}) => {
 
   const Quote = {
     async create(payload) {
+      state.createPayloads.push(payload);
       const quote = {
         id: `quote-${state.createdQuotes.length + 1}`,
         publicToken: payload.publicToken || 'public-token-1',
         status: payload.status,
-        ...payload
+        ...payload,
+        async update(patch) {
+          Object.assign(this, patch);
+          state.updatedQuotes.push({ id: this.id, patch });
+          return this;
+        }
       };
       state.createdQuotes.push(quote);
       return quote;
@@ -423,6 +431,71 @@ test('legacy /api/quotes/guest still succeeds when quote side effects fail', asy
     );
     assert.equal(
       warnings.some((entry) => JSON.stringify(entry).includes('manager_notification_create')),
+      true
+    );
+  } finally {
+    console.warn = originalWarn;
+  }
+});
+
+test('legacy /api/quotes/guest falls back to a legacy-safe create when lifecycle columns reject the first write', async () => {
+  const warnings = [];
+  const originalWarn = console.warn;
+  console.warn = (...args) => warnings.push(args);
+
+  const { state, models } = createGuestQuoteModelsStub();
+  let createAttempt = 0;
+  models.Quote = {
+    async create(payload) {
+      state.createPayloads.push(payload);
+      createAttempt += 1;
+
+      if (createAttempt === 1) {
+        throw new Error('column "workflowStatus" of relation "Quotes" does not exist');
+      }
+
+      const quote = {
+        id: 'quote-compat-1',
+        publicToken: payload.publicToken || 'public-token-compat-1',
+        status: payload.status,
+        ...payload,
+        async update(patch) {
+          Object.assign(this, patch);
+          state.updatedQuotes.push({ id: this.id, patch });
+          return this;
+        }
+      };
+      state.createdQuotes.push(quote);
+      return quote;
+    }
+  };
+  mockModels(models);
+
+  const quotesRouter = loadRoute('routes/quotes.js');
+  const app = buildExpressApp('/api/quotes', quotesRouter);
+
+  try {
+    const response = await request(app)
+      .post('/api/quotes/guest')
+      .send({
+        guestName: 'Olivia Reed',
+        guestPhone: '07395448487',
+        guestEmail: 'olivia@example.com',
+        projectType: 'kitchen',
+        budgetRange: '£8,000-£12,000',
+        description: 'Kitchen installation and refurbishment with bespoke joinery.',
+        location: 'Manchester and the North West'
+      })
+      .expect(201);
+
+    assert.equal(response.body?.quoteId, 'quote-compat-1');
+    assert.equal(state.createPayloads.length, 2);
+    assert.equal(Object.hasOwn(state.createPayloads[0], 'workflowStatus'), true);
+    assert.equal(Object.hasOwn(state.createPayloads[1], 'workflowStatus'), false);
+    assert.equal(state.updatedQuotes.length, 1);
+    assert.equal(state.updatedQuotes[0].patch.workflowStatus, 'submitted');
+    assert.equal(
+      warnings.some((entry) => JSON.stringify(entry).includes('Guest quote compatibility fallback engaged')),
       true
     );
   } finally {

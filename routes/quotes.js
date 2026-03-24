@@ -26,6 +26,52 @@ const logNonBlockingQuoteFailure = (scope, error, meta = {}) => {
     ...meta
   });
 };
+const logBlockingQuoteFailure = (scope, error, meta = {}) => {
+  console.error('Blocking quote guest failure:', {
+    scope,
+    message: error?.message || String(error),
+    ...meta
+  });
+};
+
+const createGuestQuoteRecord = async (basePayload) => {
+  const workflowPayload = {
+    workflowStatus: 'submitted',
+    sourceChannel: 'public_web',
+    submittedAt: new Date()
+  };
+
+  try {
+    return await Quote.create({
+      ...basePayload,
+      ...workflowPayload
+    });
+  } catch (error) {
+    console.warn('Guest quote compatibility fallback engaged.', {
+      message: error?.message || String(error)
+    });
+
+    let quote;
+    try {
+      quote = await Quote.create(basePayload);
+    } catch (fallbackError) {
+      logBlockingQuoteFailure('guest_quote_create', fallbackError, {
+        initialMessage: error?.message || String(error)
+      });
+      throw fallbackError;
+    }
+
+    if (typeof quote?.update === 'function') {
+      try {
+        await quote.update(workflowPayload);
+      } catch (updateError) {
+        logNonBlockingQuoteFailure('guest_quote_workflow_backfill', updateError, { quoteId: quote.id });
+      }
+    }
+
+    return quote;
+  }
+};
 
 const getClaimEmailTransporter = () => {
   if (!cachedClaimEmailTransporter) {
@@ -136,7 +182,7 @@ router.post(
 
     const contactMethod = guestEmail && guestPhone ? 'both' : guestEmail ? 'email' : 'phone';
 
-    const quote = await Quote.create({
+    const quote = await createGuestQuoteRecord({
       isGuest: true,
       guestName,
       guestEmail: guestEmail || null,
@@ -150,10 +196,7 @@ router.post(
       budgetRange,
       contactEmail: guestEmail || null,
       contactPhone: guestPhone || null,
-      status: deriveLegacyQuoteStatus('submitted'),
-      workflowStatus: 'submitted',
-      sourceChannel: 'public_web',
-      submittedAt: new Date()
+      status: deriveLegacyQuoteStatus('submitted')
     });
 
     if (typeof QuoteEvent?.create === 'function') {
