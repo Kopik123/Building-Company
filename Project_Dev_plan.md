@@ -529,3 +529,7 @@
 - Added `createGuestQuoteRecord(...)` in `routes/quotes.js` so the public guest quote route now retries with a legacy-safe payload when the initial insert fails on the newer lifecycle columns, then attempts a best-effort lifecycle metadata backfill on the created quote.
 - Extended `tests/api-v2/legacy-public-routes.test.js` with a production-style compatibility regression proving that `/api/quotes/guest` still returns `201` after a first-write failure on `workflowStatus`, followed by a successful fallback insert plus a non-blocking lifecycle update.
 - Re-ran `node --test tests/api-v2/legacy-public-routes.test.js` and `npm.cmd run test:ci`; both passed after the guest quote compatibility fallback fix.
+- Saved `Plans/Quotes ClientId Nullability Production Hotfix.md`, registered it in `Plans/Plan History.md`, and marked the schema hotfix item as done in `Project_todos.md`.
+- Added `migrations/202603240002-relax-quotes-clientid-nullability.js` so production databases that still have `Quotes.clientId NOT NULL` are patched to `allowNull: true` during the next deploy migration run, while already-correct databases stay untouched.
+- Extended `tests/api-v2/migrations-quote-table-compat.test.js` with regression coverage for the new `Quotes.clientId` nullability hotfix, proving it changes the column only when needed and becomes a no-op when the schema is already correct.
+- Re-ran `node --test tests/api-v2/migrations-quote-table-compat.test.js` and `npm.cmd run test:ci`; both passed after the `Quotes.clientId` production schema hotfix.

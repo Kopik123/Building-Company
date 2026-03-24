@@ -13,3 +13,4 @@
 - 2026-03-24 19:44 | Quote Workflow Production Migration Recovery Hotfix | Plans/Quote Workflow Production Migration Recovery Hotfix.md
 - 2026-03-24 19:54 | Public Guest Quote Submit Hardening | Plans/Public Guest Quote Submit Hardening.md
 - 2026-03-24 20:14 | Public Guest Quote Compatibility Fallback | Plans/Public Guest Quote Compatibility Fallback.md
+- 2026-03-24 20:49 | Quotes ClientId Nullability Production Hotfix | Plans/Quotes ClientId Nullability Production Hotfix.md

@@ -5,6 +5,7 @@ const baselineHardening = require('../../migrations/202603080001-production-base
 const sessionDeviceHardening = require('../../migrations/202603080002-v2-session-device-and-email-hardening.js');
 const performanceSearch = require('../../migrations/202603090000-performance-search-trgm-indexes.js');
 const quoteWorkflowAndEvents = require('../../migrations/202603240001-quote-workflow-and-events.js');
+const relaxQuotesClientIdNullability = require('../../migrations/202603240002-relax-quotes-clientid-nullability.js');
 
 const createQueryInterfaceStub = (tables) => {
   const queries = [];
@@ -291,4 +292,78 @@ test('quote workflow migration resumes safely after a partial apply and uses exp
     addedIndexes.some((item) => item.options.name === 'quote_events_quote_visibility_idx'),
     true
   );
+});
+
+test('quotes clientId nullability hotfix only changes the column when it is still non-nullable', async () => {
+  const changedColumns = [];
+  const tables = {
+    Quotes: {
+      clientId: { allowNull: false }
+    },
+    Users: {
+      id: {}
+    }
+  };
+
+  const queryInterface = {
+    async describeTable(tableName) {
+      const table = tables[tableName];
+      if (table) {
+        return table;
+      }
+
+      throw new Error(`relation "${tableName}" does not exist`);
+    },
+    async changeColumn(tableName, columnName, definition) {
+      changedColumns.push({ tableName, columnName, definition });
+      tables[tableName][columnName] = { ...tables[tableName][columnName], ...definition };
+    }
+  };
+
+  await assert.doesNotReject(() => relaxQuotesClientIdNullability.up(queryInterface, { UUID: 'UUID' }));
+
+  assert.deepEqual(changedColumns, [{
+    tableName: 'Quotes',
+    columnName: 'clientId',
+    definition: {
+      type: 'UUID',
+      allowNull: true,
+      references: {
+        model: 'Users',
+        key: 'id'
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'SET NULL'
+    }
+  }]);
+});
+
+test('quotes clientId nullability hotfix is a no-op when the column is already nullable', async () => {
+  const changedColumns = [];
+  const tables = {
+    Quotes: {
+      clientId: { allowNull: true }
+    },
+    Users: {
+      id: {}
+    }
+  };
+
+  const queryInterface = {
+    async describeTable(tableName) {
+      const table = tables[tableName];
+      if (table) {
+        return table;
+      }
+
+      throw new Error(`relation "${tableName}" does not exist`);
+    },
+    async changeColumn(tableName, columnName, definition) {
+      changedColumns.push({ tableName, columnName, definition });
+    }
+  };
+
+  await assert.doesNotReject(() => relaxQuotesClientIdNullability.up(queryInterface, { UUID: 'UUID' }));
+
+  assert.deepEqual(changedColumns, []);
 });
