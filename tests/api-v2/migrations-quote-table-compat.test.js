@@ -6,6 +6,7 @@ const sessionDeviceHardening = require('../../migrations/202603080002-v2-session
 const performanceSearch = require('../../migrations/202603090000-performance-search-trgm-indexes.js');
 const quoteWorkflowAndEvents = require('../../migrations/202603240001-quote-workflow-and-events.js');
 const relaxQuotesClientIdNullability = require('../../migrations/202603240002-relax-quotes-clientid-nullability.js');
+const forceDropQuotesClientIdNotNull = require('../../migrations/202603240003-force-drop-quotes-clientid-not-null.js');
 
 const createQueryInterfaceStub = (tables) => {
   const queries = [];
@@ -366,4 +367,34 @@ test('quotes clientId nullability hotfix is a no-op when the column is already n
   await assert.doesNotReject(() => relaxQuotesClientIdNullability.up(queryInterface, { UUID: 'UUID' }));
 
   assert.deepEqual(changedColumns, []);
+});
+
+test('quotes clientId force-drop hotfix executes a raw ALTER TABLE DROP NOT NULL on the real quotes column', async () => {
+  const queries = [];
+  const queryInterface = {
+    queryGenerator: {
+      quoteTable: (tableName) => `"${tableName}"`,
+      quoteIdentifier: (value) => `"${value}"`
+    },
+    sequelize: {
+      async query(sql) {
+        queries.push(sql);
+      }
+    },
+    async describeTable(tableName) {
+      if (tableName === 'Quotes') {
+        return {
+          clientId: { allowNull: false }
+        };
+      }
+
+      throw new Error(`relation "${tableName}" does not exist`);
+    }
+  };
+
+  await assert.doesNotReject(() => forceDropQuotesClientIdNotNull.up(queryInterface));
+
+  assert.deepEqual(queries, [
+    'ALTER TABLE "Quotes" ALTER COLUMN "clientId" DROP NOT NULL'
+  ]);
 });
