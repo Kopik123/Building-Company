@@ -482,6 +482,7 @@ ${summarySections.map((section) => renderStudioSummarySection(section, shared)).
                 <label class="span-2">Project brief<textarea name="message" rows="5" required placeholder="Tell us about your scope, finish expectations and timing."></textarea></label>
               </div>
               <p class="page-aside-copy" data-quote-files-status>Optional: attach up to 8 reference photos.</p>
+              <div class="quote-file-preview" data-quote-file-preview aria-live="polite" hidden></div>
               <button class="btn btn-gold btn-block" type="submit">${escapeHtml(shared.consultationCtaLabel || 'Request Private Consultation')}</button>
               <p class="form-status" aria-live="polite"></p>
             </form>
@@ -535,6 +536,7 @@ const renderConsultationSection = ({ title, lead, formContext, locationValue, se
           <label class="span-2">Project brief<textarea name="message" rows="5" required placeholder="Tell us about your scope, finish expectations and timing."></textarea></label>
         </div>
         <p class="page-aside-copy" data-quote-files-status>Optional: attach up to 8 reference photos.</p>
+        <div class="quote-file-preview" data-quote-file-preview aria-live="polite" hidden></div>
         <button class="btn btn-gold btn-block" type="submit">${escapeHtml(shared.consultationCtaLabel || 'Request Private Consultation')}</button>
         <p class="form-status" aria-live="polite"></p>
       </form>

@@ -1,5 +1,18 @@
 const { test, expect } = require('@playwright/test');
 
+const quotePhotoFixtures = [
+  {
+    name: 'quote-photo-1.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9pZ0Sq8AAAAASUVORK5CYII=', 'base64')
+  },
+  {
+    name: 'quote-photo-2.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9pZ0Sq8AAAAASUVORK5CYII=', 'base64')
+  }
+];
+
 const openNavIfNeeded = async (page) => {
   const toggle = page.locator('[data-nav-toggle]');
   if (await toggle.count()) {
@@ -195,6 +208,16 @@ test('core brochure pages render about, services, gallery, contact and quote rou
   await expect(page.locator('form.js-quote-form')).toBeVisible();
   await expect(page.locator('form.js-quote-form input[type="file"][name="files"]')).toHaveAttribute('accept', /image\/\*/i);
   await expect(page.locator('[data-quote-files-status]')).toContainText(/attach up to 8 reference photos/i);
+  await expect(page.locator('[data-quote-file-preview]')).toBeHidden();
+  await page.locator('form.js-quote-form input[type="file"][name="files"]').setInputFiles(quotePhotoFixtures);
+  await expect(page.locator('[data-quote-files-status]')).toContainText(/2 photos selected/i);
+  await expect(page.locator('[data-quote-file-preview]')).toBeVisible();
+  await expect(page.locator('.quote-file-preview-card')).toHaveCount(2);
+  await expect(page.locator('.quote-file-preview-thumb img')).toHaveCount(2);
+  await expect(page.locator('.quote-file-preview-name').nth(0)).toContainText('quote-photo-1.png');
+  await page.locator('.quote-file-preview-remove').nth(0).click();
+  await expect(page.locator('[data-quote-files-status]')).toContainText(/quote-photo-2\.png selected\./i);
+  await expect(page.locator('.quote-file-preview-card')).toHaveCount(1);
   const quoteCardTop = await page.locator('#quote-card').evaluate((node) => node.getBoundingClientRect().top);
   const quoteIntroTop = await page.locator('main h1').first().evaluate((node) => node.getBoundingClientRect().top);
   expect(quoteCardTop).toBeLessThan(quoteIntroTop);
@@ -293,6 +316,7 @@ test('service, location and legal pages keep the same shell and single primary c
   await expect(page.locator('[data-nav-menu] a[href="/auth.html"]')).toBeVisible();
   await expect(page.locator('form.js-quote-form')).toHaveCount(1);
   await expect(page.locator('form.js-quote-form input[type="file"][name="files"]')).toHaveAttribute('accept', /image\/\*/i);
+  await expect(page.locator('form.js-quote-form [data-quote-file-preview]')).toHaveCount(1);
 
   await page.goto('/premium-renovations-chorlton.html');
   await expect(page.locator('body.public-site.page-location')).toBeVisible();
