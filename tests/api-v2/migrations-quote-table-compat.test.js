@@ -4,6 +4,7 @@ const test = require('node:test');
 const baselineHardening = require('../../migrations/202603080001-production-baseline-hardening.js');
 const sessionDeviceHardening = require('../../migrations/202603080002-v2-session-device-and-email-hardening.js');
 const performanceSearch = require('../../migrations/202603090000-performance-search-trgm-indexes.js');
+const quoteWorkflowAndEvents = require('../../migrations/202603240001-quote-workflow-and-events.js');
 
 const createQueryInterfaceStub = (tables) => {
   const queries = [];
@@ -177,6 +178,117 @@ test('session/device hardening migration creates missing tables when Sequelize s
   );
   assert.equal(
     queries.includes('CREATE UNIQUE INDEX IF NOT EXISTS users_email_lower_unique_idx ON "Users" (LOWER("email"))'),
+    true
+  );
+});
+
+test('quote workflow migration resumes safely after a partial apply and uses explicit enum casts in backfill SQL', async () => {
+  const queries = [];
+  const addedIndexes = [];
+  const createdTables = [];
+  const tables = {
+    Quotes: {
+      id: {},
+      status: {},
+      clientId: {},
+      isGuest: {},
+      assignedManagerId: {},
+      createdAt: {},
+      updatedAt: {},
+      workflowStatus: {},
+      sourceChannel: {},
+      submittedAt: {}
+    },
+    Estimates: {
+      id: {},
+      quoteId: {},
+      decisionStatus: {}
+    },
+    Projects: {
+      id: {}
+    },
+    QuoteEvents: {
+      id: {},
+      quoteId: {},
+      visibility: {},
+      createdAt: {}
+    }
+  };
+  const indexesByTable = {
+    Quotes: [{ name: 'quotes_current_estimate_idx' }],
+    Estimates: [],
+    Projects: [],
+    QuoteEvents: [{ name: 'quote_events_quote_created_idx' }]
+  };
+
+  const queryInterface = {
+    sequelize: {
+      async query(sql) {
+        queries.push(sql);
+      }
+    },
+    async describeTable(tableName) {
+      const table = tables[tableName];
+      if (table) {
+        return table;
+      }
+
+      throw new Error(`relation "${tableName}" does not exist`);
+    },
+    async addColumn(tableName, columnName, definition) {
+      tables[tableName] = tables[tableName] || {};
+      tables[tableName][columnName] = definition;
+    },
+    async removeColumn() {},
+    async createTable(tableName, definition) {
+      createdTables.push(tableName);
+      tables[tableName] = definition;
+    },
+    async dropTable() {},
+    async showIndex(tableName) {
+      return indexesByTable[tableName] || [];
+    },
+    async addIndex(tableName, fields, options) {
+      indexesByTable[tableName] = [...(indexesByTable[tableName] || []), { name: options.name }];
+      addedIndexes.push({ tableName, fields, options });
+    },
+    async removeIndex() {}
+  };
+
+  await assert.doesNotReject(() =>
+    quoteWorkflowAndEvents.up(queryInterface, {
+      fn: (name) => ({ fn: name }),
+      DataTypes: {
+        UUID: 'UUID',
+        STRING: 'STRING',
+        DATE: 'DATE',
+        TEXT: 'TEXT',
+        INTEGER: 'INTEGER',
+        BOOLEAN: 'BOOLEAN',
+        JSON: 'JSON',
+        ENUM: (...values) => ({ type: 'ENUM', values })
+      }
+    })
+  );
+
+  assert.deepEqual(createdTables, []);
+  assert.equal(Object.hasOwn(tables.Quotes, 'currentEstimateId'), true);
+  assert.equal(Object.hasOwn(tables.Estimates, 'versionNumber'), true);
+  assert.equal(Object.hasOwn(tables.Projects, 'acceptedEstimateId'), true);
+  assert.equal(
+    queries.some((sql) => sql.includes(')::"enum_Quotes_workflowStatus"')),
+    true
+  );
+  assert.equal(
+    addedIndexes.some((item) => item.options.name === 'quotes_current_estimate_idx'),
+    false
+  );
+  assert.equal(
+    addedIndexes.some((item) => item.options.name === 'quotes_workflow_status_created_idx'),
+    true
+  );
+  assert.equal(
+    addedIndexes.some((item) => item.options.name === 'quote_events_quote_visibility_idx'),
     true
   );
 });

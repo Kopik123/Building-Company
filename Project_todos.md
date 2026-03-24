@@ -13,6 +13,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [x] Close the next manager parity gaps in `web-v2` by shipping quote creation and CRM patch flows for clients/staff, so those operations no longer depend on legacy dashboards.
 - [x] Ship the first end-to-end quote lifecycle in `api/v2` and `web-v2` for logged-in clients and managers: quote submit, manager ownership, estimate draft/send, client response and manual project conversion after approval.
 - [x] Align legacy guest quote intake with the new lifecycle metadata by storing workflow state, submission timestamps and quote events without breaking the current public/claim flow.
+- [x] Harden `202603240001-quote-workflow-and-events.js` for production recovery so a partial first-run migration can resume cleanly and the workflow-status backfill uses an explicit Postgres enum cast instead of a text-only `CASE`.
 - [ ] Finish the remaining manager parity gaps in `web-v2`: richer project lifecycle actions, broader delete/archive ownership, and the last legacy-only manager flows.
 - [ ] Add one aggregated `api/v2/overview` contract (or equivalent typed dashboard summary layer) before default cutover so `web-v2` stops composing the top board from many separate requests.
 - [x] Add direct `/app-v2` UI regression coverage for `Private Inbox` and `Project Chat`, including attachment-first direct-thread creation, so rollout-shell messaging is covered outside legacy dashboard smoke tests.

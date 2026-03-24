@@ -1,10 +1,115 @@
 'use strict';
 
+const tableDoesNotExistPattern = /does not exist|unknown table|relation .* does not exist|no such table|No description found/i;
+const WORKFLOW_STATUS_ENUM_NAME = '"enum_Quotes_workflowStatus"';
+
+const resolveColumnName = (tableDefinition, desiredColumnName) => {
+  const columns = Object.keys(tableDefinition || {});
+  const directMatch = columns.find((column) => column === desiredColumnName);
+  if (directMatch) return directMatch;
+  const normalized = String(desiredColumnName).toLowerCase();
+  return columns.find((column) => String(column).toLowerCase() === normalized) || null;
+};
+
+const tableExists = async (queryInterface, tableName) => {
+  try {
+    await queryInterface.describeTable(tableName);
+    return true;
+  } catch (error) {
+    const message = String(error && error.message ? error.message : '');
+    if (tableDoesNotExistPattern.test(message)) {
+      return false;
+    }
+    throw error;
+  }
+};
+
+const addColumnIfMissing = async (queryInterface, tableName, columnName, definition) => {
+  const tableDefinition = await queryInterface.describeTable(tableName);
+  const resolvedColumn = resolveColumnName(tableDefinition, columnName);
+  if (resolvedColumn) {
+    return;
+  }
+  await queryInterface.addColumn(tableName, columnName, definition);
+};
+
+const removeColumnIfPresent = async (queryInterface, tableName, columnName) => {
+  if (!(await tableExists(queryInterface, tableName))) {
+    return;
+  }
+
+  const tableDefinition = await queryInterface.describeTable(tableName);
+  const resolvedColumn = resolveColumnName(tableDefinition, columnName);
+  if (!resolvedColumn) {
+    return;
+  }
+
+  await queryInterface.removeColumn(tableName, resolvedColumn);
+};
+
+const addIndexIfMissing = async (queryInterface, tableName, indexName, fields, options = {}) => {
+  if (!(await tableExists(queryInterface, tableName))) {
+    return;
+  }
+
+  const indexes = await queryInterface.showIndex(tableName);
+  if (indexes.some((index) => index.name === indexName)) {
+    return;
+  }
+
+  await queryInterface.addIndex(tableName, fields, { name: indexName, ...options });
+};
+
+const removeIndexIfPresent = async (queryInterface, tableName, indexName) => {
+  if (!(await tableExists(queryInterface, tableName))) {
+    return;
+  }
+
+  const indexes = await queryInterface.showIndex(tableName);
+  if (!indexes.some((index) => index.name === indexName)) {
+    return;
+  }
+
+  await queryInterface.removeIndex(tableName, indexName);
+};
+
+const createTableIfMissing = async (queryInterface, tableName, definition) => {
+  if (await tableExists(queryInterface, tableName)) {
+    return;
+  }
+
+  await queryInterface.createTable(tableName, definition);
+};
+
+const buildWorkflowBackfillSql = () => `
+  UPDATE "Quotes"
+  SET "workflowStatus" = (
+    CASE "status"
+      WHEN 'pending' THEN 'submitted'
+      WHEN 'in_progress' THEN 'assigned'
+      WHEN 'responded' THEN 'estimate_sent'
+      WHEN 'closed' THEN 'closed_lost'
+      ELSE 'submitted'
+    END
+  )::${WORKFLOW_STATUS_ENUM_NAME},
+  "submittedAt" = COALESCE("submittedAt", "createdAt"),
+  "assignedAt" = CASE WHEN "assignedManagerId" IS NOT NULL THEN COALESCE("assignedAt", "updatedAt", "createdAt") ELSE NULL END,
+  "closedAt" = CASE WHEN "status" = 'closed' THEN COALESCE("closedAt", "updatedAt", "createdAt") ELSE NULL END,
+  "sourceChannel" = COALESCE(
+    "sourceChannel",
+    CASE
+      WHEN "isGuest" = TRUE THEN 'public_web'
+      WHEN "clientId" IS NOT NULL THEN 'client_portal'
+      ELSE 'manager_created'
+    END
+  )
+`;
+
 module.exports = {
   up: async (queryInterface, Sequelize) => {
     const { DataTypes } = Sequelize;
 
-    await queryInterface.addColumn('Quotes', 'workflowStatus', {
+    await addColumnIfMissing(queryInterface, 'Quotes', 'workflowStatus', {
       type: DataTypes.ENUM(
         'submitted',
         'triaged',
@@ -21,12 +126,12 @@ module.exports = {
       defaultValue: 'submitted'
     });
 
-    await queryInterface.addColumn('Quotes', 'sourceChannel', {
+    await addColumnIfMissing(queryInterface, 'Quotes', 'sourceChannel', {
       type: DataTypes.STRING,
       allowNull: true
     });
 
-    await queryInterface.addColumn('Quotes', 'currentEstimateId', {
+    await addColumnIfMissing(queryInterface, 'Quotes', 'currentEstimateId', {
       type: DataTypes.UUID,
       allowNull: true,
       references: {
@@ -37,7 +142,7 @@ module.exports = {
       onDelete: 'SET NULL'
     });
 
-    await queryInterface.addColumn('Quotes', 'convertedProjectId', {
+    await addColumnIfMissing(queryInterface, 'Quotes', 'convertedProjectId', {
       type: DataTypes.UUID,
       allowNull: true,
       references: {
@@ -48,80 +153,80 @@ module.exports = {
       onDelete: 'SET NULL'
     });
 
-    await queryInterface.addColumn('Quotes', 'submittedAt', {
+    await addColumnIfMissing(queryInterface, 'Quotes', 'submittedAt', {
       type: DataTypes.DATE,
       allowNull: true
     });
 
-    await queryInterface.addColumn('Quotes', 'assignedAt', {
+    await addColumnIfMissing(queryInterface, 'Quotes', 'assignedAt', {
       type: DataTypes.DATE,
       allowNull: true
     });
 
-    await queryInterface.addColumn('Quotes', 'convertedAt', {
+    await addColumnIfMissing(queryInterface, 'Quotes', 'convertedAt', {
       type: DataTypes.DATE,
       allowNull: true
     });
 
-    await queryInterface.addColumn('Quotes', 'closedAt', {
+    await addColumnIfMissing(queryInterface, 'Quotes', 'closedAt', {
       type: DataTypes.DATE,
       allowNull: true
     });
 
-    await queryInterface.addColumn('Quotes', 'lossReason', {
+    await addColumnIfMissing(queryInterface, 'Quotes', 'lossReason', {
       type: DataTypes.TEXT,
       allowNull: true
     });
 
-    await queryInterface.addColumn('Estimates', 'decisionStatus', {
+    await addColumnIfMissing(queryInterface, 'Estimates', 'decisionStatus', {
       type: DataTypes.ENUM('pending', 'viewed', 'revision_requested', 'accepted', 'declined'),
       allowNull: false,
       defaultValue: 'pending'
     });
 
-    await queryInterface.addColumn('Estimates', 'versionNumber', {
+    await addColumnIfMissing(queryInterface, 'Estimates', 'versionNumber', {
       type: DataTypes.INTEGER,
       allowNull: false,
       defaultValue: 1
     });
 
-    await queryInterface.addColumn('Estimates', 'isCurrentVersion', {
+    await addColumnIfMissing(queryInterface, 'Estimates', 'isCurrentVersion', {
       type: DataTypes.BOOLEAN,
       allowNull: false,
       defaultValue: true
     });
 
-    await queryInterface.addColumn('Estimates', 'clientMessage', {
+    await addColumnIfMissing(queryInterface, 'Estimates', 'clientMessage', {
       type: DataTypes.TEXT,
       allowNull: true
     });
 
-    await queryInterface.addColumn('Estimates', 'sentAt', {
+    await addColumnIfMissing(queryInterface, 'Estimates', 'sentAt', {
       type: DataTypes.DATE,
       allowNull: true
     });
 
-    await queryInterface.addColumn('Estimates', 'viewedAt', {
+    await addColumnIfMissing(queryInterface, 'Estimates', 'viewedAt', {
       type: DataTypes.DATE,
       allowNull: true
     });
 
-    await queryInterface.addColumn('Estimates', 'respondedAt', {
+    await addColumnIfMissing(queryInterface, 'Estimates', 'respondedAt', {
       type: DataTypes.DATE,
       allowNull: true
     });
 
-    await queryInterface.addColumn('Estimates', 'approvedAt', {
+    await addColumnIfMissing(queryInterface, 'Estimates', 'approvedAt', {
       type: DataTypes.DATE,
       allowNull: true
     });
 
-    await queryInterface.addColumn('Estimates', 'declinedAt', {
+    await addColumnIfMissing(queryInterface, 'Estimates', 'declinedAt', {
       type: DataTypes.DATE,
       allowNull: true
     });
 
-    await queryInterface.addColumn('Projects', 'acceptedEstimateId', {
+    await addColumnIfMissing(queryInterface, 'Projects', 'acceptedEstimateId', {
       type: DataTypes.UUID,
       allowNull: true,
       references: {
@@ -132,7 +237,7 @@ module.exports = {
       onDelete: 'SET NULL'
     });
 
-    await queryInterface.createTable('QuoteEvents', {
+    await createTableIfMissing(queryInterface, 'QuoteEvents', {
       id: {
         type: DataTypes.UUID,
         primaryKey: true,
@@ -188,67 +293,52 @@ module.exports = {
       }
     });
 
-    await queryInterface.sequelize.query(`
-      UPDATE "Quotes"
-      SET "workflowStatus" = CASE "status"
-        WHEN 'pending' THEN 'submitted'
-        WHEN 'in_progress' THEN 'assigned'
-        WHEN 'responded' THEN 'estimate_sent'
-        WHEN 'closed' THEN 'closed_lost'
-        ELSE 'submitted'
-      END,
-      "submittedAt" = COALESCE("submittedAt", "createdAt"),
-      "assignedAt" = CASE WHEN "assignedManagerId" IS NOT NULL THEN COALESCE("assignedAt", "updatedAt", "createdAt") ELSE NULL END,
-      "closedAt" = CASE WHEN "status" = 'closed' THEN COALESCE("closedAt", "updatedAt", "createdAt") ELSE NULL END,
-      "sourceChannel" = CASE
-        WHEN "isGuest" = TRUE THEN 'public_web'
-        WHEN "clientId" IS NOT NULL THEN 'client_portal'
-        ELSE 'manager_created'
-      END
-    `);
+    await queryInterface.sequelize.query(buildWorkflowBackfillSql());
 
-    await queryInterface.addIndex('Quotes', ['workflowStatus', 'createdAt'], { name: 'quotes_workflow_status_created_idx' });
-    await queryInterface.addIndex('Quotes', ['currentEstimateId'], { name: 'quotes_current_estimate_idx' });
-    await queryInterface.addIndex('Quotes', ['convertedProjectId'], { name: 'quotes_converted_project_idx' });
-    await queryInterface.addIndex('Estimates', ['quoteId', 'versionNumber'], { name: 'estimates_quote_version_idx' });
-    await queryInterface.addIndex('Estimates', ['quoteId', 'isCurrentVersion'], { name: 'estimates_quote_current_idx' });
-    await queryInterface.addIndex('Projects', ['acceptedEstimateId'], { name: 'projects_accepted_estimate_idx' });
-    await queryInterface.addIndex('QuoteEvents', ['quoteId', 'createdAt'], { name: 'quote_events_quote_created_idx' });
-    await queryInterface.addIndex('QuoteEvents', ['quoteId', 'visibility', 'createdAt'], { name: 'quote_events_quote_visibility_idx' });
+    await addIndexIfMissing(queryInterface, 'Quotes', 'quotes_workflow_status_created_idx', ['workflowStatus', 'createdAt']);
+    await addIndexIfMissing(queryInterface, 'Quotes', 'quotes_current_estimate_idx', ['currentEstimateId']);
+    await addIndexIfMissing(queryInterface, 'Quotes', 'quotes_converted_project_idx', ['convertedProjectId']);
+    await addIndexIfMissing(queryInterface, 'Estimates', 'estimates_quote_version_idx', ['quoteId', 'versionNumber']);
+    await addIndexIfMissing(queryInterface, 'Estimates', 'estimates_quote_current_idx', ['quoteId', 'isCurrentVersion']);
+    await addIndexIfMissing(queryInterface, 'Projects', 'projects_accepted_estimate_idx', ['acceptedEstimateId']);
+    await addIndexIfMissing(queryInterface, 'QuoteEvents', 'quote_events_quote_created_idx', ['quoteId', 'createdAt']);
+    await addIndexIfMissing(queryInterface, 'QuoteEvents', 'quote_events_quote_visibility_idx', ['quoteId', 'visibility', 'createdAt']);
   },
 
   down: async (queryInterface) => {
-    await queryInterface.removeIndex('QuoteEvents', 'quote_events_quote_visibility_idx');
-    await queryInterface.removeIndex('QuoteEvents', 'quote_events_quote_created_idx');
-    await queryInterface.removeIndex('Projects', 'projects_accepted_estimate_idx');
-    await queryInterface.removeIndex('Estimates', 'estimates_quote_current_idx');
-    await queryInterface.removeIndex('Estimates', 'estimates_quote_version_idx');
-    await queryInterface.removeIndex('Quotes', 'quotes_converted_project_idx');
-    await queryInterface.removeIndex('Quotes', 'quotes_current_estimate_idx');
-    await queryInterface.removeIndex('Quotes', 'quotes_workflow_status_created_idx');
+    await removeIndexIfPresent(queryInterface, 'QuoteEvents', 'quote_events_quote_visibility_idx');
+    await removeIndexIfPresent(queryInterface, 'QuoteEvents', 'quote_events_quote_created_idx');
+    await removeIndexIfPresent(queryInterface, 'Projects', 'projects_accepted_estimate_idx');
+    await removeIndexIfPresent(queryInterface, 'Estimates', 'estimates_quote_current_idx');
+    await removeIndexIfPresent(queryInterface, 'Estimates', 'estimates_quote_version_idx');
+    await removeIndexIfPresent(queryInterface, 'Quotes', 'quotes_converted_project_idx');
+    await removeIndexIfPresent(queryInterface, 'Quotes', 'quotes_current_estimate_idx');
+    await removeIndexIfPresent(queryInterface, 'Quotes', 'quotes_workflow_status_created_idx');
 
-    await queryInterface.dropTable('QuoteEvents');
+    if (await tableExists(queryInterface, 'QuoteEvents')) {
+      await queryInterface.dropTable('QuoteEvents');
+    }
 
-    await queryInterface.removeColumn('Projects', 'acceptedEstimateId');
+    await removeColumnIfPresent(queryInterface, 'Projects', 'acceptedEstimateId');
 
-    await queryInterface.removeColumn('Estimates', 'declinedAt');
-    await queryInterface.removeColumn('Estimates', 'approvedAt');
-    await queryInterface.removeColumn('Estimates', 'respondedAt');
-    await queryInterface.removeColumn('Estimates', 'viewedAt');
-    await queryInterface.removeColumn('Estimates', 'sentAt');
-    await queryInterface.removeColumn('Estimates', 'clientMessage');
-    await queryInterface.removeColumn('Estimates', 'isCurrentVersion');
-    await queryInterface.removeColumn('Estimates', 'versionNumber');
-    await queryInterface.removeColumn('Estimates', 'decisionStatus');
+    await removeColumnIfPresent(queryInterface, 'Estimates', 'declinedAt');
+    await removeColumnIfPresent(queryInterface, 'Estimates', 'approvedAt');
+    await removeColumnIfPresent(queryInterface, 'Estimates', 'respondedAt');
+    await removeColumnIfPresent(queryInterface, 'Estimates', 'viewedAt');
+    await removeColumnIfPresent(queryInterface, 'Estimates', 'sentAt');
+    await removeColumnIfPresent(queryInterface, 'Estimates', 'clientMessage');
+    await removeColumnIfPresent(queryInterface, 'Estimates', 'isCurrentVersion');
+    await removeColumnIfPresent(queryInterface, 'Estimates', 'versionNumber');
+    await removeColumnIfPresent(queryInterface, 'Estimates', 'decisionStatus');
 
-    await queryInterface.removeColumn('Quotes', 'lossReason');
-    await queryInterface.removeColumn('Quotes', 'closedAt');
-    await queryInterface.removeColumn('Quotes', 'convertedAt');
-    await queryInterface.removeColumn('Quotes', 'assignedAt');
-    await queryInterface.removeColumn('Quotes', 'submittedAt');
-    await queryInterface.removeColumn('Quotes', 'convertedProjectId');
-    await queryInterface.removeColumn('Quotes', 'currentEstimateId');
-    await queryInterface.removeColumn('Quotes', 'sourceChannel');
-    await queryInterface.removeColumn('Quotes', 'workflowStatus');
+    await removeColumnIfPresent(queryInterface, 'Quotes', 'lossReason');
+    await removeColumnIfPresent(queryInterface, 'Quotes', 'closedAt');
+    await removeColumnIfPresent(queryInterface, 'Quotes', 'convertedAt');
+    await removeColumnIfPresent(queryInterface, 'Quotes', 'assignedAt');
+    await removeColumnIfPresent(queryInterface, 'Quotes', 'submittedAt');
+    await removeColumnIfPresent(queryInterface, 'Quotes', 'convertedProjectId');
+    await removeColumnIfPresent(queryInterface, 'Quotes', 'currentEstimateId');
+    await removeColumnIfPresent(queryInterface, 'Quotes', 'sourceChannel');
+    await removeColumnIfPresent(queryInterface, 'Quotes', 'workflowStatus');
   }
 };
