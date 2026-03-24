@@ -33,6 +33,73 @@ const createGalleryModelsStub = (projects) => ({
   ProjectMedia: {}
 });
 
+const createGuestQuoteModelsStub = (overrides = {}) => {
+  const state = {
+    createdQuotes: [],
+    createdEvents: [],
+    notificationBatches: [],
+    managers: [{
+      id: 'manager-1',
+      role: 'manager',
+      isActive: true
+    }]
+  };
+
+  const Quote = {
+    async create(payload) {
+      const quote = {
+        id: `quote-${state.createdQuotes.length + 1}`,
+        publicToken: payload.publicToken || 'public-token-1',
+        status: payload.status,
+        ...payload
+      };
+      state.createdQuotes.push(quote);
+      return quote;
+    }
+  };
+
+  const QuoteEvent = {
+    async create(payload) {
+      state.createdEvents.push(payload);
+      return payload;
+    }
+  };
+
+  const User = {
+    async findAll() {
+      return state.managers;
+    },
+    async findByPk() {
+      return null;
+    }
+  };
+
+  const Notification = {
+    async bulkCreate(payload) {
+      state.notificationBatches.push(payload);
+      return payload;
+    }
+  };
+
+  return {
+    state,
+    models: {
+      Quote,
+      QuoteClaimToken: {
+        async destroy() {},
+        async create() {},
+        async findOne() {
+          return null;
+        }
+      },
+      User,
+      Notification,
+      QuoteEvent,
+      ...overrides
+    }
+  };
+};
+
 test.afterEach(() => {
   clearPublicCaches();
   restoreContactEnv();
@@ -278,4 +345,87 @@ test('legacy /api/contact returns 503 when email service is not configured', asy
     .expect(503);
 
   assert.equal(response.body?.error, 'Email service is not configured yet.');
+});
+
+test('legacy /api/quotes/guest creates a guest quote and manager notifications from the public form payload', async () => {
+  const { state, models } = createGuestQuoteModelsStub();
+  mockModels(models);
+
+  const quotesRouter = loadRoute('routes/quotes.js');
+  const app = buildExpressApp('/api/quotes', quotesRouter);
+
+  const response = await request(app)
+    .post('/api/quotes/guest')
+    .send({
+      guestName: 'Olivia Reed',
+      guestPhone: '07395448487',
+      guestEmail: 'olivia@example.com',
+      projectType: 'kitchen',
+      budgetRange: '£8,000-£12,000',
+      description: 'Kitchen installation and refurbishment with bespoke joinery.',
+      location: 'Manchester and the North West'
+    })
+    .expect(201);
+
+  assert.equal(response.body?.quoteId, 'quote-1');
+  assert.equal(response.body?.status, 'pending');
+  assert.equal(state.createdQuotes.length, 1);
+  assert.equal(state.createdQuotes[0].workflowStatus, 'submitted');
+  assert.equal(state.createdQuotes[0].sourceChannel, 'public_web');
+  assert.equal(state.createdEvents.length, 1);
+  assert.equal(state.notificationBatches.length, 1);
+  assert.equal(state.notificationBatches[0][0].type, 'new_quote');
+  assert.equal(state.notificationBatches[0][0].quoteId, 'quote-1');
+});
+
+test('legacy /api/quotes/guest still succeeds when quote side effects fail', async () => {
+  const warnings = [];
+  const originalWarn = console.warn;
+  console.warn = (...args) => warnings.push(args);
+
+  const { state, models } = createGuestQuoteModelsStub({
+    QuoteEvent: {
+      async create() {
+        throw new Error('Quote event store unavailable');
+      }
+    },
+    Notification: {
+      async bulkCreate() {
+        throw new Error('Notification insert failed');
+      }
+    }
+  });
+  mockModels(models);
+
+  const quotesRouter = loadRoute('routes/quotes.js');
+  const app = buildExpressApp('/api/quotes', quotesRouter);
+
+  try {
+    const response = await request(app)
+      .post('/api/quotes/guest')
+      .send({
+        guestName: 'Olivia Reed',
+        guestPhone: '07395448487',
+        guestEmail: 'olivia@example.com',
+        projectType: 'kitchen',
+        budgetRange: '£8,000-£12,000',
+        description: 'Kitchen installation and refurbishment with bespoke joinery.',
+        location: 'Manchester and the North West'
+      })
+      .expect(201);
+
+    assert.equal(response.body?.quoteId, 'quote-1');
+    assert.equal(state.createdQuotes.length, 1);
+    assert.equal(warnings.length >= 2, true);
+    assert.equal(
+      warnings.some((entry) => JSON.stringify(entry).includes('quote_event_create')),
+      true
+    );
+    assert.equal(
+      warnings.some((entry) => JSON.stringify(entry).includes('manager_notification_create')),
+      true
+    );
+  } finally {
+    console.warn = originalWarn;
+  }
 });

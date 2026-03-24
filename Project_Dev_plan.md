@@ -521,3 +521,7 @@
 - Hardened `migrations/202603240001-quote-workflow-and-events.js` so it now resumes safely after a partial apply by skipping already-created columns, indexes and the `QuoteEvents` table instead of crashing on rerun.
 - Changed the quote-workflow backfill SQL in that migration to cast the `CASE` result explicitly to `enum_Quotes_workflowStatus`, which is the safer Postgres-compatible path for enum assignment during production startup migrations.
 - Added migration regression coverage in `tests/api-v2/migrations-quote-table-compat.test.js` for the partial-apply recovery path and the explicit enum-cast backfill SQL before re-running the validation gates.
+- Saved `Plans/Public Guest Quote Submit Hardening.md`, registered it in `Plans/Plan History.md`, and marked the public guest quote hardening item as done in `Project_todos.md`.
+- Hardened `routes/quotes.js` so the public `/api/quotes/guest` flow now treats `QuoteEvent.create(...)` and manager notification fan-out as best-effort side effects, logging warnings instead of failing the customer submission after the quote itself is stored.
+- Added public quote regression coverage in `tests/api-v2/legacy-public-routes.test.js` for both the normal guest quote submit path and the degraded path where quote-event / notification side effects throw.
+- Re-ran `node --test tests/api-v2/legacy-public-routes.test.js` and `npm.cmd run test:ci`; both passed after the guest quote submit hardening fix.

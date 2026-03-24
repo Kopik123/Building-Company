@@ -19,6 +19,13 @@ let cachedClaimEmailTransporter;
 
 const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
 const normalizePhone = (value) => String(value || '').trim();
+const logNonBlockingQuoteFailure = (scope, error, meta = {}) => {
+  console.warn('Non-blocking quote guest side effect failed:', {
+    scope,
+    message: error?.message || String(error),
+    ...meta
+  });
+};
 
 const getClaimEmailTransporter = () => {
   if (!cachedClaimEmailTransporter) {
@@ -150,21 +157,23 @@ router.post(
     });
 
     if (typeof QuoteEvent?.create === 'function') {
-      await QuoteEvent.create({
-        quoteId: quote.id,
-        actorUserId: null,
-        eventType: 'quote_submitted',
-        visibility: 'public',
-        message: 'Guest submitted a new quote request.',
-        data: {
-          sourceChannel: 'public_web'
-        }
-      });
+      try {
+        await QuoteEvent.create({
+          quoteId: quote.id,
+          actorUserId: null,
+          eventType: 'quote_submitted',
+          visibility: 'public',
+          message: 'Guest submitted a new quote request.',
+          data: {
+            sourceChannel: 'public_web'
+          }
+        });
+      } catch (error) {
+        logNonBlockingQuoteFailure('quote_event_create', error, { quoteId: quote.id });
+      }
     }
 
     // Notify all managers via internal notification
-    const managers = await User.findAll({ where: { role: { [Op.in]: ['manager', 'admin'] }, isActive: true } });
-
     const notificationTitle = `New quote request from ${guestName}`;
     const notificationBody = [
       `Name: ${guestName}`,
@@ -177,25 +186,31 @@ router.post(
       `Description: ${description}`
     ].filter(Boolean).join('\n');
 
-    if (managers.length) {
-      await Notification.bulkCreate(
-        managers.map((manager) => ({
-          userId: manager.id,
-          type: 'new_quote',
-          title: notificationTitle,
-          body: notificationBody,
-          quoteId: quote.id,
-          data: {
+    try {
+      const managers = await User.findAll({ where: { role: { [Op.in]: ['manager', 'admin'] }, isActive: true } });
+
+      if (managers.length && typeof Notification?.bulkCreate === 'function') {
+        await Notification.bulkCreate(
+          managers.map((manager) => ({
+            userId: manager.id,
+            type: 'new_quote',
+            title: notificationTitle,
+            body: notificationBody,
             quoteId: quote.id,
-            guestName,
-            guestEmail: guestEmail || null,
-            guestPhone: guestPhone || null,
-            postcode,
-            location,
-            projectType
-          }
-        }))
-      );
+            data: {
+              quoteId: quote.id,
+              guestName,
+              guestEmail: guestEmail || null,
+              guestPhone: guestPhone || null,
+              postcode,
+              location,
+              projectType
+            }
+          }))
+        );
+      }
+    } catch (error) {
+      logNonBlockingQuoteFailure('manager_notification_create', error, { quoteId: quote.id });
     }
 
     return res.status(201).json({
