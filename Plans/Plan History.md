@@ -17,3 +17,4 @@
 - 2026-03-24 20:57 | Quotes ClientId Force Drop Not Null Hotfix | Plans/Quotes ClientId Force Drop Not Null Hotfix.md
 - 2026-03-24 21:24 | Quote Photo Attachments For Public And Web-v2 Intake | Plans/Quote Photo Attachments For Public And Web-v2 Intake.md
 - 2026-03-24 22:22 | Quote Multi Photo Preview And Thumbnail UX | Plans/Quote Multi Photo Preview And Thumbnail UX.md
+- 2026-03-26 18:15 | Guest Quote Private Preview Link And Follow Up Panel | Plans/Guest Quote Private Preview Link And Follow Up Panel.md

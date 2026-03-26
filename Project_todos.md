@@ -102,6 +102,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [ ] Add a real project workflow model with `stage`, `milestone`, `task/work package`, `owner` and `due date`.
 - [ ] Design and implement a durable activity/audit feed for company, client and project timelines.
 - [ ] Close the operational gap in `quote -> estimate -> approval -> project` so estimate approvals are explicit, versioned and portable to mobile clients.
+- [x] Add the first public guest quote follow-up layer by showing a private status/preview panel from `publicToken`, including reference, workflow state and attached quote photos after submit.
 - [ ] Finish public guest quote portal parity on a v2 contract (`submit`, `preview`, `claim`, later response access) so guest quote UX no longer depends on legacy-only routes.
 - [ ] Extend the future claimed/guest quote portal so customers can add follow-up quote photos after the initial submission, not only during the first send.
 - [ ] Consolidate manual public pages and generated SEO pages onto one content model/source so brochure copy, metadata, FAQ and CTA logic stop drifting.

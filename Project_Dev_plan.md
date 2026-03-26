@@ -547,3 +547,12 @@
 - Added `quote-file-preview*` styling in `styles/public.css` so the selected-photo cards match the current brochure card treatment instead of falling back to raw browser layout.
 - Regenerated the service/location brochure pages and extended `tests/playwright/public-redesign.spec.js` so the public quote regression now proves multi-file preview, thumbnail rendering and single-file removal on desktop, mobile Chromium and mobile WebKit.
 - Re-ran `npm.cmd run generate:public-pages:content`, `npm.cmd run verify:generated`, focused public Playwright quote coverage, and `npm.cmd run test:ci`; all passed after the quote preview UX polish.
+
+## 2026-03-26
+
+- Saved `Plans/Guest Quote Private Preview Link And Follow Up Panel.md`, registered it in `Plans/Plan History.md`, and marked the first public guest quote follow-up layer as done in `Project_todos.md` while keeping the bigger guest portal parity task open.
+- Extended `routes/quotes.js` so `GET /api/quotes/guest/:publicToken` now returns guest preview payloads with quote attachment metadata and attachment counts, which makes the current `publicToken` useful beyond a bare status lookup.
+- Reworked `quote.js`, `quote.html` and `scripts/publicPageRenderer.js` so brochure quote forms now render a private follow-up/status panel after successful submit, persist the private link in the current URL via `?quote=<publicToken>`, and restore the same panel on later visits from that private link.
+- Added `quote-followup*` styling in `styles/public.css` so the new guest preview panel, metadata grid and read-only photo cards fit the existing brochure card language on desktop and mobile.
+- Regenerated the generated service/location brochure pages, added API regression coverage for guest preview attachments in `tests/api-v2/legacy-public-routes.test.js`, and extended `tests/playwright/public-redesign.spec.js` so the public quote flow now proves submit -> private link -> restored preview across desktop, mobile Chromium and mobile WebKit.
+- Re-ran `npm.cmd run generate:public-pages:content`, `npm.cmd run verify:generated`, focused brochure Playwright coverage for the new guest preview flow plus generated quote forms, and `npm.cmd run test:ci`; all passed after the guest quote follow-up rollout.

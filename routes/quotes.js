@@ -358,14 +358,31 @@ router.get('/guest/:publicToken', [param('publicToken').isLength({ min: 16 })], 
       publicToken: req.params.publicToken,
       isGuest: true
     },
-    attributes: ['id', 'projectType', 'location', 'status', 'workflowStatus', 'priority', 'createdAt', 'updatedAt', 'submittedAt', 'assignedAt', 'convertedAt', 'closedAt']
+    attributes: ['id', 'projectType', 'location', 'status', 'workflowStatus', 'priority', 'createdAt', 'updatedAt', 'submittedAt', 'assignedAt', 'convertedAt', 'closedAt'],
+    include: [{
+      model: QuoteAttachment,
+      as: 'attachments',
+      attributes: ['id', 'filename', 'url', 'mimeType', 'sizeBytes', 'createdAt', 'updatedAt'],
+      required: false,
+      separate: true,
+      order: [['createdAt', 'ASC']]
+    }]
   });
 
   if (!quote) {
     return res.status(404).json({ error: 'Quote not found' });
   }
 
-  return res.json({ quote });
+  const plainQuote = typeof quote.toJSON === 'function' ? quote.toJSON() : { ...(quote || {}) };
+  const attachments = sortQuoteAttachments(plainQuote.attachments || []).map(toQuoteAttachmentSummary);
+
+  return res.json({
+    quote: {
+      ...plainQuote,
+      attachments,
+      attachmentCount: attachments.length
+    }
+  });
 }));
 
 router.post(

@@ -1133,6 +1133,10 @@
   margin: 0 0 var(--space-4);
 }
 
+.quote-file-preview--readonly {
+  margin-bottom: 0;
+}
+
 .quote-file-preview-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
@@ -1208,6 +1212,69 @@
 .quote-file-preview-remove:focus-visible {
   border-color: rgba(209, 164, 74, 0.9);
   transform: translateY(-1px);
+}
+
+.quote-file-preview-link {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.quote-followup-panel[hidden] {
+  display: none;
+}
+
+.quote-followup-panel {
+  margin-top: var(--space-4);
+  padding: 1rem;
+  border: 1px solid rgba(209, 164, 74, 0.42);
+  border-radius: var(--radius-md);
+  background:
+    linear-gradient(165deg, rgba(12, 12, 12, 0.9), rgba(5, 5, 5, 0.96)),
+    url('/mainbackground.png') center center / cover no-repeat;
+}
+
+.quote-followup-panel h3 {
+  margin-bottom: 0.45rem;
+}
+
+.quote-followup-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+  gap: var(--space-3);
+  margin: 0 0 var(--space-4);
+}
+
+.quote-followup-meta-item {
+  padding: 0.65rem 0.75rem;
+  border: 1px solid rgba(209, 164, 74, 0.34);
+  border-radius: var(--radius-sm);
+  background:
+    linear-gradient(165deg, rgba(10, 10, 10, 0.86), rgba(4, 4, 4, 0.92)),
+    url('/boxbackground.png') center center / 100% 100% no-repeat;
+}
+
+.quote-followup-meta-item dt,
+.quote-followup-meta-item dd {
+  margin: 0;
+}
+
+.quote-followup-meta-item dt {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.quote-followup-meta-item dd {
+  margin-top: 0.22rem;
+  font-size: 0.84rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.quote-followup-actions {
+  margin-top: var(--space-4);
 }
 
 @media (max-width: 1180px) {

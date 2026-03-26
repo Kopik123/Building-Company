@@ -13,6 +13,25 @@ const quotePhotoFixtures = [
   }
 ];
 
+const createGuestQuotePreviewPayload = () => ({
+  quote: {
+    id: 'quote-preview-1',
+    projectType: 'kitchen',
+    location: 'Manchester and the North West',
+    status: 'pending',
+    workflowStatus: 'submitted',
+    priority: 'medium',
+    attachmentCount: 2,
+    submittedAt: '2026-03-24T21:30:00Z',
+    attachments: quotePhotoFixtures.map((file, index) => ({
+      name: file.name,
+      url: `/uploads/${file.name}`,
+      size: 2048 + index,
+      mimeType: 'image/png'
+    }))
+  }
+});
+
 const openNavIfNeeded = async (page) => {
   const toggle = page.locator('[data-nav-toggle]');
   if (await toggle.count()) {
@@ -261,6 +280,52 @@ test('wall systems service CTA opens quote with wall-systems context preselected
   await expect(page).toHaveURL(/\/quote\.html\?projectType=interior#quote-card$/);
   await expect(page.locator('#quote-card form.js-quote-form')).toBeVisible();
   await expect(page.locator('#quote-card select[name="projectType"]')).toHaveValue('interior');
+});
+
+test('quote page shows a private guest quote preview after submit and from the saved quote link', async ({ page }) => {
+  await page.route('**/api/quotes/guest', async (route) => {
+    await route.fulfill({
+      status: 201,
+      json: {
+        quoteId: 'quote-preview-1',
+        publicToken: 'guest-preview-token',
+        status: 'pending',
+        workflowStatus: 'submitted',
+        attachmentCount: 2,
+        attachments: createGuestQuotePreviewPayload().quote.attachments
+      }
+    });
+  });
+
+  await page.route('**/api/quotes/guest/guest-preview-token', async (route) => {
+    await route.fulfill({
+      json: createGuestQuotePreviewPayload()
+    });
+  });
+
+  await page.goto('/quote.html');
+  const quoteForm = page.locator('form.js-quote-form');
+  await quoteForm.locator('input[name="name"]').fill('Marta Client');
+  await quoteForm.locator('input[name="phone"]').fill('07395448487');
+  await quoteForm.locator('input[name="email"]').fill('client@example.com');
+  await quoteForm.locator('select[name="projectType"]').selectOption('kitchen');
+  await quoteForm.locator('textarea[name="message"]').fill('Kitchen refresh with appliance wall and new finishes.');
+  await quoteForm.locator('input[type="file"][name="files"]').setInputFiles(quotePhotoFixtures);
+  await page.getByRole('button', { name: /send enquiry/i }).click();
+
+  await expect(quoteForm.locator('.form-status')).toContainText(/request sent with 2 photo\(s\)\. reference: quote-preview-1\./i);
+  await expect(quoteForm.locator('[data-quote-followup]')).toBeVisible();
+  await expect(quoteForm.locator('[data-quote-followup-title]')).toContainText(/quote status: submitted/i);
+  await expect(quoteForm.locator('[data-quote-followup-meta]')).toContainText(/quote-preview-1/i);
+  await expect(quoteForm.locator('[data-quote-followup-attachments] .quote-file-preview-card')).toHaveCount(2);
+  await expect(quoteForm.locator('[data-quote-followup-actions] a').first()).toHaveAttribute('href', /quote\.html\?quote=guest-preview-token#quote-card$/);
+  await expect(page).toHaveURL(/\/quote\.html\?quote=guest-preview-token#quote-card$/);
+
+  await page.goto('/quote.html?quote=guest-preview-token#quote-card');
+  const restoredQuoteForm = page.locator('form.js-quote-form');
+  await expect(restoredQuoteForm.locator('[data-quote-followup]')).toBeVisible();
+  await expect(restoredQuoteForm.locator('[data-quote-followup-title]')).toContainText(/quote status: submitted/i);
+  await expect(restoredQuoteForm.locator('[data-quote-followup-attachments] .quote-file-preview-card')).toHaveCount(2);
 });
 
 test('authenticated public shell hides login-only controls and keeps one account route', async ({ page }) => {

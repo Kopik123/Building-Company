@@ -456,6 +456,112 @@ test('legacy /api/quotes/guest accepts attached quote photos and returns attachm
   assert.equal(state.notificationBatches[0][0]?.data?.attachmentCount, 2);
 });
 
+test('legacy /api/quotes/guest/:publicToken returns private quote preview data with attachments', async () => {
+  mockModels({
+    sequelize: {
+      async transaction(handler) {
+        return handler({ id: 'test-transaction' });
+      }
+    },
+    Quote: {
+      async findOne({ where }) {
+        if (where?.publicToken !== 'guest-preview-token' || where?.isGuest !== true) {
+          return null;
+        }
+
+        return {
+          toJSON() {
+            return {
+              id: 'quote-preview-1',
+              projectType: 'kitchen',
+              location: 'Manchester and the North West',
+              status: 'pending',
+              workflowStatus: 'submitted',
+              priority: 'medium',
+              createdAt: '2026-03-24T21:30:00Z',
+              updatedAt: '2026-03-24T21:45:00Z',
+              submittedAt: '2026-03-24T21:30:00Z',
+              assignedAt: null,
+              convertedAt: null,
+              closedAt: null,
+              attachments: [
+                {
+                  id: 'attachment-2',
+                  filename: 'quote-photo-b.png',
+                  url: '/uploads/quote-photo-b.png',
+                  mimeType: 'image/png',
+                  sizeBytes: 20480,
+                  createdAt: '2026-03-24T21:32:00Z',
+                  updatedAt: '2026-03-24T21:32:00Z'
+                },
+                {
+                  id: 'attachment-1',
+                  filename: 'quote-photo-a.jpg',
+                  url: '/uploads/quote-photo-a.jpg',
+                  mimeType: 'image/jpeg',
+                  sizeBytes: 10240,
+                  createdAt: '2026-03-24T21:31:00Z',
+                  updatedAt: '2026-03-24T21:31:00Z'
+                }
+              ]
+            };
+          }
+        };
+      }
+    },
+    QuoteAttachment: {},
+    QuoteClaimToken: {
+      async destroy() {},
+      async create() {},
+      async findOne() {
+        return null;
+      }
+    },
+    User: {
+      async findAll() {
+        return [];
+      },
+      async findByPk() {
+        return null;
+      }
+    },
+    Notification: {
+      async bulkCreate() {
+        return [];
+      }
+    },
+    QuoteEvent: {
+      async create() {
+        return null;
+      }
+    }
+  });
+
+  const quotesRouter = loadRoute('routes/quotes.js');
+  const app = buildExpressApp('/api/quotes', quotesRouter);
+
+  const response = await request(app)
+    .get('/api/quotes/guest/guest-preview-token')
+    .expect(200);
+
+  assert.equal(response.body?.quote?.id, 'quote-preview-1');
+  assert.equal(response.body?.quote?.attachmentCount, 2);
+  assert.deepEqual(response.body?.quote?.attachments, [
+    {
+      name: 'quote-photo-a.jpg',
+      url: '/uploads/quote-photo-a.jpg',
+      size: 10240,
+      mimeType: 'image/jpeg'
+    },
+    {
+      name: 'quote-photo-b.png',
+      url: '/uploads/quote-photo-b.png',
+      size: 20480,
+      mimeType: 'image/png'
+    }
+  ]);
+});
+
 test('legacy /api/quotes/guest still succeeds when quote side effects fail', async () => {
   const warnings = [];
   const originalWarn = console.warn;

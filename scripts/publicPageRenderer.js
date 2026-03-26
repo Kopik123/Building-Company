@@ -485,6 +485,14 @@ ${summarySections.map((section) => renderStudioSummarySection(section, shared)).
               <div class="quote-file-preview" data-quote-file-preview aria-live="polite" hidden></div>
               <button class="btn btn-gold btn-block" type="submit">${escapeHtml(shared.consultationCtaLabel || 'Request Private Consultation')}</button>
               <p class="form-status" aria-live="polite"></p>
+              <div class="quote-followup-panel" data-quote-followup hidden>
+                <p class="section-eyebrow section-eyebrow--compact">Quote status</p>
+                <h3 data-quote-followup-title>Your private quote link is ready.</h3>
+                <p class="page-aside-copy" data-quote-followup-summary>Keep this private link to check the quote status later and continue from the same enquiry context.</p>
+                <dl class="quote-followup-meta" data-quote-followup-meta></dl>
+                <div class="quote-file-preview quote-file-preview--readonly" data-quote-followup-attachments hidden></div>
+                <div class="page-actions quote-followup-actions" data-quote-followup-actions></div>
+              </div>
             </form>
           </article>
         </div>
@@ -539,6 +547,14 @@ const renderConsultationSection = ({ title, lead, formContext, locationValue, se
         <div class="quote-file-preview" data-quote-file-preview aria-live="polite" hidden></div>
         <button class="btn btn-gold btn-block" type="submit">${escapeHtml(shared.consultationCtaLabel || 'Request Private Consultation')}</button>
         <p class="form-status" aria-live="polite"></p>
+        <div class="quote-followup-panel" data-quote-followup hidden>
+          <p class="section-eyebrow section-eyebrow--compact">Quote status</p>
+          <h3 data-quote-followup-title>Your private quote link is ready.</h3>
+          <p class="page-aside-copy" data-quote-followup-summary>Keep this private link to check the quote status later and continue from the same enquiry context.</p>
+          <dl class="quote-followup-meta" data-quote-followup-meta></dl>
+          <div class="quote-file-preview quote-file-preview--readonly" data-quote-followup-attachments hidden></div>
+          <div class="page-actions quote-followup-actions" data-quote-followup-actions></div>
+        </div>
       </form>
     </div>
   </section>`;

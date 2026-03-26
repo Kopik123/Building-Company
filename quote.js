@@ -3,7 +3,10 @@
   if (!forms.length) return;
   const MAX_QUOTE_PHOTOS = 8;
   const EMPTY_FILES_STATUS_TEXT = 'Optional: attach up to 8 reference photos.';
+  const QUOTE_PREVIEW_QUERY_KEY = 'quote';
   const previewUrlsByForm = new WeakMap();
+  const quotePreviewToken = new URLSearchParams(window.location.search).get(QUOTE_PREVIEW_QUERY_KEY);
+  let quotePreviewRequest;
 
   const normalizeProjectType = (value) => {
     const lower = String(value || '').trim().toLowerCase();
@@ -55,6 +58,246 @@
     if (numericBytes <= 0) return 'Image file';
     if (numericBytes < 1024 * 1024) return `${Math.max(1, Math.round(numericBytes / 1024))} KB`;
     return `${(numericBytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const formatTimestamp = (value) => {
+    const timestamp = Date.parse(String(value || ''));
+    if (!Number.isFinite(timestamp)) return '';
+    try {
+      return new Intl.DateTimeFormat('en-GB', {
+        dateStyle: 'medium',
+        timeStyle: 'short'
+      }).format(new Date(timestamp));
+    } catch (_error) {
+      return new Date(timestamp).toLocaleString();
+    }
+  };
+
+  const humanizeToken = (value) =>
+    String(value || '')
+      .replace(/[_-]+/g, ' ')
+      .replace(/\b\w/g, (character) => character.toUpperCase());
+
+  const buildQuotePreviewUrl = (form, publicToken) => {
+    const currentUrl = new URL(window.location.href);
+    currentUrl.searchParams.set(QUOTE_PREVIEW_QUERY_KEY, publicToken);
+    const anchorId = form.closest('section[id], article[id], div[id]')?.id;
+    if (anchorId) {
+      currentUrl.hash = anchorId;
+    }
+    return `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`;
+  };
+
+  const createFollowupMetaItem = (label, value) => {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'quote-followup-meta-item';
+
+    const term = document.createElement('dt');
+    term.textContent = label;
+
+    const description = document.createElement('dd');
+    description.textContent = value;
+
+    wrapper.appendChild(term);
+    wrapper.appendChild(description);
+    return wrapper;
+  };
+
+  const renderSavedAttachments = (previewRoot, attachments) => {
+    if (!previewRoot) return;
+
+    previewRoot.textContent = '';
+    const normalized = Array.isArray(attachments) ? attachments.filter(Boolean) : [];
+    if (!normalized.length) {
+      previewRoot.hidden = true;
+      return;
+    }
+
+    const grid = document.createElement('div');
+    grid.className = 'quote-file-preview-grid';
+
+    normalized.forEach((attachment, index) => {
+      const card = document.createElement('article');
+      card.className = 'quote-file-preview-card quote-file-preview-card--readonly';
+
+      const thumb = document.createElement('div');
+      thumb.className = 'quote-file-preview-thumb';
+
+      const image = document.createElement('img');
+      image.src = attachment.url || '';
+      image.alt = `Submitted quote photo ${index + 1}: ${attachment.name || 'Reference image'}`;
+      image.loading = 'lazy';
+      image.decoding = 'async';
+      thumb.appendChild(image);
+
+      const meta = document.createElement('div');
+      meta.className = 'quote-file-preview-meta';
+
+      const name = document.createElement('p');
+      name.className = 'quote-file-preview-name';
+      name.textContent = attachment.name || `Reference image ${index + 1}`;
+
+      const size = document.createElement('p');
+      size.className = 'quote-file-preview-size';
+      size.textContent = formatFileSize(attachment.size);
+
+      const link = document.createElement('a');
+      link.className = 'quote-file-preview-link';
+      link.href = attachment.url || '#';
+      link.target = '_blank';
+      link.rel = 'noreferrer';
+      link.textContent = 'Open image';
+
+      meta.appendChild(name);
+      meta.appendChild(size);
+      meta.appendChild(link);
+
+      card.appendChild(thumb);
+      card.appendChild(meta);
+      grid.appendChild(card);
+    });
+
+    previewRoot.appendChild(grid);
+    previewRoot.hidden = false;
+  };
+
+  const normalizeQuotePreviewPayload = (payload, publicToken) => {
+    const quote = payload?.quote && typeof payload.quote === 'object' ? payload.quote : (payload || {});
+    const attachments = Array.isArray(quote.attachments)
+      ? quote.attachments
+      : (Array.isArray(payload?.attachments) ? payload.attachments : []);
+
+    return {
+      quoteId: quote.id || payload?.quoteId || '',
+      publicToken: publicToken || payload?.publicToken || '',
+      projectType: quote.projectType || payload?.projectType || '',
+      location: quote.location || payload?.location || '',
+      status: quote.status || payload?.status || '',
+      workflowStatus: quote.workflowStatus || payload?.workflowStatus || '',
+      priority: quote.priority || payload?.priority || '',
+      attachmentCount: Number(quote.attachmentCount ?? payload?.attachmentCount ?? attachments.length) || 0,
+      attachments,
+      createdAt: quote.createdAt || payload?.createdAt || '',
+      updatedAt: quote.updatedAt || payload?.updatedAt || '',
+      submittedAt: quote.submittedAt || payload?.submittedAt || '',
+      assignedAt: quote.assignedAt || payload?.assignedAt || '',
+      convertedAt: quote.convertedAt || payload?.convertedAt || '',
+      closedAt: quote.closedAt || payload?.closedAt || ''
+    };
+  };
+
+  const fetchQuotePreview = async (publicToken) => {
+    const response = await fetch(`/api/quotes/guest/${encodeURIComponent(publicToken)}`, {
+      headers: {
+        Accept: 'application/json'
+      }
+    });
+    const responsePayload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(responsePayload.error || 'Could not load this private quote link.');
+    }
+    return normalizeQuotePreviewPayload(responsePayload, publicToken);
+  };
+
+  const renderQuoteFollowup = (form, preview) => {
+    const panel = form.querySelector('[data-quote-followup]');
+    if (!panel) return;
+
+    const title = panel.querySelector('[data-quote-followup-title]');
+    const summary = panel.querySelector('[data-quote-followup-summary]');
+    const meta = panel.querySelector('[data-quote-followup-meta]');
+    const actions = panel.querySelector('[data-quote-followup-actions]');
+    const attachmentsRoot = panel.querySelector('[data-quote-followup-attachments]');
+    const previewUrl = preview.publicToken ? buildQuotePreviewUrl(form, preview.publicToken) : '';
+    const statusLabel = humanizeToken(preview.workflowStatus || preview.status || 'submitted');
+    const projectTypeLabel = preview.projectType ? humanizeToken(preview.projectType) : 'Project';
+    const summaryBits = [
+      preview.quoteId ? `Reference ${preview.quoteId}.` : 'Quote saved.',
+      preview.location ? `${projectTypeLabel} in ${preview.location}.` : `${projectTypeLabel} quote.`,
+      preview.publicToken ? 'Keep the private link below to review status later.' : ''
+    ].filter(Boolean);
+
+    if (title) {
+      title.textContent = `Quote status: ${statusLabel}`;
+    }
+    if (summary) {
+      summary.textContent = summaryBits.join(' ');
+    }
+
+    if (meta) {
+      meta.textContent = '';
+      const items = [
+        ['Reference', preview.quoteId || 'Pending reference'],
+        ['Workflow', statusLabel],
+        preview.status ? ['Legacy status', humanizeToken(preview.status)] : null,
+        preview.priority ? ['Priority', humanizeToken(preview.priority)] : null,
+        preview.submittedAt ? ['Submitted', formatTimestamp(preview.submittedAt)] : null,
+        preview.assignedAt ? ['Assigned', formatTimestamp(preview.assignedAt)] : null,
+        preview.convertedAt ? ['Converted', formatTimestamp(preview.convertedAt)] : null,
+        preview.closedAt ? ['Closed', formatTimestamp(preview.closedAt)] : null,
+        ['Photos', String(preview.attachmentCount || 0)]
+      ].filter(Boolean);
+
+      items.forEach(([label, value]) => {
+        meta.appendChild(createFollowupMetaItem(label, value));
+      });
+    }
+
+    renderSavedAttachments(attachmentsRoot, preview.attachments);
+
+    if (actions) {
+      actions.textContent = '';
+      if (previewUrl) {
+        const previewLink = document.createElement('a');
+        previewLink.className = 'btn-outline-gold';
+        previewLink.href = previewUrl;
+        previewLink.textContent = 'Open private quote link';
+        actions.appendChild(previewLink);
+      }
+
+      const authLink = document.createElement('a');
+      authLink.className = 'btn-outline-gold';
+      authLink.href = '/auth.html';
+      authLink.textContent = 'Sign in to claim later';
+      actions.appendChild(authLink);
+    }
+
+    panel.hidden = false;
+  };
+
+  const renderQuoteFollowupError = (form, message) => {
+    const panel = form.querySelector('[data-quote-followup]');
+    if (!panel) return;
+    const title = panel.querySelector('[data-quote-followup-title]');
+    const summary = panel.querySelector('[data-quote-followup-summary]');
+    const meta = panel.querySelector('[data-quote-followup-meta]');
+    const actions = panel.querySelector('[data-quote-followup-actions]');
+    const attachmentsRoot = panel.querySelector('[data-quote-followup-attachments]');
+
+    if (title) title.textContent = 'Private quote link unavailable';
+    if (summary) summary.textContent = message || 'We could not load that private quote link.';
+    if (meta) meta.textContent = '';
+    if (actions) actions.textContent = '';
+    if (attachmentsRoot) {
+      attachmentsRoot.textContent = '';
+      attachmentsRoot.hidden = true;
+    }
+    panel.hidden = false;
+  };
+
+  const hideQuoteFollowup = (form) => {
+    const panel = form.querySelector('[data-quote-followup]');
+    if (!panel) return;
+    const meta = panel.querySelector('[data-quote-followup-meta]');
+    const actions = panel.querySelector('[data-quote-followup-actions]');
+    const attachmentsRoot = panel.querySelector('[data-quote-followup-attachments]');
+    if (meta) meta.textContent = '';
+    if (actions) actions.textContent = '';
+    if (attachmentsRoot) {
+      attachmentsRoot.textContent = '';
+      attachmentsRoot.hidden = true;
+    }
+    panel.hidden = true;
   };
 
   const revokePreviewUrls = (form) => {
@@ -198,6 +441,7 @@
     if (!submitButton || !status) return;
 
     applyProjectTypeContext(form);
+    hideQuoteFollowup(form);
     if (filesInput) {
       syncFilesUi(form, filesInput, filesStatus, filesPreview);
       filesInput.addEventListener('change', () => {
@@ -246,6 +490,7 @@
 
       status.className = 'form-status';
       status.textContent = '';
+      hideQuoteFollowup(form);
       if (!guestName || !description || (!guestPhone && !guestEmail)) {
         status.classList.add('is-error');
         status.textContent = 'Please provide your name, project details, and either email or phone.';
@@ -294,6 +539,24 @@
             ? `Request sent with ${responsePayload.attachmentCount} photo(s). Reference: ${responsePayload.quoteId}.`
             : `Request sent. Reference: ${responsePayload.quoteId}.`
           : 'Request sent.';
+        const previewPayload = normalizeQuotePreviewPayload({
+          ...responsePayload,
+          quote: {
+            id: responsePayload.quoteId || '',
+            projectType,
+            location,
+            status: responsePayload.status || 'pending',
+            workflowStatus: responsePayload.workflowStatus || 'submitted',
+            attachmentCount: responsePayload.attachmentCount || files.length,
+            attachments: responsePayload.attachments || [],
+            submittedAt: new Date().toISOString()
+          }
+        }, responsePayload.publicToken || '');
+        renderQuoteFollowup(form, previewPayload);
+        if (responsePayload.publicToken) {
+          const nextUrl = buildQuotePreviewUrl(form, responsePayload.publicToken);
+          window.history.replaceState({}, '', nextUrl);
+        }
         form.reset();
       } catch (error) {
         status.className = 'form-status is-error';
@@ -302,5 +565,16 @@
         submitButton.disabled = false;
       }
     });
+
+    if (quotePreviewToken) {
+      quotePreviewRequest ||= fetchQuotePreview(quotePreviewToken);
+      quotePreviewRequest
+        .then((preview) => {
+          renderQuoteFollowup(form, preview);
+        })
+        .catch((error) => {
+          renderQuoteFollowupError(form, error.message || 'Could not load this private quote link.');
+        });
+    }
   });
 })();
