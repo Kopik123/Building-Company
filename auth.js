@@ -22,8 +22,20 @@
   const logoutButton = document.getElementById('auth-logout');
   const accountPanel = document.getElementById('auth-account-panel');
   const quickAccessPanel = document.getElementById('auth-quick-access-panel');
+  const accountNavButtons = document.getElementById('auth-account-nav-buttons');
   const quickAccessLinks = document.getElementById('auth-quick-access-links');
   const quickAccessRole = document.getElementById('auth-quick-access-role');
+  const accountSummaryRole = document.getElementById('auth-account-summary-role');
+  const accountName = document.getElementById('auth-account-name');
+  const accountEmail = document.getElementById('auth-account-email');
+  const accountPhone = document.getElementById('auth-account-phone');
+  const accountCompany = document.getElementById('auth-account-company');
+  const accountPrimaryLink = document.getElementById('auth-account-primary-link');
+  const workspaceCard = document.getElementById('auth-workspace-card');
+  const workspaceRole = document.getElementById('auth-workspace-role');
+  const workspaceSummary = document.getElementById('auth-workspace-summary');
+  const workspacePrimaryLink = document.getElementById('auth-workspace-primary-link');
+  const accountCardNodes = Array.from(document.querySelectorAll('[data-auth-account-card]'));
   const guestGrid = document.getElementById('auth-guest-grid');
   const quoteClaimPanel = document.getElementById('auth-quote-claim-panel');
   const quoteClaimSummary = document.getElementById('auth-quote-claim-summary');
@@ -45,6 +57,16 @@
     !accountRole ||
     !logoutButton ||
     !accountPanel ||
+    !accountNavButtons ||
+    !accountName ||
+    !accountEmail ||
+    !accountPhone ||
+    !accountCompany ||
+    !accountPrimaryLink ||
+    !workspaceCard ||
+    !workspaceRole ||
+    !workspaceSummary ||
+    !workspacePrimaryLink ||
     !guestGrid ||
     !quoteClaimPanel ||
     !quoteClaimSummary ||
@@ -104,6 +126,30 @@
   };
 
   const getManagerQuickAccessOptions = () => Array.isArray(brand?.managerQuickAccess) ? brand.managerQuickAccess : [];
+  const ACCOUNT_CARD_DEFINITIONS = [
+    {
+      key: 'overview',
+      label: 'Overview',
+      description: 'Account summary and primary workspace route.'
+    },
+    {
+      key: 'profile',
+      label: 'Profile',
+      description: 'Name, phone and company details.'
+    },
+    {
+      key: 'security',
+      label: 'Security',
+      description: 'Password updates and login hygiene.'
+    },
+    {
+      key: 'workspace',
+      label: 'Workspace',
+      description: 'Open dashboards and role-specific shortcuts.'
+    }
+  ];
+  let activeAccountCardKey = 'overview';
+  let currentAccountUser = null;
 
   const canUseManagerWorkspace = (roleRaw) => {
     return Boolean(getRoleProfile(roleRaw)?.managerWorkspace)
@@ -122,28 +168,134 @@
     return link;
   };
 
+  const createAccountCardButton = (card) => {
+    const controlIdMap = {
+      overview: 'auth-account-overview-card',
+      profile: 'profile-form',
+      security: 'password-form',
+      workspace: 'auth-workspace-card'
+    };
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'auth-account-nav-button';
+    button.dataset.authAccountTarget = card.key;
+    button.setAttribute('aria-controls', controlIdMap[card.key] || 'auth-account-overview-card');
+    button.setAttribute('aria-label', card.label);
+
+    const heading = document.createElement('strong');
+    heading.textContent = card.label;
+    button.appendChild(heading);
+
+    const detail = document.createElement('span');
+    detail.textContent = card.description;
+    button.appendChild(detail);
+
+    return button;
+  };
+
+  const getAvailableAccountCards = (user) => {
+    if (!user?.email) return [];
+    return [...ACCOUNT_CARD_DEFINITIONS];
+  };
+
+  const setActiveAccountCard = (nextKey) => {
+    const availableCards = getAvailableAccountCards(currentAccountUser);
+    const allowedKeys = new Set(availableCards.map((card) => card.key));
+    const targetKey = allowedKeys.has(nextKey) ? nextKey : availableCards[0]?.key || '';
+    activeAccountCardKey = targetKey;
+
+    accountCardNodes.forEach((cardNode) => {
+      const isActive = cardNode.dataset.authAccountCard === targetKey;
+      cardNode.hidden = !isActive;
+      cardNode.classList.toggle('is-active', isActive);
+    });
+
+    accountNavButtons.querySelectorAll('[data-auth-account-target]').forEach((button) => {
+      const isActive = button.dataset.authAccountTarget === targetKey;
+      button.classList.toggle('is-active', isActive);
+      button.setAttribute('aria-pressed', String(isActive));
+    });
+  };
+
+  const renderAccountSummary = (user) => {
+    const role = String(user?.role || '').toLowerCase();
+    const accountPath = dashboardPathForRole(role) || DEFAULT_QUOTE_WORKSPACE_PATH;
+    const destination = accountPath === '/auth.html' ? DEFAULT_QUOTE_WORKSPACE_PATH : accountPath;
+    const workspaceLabel = canUseManagerWorkspace(role) ? 'Open manager workspace' : 'Open client workspace';
+
+    accountName.textContent = user?.name || 'No name saved';
+    accountEmail.textContent = user?.email || 'No email saved';
+    accountPhone.textContent = user?.phone || 'Not provided';
+    accountCompany.textContent = user?.companyName || 'Not provided';
+    accountSummaryRole.textContent = user?.email ? humanRole(role) : '';
+    accountPrimaryLink.href = destination;
+    accountPrimaryLink.textContent = workspaceLabel;
+    workspacePrimaryLink.href = destination;
+    workspacePrimaryLink.textContent = workspaceLabel;
+    workspaceRole.textContent = user?.email ? `${humanRole(role)} workspace` : '';
+    workspaceSummary.textContent = canUseManagerWorkspace(role)
+      ? 'Use this card to jump between manager workspace areas instead of keeping every account action on one long panel.'
+      : 'Use this card to open the main client workspace route and move back to brochure quote/contact pages when needed.';
+  };
+
+  const renderWorkspaceLinks = (user) => {
+    quickAccessLinks.replaceChildren();
+    if (!user?.email) return;
+
+    const role = String(user?.role || '').toLowerCase();
+    const managerOptions = canUseManagerWorkspace(role)
+      ? getManagerQuickAccessOptions().filter((option) => option.roles.includes(role))
+      : [];
+
+    if (managerOptions.length) {
+      const fragment = document.createDocumentFragment();
+      managerOptions.forEach((option) => fragment.appendChild(createQuickAccessLink(option)));
+      quickAccessLinks.appendChild(fragment);
+      return;
+    }
+
+    [
+      {
+        label: 'Client Dashboard',
+        href: DEFAULT_QUOTE_WORKSPACE_PATH
+      },
+      {
+        label: 'New Quote',
+        href: '/quote.html'
+      },
+      {
+        label: 'Contact Studio',
+        href: '/contact.html'
+      }
+    ].forEach((option) => quickAccessLinks.appendChild(createQuickAccessLink(option)));
+  };
+
   const renderQuickAccess = (user) => {
-    if (!quickAccessPanel || !quickAccessLinks) {
+    if (!quickAccessPanel || !quickAccessLinks || !accountNavButtons) {
       return;
     }
 
     const role = String(user?.role || '').toLowerCase();
-    const showQuickAccess = canUseManagerWorkspace(role);
+    const showQuickAccess = Boolean(user?.email);
     quickAccessPanel.hidden = !showQuickAccess;
-    quickAccessLinks.replaceChildren();
+    workspaceCard.hidden = !showQuickAccess;
+    accountNavButtons.replaceChildren();
 
     if (quickAccessRole) {
-      quickAccessRole.textContent = showQuickAccess ? humanRole(role) : '';
+      quickAccessRole.textContent = showQuickAccess ? `${humanRole(role)} routes` : '';
     }
 
     if (!showQuickAccess) {
+      quickAccessLinks.replaceChildren();
       return;
     }
 
-    const options = getManagerQuickAccessOptions().filter((option) => option.roles.includes(role));
+    const cards = getAvailableAccountCards(user);
     const fragment = document.createDocumentFragment();
-    options.forEach((option) => fragment.appendChild(createQuickAccessLink(option)));
-    quickAccessLinks.appendChild(fragment);
+    cards.forEach((card) => fragment.appendChild(createAccountCardButton(card)));
+    accountNavButtons.appendChild(fragment);
+    renderWorkspaceLinks(user);
+    setActiveAccountCard(activeAccountCardKey);
   };
 
   const saveSession = runtime.saveSession || ((token, user, v2Session = null) => {
@@ -261,6 +413,7 @@
   };
 
   const renderSession = (user) => {
+    currentAccountUser = user || null;
     if (user?.email) {
       const role = String(user.role || '').toLowerCase();
       const label = user.name ? `${user.name} (${user.email})` : user.email;
@@ -270,6 +423,7 @@
       guestGrid.hidden = true;
       accountPanel.hidden = false;
       fillProfileForm(user);
+      renderAccountSummary(user);
       renderQuickAccess(user);
       renderQuoteClaimPanel(user);
       return;
@@ -280,6 +434,7 @@
     logoutButton.hidden = true;
     guestGrid.hidden = false;
     accountPanel.hidden = true;
+    activeAccountCardKey = 'overview';
     renderQuickAccess(null);
     renderQuoteClaimPanel(null);
   };
@@ -564,6 +719,12 @@
     setStatus(passwordStatus, '');
     renderSession(null);
     globalThis.location.assign('/auth.html');
+  });
+
+  accountNavButtons.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-auth-account-target]');
+    if (!button) return;
+    setActiveAccountCard(button.dataset.authAccountTarget || 'overview');
   });
 
   renderSession(getSavedUser());

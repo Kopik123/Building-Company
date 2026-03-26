@@ -426,6 +426,77 @@
   margin-bottom: var(--space-3);
 }
 
+.auth-account-layout {
+  display: grid;
+  grid-template-columns: minmax(240px, 300px) minmax(0, 1fr);
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.auth-account-nav-panel,
+.auth-account-cards,
+.auth-account-card {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.auth-account-nav-grid {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.auth-account-nav-button {
+  display: grid;
+  gap: 0.28rem;
+  text-align: left;
+  width: 100%;
+  border: 1px solid rgba(209, 164, 74, 0.35);
+  border-radius: var(--radius-xs);
+  padding: 0.72rem 0.78rem;
+  background:
+    linear-gradient(160deg, rgba(12, 12, 12, 0.88), rgba(6, 6, 6, 0.92)),
+    url('/boxbackground.png') center center / cover no-repeat;
+  color: var(--color-text);
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.auth-account-nav-button strong {
+  font-size: 0.96rem;
+}
+
+.auth-account-nav-button span {
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+}
+
+.auth-account-nav-button:hover,
+.auth-account-nav-button:focus-visible,
+.auth-account-nav-button.is-active {
+  border-color: rgba(209, 164, 74, 0.78);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
+  transform: translateY(-1px);
+}
+
+.auth-account-cards {
+  min-width: 0;
+}
+
+.auth-account-card[hidden] {
+  display: none !important;
+}
+
+.auth-account-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.auth-account-primary-actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
 .auth-quote-claim-panel {
   display: grid;
   gap: var(--space-3);
@@ -436,18 +507,6 @@
   justify-content: space-between;
   gap: var(--space-3);
   align-items: baseline;
-}
-
-.auth-account-grid {
-  display: grid;
-  gap: var(--space-4);
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.auth-account-access-panel {
-  grid-column: 1 / -1;
-  display: grid;
-  gap: var(--space-3);
 }
 
 .auth-account-access-head {
@@ -519,7 +578,8 @@
   .dashboard-manager-top-grid,
   .dashboard-communication-grid,
   .auth-grid,
-  .auth-account-grid,
+  .auth-account-layout,
+  .auth-account-summary-grid,
   .workspace-mailbox-grid {
     grid-template-columns: 1fr;
   }

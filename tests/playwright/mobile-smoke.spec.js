@@ -621,8 +621,17 @@ test('auth page shows account panel for logged session', async ({ page }) => {
 
   await page.goto('/auth.html');
   await expect(page.locator('#auth-account-panel')).toBeVisible();
+  await expect(page.locator('#auth-quick-access-panel')).toBeVisible();
+  await expect(page.locator('#auth-account-overview-card')).toBeVisible();
+  await expect(page.locator('#profile-form')).toBeHidden();
+  await expect(page.locator('#password-form')).toBeHidden();
+  await page.getByRole('button', { name: 'Profile', exact: true }).click();
   await expect(page.locator('#profile-form')).toBeVisible();
+  await page.getByRole('button', { name: 'Security', exact: true }).click();
   await expect(page.locator('#password-form')).toBeVisible();
+  await page.getByRole('button', { name: 'Workspace', exact: true }).click();
+  await expect(page.locator('#auth-workspace-card')).toBeVisible();
+  await expect(page.locator('#auth-workspace-primary-link')).toHaveAttribute('href', '/client-dashboard.html');
   await expect(page.locator('#auth-guest-grid')).toBeHidden();
   await expect(page.locator('[data-nav-menu] [data-auth-link]')).toBeHidden();
   await expect(page.locator('[data-inline-session]')).toBeHidden();
@@ -657,6 +666,8 @@ test('auth page shows manager quick access panel for logged manager session', as
   await expect(page.locator('#auth-account-panel')).toBeVisible();
   await expect(page.locator('#auth-quick-access-panel')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Quick Access', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Workspace', exact: true }).click();
+  await expect(page.locator('#auth-workspace-card')).toBeVisible();
 
   for (const label of managerQuickAccessLabels) {
     await expect(page.locator('#auth-quick-access-links').getByRole('link', { name: label, exact: true })).toHaveCount(1);

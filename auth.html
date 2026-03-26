@@ -136,42 +136,8 @@
             </div>
             <p class="muted" id="auth-account-role"></p>
           </div>
-          <div class="auth-account-grid">
-            <form id="profile-form" class="workspace-form-panel" novalidate>
-              <h3>Profile</h3>
-              <div class="form-grid">
-                <label>Name
-                  <input type="text" name="name" id="profile-name" autocomplete="name" required />
-                </label>
-                <label>Phone
-                  <input type="tel" name="phone" id="profile-phone" autocomplete="tel" />
-                </label>
-                <label class="span-2">Company
-                  <input type="text" name="companyName" id="profile-company" autocomplete="organization" />
-                </label>
-              </div>
-              <button type="submit" class="btn btn-gold">Save Profile</button>
-              <p class="form-status" id="profile-status" aria-live="polite"></p>
-            </form>
-
-            <form id="password-form" class="workspace-form-panel" novalidate>
-              <h3>Password</h3>
-              <div class="form-grid">
-                <label class="span-2">Current password
-                  <input type="password" name="currentPassword" autocomplete="current-password" required />
-                </label>
-                <label>New password
-                  <input type="password" name="newPassword" autocomplete="new-password" minlength="8" required />
-                </label>
-                <label>Confirm new password
-                  <input type="password" name="confirmPassword" autocomplete="new-password" minlength="8" required />
-                </label>
-              </div>
-              <button type="submit" class="btn btn-outline">Change Password</button>
-              <p class="form-status" id="password-status" aria-live="polite"></p>
-            </form>
-
-            <section class="workspace-form-panel auth-account-access-panel" id="auth-quick-access-panel" hidden>
+          <div class="auth-account-layout">
+            <aside class="workspace-form-panel auth-account-nav-panel" id="auth-quick-access-panel" hidden>
               <div class="auth-account-access-head">
                 <div>
                   <p class="workspace-card-label">Account Panel</p>
@@ -179,8 +145,90 @@
                 </div>
                 <p class="muted" id="auth-quick-access-role"></p>
               </div>
-              <div id="auth-quick-access-links" class="workspace-operations-options" aria-live="polite"></div>
-            </section>
+              <div id="auth-account-nav-buttons" class="auth-account-nav-grid" aria-live="polite"></div>
+            </aside>
+
+            <div class="auth-account-cards">
+              <section class="workspace-form-panel auth-account-card" id="auth-account-overview-card" data-auth-account-card="overview">
+                <div class="auth-account-access-head">
+                  <div>
+                    <p class="workspace-card-label">Overview</p>
+                    <h3>Account summary</h3>
+                  </div>
+                  <p class="muted" id="auth-account-summary-role"></p>
+                </div>
+                <div class="auth-account-summary-grid">
+                  <article class="workspace-overview-entry">
+                    <h3>Name</h3>
+                    <p id="auth-account-name">-</p>
+                  </article>
+                  <article class="workspace-overview-entry">
+                    <h3>Email</h3>
+                    <p id="auth-account-email">-</p>
+                  </article>
+                  <article class="workspace-overview-entry">
+                    <h3>Phone</h3>
+                    <p id="auth-account-phone">Not provided</p>
+                  </article>
+                  <article class="workspace-overview-entry">
+                    <h3>Company</h3>
+                    <p id="auth-account-company">Not provided</p>
+                  </article>
+                </div>
+                <div class="auth-account-primary-actions">
+                  <a class="btn btn-gold" id="auth-account-primary-link" href="/client-dashboard.html">Open workspace</a>
+                </div>
+              </section>
+
+              <form id="profile-form" class="workspace-form-panel auth-account-card" data-auth-account-card="profile" hidden novalidate>
+                <h3>Profile card</h3>
+                <div class="form-grid">
+                  <label>Name
+                    <input type="text" name="name" id="profile-name" autocomplete="name" required />
+                  </label>
+                  <label>Phone
+                    <input type="tel" name="phone" id="profile-phone" autocomplete="tel" />
+                  </label>
+                  <label class="span-2">Company
+                    <input type="text" name="companyName" id="profile-company" autocomplete="organization" />
+                  </label>
+                </div>
+                <button type="submit" class="btn btn-gold">Save Profile</button>
+                <p class="form-status" id="profile-status" aria-live="polite"></p>
+              </form>
+
+              <form id="password-form" class="workspace-form-panel auth-account-card" data-auth-account-card="security" hidden novalidate>
+                <h3>Security card</h3>
+                <div class="form-grid">
+                  <label class="span-2">Current password
+                    <input type="password" name="currentPassword" autocomplete="current-password" required />
+                  </label>
+                  <label>New password
+                    <input type="password" name="newPassword" autocomplete="new-password" minlength="8" required />
+                  </label>
+                  <label>Confirm new password
+                    <input type="password" name="confirmPassword" autocomplete="new-password" minlength="8" required />
+                  </label>
+                </div>
+                <button type="submit" class="btn btn-outline">Change Password</button>
+                <p class="form-status" id="password-status" aria-live="polite"></p>
+              </form>
+
+              <section class="workspace-form-panel auth-account-card auth-account-workspace-card" id="auth-workspace-card" data-auth-account-card="workspace" hidden>
+                <div class="auth-account-access-head">
+                  <div>
+                    <p class="workspace-card-label">Workspace</p>
+                    <h3>Routes and shortcuts</h3>
+                  </div>
+                  <p class="muted" id="auth-workspace-role"></p>
+                </div>
+                <p class="muted" id="auth-workspace-summary">Use this card to jump into the right workspace route for your role.</p>
+                <div class="auth-account-primary-actions">
+                  <a class="btn btn-gold" id="auth-workspace-primary-link" href="/client-dashboard.html">Open workspace</a>
+                </div>
+                <div id="auth-quick-access-links" class="workspace-operations-options" aria-live="polite"></div>
+              </section>
+            </div>
           </div>
         </section>
 
