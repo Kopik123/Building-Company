@@ -2,18 +2,13 @@ const express = require('express');
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
-const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const { User } = require('../models');
 const { auth, roleCheck } = require('../middleware/auth');
 const asyncHandler = require('../utils/asyncHandler');
+const { issueV2SessionTokens, signLegacyToken } = require('../utils/sessionTokens');
 
 const router = express.Router();
-
-const signToken = (userId) =>
-  jwt.sign({ id: userId }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN || '7d'
-  });
 const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
 
 const bootstrapLockPath = path.join(__dirname, '..', '.bootstrap.lock');
@@ -54,8 +49,9 @@ router.post(
     }
 
     const user = await User.create({ email, password, name, phone, companyName, role: 'client' });
-    const token = signToken(user.id);
-    return res.status(201).json({ user, token });
+    const token = signLegacyToken(user.id);
+    const v2Session = await issueV2SessionTokens(user, req);
+    return res.status(201).json({ user, token, v2Session });
   })
 );
 
@@ -82,8 +78,9 @@ router.post(
     }
 
     await user.update({ lastLogin: new Date() });
-    const token = signToken(user.id);
-    return res.json({ user, token });
+    const token = signLegacyToken(user.id);
+    const v2Session = await issueV2SessionTokens(user, req);
+    return res.json({ user, token, v2Session });
   })
 );
 
@@ -200,8 +197,9 @@ router.post(
     const user = await User.create({ email, password, name, phone, role });
     closeBootstrap();
 
-    const token = signToken(user.id);
-    return res.status(201).json({ user, token });
+    const token = signLegacyToken(user.id);
+    const v2Session = await issueV2SessionTokens(user, req);
+    return res.status(201).json({ user, token, v2Session });
   })
 );
 

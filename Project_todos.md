@@ -25,14 +25,14 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [x] Add one aggregated `api/v2/overview` contract (or equivalent typed dashboard summary layer) before default cutover so `web-v2` stops composing the top board from many separate requests.
 - [x] Add direct `/app-v2` UI regression coverage for `Private Inbox` and `Project Chat`, including attachment-first direct-thread creation, so rollout-shell messaging is covered outside legacy dashboard smoke tests.
 - [ ] Move new authenticated web feature work to `apps/web-v2` first unless the task is explicitly legacy-only or cutover-critical.
-- [ ] Unify auth/session ownership across legacy web and `api/v2`; today legacy pages keep `ll_auth_token` / `ll_auth_user`, while `web-v2` uses `ll_v2_access_token` / `ll_v2_refresh_token` and a different session lifecycle.
+- [x] Unify auth/session ownership across legacy web and `api/v2` by bridging both surfaces through shared token helpers and synced browser session storage, so legacy pages and `web-v2` no longer operate as isolated session islands during cutover.
 - [x] Integrate `apps/web-v2` into the real runtime delivery path under `/app-v2`; the next step is parity work and deciding when account redirects/cutover should start using it by default.
 - [x] Remove the hardcoded production fallback from `apps/mobile-v1/src/api.js` and switch mobile API base selection to explicit local/staging/production config.
 - [x] Add an initial shared contract layer for `api/v2`, `web-v2` and future mobile clients by centralising enums and response normalizers in `shared/contracts/v2`, with TS-ready declarations for the first portable dashboard domains.
 - [x] Promote the shared contract layer to Zod-backed runtime validation for `api/v2` and `web-v2`, so the rollout shell stops trusting shared payload shapes without schema checks.
 - [ ] Promote the initial shared contract layer into a generated `TypeScript + Zod` or `TypeScript + OpenAPI` package shared by backend, `web-v2` and `mobile-v1` once the current parity wave settles.
-- [ ] Decide whether DB migrations should continue running automatically on every app boot or move to deploy-time only before any multi-instance/staging->prod cutover growth.
-- [ ] Either wire `models.ensureIndexes()` into a deliberate startup/deploy path or remove it and keep index ownership exclusively in migrations, because the current strategy is ambiguous.
+- [x] Move DB migrations to deploy-time only and stop running them automatically on every app boot, so schema changes happen in a deliberate deploy step before `pm2 restart`.
+- [x] Wire `models.ensureIndexes()` into a deliberate CLI/deploy path via `npm run ensure:indexes`, instead of leaving index ownership ambiguous between runtime startup and migrations.
 - [x] Save the launch-ready design/SEO execution plan under `Plans/Plan poprawy designu i SEO dla gotowej strony Level Lines Studio.md` and register it in `Plans/Plan History.md`.
 - [x] Remove helper/filler copy from the main public brochure surfaces (`Home`, `Services`, `Gallery`, `Quote`, `Contact`, legal pages) and tighten auth/workspace shell copy to task-led labels only.
 - [x] Extend the public page content/generator model with launch-ready SEO fields (`primaryKeyword`, `searchIntent`, `summaryLine`, `proofPoints`, `internalLinks`, `suppressHelperCopy`) so generated service/location pages keep one consistent search-intent contract.
@@ -135,12 +135,12 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [x] Clear the remaining production audit warnings after the `bcrypt` upgrade by overriding `@rushstack/node-core-library` to `5.20.3`, which lifts the transitive `ajv` line used by `umzug -> @rushstack/ts-command-line` without changing the existing migration runner contract.
 - [x] Make local migration tooling fail fast with a clear `DATABASE_URL` preflight message instead of a raw import stack trace when `npm run migrate` or `npm run migrate:status` is run without database env configured.
 - [x] Add a safe CLI-only `DEV_DATABASE_URL` fallback for `npm run migrate` / `npm run migrate:status`, keeping runtime app startup on normal `DATABASE_URL` while removing the need to re-export the main variable for local migration work.
-- [ ] Decide whether local migration tooling should go further than the new preflight + `DEV_DATABASE_URL` fallback and support a documented local Postgres/Compose bootstrap path for the full app/runtime flow.
+- [x] Add a documented local Postgres/Compose bootstrap path for the full app/runtime flow, extending the earlier migration preflight and `DEV_DATABASE_URL` tooling into a reproducible local environment story.
 - [ ] Export the real issue list from SonarQube for branch `vscode`, classify each `Bug` and `Vulnerability`, and start cleanup with `manager-dashboard.js`, `routes/manager.js`, `client-dashboard.js`, `styles/base.css` and `apps/mobile-v1/App.js`.
 - [ ] Run `scripts/sonar-export.sh` with `SONAR_URL` and `SONAR_TOKEN`, then attach `sonar-issues-full.json`, `sonar-quality-gate.json` and `sonar-measures.json` to the Sonar cleanup workflow.
 - [ ] Revisit SonarQube CPD exclusions once more public HTML moves into the shared renderer and fewer static outputs need to stay excluded.
 - [ ] Continue the Sonar cleanup with the remaining higher-complexity smells in dashboard/gallery controllers (`nesting`, `cognitive complexity`, nested template literals) now that the portability/readability pass is done.
-- [ ] Create a new current design source-of-truth markdown to replace the removed `Project_Web_Design_Plan.md`.
+- [x] Create a new current design source-of-truth markdown to replace the removed `Project_Web_Design_Plan.md`.
 
 ## Later
 

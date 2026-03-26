@@ -1,6 +1,5 @@
 require('dotenv').config();
 
-const { runMigrations } = require('./db/migrator');
 const { createApp } = require('./app');
 
 const requiredEnvVars = ['DATABASE_URL', 'JWT_SECRET', 'BOOTSTRAP_ADMIN_KEY'];
@@ -17,7 +16,6 @@ const app = createApp();
 
 const startServer = async () => {
   try {
-    await runMigrations();
     app.listen(PORT, HOST, () => {
       console.log(`Server running at http://${HOST}:${PORT}`);
     });

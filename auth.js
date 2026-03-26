@@ -3,6 +3,8 @@
   const brand = globalThis.LEVEL_LINES_BRAND || null;
   const TOKEN_KEY = runtime.TOKEN_KEY || 'll_auth_token';
   const USER_KEY = runtime.USER_KEY || 'll_auth_user';
+  const V2_ACCESS_KEY = runtime.V2_ACCESS_KEY || 'll_v2_access_token';
+  const V2_REFRESH_KEY = runtime.V2_REFRESH_KEY || 'll_v2_refresh_token';
   const QUOTE_CLAIM_STORAGE_KEY = 'll_quote_claim_pending';
   const DEFAULT_QUOTE_WORKSPACE_PATH = '/client-dashboard.html';
 
@@ -143,15 +145,25 @@
     quickAccessLinks.appendChild(fragment);
   };
 
-  const saveSession = runtime.saveSession || ((token, user) => {
+  const saveSession = runtime.saveSession || ((token, user, v2Session = null) => {
     localStorage.setItem(TOKEN_KEY, token);
     localStorage.setItem(USER_KEY, JSON.stringify(user || {}));
+    const accessToken = typeof v2Session?.accessToken === 'string' ? v2Session.accessToken.trim() : '';
+    const refreshToken = typeof v2Session?.refreshToken === 'string' ? v2Session.refreshToken.trim() : '';
+    if (accessToken) {
+      localStorage.setItem(V2_ACCESS_KEY, accessToken);
+    }
+    if (refreshToken) {
+      localStorage.setItem(V2_REFRESH_KEY, refreshToken);
+    }
     globalThis.dispatchEvent(new Event('ll:session-changed'));
   });
 
   const clearSession = runtime.clearSession || (() => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
+    localStorage.removeItem(V2_ACCESS_KEY);
+    localStorage.removeItem(V2_REFRESH_KEY);
     globalThis.dispatchEvent(new Event('ll:session-changed'));
   });
 
@@ -328,7 +340,7 @@
         body: JSON.stringify({ email, password })
       });
 
-      saveSession(payload.token, payload.user);
+      saveSession(payload.token, payload.user, payload.v2Session);
       renderSession(payload.user);
       loginForm.reset();
       if (hasActivePendingQuoteClaim()) {
@@ -381,7 +393,7 @@
         })
       });
 
-      saveSession(payload.token, payload.user);
+      saveSession(payload.token, payload.user, payload.v2Session);
       renderSession(payload.user);
       registerForm.reset();
       if (hasActivePendingQuoteClaim()) {

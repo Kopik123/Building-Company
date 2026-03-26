@@ -73,6 +73,17 @@ npm.cmd run migrate:status
 if ($LASTEXITCODE -ne 0) { exit 1 }
 ```
 
+### Local migrations + explicit index sync
+
+```powershell
+$env:DEV_DATABASE_URL = "postgres://postgres:postgres@127.0.0.1:5432/building_company_dev"
+npm.cmd run migrate
+if ($LASTEXITCODE -ne 0) { exit 1 }
+
+npm.cmd run ensure:indexes
+if ($LASTEXITCODE -ne 0) { exit 1 }
+```
+
 ## Note about better tooling
 
 PowerShell 7+ supports `&&`, so upgrading the local shell would simplify day-to-day command chaining. It is a better long-term developer experience, but it is not worth blocking current work for this repo because the explicit PowerShell 5.1 patterns above are already stable.

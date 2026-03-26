@@ -595,6 +595,7 @@ function ProjectCard({ project }) {
       <p className="stack-card-copy">{project?.description || 'Project summary will appear here as the route matures.'}</p>
       <div className="meta-wrap">
         <span>{mediaSummary}</span>
+        <span>{project?.isActive ? 'Active route' : 'Archived route'}</span>
         <span>Manager: {managerName}</span>
         <span>Client: {clientName}</span>
         <span>Updated: {formatDateTime(project?.updatedAt)}</span>
@@ -1065,6 +1066,23 @@ function ProjectsPage() {
     setForm((prev) => ({ ...prev, [key]: nextValue }));
   };
 
+  const syncSavedProject = async (savedProject, successMessage) => {
+    const hydratedProject = savedProject?.id ? await v2Api.getProject(savedProject.id) : savedProject;
+    if (!hydratedProject?.id) throw new Error('Project response missing payload');
+
+    projects.setData((prev) =>
+      sortByRecent(
+        [hydratedProject, ...prev.filter((project) => project.id !== hydratedProject.id)],
+        ['updatedAt', 'endDate', 'startDate', 'createdAt']
+      )
+    );
+    setIsCreatingNew(false);
+    setSelectedProjectId(hydratedProject.id);
+    setForm(projectToFormState(hydratedProject));
+    setActionMessage(successMessage);
+    return hydratedProject;
+  };
+
   const startNewProject = () => {
     setIsCreatingNew(true);
     setSelectedProjectId('');
@@ -1109,22 +1127,62 @@ function ProjectsPage() {
       const savedProject = selectedProjectId
         ? await v2Api.updateProject(selectedProjectId, payload)
         : await v2Api.createProject(payload);
-      const hydratedProject = savedProject?.id ? await v2Api.getProject(savedProject.id) : savedProject;
-
-      if (!hydratedProject?.id) throw new Error('Project response missing payload');
-
-      projects.setData((prev) =>
-        sortByRecent(
-          [hydratedProject, ...prev.filter((project) => project.id !== hydratedProject.id)],
-          ['updatedAt', 'endDate', 'startDate', 'createdAt']
-        )
-      );
-      setIsCreatingNew(false);
-      setSelectedProjectId(hydratedProject.id);
-      setForm(projectToFormState(hydratedProject));
-      setActionMessage(selectedProjectId ? 'Project saved.' : 'Project created.');
+      await syncSavedProject(savedProject, selectedProjectId ? 'Project saved.' : 'Project created.');
     } catch (error) {
       setActionError(error.message || 'Could not save project');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const applyProjectPatch = async (patch, successMessage) => {
+    if (!selectedProjectId || saving) return;
+
+    setSaving(true);
+    setActionError('');
+    setActionMessage('');
+    try {
+      const savedProject = await v2Api.updateProject(selectedProjectId, patch);
+      await syncSavedProject(savedProject, successMessage);
+    } catch (error) {
+      setActionError(error.message || 'Could not update project');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const archiveProject = () => applyProjectPatch({
+    isActive: false,
+    showInGallery: false
+  }, 'Project archived.');
+
+  const restoreProject = () => applyProjectPatch({
+    isActive: true
+  }, 'Project restored.');
+
+  const setProjectLifecycleStatus = (status) => () => applyProjectPatch({
+    status
+  }, `Project moved to ${titleCase(status)}.`);
+
+  const deleteProject = async () => {
+    if (!selectedProjectId || saving) return;
+    if (globalThis.confirm && !globalThis.confirm('Delete this project permanently? This only works for projects without linked delivery records.')) {
+      return;
+    }
+
+    setSaving(true);
+    setActionError('');
+    setActionMessage('');
+
+    try {
+      await v2Api.deleteProject(selectedProjectId);
+      projects.setData((prev) => prev.filter((project) => project.id !== selectedProjectId));
+      setSelectedProjectId('');
+      setIsCreatingNew(true);
+      setForm(createProjectFormState({ assignedManagerId: user?.id || '' }));
+      setActionMessage('Project deleted.');
+    } catch (error) {
+      setActionError(error.message || 'Could not delete project');
     } finally {
       setSaving(false);
     }
@@ -1289,6 +1347,28 @@ function ProjectsPage() {
               </button>
             ) : null}
           </div>
+          {selectedProjectId ? (
+            <div className="action-row action-row--wrap">
+              <button type="button" className="button-secondary" onClick={setProjectLifecycleStatus('planning')} disabled={saving}>
+                Mark planning
+              </button>
+              <button type="button" className="button-secondary" onClick={setProjectLifecycleStatus('in_progress')} disabled={saving}>
+                Start work
+              </button>
+              <button type="button" className="button-secondary" onClick={setProjectLifecycleStatus('on_hold')} disabled={saving}>
+                Put on hold
+              </button>
+              <button type="button" className="button-secondary" onClick={setProjectLifecycleStatus('completed')} disabled={saving}>
+                Mark completed
+              </button>
+              <button type="button" className="button-secondary" onClick={selectedProject?.isActive ? archiveProject : restoreProject} disabled={saving}>
+                {selectedProject?.isActive ? 'Archive project' : 'Restore project'}
+              </button>
+              <button type="button" className="button-secondary" onClick={deleteProject} disabled={saving}>
+                Delete project
+              </button>
+            </div>
+          ) : null}
           {actionMessage ? <p className="muted">{actionMessage}</p> : null}
           {actionError ? <p className="error">{actionError}</p> : null}
         </form>

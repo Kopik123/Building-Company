@@ -34,12 +34,22 @@ const {
 const API_BASE = import.meta.env.VITE_API_BASE || '/api/v2';
 const ACCESS_KEY = 'll_v2_access_token';
 const REFRESH_KEY = 'll_v2_refresh_token';
+const LEGACY_TOKEN_KEY = 'll_auth_token';
+const LEGACY_USER_KEY = 'll_auth_user';
 
 const readToken = (key) => window.localStorage.getItem(key) || '';
 const saveToken = (key, value) => window.localStorage.setItem(key, value);
+const saveLegacySession = (legacyToken, user) => {
+  const token = typeof legacyToken === 'string' ? legacyToken.trim() : '';
+  if (!token) return;
+  window.localStorage.setItem(LEGACY_TOKEN_KEY, token);
+  window.localStorage.setItem(LEGACY_USER_KEY, JSON.stringify(user || {}));
+};
 const clearTokens = () => {
   window.localStorage.removeItem(ACCESS_KEY);
   window.localStorage.removeItem(REFRESH_KEY);
+  window.localStorage.removeItem(LEGACY_TOKEN_KEY);
+  window.localStorage.removeItem(LEGACY_USER_KEY);
 };
 
 const parseError = (payload) => {
@@ -106,6 +116,7 @@ export const sessionApi = {
     });
     saveToken(ACCESS_KEY, payload.data.accessToken);
     saveToken(REFRESH_KEY, payload.data.refreshToken);
+    saveLegacySession(payload.data.legacyToken, payload.data.user);
     return payload.data.user;
   },
   async refresh() {
@@ -118,6 +129,7 @@ export const sessionApi = {
     });
     saveToken(ACCESS_KEY, payload.data.accessToken);
     saveToken(REFRESH_KEY, payload.data.refreshToken);
+    saveLegacySession(payload.data.legacyToken, payload.data.user);
     return payload.data.user;
   },
   async me() {
@@ -164,6 +176,10 @@ export const v2Api = {
   async updateProject(projectId, input) {
     const payload = await withAuth(`/projects/${projectId}`, toJsonOptions('PATCH', input));
     return normalizeItemResponse(payload, 'project', normalizeProjectSummary, projectSummarySchema);
+  },
+  async deleteProject(projectId) {
+    const payload = await withAuth(`/projects/${projectId}`, { method: 'DELETE' });
+    return Boolean(payload.data?.deleted);
   },
   async getQuotes(params = {}) {
     const payload = await withAuth(`/quotes${toQueryString({ page: 1, pageSize: 50, ...params })}`);

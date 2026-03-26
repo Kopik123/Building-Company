@@ -1,6 +1,8 @@
 (() => {
   const TOKEN_KEY = 'll_auth_token';
   const USER_KEY = 'll_auth_user';
+  const V2_ACCESS_KEY = 'll_v2_access_token';
+  const V2_REFRESH_KEY = 'll_v2_refresh_token';
   const assetManifest = window.LEVEL_LINES_ASSETS || { brand: {}, gallery: {} };
 
   const parseError = (payload) => {
@@ -42,15 +44,25 @@
     }
   };
 
-  const saveSession = (token, user) => {
+  const saveSession = (token, user, v2Session = null) => {
     localStorage.setItem(TOKEN_KEY, token);
     localStorage.setItem(USER_KEY, JSON.stringify(user || {}));
+    const accessToken = typeof v2Session?.accessToken === 'string' ? v2Session.accessToken.trim() : '';
+    const refreshToken = typeof v2Session?.refreshToken === 'string' ? v2Session.refreshToken.trim() : '';
+    if (accessToken) {
+      localStorage.setItem(V2_ACCESS_KEY, accessToken);
+    }
+    if (refreshToken) {
+      localStorage.setItem(V2_REFRESH_KEY, refreshToken);
+    }
     window.dispatchEvent(new Event('ll:session-changed'));
   };
 
   const clearSession = () => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
+    localStorage.removeItem(V2_ACCESS_KEY);
+    localStorage.removeItem(V2_REFRESH_KEY);
     window.dispatchEvent(new Event('ll:session-changed'));
   };
 
@@ -328,6 +340,8 @@
   window.LevelLinesRuntime = {
     TOKEN_KEY,
     USER_KEY,
+    V2_ACCESS_KEY,
+    V2_REFRESH_KEY,
     assetManifest,
     parseError,
     escapeHtml,

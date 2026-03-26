@@ -126,6 +126,7 @@ test('auth v2 login -> me -> refresh -> logout flow works', async () => {
 
   assert.ok(loginResponse.body?.data?.accessToken);
   assert.ok(loginResponse.body?.data?.refreshToken);
+  assert.ok(loginResponse.body?.data?.legacyToken);
   assert.equal(loginResponse.body?.data?.user?.email, 'manager@example.com');
 
   const meResponse = await request(app)
@@ -141,6 +142,7 @@ test('auth v2 login -> me -> refresh -> logout flow works', async () => {
 
   assert.ok(refreshResponse.body?.data?.accessToken);
   assert.notEqual(refreshResponse.body?.data?.refreshToken, loginResponse.body.data.refreshToken);
+  assert.ok(refreshResponse.body?.data?.legacyToken);
 
   const logoutResponse = await request(app)
     .post('/api/v2/auth/logout')

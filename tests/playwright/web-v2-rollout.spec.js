@@ -672,6 +672,9 @@ test('web-v2 manager operations surfaces can create projects, update quotes, cre
   let staffCounter = 2;
 
   await mockWebV2Auth(page, managerUser);
+  await page.addInitScript(() => {
+    window.confirm = () => true;
+  });
 
   await page.route(/\/api\/v2\/projects(?:\?.*)?$/, async (route) => {
     await fulfillJson(route, { data: { projects } });
@@ -692,6 +695,27 @@ test('web-v2 manager operations surfaces can create projects, update quotes, cre
     });
   });
   await page.route(/\/api\/v2\/projects\/[^/]+$/, async (route) => {
+    if (route.request().method() === 'PATCH') {
+      const projectId = route.request().url().match(/projects\/([^/?]+)/)?.[1] || '';
+      const payload = route.request().postDataJSON();
+      const project = projects.find((item) => item.id === projectId);
+      Object.assign(project, payload, {
+        updatedAt: '2026-03-23T10:15:00Z',
+        client: clients.find((client) => client.id === (payload.clientId || project.clientId)) || project.client || null,
+        assignedManager: staff.find((member) => member.id === (payload.assignedManagerId || project.assignedManagerId)) || project.assignedManager || null
+      });
+      await fulfillJson(route, { data: { project } });
+      return;
+    }
+    if (route.request().method() === 'DELETE') {
+      const projectId = route.request().url().match(/projects\/([^/?]+)/)?.[1] || '';
+      const projectIndex = projects.findIndex((item) => item.id === projectId);
+      if (projectIndex !== -1) {
+        projects.splice(projectIndex, 1);
+      }
+      await fulfillJson(route, { data: { deleted: true, projectId } });
+      return;
+    }
     await handleRouteMethod(route, 'GET', async () => {
       const projectId = route.request().url().match(/projects\/([^/?]+)/)?.[1] || '';
       const project = projects.find((item) => item.id === projectId) || null;
@@ -837,6 +861,12 @@ test('web-v2 manager operations surfaces can create projects, update quotes, cre
   await page.getByLabel('Description').fill('Premium shell-and-core finishing package.');
   await page.getByRole('button', { name: 'Create project' }).click();
   await expect(page.locator('.stack-list')).toContainText('Gallery Penthouse Fit-out');
+  await page.getByRole('button', { name: 'Mark completed' }).click();
+  await expect(page.locator('.stack-list')).toContainText('Completed');
+  await page.getByRole('button', { name: 'Archive project' }).click();
+  await expect(page.locator('.stack-list')).toContainText('Archived route');
+  await page.getByRole('button', { name: 'Delete project' }).click();
+  await expect(page.locator('.stack-list')).not.toContainText('Gallery Penthouse Fit-out');
 
   await page.goto('/app-v2/quotes');
   const quoteBoardList = page.locator('.grid-two > .surface').first().locator('.stack-list');

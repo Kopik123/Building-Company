@@ -67,7 +67,12 @@ npm run generate:public-pages
 	  - lokalnie / PM2 na serwerze: `127.0.0.1`
 	  - Docker / kontenery: `0.0.0.0`
 
-4. Uruchom serwer:
+4. Przygotuj bazę przed startem aplikacji:
+
+	npm run migrate
+	npm run ensure:indexes
+
+5. Uruchom serwer:
 
 	npm start
 
@@ -81,18 +86,48 @@ curl -sS http://127.0.0.1:3000/healthz
 
 ## Migracje bazy (Umzug)
 
-Migracje uruchamiają się automatycznie przy starcie aplikacji (dev i production).
+Migracje nie uruchamiają się już automatycznie przy starcie aplikacji. Repo używa teraz jawnego flow deploy/start:
+
+- `npm run migrate`
+- opcjonalnie `npm run ensure:indexes`
+- dopiero potem `npm start` albo `pm2 restart ...`
 
 Ręcznie:
 
 ```bash
 npm run migrate
 npm run migrate:status
+npm run ensure:indexes
 ```
 
 - Skrypty migracji wymagają `DATABASE_URL`.
 - Dla wygody lokalnej możesz ustawić `DEV_DATABASE_URL`; `scripts/migrate.js` użyje go tylko jako CLI fallback, jeśli `DATABASE_URL` nie jest ustawione w bieżącym shellu.
 - Runtime aplikacji nadal wymaga normalnego `DATABASE_URL`.
+- `npm run ensure:indexes` używa tego samego preflight/fallback co migracje, ale pozostaje osobnym krokiem CLI zamiast ukrytego startup sync.
+
+## Lokalny Postgres / Compose bootstrap
+
+Repo ma teraz jawny lokalny bootstrap dla Postgresa pod `deploy/docker-compose.local-db.yml`.
+
+Szybki start:
+
+```bash
+docker compose -f deploy/docker-compose.local-db.yml up -d
+```
+
+Następnie ustaw lokalnie:
+
+```bash
+DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/building_company_dev
+```
+
+albo tylko CLI fallback:
+
+```bash
+DEV_DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/building_company_dev
+```
+
+Pełny opis jest w `deploy/LOCAL_POSTGRES_COMPOSE_BOOTSTRAP.md`.
 
 ## Formularz e-mail i galeria
 

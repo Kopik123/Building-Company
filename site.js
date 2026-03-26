@@ -2,6 +2,8 @@
   const runtime = globalThis.LevelLinesRuntime || {};
   const TOKEN_KEY = runtime.TOKEN_KEY || 'll_auth_token';
   const USER_KEY = runtime.USER_KEY || 'll_auth_user';
+  const V2_ACCESS_KEY = runtime.V2_ACCESS_KEY || 'll_v2_access_token';
+  const V2_REFRESH_KEY = runtime.V2_REFRESH_KEY || 'll_v2_refresh_token';
   const AUTH_ME_CACHE_KEY = 'll_auth_me_cache';
   const AUTH_ME_TTL_MS = 60 * 1000;
   const brand = globalThis.LEVEL_LINES_BRAND || null;
@@ -82,6 +84,8 @@
   const baseClearSession = runtime.clearSession || (() => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
+    localStorage.removeItem(V2_ACCESS_KEY);
+    localStorage.removeItem(V2_REFRESH_KEY);
   });
 
   const clearSession = () => {
@@ -89,13 +93,21 @@
     baseClearSession();
   };
 
-  const baseSaveSession = runtime.saveSession || ((token, user) => {
+  const baseSaveSession = runtime.saveSession || ((token, user, v2Session = null) => {
     localStorage.setItem(TOKEN_KEY, token);
     localStorage.setItem(USER_KEY, JSON.stringify(user || {}));
+    const accessToken = typeof v2Session?.accessToken === 'string' ? v2Session.accessToken.trim() : '';
+    const refreshToken = typeof v2Session?.refreshToken === 'string' ? v2Session.refreshToken.trim() : '';
+    if (accessToken) {
+      localStorage.setItem(V2_ACCESS_KEY, accessToken);
+    }
+    if (refreshToken) {
+      localStorage.setItem(V2_REFRESH_KEY, refreshToken);
+    }
   });
 
-  const saveSession = (token, user) => {
-    baseSaveSession(token, user);
+  const saveSession = (token, user, v2Session = null) => {
+    baseSaveSession(token, user, v2Session);
     writeAuthMeCache(token, user);
   };
 
@@ -663,7 +675,7 @@
           body: JSON.stringify({ email, password })
         });
 
-        saveSession(payload.token, payload.user);
+        saveSession(payload.token, payload.user, payload.v2Session);
         updateNavigationForSession(payload.user);
         setStatus(inlineLoginStatus, 'Login successful. Redirecting to account...', 'success');
         inlineLoginForm.reset();

@@ -1,7 +1,7 @@
 const express = require('express');
 const { Op, fn, col, where: sqlWhere } = require('sequelize');
 const { body, param, query, validationResult } = require('express-validator');
-const { Project, ProjectMedia, Quote, User } = require('../../../models');
+const { Estimate, GroupThread, Project, ProjectMedia, Quote, User } = require('../../../models');
 const asyncHandler = require('../../../utils/asyncHandler');
 const { authV2 } = require('../middleware/auth');
 const { roleCheckV2 } = require('../middleware/roles');
@@ -258,6 +258,44 @@ router.patch(
     await project.update(payload);
     clearGalleryCache();
     return ok(res, { project });
+  })
+);
+
+router.delete(
+  '/:id',
+  [authV2, roleCheckV2('manager', 'admin'), param('id').isUUID()],
+  asyncHandler(async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return fail(res, 400, 'validation_failed', 'Validation failed', errors.array());
+    }
+
+    const project = await Project.findByPk(req.params.id);
+    if (!project) return fail(res, 404, 'project_not_found', 'Project not found');
+
+    const [linkedEstimateCount, linkedThreadCount, convertedQuoteCount] = await Promise.all([
+      Estimate.count({ where: { projectId: project.id } }),
+      GroupThread.count({ where: { projectId: project.id } }),
+      Quote.count({ where: { convertedProjectId: project.id } })
+    ]);
+
+    if (linkedEstimateCount || linkedThreadCount || convertedQuoteCount) {
+      return fail(
+        res,
+        409,
+        'project_delete_blocked',
+        'Archive this project instead of deleting it once linked delivery records exist.',
+        {
+          linkedEstimateCount,
+          linkedThreadCount,
+          convertedQuoteCount
+        }
+      );
+    }
+
+    await project.destroy();
+    clearGalleryCache();
+    return ok(res, { deleted: true, projectId: project.id });
   })
 );
 
