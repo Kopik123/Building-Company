@@ -33,6 +33,24 @@ const createClaimCode = () => String(Math.floor(100000 + Math.random() * 900000)
 const createClaimCodeHash = (value) => crypto.createHash('sha256').update(value).digest('hex');
 const CLAIM_MAX_ATTEMPTS = 5;
 let cachedClaimEmailTransporter;
+const GUEST_QUOTE_PREVIEW_ATTRIBUTES = [
+  'id',
+  'guestName',
+  'guestEmail',
+  'guestPhone',
+  'projectType',
+  'location',
+  'status',
+  'workflowStatus',
+  'priority',
+  'createdAt',
+  'updatedAt',
+  'submittedAt',
+  'assignedAt',
+  'convertedAt',
+  'closedAt'
+];
+const GUEST_QUOTE_ATTACHMENT_ATTRIBUTES = ['id', 'filename', 'url', 'mimeType', 'sizeBytes', 'createdAt', 'updatedAt'];
 
 const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
 const normalizePhone = (value) => String(value || '').trim();
@@ -92,6 +110,52 @@ const persistQuoteAttachments = async ({ quoteId, files, uploadedByUserId = null
   if (!rows.length) return [];
 
   return QuoteAttachment.bulkCreate(rows, transaction ? { transaction } : undefined);
+};
+
+const loadGuestQuotePreviewRecord = async (publicToken) =>
+  Quote.findOne({
+    where: {
+      publicToken,
+      isGuest: true
+    },
+    attributes: GUEST_QUOTE_PREVIEW_ATTRIBUTES,
+    include: [{
+      model: QuoteAttachment,
+      as: 'attachments',
+      attributes: GUEST_QUOTE_ATTACHMENT_ATTRIBUTES,
+      required: false,
+      separate: true,
+      order: [['createdAt', 'ASC']]
+    }]
+  });
+
+const buildGuestQuotePreviewPayload = (quoteRecord) => {
+  if (!quoteRecord) return null;
+
+  const plainQuote = typeof quoteRecord.toJSON === 'function' ? quoteRecord.toJSON() : { ...(quoteRecord || {}) };
+  const claimChannels = [
+    plainQuote.guestEmail ? 'email' : null,
+    plainQuote.guestPhone ? 'phone' : null
+  ].filter(Boolean);
+  const maskedGuestEmail = maskEmailForPreview(plainQuote.guestEmail);
+  const maskedGuestPhone = maskPhoneForPreview(plainQuote.guestPhone);
+  const attachments = sortQuoteAttachments(plainQuote.attachments || []).map(toQuoteAttachmentSummary);
+
+  delete plainQuote.guestName;
+  delete plainQuote.guestEmail;
+  delete plainQuote.guestPhone;
+
+  return {
+    quote: {
+      ...plainQuote,
+      canClaim: Boolean(claimChannels.length),
+      claimChannels,
+      maskedGuestEmail: maskedGuestEmail || null,
+      maskedGuestPhone: maskedGuestPhone || null,
+      attachments,
+      attachmentCount: attachments.length
+    }
+  };
 };
 
 const createGuestQuoteRecord = async (basePayload, options = {}) => {
@@ -373,49 +437,142 @@ router.get('/guest/:publicToken', [param('publicToken').isLength({ min: 16 })], 
     return res.status(400).json({ errors: errors.array() });
   }
 
-  const quote = await Quote.findOne({
-    where: {
-      publicToken: req.params.publicToken,
-      isGuest: true
-    },
-    attributes: ['id', 'projectType', 'location', 'status', 'workflowStatus', 'priority', 'createdAt', 'updatedAt', 'submittedAt', 'assignedAt', 'convertedAt', 'closedAt', 'guestEmail', 'guestPhone'],
-    include: [{
-      model: QuoteAttachment,
-      as: 'attachments',
-      attributes: ['id', 'filename', 'url', 'mimeType', 'sizeBytes', 'createdAt', 'updatedAt'],
-      required: false,
-      separate: true,
-      order: [['createdAt', 'ASC']]
-    }]
-  });
-
-  if (!quote) {
+  const quoteRecord = await loadGuestQuotePreviewRecord(req.params.publicToken);
+  if (!quoteRecord) {
     return res.status(404).json({ error: 'Quote not found' });
   }
 
-  const plainQuote = typeof quote.toJSON === 'function' ? quote.toJSON() : { ...(quote || {}) };
-  const claimChannels = [
-    plainQuote.guestEmail ? 'email' : null,
-    plainQuote.guestPhone ? 'phone' : null
-  ].filter(Boolean);
-  const maskedGuestEmail = maskEmailForPreview(plainQuote.guestEmail);
-  const maskedGuestPhone = maskPhoneForPreview(plainQuote.guestPhone);
-  const attachments = sortQuoteAttachments(plainQuote.attachments || []).map(toQuoteAttachmentSummary);
-  delete plainQuote.guestEmail;
-  delete plainQuote.guestPhone;
-
-  return res.json({
-    quote: {
-      ...plainQuote,
-      canClaim: Boolean(claimChannels.length),
-      claimChannels,
-      maskedGuestEmail: maskedGuestEmail || null,
-      maskedGuestPhone: maskedGuestPhone || null,
-      attachments,
-      attachmentCount: attachments.length
-    }
-  });
+  return res.json(buildGuestQuotePreviewPayload(quoteRecord));
 }));
+
+router.post(
+  '/guest/:publicToken/attachments',
+  upload.array('files', MAX_QUOTE_ATTACHMENT_FILES),
+  [param('publicToken').isLength({ min: 16 })],
+  asyncHandler(async (req, res) => {
+    const files = Array.isArray(req.files) ? req.files : [];
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      await cleanupUploadedFiles(files);
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const attachmentValidationError = validateQuoteAttachmentFiles(files);
+    if (attachmentValidationError) {
+      await cleanupUploadedFiles(files);
+      return res.status(400).json({ error: attachmentValidationError });
+    }
+
+    if (!files.length) {
+      return res.status(400).json({ error: 'Attach at least one photo before sending the update.' });
+    }
+
+    const quoteRecord = await loadGuestQuotePreviewRecord(req.params.publicToken);
+    if (!quoteRecord) {
+      await cleanupUploadedFiles(files);
+      return res.status(404).json({ error: 'Quote not found' });
+    }
+
+    const previewPayload = buildGuestQuotePreviewPayload(quoteRecord);
+    const existingCount = Number(previewPayload?.quote?.attachmentCount || 0);
+    const remainingSlots = Math.max(0, MAX_QUOTE_ATTACHMENT_FILES - existingCount);
+    if (remainingSlots <= 0) {
+      await cleanupUploadedFiles(files);
+      return res.status(400).json({ error: `This quote already has the maximum ${MAX_QUOTE_ATTACHMENT_FILES} photos.` });
+    }
+
+    if (files.length > remainingSlots) {
+      await cleanupUploadedFiles(files);
+      return res.status(400).json({ error: `This quote can store up to ${MAX_QUOTE_ATTACHMENT_FILES} photos. You can add ${remainingSlots} more right now.` });
+    }
+
+    const plainQuote = typeof quoteRecord.toJSON === 'function' ? quoteRecord.toJSON() : { ...(quoteRecord || {}) };
+    let attachments = [];
+
+    try {
+      attachments = await withQuoteTransaction(async (transaction) => {
+        const createdAttachments = await persistQuoteAttachments({
+          quoteId: plainQuote.id,
+          files,
+          uploadedByUserId: null,
+          source: 'public_guest_quote_followup',
+          transaction
+        });
+        return sortQuoteAttachments(createdAttachments);
+      });
+    } catch (error) {
+      await cleanupUploadedFiles(files);
+      throw error;
+    }
+
+    if (typeof QuoteEvent?.create === 'function') {
+      try {
+        await QuoteEvent.create({
+          quoteId: plainQuote.id,
+          actorUserId: null,
+          eventType: 'quote_attachments_added',
+          visibility: 'public',
+          message: attachments.length === 1
+            ? 'Guest added 1 more photo to the quote.'
+            : `Guest added ${attachments.length} more photos to the quote.`,
+          data: {
+            sourceChannel: 'public_web_followup',
+            attachmentCount: attachments.length,
+            totalAttachmentCount: existingCount + attachments.length,
+            attachments: attachments.map(toQuoteAttachmentSummary)
+          }
+        });
+      } catch (error) {
+        logNonBlockingQuoteFailure('quote_followup_attachment_event', error, { quoteId: plainQuote.id });
+      }
+    }
+
+    try {
+      const managers = await User.findAll({ where: { role: { [Op.in]: ['manager', 'admin'] }, isActive: true } });
+      if (managers.length && typeof Notification?.bulkCreate === 'function') {
+        await Notification.bulkCreate(
+          managers.map((manager) => ({
+            userId: manager.id,
+            type: 'new_quote',
+            title: `Additional quote photos from ${plainQuote.guestName || 'guest client'}`,
+            body: [
+              `Name: ${plainQuote.guestName || 'Guest client'}`,
+              `Location: ${plainQuote.location || 'Greater Manchester'}`,
+              `Project type: ${plainQuote.projectType || 'other'}`,
+              `New photos attached: ${attachments.length}`,
+              `Total photos now attached: ${existingCount + attachments.length}`
+            ].join('\n'),
+            quoteId: plainQuote.id,
+            data: {
+              quoteId: plainQuote.id,
+              event: 'guest_quote_attachments_added',
+              attachmentCount: attachments.length,
+              totalAttachmentCount: existingCount + attachments.length
+            }
+          }))
+        );
+      }
+    } catch (error) {
+      logNonBlockingQuoteFailure('manager_notification_followup_attachments', error, { quoteId: plainQuote.id });
+    }
+
+    const refreshedQuoteRecord = await loadGuestQuotePreviewRecord(req.params.publicToken);
+    if (!refreshedQuoteRecord) {
+      return res.status(201).json({
+        message: attachments.length === 1
+          ? 'Added 1 photo to your quote.'
+          : `Added ${attachments.length} photos to your quote.`
+      });
+    }
+
+    return res.status(201).json({
+      message: attachments.length === 1
+        ? 'Added 1 photo to your quote.'
+        : `Added ${attachments.length} photos to your quote.`,
+      ...buildGuestQuotePreviewPayload(refreshedQuoteRecord)
+    });
+  })
+);
 
 router.post(
   '/guest/:id/claim/request',

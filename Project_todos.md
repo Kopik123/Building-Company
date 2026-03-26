@@ -105,7 +105,8 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [ ] Close the operational gap in `quote -> estimate -> approval -> project` so estimate approvals are explicit, versioned and portable to mobile clients.
 - [x] Add the first public guest quote follow-up layer by showing a private status/preview panel from `publicToken`, including reference, workflow state and attached quote photos after submit.
 - [ ] Finish public guest quote portal parity on a v2 contract (`submit`, `preview`, `claim`, later response access) so guest quote UX no longer depends on legacy-only routes.
-- [ ] Extend the future claimed/guest quote portal so customers can add follow-up quote photos after the initial submission, not only during the first send.
+- [x] Let guest customers add follow-up quote photos from the private preview link after the initial submission, not only during the first send.
+- [ ] Extend the claimed/logged-in quote portal so customers can add follow-up quote photos after claim/login as well, not only from the guest private link.
 - [ ] Consolidate manual public pages and generated SEO pages onto one content model/source so brochure copy, metadata, FAQ and CTA logic stop drifting.
 - [ ] Create a shared web/mobile contract layer for auth/session, project summaries, thread summaries, notifications and estimate state before expanding `mobile-v1` further.
 - [ ] Keep every new feature review aligned with future Android/iOS app readiness, especially API contracts, auth/session handling, messaging and media flows.

@@ -571,6 +571,136 @@ test('legacy /api/quotes/guest/:publicToken returns private quote preview data w
   assert.equal(response.body?.quote?.maskedGuestPhone, '0739***87');
 });
 
+test('legacy /api/quotes/guest/:publicToken/attachments appends more guest quote photos and returns the refreshed preview', async () => {
+  const notificationBatches = [];
+  const createdEvents = [];
+  let attachmentId = 3;
+  const attachmentsState = [
+    {
+      id: 'attachment-1',
+      filename: 'quote-photo-a.jpg',
+      url: '/uploads/quote-photo-a.jpg',
+      mimeType: 'image/jpeg',
+      sizeBytes: 10240,
+      createdAt: '2026-03-24T21:31:00Z',
+      updatedAt: '2026-03-24T21:31:00Z'
+    },
+    {
+      id: 'attachment-2',
+      filename: 'quote-photo-b.png',
+      url: '/uploads/quote-photo-b.png',
+      mimeType: 'image/png',
+      sizeBytes: 20480,
+      createdAt: '2026-03-24T21:32:00Z',
+      updatedAt: '2026-03-24T21:32:00Z'
+    }
+  ];
+
+  mockModels({
+    sequelize: {
+      async transaction(handler) {
+        return handler({ id: 'test-transaction' });
+      }
+    },
+    Quote: {
+      async findOne({ where }) {
+        if (where?.publicToken !== 'guest-preview-token' || where?.isGuest !== true) {
+          return null;
+        }
+
+        return {
+          id: 'quote-preview-1',
+          guestName: 'Guest Example',
+          guestEmail: 'guest@example.com',
+          guestPhone: '07395448487',
+          toJSON() {
+            return {
+              id: 'quote-preview-1',
+              guestName: 'Guest Example',
+              guestEmail: 'guest@example.com',
+              guestPhone: '07395448487',
+              projectType: 'kitchen',
+              location: 'Manchester and the North West',
+              status: 'pending',
+              workflowStatus: 'submitted',
+              priority: 'medium',
+              createdAt: '2026-03-24T21:30:00Z',
+              updatedAt: '2026-03-24T21:45:00Z',
+              submittedAt: '2026-03-24T21:30:00Z',
+              assignedAt: null,
+              convertedAt: null,
+              closedAt: null,
+              attachments: [...attachmentsState]
+            };
+          }
+        };
+      }
+    },
+    QuoteAttachment: {
+      async bulkCreate(rows) {
+        const created = rows.map((row, index) => ({
+          id: `attachment-${attachmentId + index}`,
+          createdAt: `2026-03-24T21:4${index + 1}:00Z`,
+          updatedAt: `2026-03-24T21:4${index + 1}:00Z`,
+          ...row
+        }));
+        attachmentId += rows.length;
+        attachmentsState.push(...created);
+        registerUploadCleanup(created);
+        return created;
+      }
+    },
+    QuoteClaimToken: {
+      async destroy() {},
+      async create() {},
+      async findOne() {
+        return null;
+      }
+    },
+    User: {
+      async findAll() {
+        return [{ id: 'manager-1', role: 'manager', isActive: true }];
+      },
+      async findByPk() {
+        return null;
+      }
+    },
+    Notification: {
+      async bulkCreate(payload) {
+        notificationBatches.push(payload);
+        return payload;
+      }
+    },
+    QuoteEvent: {
+      async create(payload) {
+        createdEvents.push(payload);
+        return payload;
+      }
+    }
+  });
+
+  const quotesRouter = loadRoute('routes/quotes.js');
+  const app = buildExpressApp('/api/quotes', quotesRouter);
+
+  const response = await request(app)
+    .post('/api/quotes/guest/guest-preview-token/attachments')
+    .attach('files', Buffer.from('follow-up-image-a'), { filename: 'follow-up-a.jpg', contentType: 'image/jpeg' })
+    .attach('files', Buffer.from('follow-up-image-b'), { filename: 'follow-up-b.png', contentType: 'image/png' })
+    .expect(201);
+
+  assert.equal(response.body?.message, 'Added 2 photos to your quote.');
+  assert.equal(response.body?.quote?.attachmentCount, 4);
+  assert.equal(response.body?.quote?.attachments?.length, 4);
+  assert.equal(response.body?.quote?.attachments?.[2]?.name, 'follow-up-a.jpg');
+  assert.equal(response.body?.quote?.attachments?.[3]?.name, 'follow-up-b.png');
+  assert.equal(createdEvents.length, 1);
+  assert.equal(createdEvents[0]?.eventType, 'quote_attachments_added');
+  assert.equal(createdEvents[0]?.data?.totalAttachmentCount, 4);
+  assert.equal(notificationBatches.length, 1);
+  assert.equal(notificationBatches[0][0]?.title, 'Additional quote photos from Guest Example');
+  assert.equal(notificationBatches[0][0]?.data?.totalAttachmentCount, 4);
+});
+
 test('legacy /api/quotes/guest/:id/claim/request sends a claim code and returns a masked target hint', async () => {
   const quoteId = '11111111-1111-4111-8111-111111111111';
   let smsRequest = null;

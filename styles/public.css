@@ -1331,6 +1331,15 @@
   gap: 0.7rem;
 }
 
+.quote-followup-upload-card {
+  margin-top: var(--space-3);
+}
+
+.quote-followup-upload-label {
+  display: grid;
+  gap: 0.42rem;
+}
+
 @media (max-width: 1180px) {
   .services-hub-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -432,6 +432,63 @@ test('guest quote claim handoff runs from the private quote panel into auth conf
   await expect(page).toHaveURL(/\/client-dashboard\.html$/);
 });
 
+test('guest quote private preview lets the customer add more photos after submit', async ({ page }) => {
+  let previewPayload = createGuestQuotePreviewPayload();
+
+  await page.route('**/api/quotes/guest/guest-preview-token', async (route) => {
+    await route.fulfill({
+      json: previewPayload
+    });
+  });
+
+  await page.route('**/api/quotes/guest/guest-preview-token/attachments', async (route) => {
+    previewPayload = {
+      quote: {
+        ...previewPayload.quote,
+        attachmentCount: 4,
+        attachments: [
+          ...previewPayload.quote.attachments,
+          {
+            name: 'quote-photo-3.png',
+            url: '/uploads/quote-photo-3.png',
+            size: 3072,
+            mimeType: 'image/png'
+          },
+          {
+            name: 'quote-photo-4.png',
+            url: '/uploads/quote-photo-4.png',
+            size: 4096,
+            mimeType: 'image/png'
+          }
+        ]
+      }
+    };
+
+    await route.fulfill({
+      status: 201,
+      json: {
+        message: 'Added 2 photos to your quote.',
+        ...previewPayload
+      }
+    });
+  });
+
+  await page.goto('/quote.html?quote=guest-preview-token#quote-card');
+
+  const quoteForm = page.locator('form.js-quote-form');
+  const uploadCard = quoteForm.locator('.quote-followup-upload-card');
+  await expect(uploadCard).toBeVisible();
+  await expect(uploadCard).toContainText(/you can add 6 more photos/i);
+  await uploadCard.locator('input[type="file"][name="files"]').setInputFiles(quotePhotoFixtures);
+  await expect(uploadCard.locator('.quote-file-preview-card')).toHaveCount(2);
+  await uploadCard.getByRole('button', { name: /add photos to quote/i }).click();
+
+  await expect(uploadCard.locator('.form-status')).toContainText(/added 2 photos to your quote/i);
+  await expect(quoteForm.locator('[data-quote-followup-meta]')).toContainText(/photos\s*4/i);
+  await expect(quoteForm.locator('[data-quote-followup-attachments] .quote-file-preview-card')).toHaveCount(4);
+  await expect(uploadCard).toContainText(/you can add 4 more photos/i);
+});
+
 test('authenticated public shell hides login-only controls and keeps one account route', async ({ page }) => {
   await mockPublicClientSession(page);
   await page.goto('/index.html');

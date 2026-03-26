@@ -9,7 +9,8 @@
   const QUOTE_WORKSPACE_PATH = '/client-dashboard.html';
   const TOKEN_KEY = runtime.TOKEN_KEY || 'll_auth_token';
   const USER_KEY = runtime.USER_KEY || 'll_auth_user';
-  const previewUrlsByForm = new WeakMap();
+  const previewUrlsByRoot = new WeakMap();
+  const followupContextByForm = new WeakMap();
   const quotePreviewToken = new URLSearchParams(window.location.search).get(QUOTE_PREVIEW_QUERY_KEY);
   let quotePreviewRequest;
 
@@ -121,6 +122,7 @@
     authUrl.searchParams.set('next', QUOTE_WORKSPACE_PATH);
     return `${authUrl.pathname}${authUrl.search}`;
   };
+  const getRemainingPhotoSlots = (preview) => Math.max(0, MAX_QUOTE_PHOTOS - Number(preview?.attachmentCount || 0));
 
   const buildQuotePreviewUrl = (form, publicToken) => {
     const currentUrl = new URL(window.location.href);
@@ -247,6 +249,23 @@
       throw new Error(responsePayload.error || 'Could not load this private quote link.');
     }
     return normalizeQuotePreviewPayload(responsePayload, publicToken);
+  };
+
+  const resolveFollowupContext = (form, options = {}) => {
+    const previous = followupContextByForm.get(form) || {};
+    const next = {
+      guestEmail: Object.hasOwn(options, 'guestEmail')
+        ? normalizeEmail(options.guestEmail)
+        : (previous.guestEmail || ''),
+      guestPhone: Object.hasOwn(options, 'guestPhone')
+        ? normalizePhone(options.guestPhone)
+        : (previous.guestPhone || '')
+    };
+    followupContextByForm.set(form, next);
+    return {
+      ...next,
+      uploadNotice: options.uploadNotice || null
+    };
   };
 
   const buildClaimContactHint = (preview, channel) => {
@@ -465,6 +484,7 @@
   };
 
   const renderQuoteFollowup = (form, preview, options = {}) => {
+    const context = resolveFollowupContext(form, options);
     const panel = form.querySelector('[data-quote-followup]');
     if (!panel) return;
 
@@ -532,11 +552,20 @@
       const claimPanel = createQuoteClaimPanel({
         preview,
         previewUrl,
-        guestEmail: normalizeEmail(options.guestEmail),
-        guestPhone: normalizePhone(options.guestPhone)
+        guestEmail: context.guestEmail,
+        guestPhone: context.guestPhone
       });
       if (claimPanel) {
         actions.appendChild(claimPanel);
+      }
+
+      const uploadPanel = createFollowupUploadPanel({
+        form,
+        preview,
+        context
+      });
+      if (uploadPanel) {
+        actions.appendChild(uploadPanel);
       }
     }
 
@@ -578,8 +607,8 @@
     panel.hidden = true;
   };
 
-  const revokePreviewUrls = (form) => {
-    const urls = previewUrlsByForm.get(form) || [];
+  const revokePreviewUrls = (previewRoot) => {
+    const urls = previewUrlsByRoot.get(previewRoot) || [];
     urls.forEach((url) => {
       try {
         URL.revokeObjectURL(url);
@@ -587,11 +616,11 @@
         // Ignore browsers that reject repeated revokes.
       }
     });
-    previewUrlsByForm.delete(form);
+    previewUrlsByRoot.delete(previewRoot);
   };
 
-  const clearFilesPreview = (form, previewRoot) => {
-    revokePreviewUrls(form);
+  const clearFilesPreview = (previewRoot) => {
+    revokePreviewUrls(previewRoot);
     if (!previewRoot) return;
     previewRoot.hidden = true;
     previewRoot.textContent = '';
@@ -617,10 +646,10 @@
     return true;
   };
 
-  const renderFilesPreview = (form, previewRoot, files) => {
+  const renderFilesPreview = (previewRoot, files) => {
     if (!previewRoot) return;
 
-    clearFilesPreview(form, previewRoot);
+    clearFilesPreview(previewRoot);
 
     if (!files.length) {
       return;
@@ -678,15 +707,173 @@
 
     previewRoot.appendChild(grid);
     previewRoot.hidden = false;
-    previewUrlsByForm.set(form, urls);
+    previewUrlsByRoot.set(previewRoot, urls);
   };
 
-  const syncFilesUi = (form, filesInput, filesStatus, previewRoot) => {
+  const syncFilesUi = (filesInput, filesStatus, previewRoot) => {
     const files = Array.from(filesInput?.files || []);
     if (filesStatus) {
       filesStatus.textContent = getFilesStatusText(files);
     }
-    renderFilesPreview(form, previewRoot, files);
+    renderFilesPreview(previewRoot, files);
+  };
+
+  const createFollowupUploadPanel = ({ form, preview, context }) => {
+    if (!preview?.publicToken) {
+      return null;
+    }
+
+    const remainingSlots = getRemainingPhotoSlots(preview);
+    const wrapper = document.createElement('section');
+    wrapper.className = 'quote-claim-card quote-followup-upload-card';
+
+    const heading = document.createElement('div');
+    heading.className = 'quote-claim-head';
+
+    const eyebrow = document.createElement('p');
+    eyebrow.className = 'section-eyebrow section-eyebrow--compact';
+    eyebrow.textContent = 'Add Photos';
+
+    const title = document.createElement('h4');
+    title.textContent = remainingSlots > 0
+      ? 'Add more reference photos to this quote.'
+      : 'Photo limit reached for this quote.';
+
+    const intro = document.createElement('p');
+    intro.className = 'page-aside-copy';
+    intro.textContent = remainingSlots > 0
+      ? `You can add ${remainingSlots} more photo${remainingSlots === 1 ? '' : 's'} to the same private quote link.`
+      : `This quote already has the maximum ${MAX_QUOTE_PHOTOS} photos.`;
+
+    heading.appendChild(eyebrow);
+    heading.appendChild(title);
+    heading.appendChild(intro);
+
+    const uploadForm = document.createElement('form');
+    uploadForm.className = 'quote-claim-form';
+    uploadForm.noValidate = true;
+
+    const fileLabel = document.createElement('label');
+    fileLabel.className = 'quote-followup-upload-label';
+    fileLabel.textContent = 'Additional quote photos';
+
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.name = 'files';
+    fileInput.accept = 'image/*';
+    fileInput.multiple = true;
+    fileInput.disabled = remainingSlots <= 0;
+    fileLabel.appendChild(fileInput);
+
+    const fileStatus = document.createElement('p');
+    fileStatus.className = 'page-aside-copy';
+    fileStatus.textContent = remainingSlots > 0
+      ? `Optional: add up to ${remainingSlots} more photo${remainingSlots === 1 ? '' : 's'} here.`
+      : `No more than ${MAX_QUOTE_PHOTOS} photos can be stored on one quote.`;
+
+    const previewRoot = document.createElement('div');
+    previewRoot.className = 'quote-file-preview';
+    previewRoot.hidden = true;
+    previewRoot.setAttribute('aria-live', 'polite');
+
+    const actions = document.createElement('div');
+    actions.className = 'quote-claim-actions';
+
+    const submitButton = document.createElement('button');
+    submitButton.type = 'submit';
+    submitButton.className = 'btn-outline-gold';
+    submitButton.textContent = 'Add photos to quote';
+    submitButton.disabled = remainingSlots <= 0;
+
+    actions.appendChild(submitButton);
+
+    const status = document.createElement('p');
+    status.className = 'form-status';
+    if (context?.uploadNotice) {
+      setStatus(status, context.uploadNotice.message, context.uploadNotice.type);
+    }
+
+    fileInput.addEventListener('change', () => {
+      syncFilesUi(fileInput, fileStatus, previewRoot);
+      if (remainingSlots > 0 && status.textContent) {
+        setStatus(status, '');
+      }
+    });
+
+    previewRoot.addEventListener('click', (event) => {
+      const removeButton = event.target.closest('[data-quote-file-remove-index]');
+      if (!removeButton) return;
+      const removeIndex = Number(removeButton.getAttribute('data-quote-file-remove-index'));
+      if (!Number.isInteger(removeIndex)) return;
+      if (!rebuildSelectedFiles(fileInput, removeIndex)) return;
+      syncFilesUi(fileInput, fileStatus, previewRoot);
+    });
+
+    uploadForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      const files = Array.from(fileInput.files || []);
+      if (!files.length) {
+        setStatus(status, 'Attach at least one new photo before sending the update.', 'error');
+        return;
+      }
+
+      if (files.length > remainingSlots) {
+        setStatus(
+          status,
+          `This quote can only accept ${remainingSlots} more photo${remainingSlots === 1 ? '' : 's'} right now.`,
+          'error'
+        );
+        return;
+      }
+
+      if (files.some((file) => !String(file.type || '').toLowerCase().startsWith('image/'))) {
+        setStatus(status, 'Only image files are allowed for quote photo attachments.', 'error');
+        return;
+      }
+
+      submitButton.disabled = true;
+      setStatus(status, 'Uploading additional quote photos...', 'loading');
+
+      try {
+        const requestBody = new FormData();
+        files.forEach((file) => requestBody.append('files', file));
+
+        const response = await fetch(`/api/quotes/guest/${encodeURIComponent(preview.publicToken)}/attachments`, {
+          method: 'POST',
+          body: requestBody
+        });
+        const responsePayload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(responsePayload.error || 'Could not upload the extra quote photos.');
+        }
+
+        const nextPreview = normalizeQuotePreviewPayload(responsePayload, preview.publicToken);
+        renderQuoteFollowup(form, nextPreview, {
+          guestEmail: context?.guestEmail,
+          guestPhone: context?.guestPhone,
+          uploadNotice: {
+            type: 'success',
+            message: responsePayload.message || (files.length === 1
+              ? 'Added 1 photo to your quote.'
+              : `Added ${files.length} photos to your quote.`)
+          }
+        });
+      } catch (error) {
+        setStatus(status, error.message || 'Could not upload the extra quote photos.', 'error');
+      } finally {
+        submitButton.disabled = false;
+      }
+    });
+
+    uploadForm.appendChild(fileLabel);
+    uploadForm.appendChild(fileStatus);
+    uploadForm.appendChild(previewRoot);
+    uploadForm.appendChild(actions);
+    uploadForm.appendChild(status);
+    wrapper.appendChild(heading);
+    wrapper.appendChild(uploadForm);
+    return wrapper;
   };
 
   const applyProjectTypeContext = (form) => {
@@ -721,9 +908,9 @@
     applyProjectTypeContext(form);
     hideQuoteFollowup(form);
     if (filesInput) {
-      syncFilesUi(form, filesInput, filesStatus, filesPreview);
+      syncFilesUi(filesInput, filesStatus, filesPreview);
       filesInput.addEventListener('change', () => {
-        syncFilesUi(form, filesInput, filesStatus, filesPreview);
+        syncFilesUi(filesInput, filesStatus, filesPreview);
       });
     } else if (filesStatus) {
       filesStatus.textContent = EMPTY_FILES_STATUS_TEXT;
@@ -736,7 +923,7 @@
         const removeIndex = Number(removeButton.getAttribute('data-quote-file-remove-index'));
         if (!Number.isInteger(removeIndex)) return;
         if (!rebuildSelectedFiles(filesInput, removeIndex)) return;
-        syncFilesUi(form, filesInput, filesStatus, filesPreview);
+        syncFilesUi(filesInput, filesStatus, filesPreview);
       });
     }
 
@@ -744,7 +931,7 @@
       setTimeout(() => {
         applyProjectTypeContext(form);
         if (filesInput) {
-          syncFilesUi(form, filesInput, filesStatus, filesPreview);
+          syncFilesUi(filesInput, filesStatus, filesPreview);
         } else if (filesStatus) {
           filesStatus.textContent = EMPTY_FILES_STATUS_TEXT;
         }
