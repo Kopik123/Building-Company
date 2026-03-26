@@ -14,6 +14,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [x] Ship the first end-to-end quote lifecycle in `api/v2` and `web-v2` for logged-in clients and managers: quote submit, manager ownership, estimate draft/send, client response and manual project conversion after approval.
 - [x] Add quote photo attachments across the current website intake flow so clients can send up to 8 reference images from public quote forms and the authenticated `web-v2` quote surface, while managers can review those photos inside quote detail.
 - [x] Upgrade the public quote-form upload UX so clients can select multiple photos, see thumbnail previews immediately, and remove a chosen image before sending the quote.
+- [x] Connect the guest quote private preview panel to the claim flow so customers can request a verification code from the saved quote link and finish the claim after login/register on `auth.html`.
 - [x] Align legacy guest quote intake with the new lifecycle metadata by storing workflow state, submission timestamps and quote events without breaking the current public/claim flow.
 - [x] Harden `202603240001-quote-workflow-and-events.js` for production recovery so a partial first-run migration can resume cleanly and the workflow-status backfill uses an explicit Postgres enum cast instead of a text-only `CASE`.
 - [x] Harden legacy `/api/quotes/guest` so customer intake still succeeds when non-critical side effects like `QuoteEvent.create` or manager notification fan-out fail.

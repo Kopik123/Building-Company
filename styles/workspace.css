@@ -402,7 +402,8 @@
 
 .auth-card,
 .auth-account-panel,
-.auth-session {
+.auth-session,
+.auth-quote-claim-panel {
   background:
     linear-gradient(165deg, rgba(12, 12, 12, 0.9), rgba(5, 5, 5, 0.96)),
     url('/mainbackground.png') center center / cover no-repeat;
@@ -423,6 +424,18 @@
   gap: var(--space-3);
   align-items: baseline;
   margin-bottom: var(--space-3);
+}
+
+.auth-quote-claim-panel {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.auth-quote-claim-head {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  align-items: baseline;
 }
 
 .auth-account-grid {
@@ -516,6 +529,11 @@
   }
 
   .manager-workflow-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .auth-quote-claim-head {
     flex-direction: column;
     align-items: flex-start;
   }

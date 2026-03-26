@@ -1277,6 +1277,60 @@
   margin-top: var(--space-4);
 }
 
+.quote-followup-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+}
+
+.quote-claim-card {
+  display: grid;
+  gap: 0.8rem;
+  margin-top: var(--space-4);
+  padding: 0.95rem;
+  border: 1px solid rgba(209, 164, 74, 0.34);
+  border-radius: var(--radius-sm);
+  background:
+    linear-gradient(165deg, rgba(10, 10, 10, 0.86), rgba(4, 4, 4, 0.92)),
+    url('/boxbackground.png') center center / 100% 100% no-repeat;
+}
+
+.quote-claim-head {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.quote-claim-head h4,
+.quote-claim-hint {
+  margin: 0;
+}
+
+.quote-claim-form {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.quote-claim-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.quote-claim-contact-label {
+  min-width: 0;
+}
+
+.quote-claim-hint {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+
+.quote-claim-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+}
+
 @media (max-width: 1180px) {
   .services-hub-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1437,6 +1491,10 @@
 
   .gallery-stage-shell {
     min-height: auto;
+  }
+
+  .quote-claim-grid {
+    grid-template-columns: 1fr;
   }
 }
 

@@ -18,3 +18,4 @@
 - 2026-03-24 21:24 | Quote Photo Attachments For Public And Web-v2 Intake | Plans/Quote Photo Attachments For Public And Web-v2 Intake.md
 - 2026-03-24 22:22 | Quote Multi Photo Preview And Thumbnail UX | Plans/Quote Multi Photo Preview And Thumbnail UX.md
 - 2026-03-26 18:15 | Guest Quote Private Preview Link And Follow Up Panel | Plans/Guest Quote Private Preview Link And Follow Up Panel.md
+- 2026-03-26 18:55 | Guest Quote Claim Handoff Between Quote Preview And Auth Account | Plans/Guest Quote Claim Handoff Between Quote Preview And Auth Account.md

@@ -36,6 +36,26 @@ let cachedClaimEmailTransporter;
 
 const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
 const normalizePhone = (value) => String(value || '').trim();
+const maskEmailForPreview = (value) => {
+  const normalized = normalizeEmail(value);
+  if (!normalized.includes('@')) return '';
+  const [localPart, domainPart] = normalized.split('@');
+  const [domainLabel = '', ...domainRest] = domainPart.split('.');
+  const maskedLocal = localPart.length <= 2
+    ? `${localPart[0] || ''}*`
+    : `${localPart.slice(0, 2)}***`;
+  const maskedDomainLabel = domainLabel.length <= 1
+    ? `${domainLabel || ''}*`
+    : `${domainLabel[0]}***`;
+  return `${maskedLocal}@${maskedDomainLabel}${domainRest.length ? `.${domainRest.join('.')}` : ''}`;
+};
+const maskPhoneForPreview = (value) => {
+  const normalized = normalizePhone(value);
+  if (!normalized) return '';
+  const prefix = normalized.slice(0, Math.min(4, normalized.length));
+  const suffix = normalized.length > 2 ? normalized.slice(-2) : '';
+  return `${prefix}${normalized.length > prefix.length + suffix.length ? '***' : ''}${suffix}`;
+};
 const logNonBlockingQuoteFailure = (scope, error, meta = {}) => {
   console.warn('Non-blocking quote guest side effect failed:', {
     scope,
@@ -358,7 +378,7 @@ router.get('/guest/:publicToken', [param('publicToken').isLength({ min: 16 })], 
       publicToken: req.params.publicToken,
       isGuest: true
     },
-    attributes: ['id', 'projectType', 'location', 'status', 'workflowStatus', 'priority', 'createdAt', 'updatedAt', 'submittedAt', 'assignedAt', 'convertedAt', 'closedAt'],
+    attributes: ['id', 'projectType', 'location', 'status', 'workflowStatus', 'priority', 'createdAt', 'updatedAt', 'submittedAt', 'assignedAt', 'convertedAt', 'closedAt', 'guestEmail', 'guestPhone'],
     include: [{
       model: QuoteAttachment,
       as: 'attachments',
@@ -374,11 +394,23 @@ router.get('/guest/:publicToken', [param('publicToken').isLength({ min: 16 })], 
   }
 
   const plainQuote = typeof quote.toJSON === 'function' ? quote.toJSON() : { ...(quote || {}) };
+  const claimChannels = [
+    plainQuote.guestEmail ? 'email' : null,
+    plainQuote.guestPhone ? 'phone' : null
+  ].filter(Boolean);
+  const maskedGuestEmail = maskEmailForPreview(plainQuote.guestEmail);
+  const maskedGuestPhone = maskPhoneForPreview(plainQuote.guestPhone);
   const attachments = sortQuoteAttachments(plainQuote.attachments || []).map(toQuoteAttachmentSummary);
+  delete plainQuote.guestEmail;
+  delete plainQuote.guestPhone;
 
   return res.json({
     quote: {
       ...plainQuote,
+      canClaim: Boolean(claimChannels.length),
+      claimChannels,
+      maskedGuestEmail: maskedGuestEmail || null,
+      maskedGuestPhone: maskedGuestPhone || null,
       attachments,
       attachmentCount: attachments.length
     }
@@ -461,8 +493,10 @@ router.post(
 
     return res.json({
       message: 'Claim verification code sent',
+      quoteId: quote.id,
       claimToken: token,
       channel,
+      maskedTarget: channel === 'email' ? maskEmailForPreview(target) : maskPhoneForPreview(target),
       expiresAt
     });
   })

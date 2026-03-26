@@ -3,6 +3,8 @@
   const brand = globalThis.LEVEL_LINES_BRAND || null;
   const TOKEN_KEY = runtime.TOKEN_KEY || 'll_auth_token';
   const USER_KEY = runtime.USER_KEY || 'll_auth_user';
+  const QUOTE_CLAIM_STORAGE_KEY = 'll_quote_claim_pending';
+  const DEFAULT_QUOTE_WORKSPACE_PATH = '/client-dashboard.html';
 
   const loginForm = document.getElementById('login-form');
   const registerForm = document.getElementById('register-form');
@@ -20,6 +22,12 @@
   const quickAccessLinks = document.getElementById('auth-quick-access-links');
   const quickAccessRole = document.getElementById('auth-quick-access-role');
   const guestGrid = document.getElementById('auth-guest-grid');
+  const quoteClaimPanel = document.getElementById('auth-quote-claim-panel');
+  const quoteClaimSummary = document.getElementById('auth-quote-claim-summary');
+  const quoteClaimGuestCopy = document.getElementById('auth-quote-claim-guest-copy');
+  const quoteClaimForm = document.getElementById('auth-quote-claim-form');
+  const quoteClaimStatus = document.getElementById('auth-quote-claim-status');
+  const quoteClaimReturn = document.getElementById('auth-quote-claim-return');
 
   if (
     !loginForm ||
@@ -34,7 +42,13 @@
     !accountRole ||
     !logoutButton ||
     !accountPanel ||
-    !guestGrid
+    !guestGrid ||
+    !quoteClaimPanel ||
+    !quoteClaimSummary ||
+    !quoteClaimGuestCopy ||
+    !quoteClaimForm ||
+    !quoteClaimStatus ||
+    !quoteClaimReturn
   ) {
     return;
   }
@@ -52,12 +66,8 @@
     return brand?.roleProfiles?.[role] || null;
   };
 
-  const dashboardPathForRole = (roleRaw) => {
-    return getRoleProfile(roleRaw)?.accountPath || '/auth.html';
-  };
-
-  const resolveNextPath = () => {
-    const raw = new URLSearchParams(globalThis.location.search).get('next');
+  const sanitizeInternalPath = (value) => {
+    const raw = String(value || '').trim();
     if (!raw) return '';
     if (!raw.startsWith('/')) return '';
     if (raw.startsWith('//')) return '';
@@ -65,8 +75,29 @@
     return raw;
   };
 
+  const dashboardPathForRole = (roleRaw) => {
+    return getRoleProfile(roleRaw)?.accountPath || '/auth.html';
+  };
+
+  const resolveNextPath = () => {
+    return sanitizeInternalPath(new URLSearchParams(globalThis.location.search).get('next'));
+  };
+
   const humanRole = (roleRaw) => {
     return getRoleProfile(roleRaw)?.label || 'User';
+  };
+  const humanChannel = (value) => (String(value || '').toLowerCase() === 'phone' ? 'phone' : 'email');
+  const formatTimestamp = (value) => {
+    const timestamp = Date.parse(String(value || ''));
+    if (!Number.isFinite(timestamp)) return '';
+    try {
+      return new Intl.DateTimeFormat('en-GB', {
+        dateStyle: 'medium',
+        timeStyle: 'short'
+      }).format(new Date(timestamp));
+    } catch (_error) {
+      return new Date(timestamp).toLocaleString();
+    }
   };
 
   const getManagerQuickAccessOptions = () => Array.isArray(brand?.managerQuickAccess) ? brand.managerQuickAccess : [];
@@ -133,6 +164,26 @@
   });
 
   const getToken = () => localStorage.getItem(TOKEN_KEY) || '';
+  const getPendingQuoteClaim = () => {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(QUOTE_CLAIM_STORAGE_KEY) || 'null');
+      return parsed && typeof parsed === 'object' ? parsed : null;
+    } catch {
+      return null;
+    }
+  };
+  const clearPendingQuoteClaim = () => {
+    localStorage.removeItem(QUOTE_CLAIM_STORAGE_KEY);
+    globalThis.dispatchEvent(new Event('ll:quote-claim-changed'));
+  };
+  const isPendingQuoteClaimActive = (pendingClaim) => {
+    const expiresAt = Date.parse(String(pendingClaim?.expiresAt || ''));
+    return Boolean(pendingClaim?.quoteId && pendingClaim?.claimToken && Number.isFinite(expiresAt) && expiresAt > Date.now());
+  };
+  const getQuoteClaimPreviewPath = (pendingClaim) => sanitizeInternalPath(pendingClaim?.previewUrl) || '/quote.html';
+  const getQuoteClaimWorkspacePath = (pendingClaim) =>
+    sanitizeInternalPath(pendingClaim?.workspacePath) || DEFAULT_QUOTE_WORKSPACE_PATH;
+  const hasActivePendingQuoteClaim = () => isPendingQuoteClaimActive(getPendingQuoteClaim());
 
   const fetchJson = async (url, options = {}) => {
     const response = await fetch(url, options);
@@ -157,6 +208,45 @@
     if (companyInput) companyInput.value = user.companyName || '';
   };
 
+  const renderQuoteClaimPanel = (user) => {
+    const pendingClaim = getPendingQuoteClaim();
+    if (!pendingClaim?.quoteId || !pendingClaim?.claimToken) {
+      quoteClaimPanel.hidden = true;
+      setStatus(quoteClaimStatus, '');
+      return;
+    }
+
+    const isActive = isPendingQuoteClaimActive(pendingClaim);
+    const channel = humanChannel(pendingClaim.channel);
+    const targetSuffix = pendingClaim.maskedTarget ? ` to ${pendingClaim.maskedTarget}` : '';
+    const expiryLabel = formatTimestamp(pendingClaim.expiresAt);
+
+    quoteClaimPanel.hidden = false;
+    quoteClaimReturn.href = getQuoteClaimPreviewPath(pendingClaim);
+    quoteClaimReturn.hidden = !quoteClaimReturn.href;
+    quoteClaimSummary.textContent = isActive
+      ? `Quote ${pendingClaim.quoteId} is waiting to be claimed. A 6-digit code was sent via ${channel}${targetSuffix}${expiryLabel ? ` and expires at ${expiryLabel}.` : '.'}`
+      : `The saved claim code for quote ${pendingClaim.quoteId} has expired. Return to the private quote link and request a new code.`;
+
+    if (user?.email && isActive) {
+      quoteClaimGuestCopy.hidden = true;
+      quoteClaimForm.hidden = false;
+      setStatus(quoteClaimStatus, '');
+      return;
+    }
+
+    quoteClaimForm.hidden = true;
+    quoteClaimGuestCopy.hidden = false;
+    quoteClaimGuestCopy.textContent = user?.email
+      ? 'This saved claim code expired. Return to the private quote link and request a new code, then come back here to finish claiming the quote.'
+      : 'Login or create an account below, then this panel will switch to code confirmation automatically.';
+    if (!isActive) {
+      setStatus(quoteClaimStatus, 'Saved quote claim code expired. Request a new one from the private quote link.', 'error');
+    } else {
+      setStatus(quoteClaimStatus, '');
+    }
+  };
+
   const renderSession = (user) => {
     if (user?.email) {
       const role = String(user.role || '').toLowerCase();
@@ -168,6 +258,7 @@
       accountPanel.hidden = false;
       fillProfileForm(user);
       renderQuickAccess(user);
+      renderQuoteClaimPanel(user);
       return;
     }
 
@@ -177,6 +268,7 @@
     guestGrid.hidden = false;
     accountPanel.hidden = true;
     renderQuickAccess(null);
+    renderQuoteClaimPanel(null);
   };
 
   const syncSession = async () => {
@@ -238,9 +330,14 @@
 
       saveSession(payload.token, payload.user);
       renderSession(payload.user);
-      setStatus(loginStatus, 'Login successful. Redirecting to your account...', 'success');
       loginForm.reset();
-      redirectAfterLogin(payload.user);
+      if (hasActivePendingQuoteClaim()) {
+        setStatus(loginStatus, 'Login successful. Enter the 6-digit quote claim code below to finish linking your enquiry.', 'success');
+        quoteClaimForm.elements.namedItem('claimCode')?.focus();
+      } else {
+        setStatus(loginStatus, 'Login successful. Redirecting to your account...', 'success');
+        redirectAfterLogin(payload.user);
+      }
     } catch (error) {
       setStatus(loginStatus, error.message || 'Login failed.', 'error');
     }
@@ -286,9 +383,14 @@
 
       saveSession(payload.token, payload.user);
       renderSession(payload.user);
-      setStatus(registerStatus, 'Account created. Redirecting to your account...', 'success');
       registerForm.reset();
-      redirectAfterLogin(payload.user);
+      if (hasActivePendingQuoteClaim()) {
+        setStatus(registerStatus, 'Account created. Enter the 6-digit quote claim code below to finish linking your enquiry.', 'success');
+        quoteClaimForm.elements.namedItem('claimCode')?.focus();
+      } else {
+        setStatus(registerStatus, 'Account created. Redirecting to your account...', 'success');
+        redirectAfterLogin(payload.user);
+      }
     } catch (error) {
       setStatus(registerStatus, error.message || 'Registration failed.', 'error');
     }
@@ -379,6 +481,65 @@
       setStatus(passwordStatus, 'Password changed successfully.', 'success');
     } catch (error) {
       setStatus(passwordStatus, error.message || 'Could not change password.', 'error');
+    }
+  });
+
+  quoteClaimForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    const token = getToken();
+    if (!token) {
+      setStatus(quoteClaimStatus, 'Please login or register first.', 'error');
+      return;
+    }
+
+    const pendingClaim = getPendingQuoteClaim();
+    if (!pendingClaim?.quoteId || !pendingClaim?.claimToken) {
+      quoteClaimPanel.hidden = true;
+      setStatus(quoteClaimStatus, '');
+      return;
+    }
+
+    if (!isPendingQuoteClaimActive(pendingClaim)) {
+      renderQuoteClaimPanel(getSavedUser());
+      return;
+    }
+
+    const formData = new FormData(quoteClaimForm);
+    const claimCode = String(formData.get('claimCode') || '').trim();
+    if (!/^\d{6}$/.test(claimCode)) {
+      setStatus(quoteClaimStatus, 'Enter the 6-digit claim code we sent for this quote.', 'error');
+      return;
+    }
+
+    setStatus(quoteClaimStatus, 'Confirming quote claim...', 'loading');
+
+    try {
+      const response = await fetchJson(`/api/quotes/guest/${encodeURIComponent(pendingClaim.quoteId)}/claim/confirm`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          claimToken: pendingClaim.claimToken,
+          claimCode
+        })
+      });
+
+      clearPendingQuoteClaim();
+      quoteClaimForm.reset();
+      quoteClaimForm.hidden = true;
+      quoteClaimGuestCopy.hidden = true;
+      quoteClaimReturn.hidden = true;
+      quoteClaimSummary.textContent = `Quote ${response.quoteId || pendingClaim.quoteId} is now linked to your account. Opening the quotes workspace...`;
+      setStatus(quoteClaimStatus, 'Quote claimed successfully. Redirecting to your quotes workspace...', 'success');
+
+      globalThis.setTimeout(() => {
+        globalThis.location.assign(getQuoteClaimWorkspacePath(pendingClaim));
+      }, 400);
+    } catch (error) {
+      setStatus(quoteClaimStatus, error.message || 'Could not confirm the quote claim.', 'error');
     }
   });
 

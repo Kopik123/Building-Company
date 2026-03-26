@@ -1,9 +1,14 @@
 (() => {
+  const runtime = globalThis.LevelLinesRuntime || {};
   const forms = document.querySelectorAll('.quote-form');
   if (!forms.length) return;
   const MAX_QUOTE_PHOTOS = 8;
   const EMPTY_FILES_STATUS_TEXT = 'Optional: attach up to 8 reference photos.';
   const QUOTE_PREVIEW_QUERY_KEY = 'quote';
+  const QUOTE_CLAIM_STORAGE_KEY = 'll_quote_claim_pending';
+  const QUOTE_WORKSPACE_PATH = '/client-dashboard.html';
+  const TOKEN_KEY = runtime.TOKEN_KEY || 'll_auth_token';
+  const USER_KEY = runtime.USER_KEY || 'll_auth_user';
   const previewUrlsByForm = new WeakMap();
   const quotePreviewToken = new URLSearchParams(window.location.search).get(QUOTE_PREVIEW_QUERY_KEY);
   let quotePreviewRequest;
@@ -77,6 +82,45 @@
     String(value || '')
       .replace(/[_-]+/g, ' ')
       .replace(/\b\w/g, (character) => character.toUpperCase());
+  const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
+  const normalizePhone = (value) => String(value || '').trim();
+  const setStatus = (node, message = '', type = '') => {
+    if (!node) return;
+    node.className = 'form-status';
+    if (type === 'success') node.classList.add('is-success');
+    if (type === 'error') node.classList.add('is-error');
+    if (type === 'loading') node.classList.add('is-loading');
+    node.textContent = message;
+  };
+  const getSavedUser = () => {
+    try {
+      return JSON.parse(localStorage.getItem(USER_KEY) || 'null');
+    } catch {
+      return null;
+    }
+  };
+  const hasSessionToken = () => Boolean(localStorage.getItem(TOKEN_KEY));
+  const getPendingQuoteClaim = () => {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(QUOTE_CLAIM_STORAGE_KEY) || 'null');
+      return parsed && typeof parsed === 'object' ? parsed : null;
+    } catch {
+      return null;
+    }
+  };
+  const savePendingQuoteClaim = (payload) => {
+    localStorage.setItem(QUOTE_CLAIM_STORAGE_KEY, JSON.stringify(payload || {}));
+    globalThis.dispatchEvent(new Event('ll:quote-claim-changed'));
+  };
+  const isPendingQuoteClaimActive = (pendingClaim) => {
+    const expiresAt = Date.parse(String(pendingClaim?.expiresAt || ''));
+    return Boolean(pendingClaim?.quoteId && pendingClaim?.claimToken && Number.isFinite(expiresAt) && expiresAt > Date.now());
+  };
+  const buildAuthClaimUrl = () => {
+    const authUrl = new URL('/auth.html', window.location.origin);
+    authUrl.searchParams.set('next', QUOTE_WORKSPACE_PATH);
+    return `${authUrl.pathname}${authUrl.search}`;
+  };
 
   const buildQuotePreviewUrl = (form, publicToken) => {
     const currentUrl = new URL(window.location.href);
@@ -176,6 +220,12 @@
       workflowStatus: quote.workflowStatus || payload?.workflowStatus || '',
       priority: quote.priority || payload?.priority || '',
       attachmentCount: Number(quote.attachmentCount ?? payload?.attachmentCount ?? attachments.length) || 0,
+      canClaim: Boolean(quote.canClaim ?? payload?.canClaim ?? true),
+      claimChannels: Array.isArray(quote.claimChannels)
+        ? quote.claimChannels.filter(Boolean)
+        : (Array.isArray(payload?.claimChannels) ? payload.claimChannels.filter(Boolean) : []),
+      maskedGuestEmail: quote.maskedGuestEmail || payload?.maskedGuestEmail || '',
+      maskedGuestPhone: quote.maskedGuestPhone || payload?.maskedGuestPhone || '',
       attachments,
       createdAt: quote.createdAt || payload?.createdAt || '',
       updatedAt: quote.updatedAt || payload?.updatedAt || '',
@@ -199,7 +249,222 @@
     return normalizeQuotePreviewPayload(responsePayload, publicToken);
   };
 
-  const renderQuoteFollowup = (form, preview) => {
+  const buildClaimContactHint = (preview, channel) => {
+    if (channel === 'email') {
+      return preview.maskedGuestEmail
+        ? `Use the same email used for this quote (${preview.maskedGuestEmail}).`
+        : 'Use the same email used for this quote.';
+    }
+
+    return preview.maskedGuestPhone
+      ? `Use the same phone used for this quote (${preview.maskedGuestPhone}).`
+      : 'Use the same phone used for this quote.';
+  };
+
+  const createQuoteClaimPanel = ({ preview, previewUrl, guestEmail = '', guestPhone = '' }) => {
+    const availableChannels = [...new Set([
+      ...(Array.isArray(preview.claimChannels) ? preview.claimChannels : []),
+      guestEmail ? 'email' : null,
+      guestPhone ? 'phone' : null
+    ].filter(Boolean))];
+
+    if (!preview.canClaim || !preview.quoteId || !availableChannels.length) {
+      return null;
+    }
+
+    const currentUser = getSavedUser();
+    const pendingClaim = getPendingQuoteClaim();
+    const hasActivePendingClaim = pendingClaim?.quoteId === preview.quoteId && isPendingQuoteClaimActive(pendingClaim);
+    const wrapper = document.createElement('section');
+    wrapper.className = 'quote-claim-card';
+
+    const heading = document.createElement('div');
+    heading.className = 'quote-claim-head';
+
+    const eyebrow = document.createElement('p');
+    eyebrow.className = 'section-eyebrow section-eyebrow--compact';
+    eyebrow.textContent = 'Claim Quote';
+
+    const title = document.createElement('h4');
+    title.textContent = 'Link this private quote to your account.';
+
+    const intro = document.createElement('p');
+    intro.className = 'page-aside-copy';
+    intro.textContent = 'We send a 6-digit code to the same contact you used for this quote. After login or registration, confirm the code in your account.';
+
+    heading.appendChild(eyebrow);
+    heading.appendChild(title);
+    heading.appendChild(intro);
+
+    const form = document.createElement('form');
+    form.className = 'quote-claim-form';
+    form.noValidate = true;
+
+    const controls = document.createElement('div');
+    controls.className = 'quote-claim-grid';
+
+    const channelLabel = document.createElement('label');
+    channelLabel.textContent = 'Delivery channel';
+    const channelSelect = document.createElement('select');
+    channelSelect.name = 'channel';
+    availableChannels.forEach((channel) => {
+      const option = document.createElement('option');
+      option.value = channel;
+      option.textContent = channel === 'email' ? 'Email' : 'Phone';
+      channelSelect.appendChild(option);
+    });
+    channelLabel.appendChild(channelSelect);
+
+    const contactLabel = document.createElement('label');
+    contactLabel.className = 'quote-claim-contact-label';
+    const contactLabelText = document.createElement('span');
+    contactLabelText.textContent = 'Quote email';
+    const contactInput = document.createElement('input');
+    contactInput.required = true;
+    contactLabel.appendChild(contactLabelText);
+    contactLabel.appendChild(contactInput);
+
+    controls.appendChild(channelLabel);
+    controls.appendChild(contactLabel);
+
+    const hint = document.createElement('p');
+    hint.className = 'quote-claim-hint';
+
+    const actionRow = document.createElement('div');
+    actionRow.className = 'quote-claim-actions';
+
+    const requestButton = document.createElement('button');
+    requestButton.type = 'submit';
+    requestButton.className = 'btn-outline-gold';
+    requestButton.textContent = hasActivePendingClaim ? 'Send new claim code' : 'Send claim code';
+
+    const accountLink = document.createElement('a');
+    accountLink.className = 'btn-outline-gold';
+    accountLink.href = buildAuthClaimUrl();
+    accountLink.textContent = currentUser?.email || hasSessionToken()
+      ? 'Open account to confirm code'
+      : 'Login or register to confirm';
+
+    actionRow.appendChild(requestButton);
+    actionRow.appendChild(accountLink);
+
+    const status = document.createElement('p');
+    status.className = 'form-status';
+
+    const syncClaimField = () => {
+      const channel = channelSelect.value === 'phone' ? 'phone' : 'email';
+      if (channel === 'phone') {
+        contactLabelText.textContent = 'Quote phone';
+        contactInput.type = 'tel';
+        contactInput.name = 'guestPhone';
+        contactInput.autocomplete = 'tel';
+        contactInput.inputMode = 'tel';
+        contactInput.value = guestPhone || '';
+      } else {
+        contactLabelText.textContent = 'Quote email';
+        contactInput.type = 'email';
+        contactInput.name = 'guestEmail';
+        contactInput.autocomplete = 'email';
+        contactInput.inputMode = 'email';
+        contactInput.value = guestEmail || '';
+      }
+      contactInput.placeholder = buildClaimContactHint(preview, channel);
+      hint.textContent = buildClaimContactHint(preview, channel);
+    };
+
+    if (hasActivePendingClaim && pendingClaim.channel && availableChannels.includes(pendingClaim.channel)) {
+      channelSelect.value = pendingClaim.channel;
+    }
+    if (availableChannels.length === 1) {
+      channelLabel.hidden = true;
+    }
+    syncClaimField();
+
+    if (hasActivePendingClaim) {
+      const pendingChannelLabel = humanizeToken(pendingClaim.channel);
+      const pendingTarget = pendingClaim.maskedTarget ? ` to ${pendingClaim.maskedTarget}` : '';
+      setStatus(
+        status,
+        `A claim code is already active for this quote. Check your ${pendingChannelLabel.toLowerCase()}${pendingTarget} and confirm it in your account before ${formatTimestamp(pendingClaim.expiresAt)}.`,
+        'success'
+      );
+    }
+
+    channelSelect.addEventListener('change', () => {
+      syncClaimField();
+      setStatus(status, '');
+    });
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const channel = channelSelect.value === 'phone' ? 'phone' : 'email';
+      const contactValue = channel === 'phone'
+        ? normalizePhone(contactInput.value)
+        : normalizeEmail(contactInput.value);
+
+      if (!contactValue) {
+        setStatus(
+          status,
+          channel === 'phone' ? 'Enter the phone number used for this quote.' : 'Enter the email used for this quote.',
+          'error'
+        );
+        return;
+      }
+
+      requestButton.disabled = true;
+      setStatus(status, 'Sending claim code...', 'loading');
+
+      try {
+        const response = await fetch(`/api/quotes/guest/${encodeURIComponent(preview.quoteId)}/claim/request`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json'
+          },
+          body: JSON.stringify(channel === 'phone'
+            ? { channel, guestPhone: contactValue }
+            : { channel, guestEmail: contactValue })
+        });
+        const responsePayload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(responsePayload.error || 'Could not send the quote claim code.');
+        }
+
+        const maskedTarget = responsePayload.maskedTarget || (channel === 'phone' ? preview.maskedGuestPhone : preview.maskedGuestEmail) || '';
+        savePendingQuoteClaim({
+          quoteId: preview.quoteId,
+          claimToken: responsePayload.claimToken || '',
+          channel,
+          maskedTarget,
+          expiresAt: responsePayload.expiresAt || '',
+          previewUrl: previewUrl || '',
+          workspacePath: QUOTE_WORKSPACE_PATH,
+          publicToken: preview.publicToken || ''
+        });
+
+        setStatus(
+          status,
+          `Claim code sent via ${channel}. ${maskedTarget ? `Target: ${maskedTarget}. ` : ''}Open your account and confirm the 6-digit code before ${formatTimestamp(responsePayload.expiresAt)}.`,
+          'success'
+        );
+        accountLink.textContent = 'Open account to confirm code';
+      } catch (error) {
+        setStatus(status, error.message || 'Could not send the quote claim code.', 'error');
+      } finally {
+        requestButton.disabled = false;
+      }
+    });
+
+    form.appendChild(controls);
+    form.appendChild(hint);
+    form.appendChild(actionRow);
+    form.appendChild(status);
+    wrapper.appendChild(heading);
+    wrapper.appendChild(form);
+    return wrapper;
+  };
+
+  const renderQuoteFollowup = (form, preview, options = {}) => {
     const panel = form.querySelector('[data-quote-followup]');
     if (!panel) return;
 
@@ -247,19 +512,32 @@
 
     if (actions) {
       actions.textContent = '';
+      const primaryActions = document.createElement('div');
+      primaryActions.className = 'quote-followup-actions-row';
       if (previewUrl) {
         const previewLink = document.createElement('a');
         previewLink.className = 'btn-outline-gold';
         previewLink.href = previewUrl;
         previewLink.textContent = 'Open private quote link';
-        actions.appendChild(previewLink);
+        primaryActions.appendChild(previewLink);
       }
 
       const authLink = document.createElement('a');
       authLink.className = 'btn-outline-gold';
-      authLink.href = '/auth.html';
-      authLink.textContent = 'Sign in to claim later';
-      actions.appendChild(authLink);
+      authLink.href = buildAuthClaimUrl();
+      authLink.textContent = hasSessionToken() ? 'Open account' : 'Login or register';
+      primaryActions.appendChild(authLink);
+      actions.appendChild(primaryActions);
+
+      const claimPanel = createQuoteClaimPanel({
+        preview,
+        previewUrl,
+        guestEmail: normalizeEmail(options.guestEmail),
+        guestPhone: normalizePhone(options.guestPhone)
+      });
+      if (claimPanel) {
+        actions.appendChild(claimPanel);
+      }
     }
 
     panel.hidden = false;
@@ -552,7 +830,10 @@
             submittedAt: new Date().toISOString()
           }
         }, responsePayload.publicToken || '');
-        renderQuoteFollowup(form, previewPayload);
+        renderQuoteFollowup(form, previewPayload, {
+          guestEmail,
+          guestPhone
+        });
         if (responsePayload.publicToken) {
           const nextUrl = buildQuotePreviewUrl(form, responsePayload.publicToken);
           window.history.replaceState({}, '', nextUrl);

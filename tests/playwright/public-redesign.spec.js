@@ -21,6 +21,10 @@ const createGuestQuotePreviewPayload = () => ({
     status: 'pending',
     workflowStatus: 'submitted',
     priority: 'medium',
+    canClaim: true,
+    claimChannels: ['email', 'phone'],
+    maskedGuestEmail: 'gu***@e***.com',
+    maskedGuestPhone: '0739***87',
     attachmentCount: 2,
     submittedAt: '2026-03-24T21:30:00Z',
     attachments: quotePhotoFixtures.map((file, index) => ({
@@ -313,7 +317,7 @@ test('quote page shows a private guest quote preview after submit and from the s
   await quoteForm.locator('input[type="file"][name="files"]').setInputFiles(quotePhotoFixtures);
   await page.getByRole('button', { name: /send enquiry/i }).click();
 
-  await expect(quoteForm.locator('.form-status')).toContainText(/request sent with 2 photo\(s\)\. reference: quote-preview-1\./i);
+  await expect(quoteForm.locator('.form-status').first()).toContainText(/request sent with 2 photo\(s\)\. reference: quote-preview-1\./i);
   await expect(quoteForm.locator('[data-quote-followup]')).toBeVisible();
   await expect(quoteForm.locator('[data-quote-followup-title]')).toContainText(/quote status: submitted/i);
   await expect(quoteForm.locator('[data-quote-followup-meta]')).toContainText(/quote-preview-1/i);
@@ -326,6 +330,106 @@ test('quote page shows a private guest quote preview after submit and from the s
   await expect(restoredQuoteForm.locator('[data-quote-followup]')).toBeVisible();
   await expect(restoredQuoteForm.locator('[data-quote-followup-title]')).toContainText(/quote status: submitted/i);
   await expect(restoredQuoteForm.locator('[data-quote-followup-attachments] .quote-file-preview-card')).toHaveCount(2);
+});
+
+test('guest quote claim handoff runs from the private quote panel into auth confirmation', async ({ page }) => {
+  const claimPreviewPayload = createGuestQuotePreviewPayload();
+
+  await page.route('**/api/quotes/guest/guest-preview-token', async (route) => {
+    await route.fulfill({
+      json: claimPreviewPayload
+    });
+  });
+
+  await page.route('**/api/quotes/guest/quote-preview-1/claim/request', async (route) => {
+    const body = route.request().postDataJSON();
+    expect(body).toEqual({
+      channel: 'email',
+      guestEmail: 'guest@example.com'
+    });
+
+    await route.fulfill({
+      json: {
+        message: 'Claim verification code sent',
+        quoteId: 'quote-preview-1',
+        claimToken: 'claim-token-1',
+        channel: 'email',
+        maskedTarget: 'gu***@e***.com',
+        expiresAt: '2026-03-26T19:00:00.000Z'
+      }
+    });
+  });
+
+  await page.route('**/api/auth/login', async (route) => {
+    await route.fulfill({
+      json: {
+        token: 'test-token',
+        user: {
+          id: 'client-1',
+          name: 'Marta Client',
+          email: 'client@example.com',
+          role: 'client'
+        }
+      }
+    });
+  });
+
+  await page.route('**/api/auth/me', async (route) => {
+    await route.fulfill({
+      json: {
+        user: {
+          id: 'client-1',
+          name: 'Marta Client',
+          email: 'client@example.com',
+          role: 'client'
+        }
+      }
+    });
+  });
+
+  await page.route('**/api/quotes/guest/quote-preview-1/claim/confirm', async (route) => {
+    const body = route.request().postDataJSON();
+    expect(body).toEqual({
+      claimToken: 'claim-token-1',
+      claimCode: '123456'
+    });
+    expect(route.request().headers().authorization).toBe('Bearer test-token');
+
+    await route.fulfill({
+      json: {
+        message: 'Quote claimed successfully',
+        quoteId: 'quote-preview-1',
+        clientId: 'client-1'
+      }
+    });
+  });
+
+  await page.goto('/quote.html?quote=guest-preview-token#quote-card');
+
+  const claimCard = page.locator('.quote-claim-card');
+  await expect(claimCard).toBeVisible();
+  await claimCard.locator('select[name="channel"]').selectOption('email');
+  await claimCard.locator('input[name="guestEmail"]').fill('guest@example.com');
+  await claimCard.getByRole('button', { name: /send claim code/i }).click();
+  await expect(claimCard.locator('.form-status')).toContainText(/claim code sent via email/i);
+
+  await claimCard.getByRole('link', { name: /open account to confirm code/i }).click();
+  await expect(page).toHaveURL(/\/auth\.html\?next=%2Fclient-dashboard\.html$/);
+  await expect(page.locator('#auth-quote-claim-panel')).toBeVisible();
+  await expect(page.locator('#auth-quote-claim-summary')).toContainText(/quote-preview-1/i);
+
+  await page.locator('#login-form input[name="email"]').fill('client@example.com');
+  await page.locator('#login-form input[name="password"]').fill('secret123');
+  await page.locator('#login-form button[type="submit"]').click();
+
+  await expect(page.locator('#login-status')).toContainText(/enter the 6-digit quote claim code below/i);
+  await expect(page.locator('#auth-quote-claim-form')).toBeVisible();
+
+  await page.locator('#auth-quote-claim-form input[name="claimCode"]').fill('123456');
+  await page.locator('#auth-quote-claim-form button[type="submit"]').click();
+
+  await expect(page.locator('#auth-quote-claim-status')).toContainText(/quote claimed successfully/i);
+  await expect(page).toHaveURL(/\/client-dashboard\.html$/);
 });
 
 test('authenticated public shell hides login-only controls and keeps one account route', async ({ page }) => {

@@ -11,9 +11,11 @@ const originalContactEnv = {
   SMTP_SECURE: process.env.SMTP_SECURE,
   SMTP_USER: process.env.SMTP_USER,
   SMTP_PASS: process.env.SMTP_PASS,
+  CLAIM_SMS_WEBHOOK_URL: process.env.CLAIM_SMS_WEBHOOK_URL,
   CONTACT_TO: process.env.CONTACT_TO,
   CONTACT_FROM: process.env.CONTACT_FROM
 };
+const originalFetch = global.fetch;
 
 const restoreContactEnv = () => {
   Object.entries(originalContactEnv).forEach(([key, value]) => {
@@ -140,6 +142,7 @@ const createGuestQuoteModelsStub = (overrides = {}) => {
 test.afterEach(() => {
   clearPublicCaches();
   restoreContactEnv();
+  global.fetch = originalFetch;
   mock.stopAll();
 });
 
@@ -477,6 +480,8 @@ test('legacy /api/quotes/guest/:publicToken returns private quote preview data w
               location: 'Manchester and the North West',
               status: 'pending',
               workflowStatus: 'submitted',
+              guestEmail: 'guest@example.com',
+              guestPhone: '07395448487',
               priority: 'medium',
               createdAt: '2026-03-24T21:30:00Z',
               updatedAt: '2026-03-24T21:45:00Z',
@@ -560,6 +565,105 @@ test('legacy /api/quotes/guest/:publicToken returns private quote preview data w
       mimeType: 'image/png'
     }
   ]);
+  assert.equal(response.body?.quote?.canClaim, true);
+  assert.deepEqual(response.body?.quote?.claimChannels, ['email', 'phone']);
+  assert.equal(response.body?.quote?.maskedGuestEmail, 'gu***@e***.com');
+  assert.equal(response.body?.quote?.maskedGuestPhone, '0739***87');
+});
+
+test('legacy /api/quotes/guest/:id/claim/request sends a claim code and returns a masked target hint', async () => {
+  const quoteId = '11111111-1111-4111-8111-111111111111';
+  let smsRequest = null;
+  const destroyedClaims = [];
+  const createdClaims = [];
+
+  process.env.CLAIM_SMS_WEBHOOK_URL = 'https://sms.example.test/send';
+  global.fetch = async (url, options = {}) => {
+    smsRequest = {
+      url,
+      options
+    };
+    return {
+      ok: true
+    };
+  };
+
+  mockModels({
+    sequelize: {
+      async transaction(handler) {
+        return handler({ id: 'test-transaction' });
+      }
+    },
+    Quote: {
+      async findOne({ where }) {
+        assert.equal(where?.id, quoteId);
+        assert.equal(where?.isGuest, true);
+        return {
+          id: quoteId,
+          isGuest: true,
+          guestEmail: 'guest@example.com',
+          guestPhone: '07395448487'
+        };
+      }
+    },
+    QuoteAttachment: {},
+    QuoteClaimToken: {
+      async destroy(payload) {
+        destroyedClaims.push(payload);
+      },
+      async create(payload) {
+        createdClaims.push(payload);
+        return payload;
+      },
+      async findOne() {
+        return null;
+      }
+    },
+    User: {
+      async findAll() {
+        return [];
+      },
+      async findByPk() {
+        return null;
+      }
+    },
+    Notification: {
+      async bulkCreate() {
+        return [];
+      }
+    },
+    QuoteEvent: {
+      async create() {
+        return null;
+      }
+    }
+  });
+
+  const quotesRouter = loadRoute('routes/quotes.js');
+  const app = buildExpressApp('/api/quotes', quotesRouter);
+
+  const response = await request(app)
+    .post(`/api/quotes/guest/${quoteId}/claim/request`)
+    .send({
+      channel: 'phone',
+      guestPhone: '07395448487'
+    })
+    .expect(200);
+
+  assert.equal(response.body?.message, 'Claim verification code sent');
+  assert.equal(response.body?.quoteId, quoteId);
+  assert.equal(response.body?.channel, 'phone');
+  assert.equal(response.body?.maskedTarget, '0739***87');
+  assert.match(String(response.body?.claimToken || ''), /^[a-f0-9]{48}$/);
+  assert.equal(destroyedClaims.length, 1);
+  assert.equal(createdClaims.length, 1);
+  assert.equal(createdClaims[0]?.quoteId, quoteId);
+  assert.equal(createdClaims[0]?.channel, 'phone');
+  assert.equal(createdClaims[0]?.target, '07395448487');
+  assert.match(String(createdClaims[0]?.token || ''), /^[a-f0-9]{48}$/);
+  assert.ok(smsRequest);
+  assert.equal(smsRequest.url, 'https://sms.example.test/send');
+  assert.match(String(smsRequest.options?.body || ''), /claim code/i);
 });
 
 test('legacy /api/quotes/guest still succeeds when quote side effects fail', async () => {
