@@ -11,6 +11,7 @@
   const USER_KEY = runtime.USER_KEY || 'll_auth_user';
   const previewUrlsByRoot = new WeakMap();
   const followupContextByForm = new WeakMap();
+  const selectedFilesByInput = new WeakMap();
   const quotePreviewToken = new URLSearchParams(window.location.search).get(QUOTE_PREVIEW_QUERY_KEY);
   let quotePreviewRequest;
 
@@ -53,10 +54,82 @@
     return 'other';
   };
 
-  const getFilesStatusText = (files) => {
-    if (!files.length) return EMPTY_FILES_STATUS_TEXT;
-    if (files.length === 1) return `${files[0].name} selected.`;
-    return `${files.length} photos selected.`;
+  const getFilesStatusText = (files, emptyText = EMPTY_FILES_STATUS_TEXT, suffix = '') => {
+    if (!files.length) return emptyText;
+    const base = files.length === 1 ? `${files[0].name} selected.` : `${files.length} photos selected.`;
+    return suffix ? `${base} ${suffix}` : base;
+  };
+
+  const buildFileFingerprint = (file) => [
+    String(file?.name || ''),
+    Number(file?.size || 0),
+    String(file?.type || ''),
+    Number(file?.lastModified || 0)
+  ].join('::');
+
+  const dedupeFiles = (files) => {
+    const fingerprints = new Set();
+    return (Array.isArray(files) ? files : []).filter((file) => {
+      const fingerprint = buildFileFingerprint(file);
+      if (!fingerprint || fingerprints.has(fingerprint)) {
+        return false;
+      }
+      fingerprints.add(fingerprint);
+      return true;
+    });
+  };
+
+  const syncNativeFileInput = (filesInput, files) => {
+    if (!(filesInput instanceof HTMLInputElement) || typeof DataTransfer === 'undefined') {
+      return;
+    }
+
+    const dataTransfer = new DataTransfer();
+    files.forEach((file) => dataTransfer.items.add(file));
+    filesInput.files = dataTransfer.files;
+  };
+
+  const getSelectedFiles = (filesInput) => {
+    const stored = selectedFilesByInput.get(filesInput);
+    if (Array.isArray(stored)) {
+      return [...stored];
+    }
+    return Array.from(filesInput?.files || []);
+  };
+
+  const setSelectedFiles = (filesInput, files) => {
+    const normalized = dedupeFiles(files);
+    if (filesInput) {
+      if (normalized.length) {
+        selectedFilesByInput.set(filesInput, normalized);
+      } else {
+        selectedFilesByInput.delete(filesInput);
+      }
+      syncNativeFileInput(filesInput, normalized);
+    }
+    return normalized;
+  };
+
+  const mergeSelectedFiles = (filesInput, incomingFiles, maxFiles = MAX_QUOTE_PHOTOS) => {
+    const merged = dedupeFiles([
+      ...getSelectedFiles(filesInput),
+      ...(Array.isArray(incomingFiles) ? incomingFiles : [])
+    ]);
+    const truncated = Number.isFinite(maxFiles) && merged.length > maxFiles;
+    const nextFiles = truncated ? merged.slice(0, maxFiles) : merged;
+    return {
+      files: setSelectedFiles(filesInput, nextFiles),
+      truncated
+    };
+  };
+
+  const clearSelectedFiles = (filesInput) => {
+    setSelectedFiles(filesInput, []);
+  };
+
+  const getFilesLimitSuffix = (maxFiles, truncated) => {
+    if (!truncated || !Number.isFinite(maxFiles)) return '';
+    return `Only the first ${maxFiles} photo${maxFiles === 1 ? '' : 's'} can be kept here.`;
   };
 
   const formatFileSize = (bytes) => {
@@ -627,22 +700,15 @@
   };
 
   const rebuildSelectedFiles = (filesInput, removeIndex) => {
-    if (!(filesInput instanceof HTMLInputElement) || typeof DataTransfer === 'undefined') {
+    if (!(filesInput instanceof HTMLInputElement)) {
       return false;
     }
 
-    const files = Array.from(filesInput.files || []);
+    const files = getSelectedFiles(filesInput);
     if (removeIndex < 0 || removeIndex >= files.length) {
       return false;
     }
-
-    const dataTransfer = new DataTransfer();
-    files.forEach((file, index) => {
-      if (index !== removeIndex) {
-        dataTransfer.items.add(file);
-      }
-    });
-    filesInput.files = dataTransfer.files;
+    setSelectedFiles(filesInput, files.filter((_file, index) => index !== removeIndex));
     return true;
   };
 
@@ -710,10 +776,10 @@
     previewUrlsByRoot.set(previewRoot, urls);
   };
 
-  const syncFilesUi = (filesInput, filesStatus, previewRoot) => {
-    const files = Array.from(filesInput?.files || []);
+  const syncFilesUi = (filesInput, filesStatus, previewRoot, options = {}) => {
+    const files = getSelectedFiles(filesInput);
     if (filesStatus) {
-      filesStatus.textContent = getFilesStatusText(files);
+      filesStatus.textContent = getFilesStatusText(files, options.emptyText, options.suffix);
     }
     renderFilesPreview(previewRoot, files);
   };
@@ -767,9 +833,10 @@
 
     const fileStatus = document.createElement('p');
     fileStatus.className = 'page-aside-copy';
-    fileStatus.textContent = remainingSlots > 0
+    const emptyFollowupFilesText = remainingSlots > 0
       ? `Optional: add up to ${remainingSlots} more photo${remainingSlots === 1 ? '' : 's'} here.`
       : `No more than ${MAX_QUOTE_PHOTOS} photos can be stored on one quote.`;
+    fileStatus.textContent = emptyFollowupFilesText;
 
     const previewRoot = document.createElement('div');
     previewRoot.className = 'quote-file-preview';
@@ -794,7 +861,11 @@
     }
 
     fileInput.addEventListener('change', () => {
-      syncFilesUi(fileInput, fileStatus, previewRoot);
+      const { truncated } = mergeSelectedFiles(fileInput, Array.from(fileInput.files || []), remainingSlots);
+      syncFilesUi(fileInput, fileStatus, previewRoot, {
+        emptyText: emptyFollowupFilesText,
+        suffix: getFilesLimitSuffix(remainingSlots, truncated)
+      });
       if (remainingSlots > 0 && status.textContent) {
         setStatus(status, '');
       }
@@ -806,13 +877,15 @@
       const removeIndex = Number(removeButton.getAttribute('data-quote-file-remove-index'));
       if (!Number.isInteger(removeIndex)) return;
       if (!rebuildSelectedFiles(fileInput, removeIndex)) return;
-      syncFilesUi(fileInput, fileStatus, previewRoot);
+      syncFilesUi(fileInput, fileStatus, previewRoot, {
+        emptyText: emptyFollowupFilesText
+      });
     });
 
     uploadForm.addEventListener('submit', async (event) => {
       event.preventDefault();
 
-      const files = Array.from(fileInput.files || []);
+      const files = getSelectedFiles(fileInput);
       if (!files.length) {
         setStatus(status, 'Attach at least one new photo before sending the update.', 'error');
         return;
@@ -910,7 +983,10 @@
     if (filesInput) {
       syncFilesUi(filesInput, filesStatus, filesPreview);
       filesInput.addEventListener('change', () => {
-        syncFilesUi(filesInput, filesStatus, filesPreview);
+        const { truncated } = mergeSelectedFiles(filesInput, Array.from(filesInput.files || []), MAX_QUOTE_PHOTOS);
+        syncFilesUi(filesInput, filesStatus, filesPreview, {
+          suffix: getFilesLimitSuffix(MAX_QUOTE_PHOTOS, truncated)
+        });
       });
     } else if (filesStatus) {
       filesStatus.textContent = EMPTY_FILES_STATUS_TEXT;
@@ -931,6 +1007,7 @@
       setTimeout(() => {
         applyProjectTypeContext(form);
         if (filesInput) {
+          clearSelectedFiles(filesInput);
           syncFilesUi(filesInput, filesStatus, filesPreview);
         } else if (filesStatus) {
           filesStatus.textContent = EMPTY_FILES_STATUS_TEXT;
@@ -951,7 +1028,7 @@
       const description = String(formData.get('message') || '').trim();
       const location = String(formData.get('location') || '').trim() || 'Greater Manchester';
       const postcode = String(formData.get('postcode') || '').trim();
-      const files = Array.from(filesInput?.files || []);
+      const files = getSelectedFiles(filesInput);
 
       status.className = 'form-status';
       status.textContent = '';

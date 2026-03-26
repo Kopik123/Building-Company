@@ -13,6 +13,13 @@ const quotePhotoFixtures = [
   }
 ];
 
+const expectPreviewImagesToLoad = async (locator, scheme = 'blob:') => {
+  await expect.poll(async () => locator.evaluateAll((images, expectedScheme) => images.every((image) => {
+    const source = image.currentSrc || image.getAttribute('src') || '';
+    return source.startsWith(expectedScheme) && image.complete && image.naturalWidth > 0;
+  }), scheme)).toBeTruthy();
+};
+
 const createGuestQuotePreviewPayload = () => ({
   quote: {
     id: 'quote-preview-1',
@@ -232,11 +239,14 @@ test('core brochure pages render about, services, gallery, contact and quote rou
   await expect(page.locator('form.js-quote-form input[type="file"][name="files"]')).toHaveAttribute('accept', /image\/\*/i);
   await expect(page.locator('[data-quote-files-status]')).toContainText(/attach up to 8 reference photos/i);
   await expect(page.locator('[data-quote-file-preview]')).toBeHidden();
-  await page.locator('form.js-quote-form input[type="file"][name="files"]').setInputFiles(quotePhotoFixtures);
+  const quoteFileInput = page.locator('form.js-quote-form input[type="file"][name="files"]');
+  await quoteFileInput.setInputFiles([quotePhotoFixtures[0]]);
+  await quoteFileInput.setInputFiles([quotePhotoFixtures[1]]);
   await expect(page.locator('[data-quote-files-status]')).toContainText(/2 photos selected/i);
   await expect(page.locator('[data-quote-file-preview]')).toBeVisible();
   await expect(page.locator('.quote-file-preview-card')).toHaveCount(2);
   await expect(page.locator('.quote-file-preview-thumb img')).toHaveCount(2);
+  await expectPreviewImagesToLoad(page.locator('.quote-file-preview-thumb img'));
   await expect(page.locator('.quote-file-preview-name').nth(0)).toContainText('quote-photo-1.png');
   await page.locator('.quote-file-preview-remove').nth(0).click();
   await expect(page.locator('[data-quote-files-status]')).toContainText(/quote-photo-2\.png selected\./i);
@@ -479,8 +489,11 @@ test('guest quote private preview lets the customer add more photos after submit
   const uploadCard = quoteForm.locator('.quote-followup-upload-card');
   await expect(uploadCard).toBeVisible();
   await expect(uploadCard).toContainText(/you can add 6 more photos/i);
-  await uploadCard.locator('input[type="file"][name="files"]').setInputFiles(quotePhotoFixtures);
+  const followupInput = uploadCard.locator('input[type="file"][name="files"]');
+  await followupInput.setInputFiles([quotePhotoFixtures[0]]);
+  await followupInput.setInputFiles([quotePhotoFixtures[1]]);
   await expect(uploadCard.locator('.quote-file-preview-card')).toHaveCount(2);
+  await expectPreviewImagesToLoad(uploadCard.locator('.quote-file-preview-thumb img'));
   await uploadCard.getByRole('button', { name: /add photos to quote/i }).click();
 
   await expect(uploadCard.locator('.form-status')).toContainText(/added 2 photos to your quote/i);
