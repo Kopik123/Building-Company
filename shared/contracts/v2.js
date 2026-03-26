@@ -43,6 +43,7 @@ const normalizeEstimateDecisionStatusValue = (value, fallback = ESTIMATE_DECISIO
 };
 
 const PROJECT_STATUSES = Object.freeze(['planning', 'in_progress', 'completed', 'on_hold']);
+const CLIENT_LIFECYCLE_STATUSES = Object.freeze(['lead', 'quoted', 'approved', 'active_project', 'completed', 'archived']);
 const QUOTE_STATUSES = Object.freeze(['pending', 'in_progress', 'responded', 'closed']);
 const QUOTE_PRIORITIES = Object.freeze(['low', 'medium', 'high']);
 const QUOTE_PROJECT_TYPES = Object.freeze(['bathroom', 'kitchen', 'interior', 'tiling', 'extension', 'joinery', 'rendering', 'decorating', 'other']);
@@ -51,6 +52,8 @@ const SERVICE_CATEGORIES = Object.freeze(['bathroom', 'kitchen', 'interior', 'ou
 const MATERIAL_CATEGORIES = Object.freeze(['tiles', 'plumbing', 'electrical', 'joinery', 'paint', 'hardware', 'other']);
 const STAFF_ROLES = Object.freeze(['employee', 'manager', 'admin']);
 const STAFF_CREATION_ROLES = Object.freeze(['employee', 'manager']);
+const ACTIVITY_ENTITY_TYPES = Object.freeze(['quote', 'estimate', 'project', 'crm_client']);
+const ACTIVITY_VISIBILITY = Object.freeze(['internal', 'client', 'public']);
 
 const toPlainObject = (value) => (value && typeof value === 'object' ? value : {});
 const toArray = (value) => (Array.isArray(value) ? value : []);
@@ -88,6 +91,8 @@ const userSummarySchema = z.object({
   role: nullableStringSchema,
   phone: nullableStringSchema,
   companyName: nullableStringSchema,
+  crmLifecycleStatus: z.enum(CLIENT_LIFECYCLE_STATUSES),
+  crmLifecycleUpdatedAt: nullableStringSchema,
   isActive: z.boolean(),
   createdAt: nullableStringSchema,
   updatedAt: nullableStringSchema
@@ -109,6 +114,10 @@ const normalizeUserSummary = (value) => {
     role: toNullableString(plain.role),
     phone: toNullableString(plain.phone),
     companyName: toNullableString(plain.companyName),
+    crmLifecycleStatus: CLIENT_LIFECYCLE_STATUSES.includes(toNullableString(plain.crmLifecycleStatus) || '')
+      ? plain.crmLifecycleStatus
+      : CLIENT_LIFECYCLE_STATUSES[0],
+    crmLifecycleUpdatedAt: toNullableString(plain.crmLifecycleUpdatedAt),
     isActive: toBoolean(plain.isActive, true),
     createdAt: toNullableString(plain.createdAt),
     updatedAt: toNullableString(plain.updatedAt)
@@ -282,6 +291,24 @@ const crmClientSchema = userSummarySchema.extend({
 
 const crmStaffMemberSchema = userSummarySchema.extend({
   role: z.enum(STAFF_ROLES)
+});
+
+const activityEventSchema = z.object({
+  id: z.string(),
+  actorUserId: nullableStringSchema,
+  entityType: z.enum(ACTIVITY_ENTITY_TYPES),
+  entityId: nullableStringSchema,
+  visibility: z.enum(ACTIVITY_VISIBILITY),
+  eventType: nullableStringSchema,
+  title: nullableStringSchema,
+  message: nullableStringSchema,
+  clientId: nullableStringSchema,
+  projectId: nullableStringSchema,
+  quoteId: nullableStringSchema,
+  createdAt: nullableStringSchema,
+  updatedAt: nullableStringSchema,
+  actor: userSummarySchema,
+  data: z.record(z.string(), z.any()).nullable()
 });
 
 const inventoryServiceSchema = z.object({
@@ -568,6 +595,27 @@ const normalizeCrmStaffMember = (value) => {
   };
 };
 
+const normalizeActivityEvent = (value) => {
+  const plain = toPlainObject(value);
+  return {
+    id: toStringOr(plain.id),
+    actorUserId: toNullableString(plain.actorUserId),
+    entityType: ACTIVITY_ENTITY_TYPES.includes(toNullableString(plain.entityType) || '') ? plain.entityType : ACTIVITY_ENTITY_TYPES[0],
+    entityId: toNullableString(plain.entityId),
+    visibility: ACTIVITY_VISIBILITY.includes(toNullableString(plain.visibility) || '') ? plain.visibility : ACTIVITY_VISIBILITY[0],
+    eventType: toNullableString(plain.eventType),
+    title: toNullableString(plain.title),
+    message: toNullableString(plain.message),
+    clientId: toNullableString(plain.clientId),
+    projectId: toNullableString(plain.projectId),
+    quoteId: toNullableString(plain.quoteId),
+    createdAt: toNullableString(plain.createdAt),
+    updatedAt: toNullableString(plain.updatedAt),
+    actor: normalizeUserSummary(plain.actor),
+    data: plain.data && typeof plain.data === 'object' ? plain.data : null
+  };
+};
+
 const normalizeInventoryService = (value) => {
   const plain = toPlainObject(value);
   return {
@@ -658,10 +706,13 @@ module.exports = {
   QUOTE_PROJECT_TYPES,
   QUOTE_CONTACT_METHODS,
   ESTIMATE_DECISION_STATUSES,
+  CLIENT_LIFECYCLE_STATUSES,
   SERVICE_CATEGORIES,
   MATERIAL_CATEGORIES,
   STAFF_ROLES,
   STAFF_CREATION_ROLES,
+  ACTIVITY_ENTITY_TYPES,
+  ACTIVITY_VISIBILITY,
   userSummarySchema,
   messageAttachmentSchema,
   threadMessageSchema,
@@ -674,6 +725,7 @@ module.exports = {
   notificationSchema,
   crmClientSchema,
   crmStaffMemberSchema,
+  activityEventSchema,
   inventoryServiceSchema,
   inventoryMaterialSchema,
   overviewMetricsSchema,
@@ -691,6 +743,7 @@ module.exports = {
   normalizeNotification,
   normalizeCrmClient,
   normalizeCrmStaffMember,
+  normalizeActivityEvent,
   normalizeInventoryService,
   normalizeInventoryMaterial,
   normalizeOverviewSummary,

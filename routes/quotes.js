@@ -17,6 +17,7 @@ const {
   Quote,
   QuoteAttachment,
   QuoteClaimToken,
+  ActivityEvent,
   User,
   Notification,
   QuoteEvent
@@ -24,6 +25,8 @@ const {
 const { auth } = require('../middleware/auth');
 const asyncHandler = require('../utils/asyncHandler');
 const { deriveLegacyQuoteStatus } = require('../utils/quoteWorkflow');
+const { advanceClientLifecycle } = require('../utils/crmLifecycle');
+const { createActivityEvent } = require('../utils/activityFeed');
 
 const router = express.Router();
 
@@ -379,6 +382,25 @@ router.post(
       }
     }
 
+    await createActivityEvent(ActivityEvent, {
+      actorUserId: null,
+      entityType: 'quote',
+      entityId: quote.id,
+      quoteId: quote.id,
+      clientId: null,
+      visibility: 'public',
+      eventType: 'quote_submitted',
+      title: 'Guest quote submitted',
+      message: attachments.length
+        ? `Guest submitted a quote with ${attachments.length} photo(s).`
+        : 'Guest submitted a quote.',
+      data: {
+        projectType,
+        location,
+        attachmentCount: attachments.length
+      }
+    }, 'legacy_guest_quote_submit_activity');
+
     // Notify all managers via internal notification
     const notificationTitle = `New quote request from ${guestName}`;
     const notificationBody = [
@@ -526,6 +548,24 @@ router.post(
         logNonBlockingQuoteFailure('quote_followup_attachment_event', error, { quoteId: plainQuote.id });
       }
     }
+
+    await createActivityEvent(ActivityEvent, {
+      actorUserId: null,
+      entityType: 'quote',
+      entityId: plainQuote.id,
+      quoteId: plainQuote.id,
+      clientId: null,
+      visibility: 'public',
+      eventType: 'quote_attachments_added',
+      title: 'Guest quote photos added',
+      message: attachments.length === 1
+        ? 'Guest added 1 more photo to the quote.'
+        : `Guest added ${attachments.length} more photos to the quote.`,
+      data: {
+        attachmentCount: attachments.length,
+        totalAttachmentCount: existingCount + attachments.length
+      }
+    }, 'legacy_guest_quote_attachment_activity');
 
     try {
       const managers = await User.findAll({ where: { role: { [Op.in]: ['manager', 'admin'] }, isActive: true } });
@@ -714,6 +754,7 @@ router.post(
       clientId: req.user.id,
       publicToken: null
     });
+    await advanceClientLifecycle(req.user, 'quoted');
 
     if (typeof QuoteEvent?.create === 'function') {
       await QuoteEvent.create({
@@ -727,6 +768,21 @@ router.post(
         }
       });
     }
+
+    await createActivityEvent(ActivityEvent, {
+      actorUserId: req.user.id,
+      entityType: 'quote',
+      entityId: quote.id,
+      quoteId: quote.id,
+      clientId: req.user.id,
+      visibility: 'client',
+      eventType: 'quote_claimed',
+      title: 'Guest quote claimed',
+      message: 'Guest quote claimed into an authenticated account.',
+      data: {
+        clientId: req.user.id
+      }
+    }, 'legacy_guest_quote_claim_activity');
 
     return res.json({ message: 'Quote claimed successfully', quoteId: quote.id, clientId: req.user.id });
   })

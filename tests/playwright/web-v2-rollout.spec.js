@@ -853,6 +853,7 @@ test('web-v2 manager operations surfaces can create projects, update quotes, cre
   });
 
   await page.goto('/app-v2/projects');
+  const projectBoardList = page.locator('.grid-two > .surface').first().locator('.stack-list');
   await page.getByRole('button', { name: 'New project' }).click();
   await page.getByLabel('Title').fill('Gallery Penthouse Fit-out');
   await page.getByLabel('Client').selectOption('client-1');
@@ -860,13 +861,13 @@ test('web-v2 manager operations surfaces can create projects, update quotes, cre
   await page.getByLabel('Location').fill('Manchester');
   await page.getByLabel('Description').fill('Premium shell-and-core finishing package.');
   await page.getByRole('button', { name: 'Create project' }).click();
-  await expect(page.locator('.stack-list')).toContainText('Gallery Penthouse Fit-out');
+  await expect(projectBoardList).toContainText('Gallery Penthouse Fit-out');
   await page.getByRole('button', { name: 'Mark completed' }).click();
-  await expect(page.locator('.stack-list')).toContainText('Completed');
+  await expect(projectBoardList).toContainText('Completed');
   await page.getByRole('button', { name: 'Archive project' }).click();
-  await expect(page.locator('.stack-list')).toContainText('Archived route');
+  await expect(projectBoardList).toContainText('Archived route');
   await page.getByRole('button', { name: 'Delete project' }).click();
-  await expect(page.locator('.stack-list')).not.toContainText('Gallery Penthouse Fit-out');
+  await expect(projectBoardList).not.toContainText('Gallery Penthouse Fit-out');
 
   await page.goto('/app-v2/quotes');
   const quoteBoardList = page.locator('.grid-two > .surface').first().locator('.stack-list');
@@ -882,18 +883,22 @@ test('web-v2 manager operations surfaces can create projects, update quotes, cre
   await expect(quoteBoardList).toContainText('Estimate Sent');
 
   await page.goto('/app-v2/crm');
+  const clientSurface = page.locator('.grid-two > .surface').first();
+  const staffSurface = page.locator('.grid-two > .surface').nth(1);
+  const clientBoardList = clientSurface.locator('.stack-list').first();
+  const staffBoardList = staffSurface.locator('.stack-list').first();
   await page.getByLabel('Create staff name').fill('Leah Builder');
   await page.getByLabel('Create staff email').fill('leah@example.com');
   await page.getByLabel('Temporary password').fill('StrongPassword123!');
   await page.getByLabel('Create staff role').selectOption('employee');
   await page.getByRole('button', { name: 'Create staff member' }).click();
-  await expect(page.locator('.grid-two .stack-list').nth(1)).toContainText('Leah Builder');
+  await expect(staffBoardList).toContainText('Leah Builder');
   await page.getByLabel('Client name').fill('Marta Client Updated');
   await page.getByRole('button', { name: 'Save client' }).click();
-  await expect(page.locator('.grid-two .stack-list').first()).toContainText('Marta Client Updated');
+  await expect(clientBoardList).toContainText('Marta Client Updated');
   await page.getByLabel('Update staff name').fill('Daniel Manager Updated');
   await page.getByRole('button', { name: 'Save staff record' }).click();
-  await expect(page.locator('.grid-two .stack-list').nth(1)).toContainText('Daniel Manager Updated');
+  await expect(staffBoardList).toContainText('Daniel Manager Updated');
 
   await page.goto('/app-v2/inventory');
   await page.getByRole('button', { name: 'New service' }).click();

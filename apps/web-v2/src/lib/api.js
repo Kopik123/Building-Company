@@ -1,6 +1,7 @@
 import contractKit from '../../../../shared/contracts/v2.js';
 
 const {
+  activityEventSchema,
   crmClientSchema,
   crmStaffMemberSchema,
   directThreadSummarySchema,
@@ -8,6 +9,7 @@ const {
   inventoryServiceSchema,
   normalizeCrmClient,
   normalizeCrmStaffMember,
+  normalizeActivityEvent,
   normalizeEstimateSummary,
   normalizeOverviewSummary,
   normalizeItemResponse,
@@ -351,6 +353,18 @@ export const v2Api = {
   async getCrmClients(params = {}) {
     const payload = await withAuth(`/crm/clients${toQueryString({ page: 1, pageSize: 50, ...params })}`);
     return normalizeListResponse(payload, 'clients', normalizeCrmClient, crmClientSchema);
+  },
+  async getActivity(params = {}) {
+    const payload = await withAuth(`/activity${toQueryString({ page: 1, pageSize: 50, ...params })}`);
+    return normalizeListResponse(payload, 'activity', normalizeActivityEvent, activityEventSchema);
+  },
+  async getProjectActivity(projectId, params = {}) {
+    const payload = await withAuth(`/activity/projects/${projectId}${toQueryString({ page: 1, pageSize: 50, ...params })}`);
+    return normalizeListResponse(payload, 'activity', normalizeActivityEvent, activityEventSchema);
+  },
+  async getClientActivity(clientId, params = {}) {
+    const payload = await withAuth(`/activity/clients/${clientId}${toQueryString({ page: 1, pageSize: 50, ...params })}`);
+    return normalizeListResponse(payload, 'activity', normalizeActivityEvent, activityEventSchema);
   },
   async getCrmStaff(params = {}) {
     const payload = await withAuth(`/crm/staff${toQueryString({ page: 1, pageSize: 50, ...params })}`);

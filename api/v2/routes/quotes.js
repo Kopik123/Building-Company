@@ -16,6 +16,7 @@ const {
   EstimateLine,
   GroupMember,
   GroupThread,
+  ActivityEvent,
   Notification,
   Project,
   Quote,
@@ -32,6 +33,8 @@ const {
   normalizeEstimateDecisionStatus,
   normalizeWorkflowStatus
 } = require('../../../utils/quoteWorkflow');
+const { advanceClientLifecycle } = require('../../../utils/crmLifecycle');
+const { createActivityEvent } = require('../../../utils/activityFeed');
 const { authV2 } = require('../middleware/auth');
 const { roleCheckV2 } = require('../middleware/roles');
 const { ok, fail } = require('../utils/response');
@@ -237,6 +240,11 @@ const notifyUsers = async (users, payloadBuilder) => {
   await Notification.bulkCreate(rows);
 };
 
+const loadClientRecord = async (clientId) => {
+  if (!clientId || typeof User?.findByPk !== 'function') return null;
+  return User.findByPk(clientId);
+};
+
 const findManagerRecipients = async (excludeUserId) => {
   if (typeof User?.findAll !== 'function') return [];
   return User.findAll({
@@ -403,6 +411,22 @@ router.post(
       });
     }
 
+    await createActivityEvent(ActivityEvent, {
+      actorUserId: req.v2User.id,
+      entityType: 'quote',
+      entityId: quote.id,
+      quoteId: quote.id,
+      clientId: quote.clientId || null,
+      visibility: req.v2User.role === 'client' ? 'client' : 'internal',
+      eventType: 'quote_attachments_added',
+      title: 'Quote photos added',
+      message: attachments.length === 1 ? '1 quote photo added.' : `${attachments.length} quote photos added.`,
+      data: {
+        attachmentCount: attachments.length,
+        totalAttachmentCount: existingCount + attachments.length
+      }
+    }, 'quote_attachment_activity');
+
     const hydratedQuote = await attachEstimateMeta(quote);
     return ok(res, { quote: hydratedQuote, attachments: normalizeAttachmentList(attachments) }, {}, 201);
   })
@@ -464,6 +488,9 @@ router.post(
       priority: req.body.priority || QUOTE_PRIORITIES[1]
     });
 
+    const clientRecord = await loadClientRecord(clientId);
+    await advanceClientLifecycle(clientRecord, 'quoted');
+
     await createQuoteEvent({
       quoteId: quote.id,
       actorUserId: req.v2User.id,
@@ -474,6 +501,23 @@ router.post(
         sourceChannel
       }
     });
+
+    await createActivityEvent(ActivityEvent, {
+      actorUserId: req.v2User.id,
+      entityType: 'quote',
+      entityId: quote.id,
+      quoteId: quote.id,
+      clientId: clientId || null,
+      visibility: clientId ? 'client' : 'public',
+      eventType: 'quote_submitted',
+      title: 'Quote submitted',
+      message: isClientCreate ? 'Client submitted a new quote request.' : 'Quote request created.',
+      data: {
+        sourceChannel,
+        projectType: quote.projectType,
+        location: quote.location
+      }
+    }, 'quote_submit_activity');
 
     if (isClientCreate) {
       const managers = await findManagerRecipients();
@@ -593,6 +637,22 @@ router.post(
         groupThreadId: thread?.id || null
       }
     });
+
+    await createActivityEvent(ActivityEvent, {
+      actorUserId: req.v2User.id,
+      entityType: 'quote',
+      entityId: quote.id,
+      quoteId: quote.id,
+      clientId: quote.clientId || null,
+      visibility: 'client',
+      eventType: 'quote_assigned',
+      title: 'Quote assigned',
+      message: 'A manager took ownership of the quote request.',
+      data: {
+        assignedManagerId,
+        groupThreadId: thread?.id || null
+      }
+    }, 'quote_assign_activity');
 
     const hydratedQuote = await attachEstimateMeta(quote);
     return ok(res, { quote: hydratedQuote, thread });
@@ -756,6 +816,22 @@ router.post(
       }
     });
 
+    await createActivityEvent(ActivityEvent, {
+      actorUserId: req.v2User.id,
+      entityType: 'estimate',
+      entityId: estimate.id,
+      quoteId: quote.id,
+      clientId: quote.clientId || null,
+      visibility: 'internal',
+      eventType: 'estimate_drafted',
+      title: `Estimate v${versionNumber} drafted`,
+      message: `Estimate v${versionNumber} drafted.`,
+      data: {
+        estimateId: estimate.id,
+        versionNumber
+      }
+    }, 'estimate_draft_activity');
+
     const refreshed = await loadQuoteEstimates(quote.id);
     return ok(res, { estimates: refreshed, estimate: refreshed.find((item) => item.id === estimate.id) || estimate }, {}, 201);
   })
@@ -805,6 +881,22 @@ router.post(
         estimateId: estimate.id
       }
     });
+
+    await createActivityEvent(ActivityEvent, {
+      actorUserId: req.v2User.id,
+      entityType: 'estimate',
+      entityId: estimate.id,
+      quoteId: quote.id,
+      clientId: quote.clientId || null,
+      visibility: 'client',
+      eventType: 'estimate_sent',
+      title: 'Estimate sent',
+      message: `Estimate v${estimate.versionNumber || 1} sent to client.`,
+      data: {
+        estimateId: estimate.id,
+        versionNumber: estimate.versionNumber || 1
+      }
+    }, 'estimate_send_activity');
 
     if (quote.clientId && typeof Notification?.create === 'function') {
       await Notification.create({
@@ -868,6 +960,10 @@ router.post(
     await quote.update(resolveWorkflowPayload(workflowStatus, {
       lossReason: decision === 'declined' ? toNullableString(req.body.note) : quote.lossReason
     }));
+    if (decision === 'accepted') {
+      const clientRecord = await loadClientRecord(quote.clientId);
+      await advanceClientLifecycle(clientRecord, 'approved');
+    }
 
     await createQuoteEvent({
       quoteId: quote.id,
@@ -880,6 +976,23 @@ router.post(
         note: toNullableString(req.body.note)
       }
     });
+
+    await createActivityEvent(ActivityEvent, {
+      actorUserId: req.v2User.id,
+      entityType: 'estimate',
+      entityId: estimate.id,
+      quoteId: quote.id,
+      clientId: quote.clientId || null,
+      visibility: 'client',
+      eventType: `estimate_${decision}`,
+      title: `Estimate ${decision.replaceAll('_', ' ')}`,
+      message: `Client ${decision.replaceAll('_', ' ')} the estimate.`,
+      data: {
+        estimateId: estimate.id,
+        decision,
+        note: toNullableString(req.body.note)
+      }
+    }, 'estimate_response_activity');
 
     const managers = await findManagerRecipients();
     await notifyUsers(managers, (manager) => ({
@@ -981,6 +1094,26 @@ router.post(
         groupThreadId: projectThread?.id || null
       }
     });
+
+    const clientRecord = await loadClientRecord(quote.clientId);
+    await advanceClientLifecycle(clientRecord, 'active_project');
+
+    await createActivityEvent(ActivityEvent, {
+      actorUserId: req.v2User.id,
+      entityType: 'project',
+      entityId: project.id,
+      quoteId: quote.id,
+      projectId: project.id,
+      clientId: quote.clientId || null,
+      visibility: 'client',
+      eventType: 'project_created',
+      title: 'Project created',
+      message: 'Quote converted into a live project.',
+      data: {
+        acceptedEstimateId: currentEstimate?.id || null,
+        groupThreadId: projectThread?.id || null
+      }
+    }, 'project_convert_activity');
 
     if (quote.clientId && typeof Notification?.create === 'function') {
       await Notification.create({

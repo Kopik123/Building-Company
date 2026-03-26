@@ -7,6 +7,7 @@
   const V2_REFRESH_KEY = runtime.V2_REFRESH_KEY || 'll_v2_refresh_token';
   const QUOTE_CLAIM_STORAGE_KEY = 'll_quote_claim_pending';
   const DEFAULT_QUOTE_WORKSPACE_PATH = '/client-dashboard.html';
+  const PUBLIC_QUOTE_API_BASE = '/api/v2/public/quotes';
 
   const loginForm = document.getElementById('login-form');
   const registerForm = document.getElementById('register-form');
@@ -527,7 +528,7 @@
     setStatus(quoteClaimStatus, 'Confirming quote claim...', 'loading');
 
     try {
-      const response = await fetchJson(`/api/quotes/guest/${encodeURIComponent(pendingClaim.quoteId)}/claim/confirm`, {
+      const response = await fetchJson(`${PUBLIC_QUOTE_API_BASE}/${encodeURIComponent(pendingClaim.quoteId)}/claim/confirm`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -39,6 +39,15 @@ const User = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true
     },
+    crmLifecycleStatus: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: 'lead'
+    },
+    crmLifecycleUpdatedAt: {
+      type: DataTypes.DATE,
+      allowNull: true
+    },
     isActive: {
       type: DataTypes.BOOLEAN,
       allowNull: false,

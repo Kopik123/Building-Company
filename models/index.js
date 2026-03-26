@@ -7,6 +7,7 @@ const QuoteMessage = require('./QuoteMessage');
 const InboxThread = require('./InboxThread');
 const InboxMessage = require('./InboxMessage');
 const QuoteClaimToken = require('./QuoteClaimToken');
+const ActivityEvent = require('./ActivityEvent');
 const Notification = require('./Notification');
 const GroupThread = require('./GroupThread');
 const GroupMember = require('./GroupMember');
@@ -30,6 +31,14 @@ User.hasMany(QuoteAttachment, { foreignKey: 'uploadedByUserId', as: 'quoteAttach
 Quote.hasMany(QuoteEvent, { foreignKey: 'quoteId', as: 'events', onDelete: 'CASCADE', hooks: true });
 QuoteEvent.belongsTo(Quote, { foreignKey: 'quoteId', as: 'quote' });
 QuoteEvent.belongsTo(User, { foreignKey: 'actorUserId', as: 'actor' });
+ActivityEvent.belongsTo(User, { foreignKey: 'actorUserId', as: 'actor' });
+ActivityEvent.belongsTo(User, { foreignKey: 'clientId', as: 'client' });
+ActivityEvent.belongsTo(Project, { foreignKey: 'projectId', as: 'project' });
+ActivityEvent.belongsTo(Quote, { foreignKey: 'quoteId', as: 'quote' });
+User.hasMany(ActivityEvent, { foreignKey: 'actorUserId', as: 'activityEvents' });
+User.hasMany(ActivityEvent, { foreignKey: 'clientId', as: 'clientActivityEvents' });
+Project.hasMany(ActivityEvent, { foreignKey: 'projectId', as: 'activityEvents' });
+Quote.hasMany(ActivityEvent, { foreignKey: 'quoteId', as: 'activityEvents' });
 
 Quote.hasMany(QuoteMessage, { foreignKey: 'quoteId', as: 'messages' });
 QuoteMessage.belongsTo(Quote, { foreignKey: 'quoteId', as: 'quote' });
@@ -156,6 +165,12 @@ const ensureIndexes = async () => {
     { table: QuoteEvent.getTableName(), name: 'quote_events_quote_created_idx', fields: ['quoteId', 'createdAt'] },
     { table: QuoteEvent.getTableName(), name: 'quote_events_quote_visibility_idx', fields: ['quoteId', 'visibility', 'createdAt'] },
     { table: User.getTableName(), name: 'users_role_active_idx', fields: ['role', 'isActive'] },
+    { table: User.getTableName(), name: 'users_crm_lifecycle_idx', fields: ['crmLifecycleStatus', 'crmLifecycleUpdatedAt'] },
+    { table: ActivityEvent.getTableName(), name: 'activity_events_created_idx', fields: ['createdAt'] },
+    { table: ActivityEvent.getTableName(), name: 'activity_events_client_created_idx', fields: ['clientId', 'createdAt'] },
+    { table: ActivityEvent.getTableName(), name: 'activity_events_project_created_idx', fields: ['projectId', 'createdAt'] },
+    { table: ActivityEvent.getTableName(), name: 'activity_events_quote_created_idx', fields: ['quoteId', 'createdAt'] },
+    { table: ActivityEvent.getTableName(), name: 'activity_events_visibility_created_idx', fields: ['visibility', 'createdAt'] },
     { table: InboxThread.getTableName(), name: 'inbox_threads_participant_a_updated_idx', fields: ['participantAId', 'updatedAt'] },
     { table: InboxThread.getTableName(), name: 'inbox_threads_participant_b_updated_idx', fields: ['participantBId', 'updatedAt'] },
     { table: InboxMessage.getTableName(), name: 'inbox_messages_thread_created_idx', fields: ['threadId', 'createdAt'] },
@@ -205,6 +220,7 @@ module.exports = {
   InboxThread,
   InboxMessage,
   QuoteClaimToken,
+  ActivityEvent,
   Notification,
   GroupThread,
   GroupMember,

@@ -1,6 +1,7 @@
 import type { z } from 'zod';
 
 export type ProjectStatus = 'planning' | 'in_progress' | 'completed' | 'on_hold';
+export type ClientLifecycleStatus = 'lead' | 'quoted' | 'approved' | 'active_project' | 'completed' | 'archived';
 export type QuoteStatus = 'pending' | 'in_progress' | 'responded' | 'closed';
 export type QuoteWorkflowStatus =
   | 'submitted'
@@ -21,6 +22,8 @@ export type ServiceCategory = 'bathroom' | 'kitchen' | 'interior' | 'outdoor' | 
 export type MaterialCategory = 'tiles' | 'plumbing' | 'electrical' | 'joinery' | 'paint' | 'hardware' | 'other';
 export type StaffRole = 'employee' | 'manager' | 'admin';
 export type StaffCreationRole = 'employee' | 'manager';
+export type ActivityEntityType = 'quote' | 'estimate' | 'project' | 'crm_client';
+export type ActivityVisibility = 'internal' | 'client' | 'public';
 
 export interface UserSummary {
   id: string;
@@ -29,6 +32,8 @@ export interface UserSummary {
   role: string | null;
   phone: string | null;
   companyName: string | null;
+  crmLifecycleStatus: ClientLifecycleStatus;
+  crmLifecycleUpdatedAt: string | null;
   isActive: boolean;
   createdAt: string | null;
   updatedAt: string | null;
@@ -206,6 +211,24 @@ export interface CrmStaffMember extends UserSummary {
   role: StaffRole;
 }
 
+export interface ActivityEventSummary {
+  id: string;
+  actorUserId: string | null;
+  entityType: ActivityEntityType;
+  entityId: string | null;
+  visibility: ActivityVisibility;
+  eventType: string | null;
+  title: string | null;
+  message: string | null;
+  clientId: string | null;
+  projectId: string | null;
+  quoteId: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+  actor: UserSummary;
+  data: Record<string, unknown> | null;
+}
+
 export interface InventoryService {
   id: string;
   slug: string | null;
@@ -271,6 +294,7 @@ export interface OverviewSummary {
 }
 
 export const PROJECT_STATUSES: readonly ProjectStatus[];
+export const CLIENT_LIFECYCLE_STATUSES: readonly ClientLifecycleStatus[];
 export const QUOTE_STATUSES: readonly QuoteStatus[];
 export const QUOTE_WORKFLOW_STATUSES: readonly QuoteWorkflowStatus[];
 export const QUOTE_PRIORITIES: readonly QuotePriority[];
@@ -281,6 +305,8 @@ export const SERVICE_CATEGORIES: readonly ServiceCategory[];
 export const MATERIAL_CATEGORIES: readonly MaterialCategory[];
 export const STAFF_ROLES: readonly StaffRole[];
 export const STAFF_CREATION_ROLES: readonly StaffCreationRole[];
+export const ACTIVITY_ENTITY_TYPES: readonly ActivityEntityType[];
+export const ACTIVITY_VISIBILITY: readonly ActivityVisibility[];
 
 export const userSummarySchema: z.ZodType<UserSummary>;
 export const messageAttachmentSchema: z.ZodType<MessageAttachment>;
@@ -294,6 +320,7 @@ export const directThreadSummarySchema: z.ZodType<DirectThreadSummary>;
 export const notificationSchema: z.ZodType<NotificationSummary>;
 export const crmClientSchema: z.ZodType<CrmClient>;
 export const crmStaffMemberSchema: z.ZodType<CrmStaffMember>;
+export const activityEventSchema: z.ZodType<ActivityEventSummary>;
 export const inventoryServiceSchema: z.ZodType<InventoryService>;
 export const inventoryMaterialSchema: z.ZodType<InventoryMaterial>;
 export const overviewMetricsSchema: z.ZodType<OverviewMetricsSummary>;
@@ -311,6 +338,7 @@ export function normalizeDirectThreadSummary(value: unknown): DirectThreadSummar
 export function normalizeNotification(value: unknown): NotificationSummary;
 export function normalizeCrmClient(value: unknown): CrmClient;
 export function normalizeCrmStaffMember(value: unknown): CrmStaffMember;
+export function normalizeActivityEvent(value: unknown): ActivityEventSummary;
 export function normalizeInventoryService(value: unknown): InventoryService;
 export function normalizeInventoryMaterial(value: unknown): InventoryMaterial;
 export function normalizeOverviewSummary(value: unknown): OverviewSummary;

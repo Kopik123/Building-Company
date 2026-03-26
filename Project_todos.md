@@ -99,12 +99,13 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 
 - [ ] Implement the planned `client_proposal_quote` structure on the public quote page with phased UX, richer project fields and mobile-safe validation.
 - [ ] Decide whether richer quote intake should be stored as structured quote metadata in phase 1 or temporarily mapped into the existing `description` field.
-- [ ] Define one explicit CRM lifecycle for clients: `lead`, `quoted`, `approved`, `active project`, `completed`, `archived`.
+- [x] Define one explicit CRM lifecycle for clients: `lead`, `quoted`, `approved`, `active project`, `completed`, `archived`.
 - [ ] Add a real project workflow model with `stage`, `milestone`, `task/work package`, `owner` and `due date`.
-- [ ] Design and implement a durable activity/audit feed for company, client and project timelines.
+- [x] Design and implement a durable activity/audit feed for company, client and project timelines.
 - [ ] Close the operational gap in `quote -> estimate -> approval -> project` so estimate approvals are explicit, versioned and portable to mobile clients.
 - [x] Add the first public guest quote follow-up layer by showing a private status/preview panel from `publicToken`, including reference, workflow state and attached quote photos after submit.
 - [ ] Finish public guest quote portal parity on a v2 contract (`submit`, `preview`, `claim`, later response access) so guest quote UX no longer depends on legacy-only routes.
+- [x] Move the live public guest quote browser flow onto `/api/v2/public/quotes` paths for submit, preview, follow-up uploads and claim handoff, while keeping the current legacy guest router only as a temporary adapter behind the v2 contract.
 - [x] Let guest customers add follow-up quote photos from the private preview link after the initial submission, not only during the first send.
 - [x] Fix public quote file pickers so selecting more photos again appends to the current selection instead of replacing it before submit or follow-up upload.
 - [x] Allow local quote thumbnail previews to render correctly by supporting `blob:` image previews in the public CSP.

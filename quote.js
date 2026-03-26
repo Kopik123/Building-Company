@@ -7,6 +7,7 @@
   const QUOTE_PREVIEW_QUERY_KEY = 'quote';
   const QUOTE_CLAIM_STORAGE_KEY = 'll_quote_claim_pending';
   const QUOTE_WORKSPACE_PATH = '/client-dashboard.html';
+  const PUBLIC_QUOTE_API_BASE = '/api/v2/public/quotes';
   const TOKEN_KEY = runtime.TOKEN_KEY || 'll_auth_token';
   const USER_KEY = runtime.USER_KEY || 'll_auth_user';
   const previewUrlsByRoot = new WeakMap();
@@ -312,7 +313,7 @@
   };
 
   const fetchQuotePreview = async (publicToken) => {
-    const response = await fetch(`/api/quotes/guest/${encodeURIComponent(publicToken)}`, {
+    const response = await fetch(`${PUBLIC_QUOTE_API_BASE}/${encodeURIComponent(publicToken)}`, {
       headers: {
         Accept: 'application/json'
       }
@@ -508,7 +509,7 @@
       setStatus(status, 'Sending claim code...', 'loading');
 
       try {
-        const response = await fetch(`/api/quotes/guest/${encodeURIComponent(preview.quoteId)}/claim/request`, {
+        const response = await fetch(`${PUBLIC_QUOTE_API_BASE}/${encodeURIComponent(preview.quoteId)}/claim/request`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -914,7 +915,7 @@
         const requestBody = new FormData();
         files.forEach((file) => requestBody.append('files', file));
 
-        const response = await fetch(`/api/quotes/guest/${encodeURIComponent(preview.publicToken)}/attachments`, {
+        const response = await fetch(`${PUBLIC_QUOTE_API_BASE}/${encodeURIComponent(preview.publicToken)}/attachments`, {
           method: 'POST',
           body: requestBody
         });
@@ -1067,7 +1068,7 @@
         if (postcode) requestBody.set('postcode', postcode);
         files.forEach((file) => requestBody.append('files', file));
 
-        const response = await fetch('/api/quotes/guest', {
+        const response = await fetch(PUBLIC_QUOTE_API_BASE, {
           method: 'POST',
           body: requestBody
         });

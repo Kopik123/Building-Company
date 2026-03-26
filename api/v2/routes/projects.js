@@ -1,12 +1,14 @@
 const express = require('express');
 const { Op, fn, col, where: sqlWhere } = require('sequelize');
 const { body, param, query, validationResult } = require('express-validator');
-const { Estimate, GroupThread, Project, ProjectMedia, Quote, User } = require('../../../models');
+const { ActivityEvent, Estimate, GroupThread, Project, ProjectMedia, Quote, User } = require('../../../models');
 const asyncHandler = require('../../../utils/asyncHandler');
 const { authV2 } = require('../middleware/auth');
 const { roleCheckV2 } = require('../middleware/roles');
 const { ok, fail } = require('../utils/response');
 const { clearGalleryCache } = require('../utils/publicCache');
+const { createActivityEvent } = require('../../../utils/activityFeed');
+const { advanceClientLifecycle } = require('../../../utils/crmLifecycle');
 const { PROJECT_STATUSES } = require('../../../shared/contracts/v2');
 
 const router = express.Router();
@@ -212,6 +214,28 @@ router.post(
       isActive: parseBoolean(req.body.isActive, true)
     });
 
+    if (project.clientId && typeof User?.findByPk === 'function') {
+      const clientRecord = await User.findByPk(project.clientId);
+      await advanceClientLifecycle(clientRecord, 'active_project');
+    }
+
+    await createActivityEvent(ActivityEvent, {
+      actorUserId: req.v2User.id,
+      entityType: 'project',
+      entityId: project.id,
+      projectId: project.id,
+      quoteId: project.quoteId || null,
+      clientId: project.clientId || null,
+      visibility: 'internal',
+      eventType: 'project_created',
+      title: 'Project created',
+      message: `Project "${project.title}" created.`,
+      data: {
+        status: project.status,
+        assignedManagerId: project.assignedManagerId || null
+      }
+    }, 'project_create_activity');
+
     clearGalleryCache();
     return ok(res, { project }, {}, 201);
   })
@@ -256,6 +280,26 @@ router.patch(
     if (!Object.keys(payload).length) return fail(res, 400, 'no_changes', 'No changes provided');
 
     await project.update(payload);
+    if (project.clientId && PROJECT_STATUSES.includes(String(project.status || '').trim().toLowerCase()) && typeof User?.findByPk === 'function') {
+      const clientRecord = await User.findByPk(project.clientId);
+      await advanceClientLifecycle(clientRecord, 'active_project');
+    }
+
+    await createActivityEvent(ActivityEvent, {
+      actorUserId: req.v2User.id,
+      entityType: 'project',
+      entityId: project.id,
+      projectId: project.id,
+      quoteId: project.quoteId || null,
+      clientId: project.clientId || null,
+      visibility: 'internal',
+      eventType: 'project_updated',
+      title: 'Project updated',
+      message: `Project "${project.title}" updated.`,
+      data: {
+        changes: payload
+      }
+    }, 'project_update_activity');
     clearGalleryCache();
     return ok(res, { project });
   })
@@ -294,6 +338,19 @@ router.delete(
     }
 
     await project.destroy();
+    await createActivityEvent(ActivityEvent, {
+      actorUserId: req.v2User.id,
+      entityType: 'project',
+      entityId: project.id,
+      projectId: project.id,
+      quoteId: project.quoteId || null,
+      clientId: project.clientId || null,
+      visibility: 'internal',
+      eventType: 'project_deleted',
+      title: 'Project deleted',
+      message: `Project "${project.title}" deleted.`,
+      data: null
+    }, 'project_delete_activity');
     clearGalleryCache();
     return ok(res, { deleted: true, projectId: project.id });
   })

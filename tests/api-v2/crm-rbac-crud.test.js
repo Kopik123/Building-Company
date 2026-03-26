@@ -25,6 +25,8 @@ const createCrmStubs = () => {
       email: 'manager@example.com',
       name: 'Manager',
       phone: '+44 7000 000 001',
+      crmLifecycleStatus: 'lead',
+      crmLifecycleUpdatedAt: '2026-03-26T09:00:00Z',
       isActive: true
     }),
     attachMethods({
@@ -33,6 +35,8 @@ const createCrmStubs = () => {
       email: 'admin@example.com',
       name: 'Admin',
       phone: '+44 7000 000 002',
+      crmLifecycleStatus: 'lead',
+      crmLifecycleUpdatedAt: '2026-03-26T09:00:00Z',
       isActive: true
     }),
     attachMethods({
@@ -41,6 +45,8 @@ const createCrmStubs = () => {
       email: 'employee@example.com',
       name: 'Employee',
       phone: '+44 7000 000 003',
+      crmLifecycleStatus: 'lead',
+      crmLifecycleUpdatedAt: '2026-03-26T09:00:00Z',
       isActive: true
     }),
     attachMethods({
@@ -50,6 +56,8 @@ const createCrmStubs = () => {
       name: 'Client',
       phone: '+44 7000 000 004',
       companyName: 'Client Co',
+      crmLifecycleStatus: 'lead',
+      crmLifecycleUpdatedAt: '2026-03-26T09:00:00Z',
       isActive: true
     })
   ];
@@ -89,6 +97,8 @@ const createCrmStubs = () => {
         role: payload.role,
         phone: payload.phone || null,
         companyName: null,
+        crmLifecycleStatus: 'lead',
+        crmLifecycleUpdatedAt: '2026-03-26T18:30:00Z',
         isActive: true,
         createdAt: '2026-03-23T18:30:00Z',
         updatedAt: '2026-03-23T18:30:00Z'
@@ -181,11 +191,13 @@ test('crm v2 lets manager/admin update client and staff records with role guardr
     .set('Authorization', `Bearer ${managerToken}`)
     .send({
       name: 'Client Updated',
-      companyName: 'Updated Client Co'
+      companyName: 'Updated Client Co',
+      crmLifecycleStatus: 'quoted'
     })
     .expect(200);
 
   assert.equal(stubs.users.find((user) => user.id === '44444444-4444-4444-8444-444444444444')?.companyName, 'Updated Client Co');
+  assert.equal(stubs.users.find((user) => user.id === '44444444-4444-4444-8444-444444444444')?.crmLifecycleStatus, 'quoted');
 
   await request(app)
     .patch('/api/v2/crm/staff/33333333-3333-4333-8333-333333333333')

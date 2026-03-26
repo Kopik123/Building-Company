@@ -5,6 +5,7 @@ import { useAuth } from './lib/auth.jsx';
 import { v2Api } from './lib/api';
 
 const {
+  CLIENT_LIFECYCLE_STATUSES,
   ESTIMATE_DECISION_STATUSES,
   MATERIAL_CATEGORIES,
   QUOTE_CONTACT_METHODS,
@@ -83,6 +84,24 @@ const formatDateTime = (value, options = {}) => {
     dateStyle: options.dateOnly ? 'medium' : 'medium',
     timeStyle: options.dateOnly ? undefined : 'short'
   });
+};
+
+const formatActivityTitle = (activity) => activity?.title || titleCase(activity?.eventType || 'activity');
+const formatActivityMessage = (activity) => activity?.message || 'Activity details pending.';
+const formatActivityMeta = (activity) => {
+  const parts = [];
+  if (activity?.entityType) parts.push(titleCase(activity.entityType));
+  if (activity?.actor?.name || activity?.actor?.email) parts.push(activity.actor.name || activity.actor.email);
+  if (activity?.createdAt) parts.push(formatDateTime(activity.createdAt));
+  return parts.join(' | ');
+};
+const getActivityTone = (activity) => {
+  const entityType = normalizeText(activity?.entityType);
+  const eventType = normalizeText(activity?.eventType);
+  if (entityType === 'project') return 'accent';
+  if (eventType.includes('approved') || eventType.includes('accepted')) return 'accent';
+  if (eventType.includes('declined') || eventType.includes('deleted') || eventType.includes('closed')) return 'danger';
+  return 'neutral';
 };
 
 const compactNumber = (value) =>
@@ -282,6 +301,7 @@ const createClientEditorState = (overrides = {}) => ({
   name: '',
   phone: '',
   companyName: '',
+  crmLifecycleStatus: CLIENT_LIFECYCLE_STATUSES[0],
   isActive: true,
   ...overrides
 });
@@ -291,6 +311,7 @@ const clientToFormState = (client) =>
     name: client?.name || '',
     phone: client?.phone || '',
     companyName: client?.companyName || '',
+    crmLifecycleStatus: client?.crmLifecycleStatus || CLIENT_LIFECYCLE_STATUSES[0],
     isActive: typeof client?.isActive === 'boolean' ? client.isActive : true
   });
 
@@ -810,6 +831,7 @@ function OverviewPage() {
   const role = normalizeText(user?.role || 'client');
   const staffMode = isStaffRole(role);
   const overview = useAsyncState(() => v2Api.getOverview(), [role], createEmptyOverviewSummary());
+  const activity = useAsyncState(() => (staffMode ? v2Api.getActivity({ pageSize: 6 }) : Promise.resolve([])), [staffMode], []);
   const overviewData = overview.data || createEmptyOverviewSummary();
   const metrics = overviewData.metrics || createEmptyOverviewSummary().metrics;
   const sortedProjects = sortByRecent(overviewData.projects, ['updatedAt', 'endDate', 'startDate', 'createdAt']);
@@ -977,6 +999,30 @@ function OverviewPage() {
             </div>
           </Surface>
 
+          <Surface eyebrow="Activity" title="Company feed" description="Durable project, quote and CRM events from the current workflow." actions={<Link to="/projects">Open projects</Link>}>
+            <div className="stack-list">
+              {activity.loading ? <p className="muted">Loading activity feed...</p> : null}
+              {activity.error ? <p className="error">{activity.error}</p> : null}
+              {!activity.loading && !activity.error && !activity.data.length ? <EmptyState text="Activity will appear here once the next operational change is saved." /> : null}
+              {activity.data.map((entry) => (
+                <article key={entry.id} className="summary-row">
+                  <div>
+                    <strong>{formatActivityTitle(entry)}</strong>
+                    <p>{formatActivityMessage(entry)}</p>
+                  </div>
+                  <div className="summary-row-meta">
+                    <StatusPill tone={getActivityTone(entry)}>{titleCase(entry.entityType || 'activity')}</StatusPill>
+                    <span>{formatActivityMeta(entry)}</span>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </Surface>
+        </div>
+      ) : null}
+
+      {staffMode ? (
+        <div className="grid-two">
           <Surface eyebrow="Inventory" title="Stock watch" description="Quick signal for material levels that need follow-up." actions={<Link to="/inventory">Open inventory</Link>}>
             <div className="stack-list">
               {overview.loading ? <p className="muted">Loading stock levels...</p> : null}
@@ -1060,6 +1106,11 @@ function ProjectsPage() {
   }, [selectedProjectId, projects.data, isCreatingNew, staffMode]);
 
   const selectedProject = projects.data.find((project) => project.id === selectedProjectId) || null;
+  const projectActivity = useAsyncState(
+    () => (staffMode && selectedProjectId ? v2Api.getProjectActivity(selectedProjectId, { pageSize: 8 }) : Promise.resolve([])),
+    [staffMode, selectedProjectId],
+    []
+  );
 
   const onFieldChange = (key) => (event) => {
     const nextValue = event?.target?.type === 'checkbox' ? event.target.checked : event.target.value;
@@ -1372,6 +1423,28 @@ function ProjectsPage() {
           {actionMessage ? <p className="muted">{actionMessage}</p> : null}
           {actionError ? <p className="error">{actionError}</p> : null}
         </form>
+        {selectedProjectId ? (
+          <div className="stack-list">
+            <h3>Project activity</h3>
+            {projectActivity.loading ? <p className="muted">Loading project activity...</p> : null}
+            {projectActivity.error ? <p className="error">{projectActivity.error}</p> : null}
+            {!projectActivity.loading && !projectActivity.error && !projectActivity.data.length ? (
+              <EmptyState text="Project activity will appear here after the next saved project action." />
+            ) : null}
+            {projectActivity.data.map((entry) => (
+              <article key={entry.id} className="summary-row">
+                <div>
+                  <strong>{formatActivityTitle(entry)}</strong>
+                  <p>{formatActivityMessage(entry)}</p>
+                </div>
+                <div className="summary-row-meta">
+                  <StatusPill tone={getActivityTone(entry)}>{titleCase(entry.entityType || 'activity')}</StatusPill>
+                  <span>{formatActivityMeta(entry)}</span>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : null}
       </Surface>
     </div>
   );
@@ -2905,13 +2978,18 @@ function CrmPage() {
   const deferredSearch = React.useDeferredValue(search);
 
   const filteredClients = clients.data.filter((client) =>
-    [client?.name, client?.email, client?.phone, client?.companyName].join(' ').toLowerCase().includes(normalizeText(deferredSearch))
+    [client?.name, client?.email, client?.phone, client?.companyName, client?.crmLifecycleStatus].join(' ').toLowerCase().includes(normalizeText(deferredSearch))
   );
   const filteredStaff = staff.data.filter((member) =>
     [member?.name, member?.email, member?.role].join(' ').toLowerCase().includes(normalizeText(deferredSearch))
   );
   const selectedClient = clients.data.find((client) => client.id === selectedClientId) || null;
   const selectedStaff = staff.data.find((member) => member.id === selectedStaffId) || null;
+  const clientActivity = useAsyncState(
+    () => (canEditPeople && selectedClientId ? v2Api.getClientActivity(selectedClientId, { pageSize: 8 }) : Promise.resolve([])),
+    [canEditPeople, selectedClientId],
+    []
+  );
 
   const onStaffFieldChange = (key) => (event) => {
     const nextValue = event?.target?.type === 'checkbox' ? event.target.checked : event.target.value;
@@ -3001,6 +3079,7 @@ function CrmPage() {
         name: String(clientForm.name || '').trim(),
         phone: toNullablePayload(clientForm.phone),
         companyName: toNullablePayload(clientForm.companyName),
+        crmLifecycleStatus: clientForm.crmLifecycleStatus,
         isActive: Boolean(clientForm.isActive)
       });
       if (!updatedClient?.id) throw new Error('Client response missing payload');
@@ -3143,6 +3222,16 @@ function CrmPage() {
                   Company name
                   <input value={clientForm.companyName} onChange={onClientFieldChange('companyName')} placeholder="Client company" />
                 </label>
+                <label>
+                  CRM lifecycle
+                  <select value={clientForm.crmLifecycleStatus} onChange={onClientFieldChange('crmLifecycleStatus')}>
+                    {CLIENT_LIFECYCLE_STATUSES.map((status) => (
+                      <option key={status} value={status}>
+                        {titleCase(status)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
               </div>
               <label className="checkbox-row">
                 <input type="checkbox" checked={Boolean(clientForm.isActive)} onChange={onClientFieldChange('isActive')} />
@@ -3150,6 +3239,7 @@ function CrmPage() {
               </label>
               <div className="meta-wrap">
                 <span>Email: {selectedClient.email || 'No email available'}</span>
+                <span>Lifecycle: {titleCase(selectedClient.crmLifecycleStatus || 'lead')}</span>
                 <span>Updated: {formatDateTime(selectedClient.updatedAt || selectedClient.createdAt)}</span>
               </div>
               <div className="action-row">
@@ -3160,6 +3250,28 @@ function CrmPage() {
               {clientMessage ? <p className="muted">{clientMessage}</p> : null}
               {clientError ? <p className="error">{clientError}</p> : null}
             </form>
+          ) : null}
+          {canEditPeople && selectedClient ? (
+            <div className="stack-list">
+              <h3>Client activity</h3>
+              {clientActivity.loading ? <p className="muted">Loading client activity...</p> : null}
+              {clientActivity.error ? <p className="error">{clientActivity.error}</p> : null}
+              {!clientActivity.loading && !clientActivity.error && !clientActivity.data.length ? (
+                <EmptyState text="Client activity will appear here after the next quote, CRM or project event." />
+              ) : null}
+              {clientActivity.data.map((entry) => (
+                <article key={entry.id} className="summary-row">
+                  <div>
+                    <strong>{formatActivityTitle(entry)}</strong>
+                    <p>{formatActivityMessage(entry)}</p>
+                  </div>
+                  <div className="summary-row-meta">
+                    <StatusPill tone={getActivityTone(entry)}>{titleCase(entry.entityType || 'activity')}</StatusPill>
+                    <span>{formatActivityMeta(entry)}</span>
+                  </div>
+                </article>
+              ))}
+            </div>
           ) : null}
         </Surface>
 

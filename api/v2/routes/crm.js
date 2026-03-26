@@ -1,11 +1,13 @@
 const express = require('express');
 const { Op, fn, col, where: sqlWhere } = require('sequelize');
 const { body, param, query, validationResult } = require('express-validator');
-const { User } = require('../../../models');
+const { ActivityEvent, User } = require('../../../models');
 const asyncHandler = require('../../../utils/asyncHandler');
 const { authV2 } = require('../middleware/auth');
 const { roleCheckV2 } = require('../middleware/roles');
 const { ok, fail } = require('../utils/response');
+const { createActivityEvent } = require('../../../utils/activityFeed');
+const { buildLifecyclePayload, CLIENT_LIFECYCLE_STATUSES } = require('../../../utils/crmLifecycle');
 const { STAFF_CREATION_ROLES, STAFF_ROLES } = require('../../../shared/contracts/v2');
 
 const router = express.Router();
@@ -55,7 +57,7 @@ router.get(
     const { page, pageSize, offset } = getPagination(req);
     const { rows, count } = await User.findAndCountAll({
       where,
-      attributes: ['id', 'name', 'email', 'phone', 'companyName', 'isActive', 'createdAt', 'updatedAt'],
+      attributes: ['id', 'name', 'email', 'phone', 'companyName', 'crmLifecycleStatus', 'crmLifecycleUpdatedAt', 'isActive', 'createdAt', 'updatedAt'],
       order: [['email', 'ASC']],
       limit: pageSize,
       offset
@@ -92,7 +94,7 @@ router.get(
     const { page, pageSize, offset } = getPagination(req);
     const { rows, count } = await User.findAndCountAll({
       where,
-      attributes: ['id', 'name', 'email', 'phone', 'role', 'isActive', 'createdAt', 'updatedAt'],
+      attributes: ['id', 'name', 'email', 'phone', 'role', 'crmLifecycleStatus', 'crmLifecycleUpdatedAt', 'isActive', 'createdAt', 'updatedAt'],
       order: [['email', 'ASC']],
       limit: pageSize,
       offset
@@ -111,6 +113,7 @@ router.patch(
     body('name').optional().trim().notEmpty(),
     body('phone').optional({ nullable: true }).trim(),
     body('companyName').optional({ nullable: true }).trim(),
+    body('crmLifecycleStatus').optional().isIn(CLIENT_LIFECYCLE_STATUSES),
     body('isActive').optional().isBoolean()
   ],
   asyncHandler(async (req, res) => {
@@ -126,10 +129,32 @@ router.patch(
     if (Object.prototype.hasOwnProperty.call(req.body, 'name')) payload.name = String(req.body.name || '').trim();
     if (Object.prototype.hasOwnProperty.call(req.body, 'phone')) payload.phone = toNullableString(req.body.phone);
     if (Object.prototype.hasOwnProperty.call(req.body, 'companyName')) payload.companyName = toNullableString(req.body.companyName);
+    if (Object.prototype.hasOwnProperty.call(req.body, 'crmLifecycleStatus')) {
+      Object.assign(payload, buildLifecyclePayload(req.body.crmLifecycleStatus));
+    }
     if (Object.prototype.hasOwnProperty.call(req.body, 'isActive')) payload.isActive = req.body.isActive;
     if (!Object.keys(payload).length) return fail(res, 400, 'no_changes', 'No changes provided');
 
     await client.update(payload);
+
+    await createActivityEvent(ActivityEvent, {
+      actorUserId: req.v2User.id,
+      entityType: 'crm_client',
+      entityId: client.id,
+      clientId: client.id,
+      visibility: 'internal',
+      eventType: Object.prototype.hasOwnProperty.call(req.body, 'crmLifecycleStatus')
+        ? 'crm_client_lifecycle_updated'
+        : 'crm_client_updated',
+      title: 'CRM client updated',
+      message: Object.prototype.hasOwnProperty.call(req.body, 'crmLifecycleStatus')
+        ? `Client lifecycle moved to ${req.body.crmLifecycleStatus}.`
+        : 'Client profile updated.',
+      data: {
+        changes: payload
+      }
+    }, 'crm_client_update_activity');
+
     return ok(res, { client });
   })
 );

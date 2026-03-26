@@ -297,7 +297,7 @@ test('wall systems service CTA opens quote with wall-systems context preselected
 });
 
 test('quote page shows a private guest quote preview after submit and from the saved quote link', async ({ page }) => {
-  await page.route('**/api/quotes/guest', async (route) => {
+  await page.route('**/api/v2/public/quotes', async (route) => {
     await route.fulfill({
       status: 201,
       json: {
@@ -311,7 +311,7 @@ test('quote page shows a private guest quote preview after submit and from the s
     });
   });
 
-  await page.route('**/api/quotes/guest/guest-preview-token', async (route) => {
+  await page.route('**/api/v2/public/quotes/guest-preview-token', async (route) => {
     await route.fulfill({
       json: createGuestQuotePreviewPayload()
     });
@@ -345,13 +345,13 @@ test('quote page shows a private guest quote preview after submit and from the s
 test('guest quote claim handoff runs from the private quote panel into auth confirmation', async ({ page }) => {
   const claimPreviewPayload = createGuestQuotePreviewPayload();
 
-  await page.route('**/api/quotes/guest/guest-preview-token', async (route) => {
+  await page.route('**/api/v2/public/quotes/guest-preview-token', async (route) => {
     await route.fulfill({
       json: claimPreviewPayload
     });
   });
 
-  await page.route('**/api/quotes/guest/quote-preview-1/claim/request', async (route) => {
+  await page.route('**/api/v2/public/quotes/quote-preview-1/claim/request', async (route) => {
     const body = route.request().postDataJSON();
     expect(body).toEqual({
       channel: 'email',
@@ -397,7 +397,7 @@ test('guest quote claim handoff runs from the private quote panel into auth conf
     });
   });
 
-  await page.route('**/api/quotes/guest/quote-preview-1/claim/confirm', async (route) => {
+  await page.route('**/api/v2/public/quotes/quote-preview-1/claim/confirm', async (route) => {
     const body = route.request().postDataJSON();
     expect(body).toEqual({
       claimToken: 'claim-token-1',
@@ -445,13 +445,13 @@ test('guest quote claim handoff runs from the private quote panel into auth conf
 test('guest quote private preview lets the customer add more photos after submit', async ({ page }) => {
   let previewPayload = createGuestQuotePreviewPayload();
 
-  await page.route('**/api/quotes/guest/guest-preview-token', async (route) => {
+  await page.route('**/api/v2/public/quotes/guest-preview-token', async (route) => {
     await route.fulfill({
       json: previewPayload
     });
   });
 
-  await page.route('**/api/quotes/guest/guest-preview-token/attachments', async (route) => {
+  await page.route('**/api/v2/public/quotes/guest-preview-token/attachments', async (route) => {
     previewPayload = {
       quote: {
         ...previewPayload.quote,

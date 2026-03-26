@@ -23,3 +23,4 @@
 - 2026-03-26 21:04 | Quote File Picker Append And Thumbnail Preview Hotfix | Plans/Quote File Picker Append And Thumbnail Preview Hotfix.md
 - 2026-03-26 21:40 | Web-v2 Overview Aggregation, Claimed Quote Follow Up Uploads And Mobile API Environment Hardening | Plans/Web-v2 Overview Aggregation, Claimed Quote Follow Up Uploads And Mobile API Environment Hardening.md
 - 2026-03-26 22:09 | Auth Session Bridge, Deploy-time Migrations And Project Lifecycle Hardening | Plans/Auth Session Bridge, Deploy-time Migrations And Project Lifecycle Hardening.md
+- 2026-03-26 23:17 | CRM Lifecycle, Activity Feed And V2 Public Quote Portal | Plans/CRM Lifecycle, Activity Feed And V2 Public Quote Portal.md
