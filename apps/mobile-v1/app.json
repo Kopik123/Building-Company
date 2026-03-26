@@ -27,7 +27,12 @@
       "package": "co.uk.levellines.mobile"
     },
     "extra": {
-      "apiBaseUrl": "https://levellines.co.uk/api/v2"
+      "apiEnvironment": "production",
+      "apiBaseUrls": {
+        "local": "http://10.0.2.2:3000/api/v2",
+        "staging": "https://staging.levellines.co.uk/api/v2",
+        "production": "https://levellines.co.uk/api/v2"
+      }
     }
   }
 }

@@ -365,7 +365,7 @@ test('guest quote claim handoff runs from the private quote panel into auth conf
         claimToken: 'claim-token-1',
         channel: 'email',
         maskedTarget: 'gu***@e***.com',
-        expiresAt: '2026-03-26T19:00:00.000Z'
+        expiresAt: '2099-03-26T19:00:00.000Z'
       }
     });
   });
@@ -416,7 +416,7 @@ test('guest quote claim handoff runs from the private quote panel into auth conf
 
   await page.goto('/quote.html?quote=guest-preview-token#quote-card');
 
-  const claimCard = page.locator('.quote-claim-card');
+  const claimCard = page.locator('[data-quote-claim-panel]');
   await expect(claimCard).toBeVisible();
   await claimCard.locator('select[name="channel"]').selectOption('email');
   await claimCard.locator('input[name="guestEmail"]').fill('guest@example.com');
@@ -486,7 +486,7 @@ test('guest quote private preview lets the customer add more photos after submit
   await page.goto('/quote.html?quote=guest-preview-token#quote-card');
 
   const quoteForm = page.locator('form.js-quote-form');
-  const uploadCard = quoteForm.locator('.quote-followup-upload-card');
+  const uploadCard = quoteForm.locator('[data-quote-followup-upload-panel]');
   await expect(uploadCard).toBeVisible();
   await expect(uploadCard).toContainText(/you can add 6 more photos/i);
   const followupInput = uploadCard.locator('input[type="file"][name="files"]');

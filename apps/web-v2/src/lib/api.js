@@ -9,6 +9,7 @@ const {
   normalizeCrmClient,
   normalizeCrmStaffMember,
   normalizeEstimateSummary,
+  normalizeOverviewSummary,
   normalizeItemResponse,
   normalizeListResponse,
   normalizeNotification,
@@ -21,6 +22,7 @@ const {
   normalizeThreadMessage,
   normalizeThreadSummary,
   notificationSchema,
+  overviewSummarySchema,
   projectSummarySchema,
   estimateSummarySchema,
   quoteEventSchema,
@@ -143,6 +145,10 @@ const toJsonOptions = (method, body) => ({
 const toMessageResponse = (payload, key = 'message') => normalizeItemResponse(payload, key, normalizeThreadMessage, threadMessageSchema);
 
 export const v2Api = {
+  async getOverview() {
+    const payload = await withAuth('/overview');
+    return normalizeItemResponse(payload, 'overview', normalizeOverviewSummary, overviewSummarySchema);
+  },
   async getProjects(params = {}) {
     const payload = await withAuth(`/projects${toQueryString({ page: 1, pageSize: 50, ...params })}`);
     return normalizeListResponse(payload, 'projects', normalizeProjectSummary, projectSummarySchema);

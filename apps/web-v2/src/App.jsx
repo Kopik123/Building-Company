@@ -36,6 +36,33 @@ const activeProjectStatuses = new Set(['planning', 'in_progress', 'on_hold']);
 const openQuoteStatuses = new Set(['pending', 'in_progress']);
 const MAX_QUOTE_PHOTO_FILES = 8;
 
+const createEmptyOverviewSummary = () => ({
+  metrics: {
+    projectCount: 0,
+    activeProjectCount: 0,
+    quoteCount: 0,
+    openQuoteCount: 0,
+    projectThreadCount: 0,
+    directThreadCount: 0,
+    unreadNotificationCount: 0,
+    clientCount: 0,
+    staffCount: 0,
+    lowStockMaterialCount: 0,
+    publicServiceCount: 0
+  },
+  projects: [],
+  quotes: [],
+  threads: [],
+  directThreads: [],
+  notifications: [],
+  lowStockMaterials: [],
+  publicServices: [],
+  crm: {
+    clientCount: 0,
+    staffCount: 0
+  }
+});
+
 const isStaffRole = (role) => ['employee', 'manager', 'admin'].includes(String(role || '').toLowerCase());
 
 const normalizeText = (value) => String(value || '').trim().toLowerCase();
@@ -354,6 +381,52 @@ const toNumberPayload = (value, fallback = 0) => {
 const formatMoney = (value) => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? `GBP ${parsed.toFixed(2)}` : 'Value pending';
+};
+
+const getSelectedFileKey = (file) => [file?.name || '', file?.size || 0, file?.lastModified || 0].join(':');
+
+const mergeSelectedFiles = (currentFiles, incomingFiles) => {
+  const merged = [...(Array.isArray(currentFiles) ? currentFiles : [])];
+  const seenKeys = new Set(merged.map(getSelectedFileKey));
+
+  (Array.isArray(incomingFiles) ? incomingFiles : []).forEach((file) => {
+    const key = getSelectedFileKey(file);
+    if (!seenKeys.has(key)) {
+      merged.push(file);
+      seenKeys.add(key);
+    }
+  });
+
+  return merged;
+};
+
+const getRemainingQuotePhotoSlots = (quote) =>
+  Math.max(0, MAX_QUOTE_PHOTO_FILES - Number(quote?.attachmentCount || 0));
+
+const validateQuotePhotoSelection = ({ currentFiles = [], incomingFiles = [], existingAttachmentCount = 0 }) => {
+  const mergedFiles = mergeSelectedFiles(currentFiles, incomingFiles);
+
+  if (mergedFiles.some((file) => !String(file?.type || '').toLowerCase().startsWith('image/'))) {
+    return {
+      files: currentFiles,
+      error: 'Only image files are allowed for quote photo attachments.'
+    };
+  }
+
+  const allowedCount = Math.max(0, MAX_QUOTE_PHOTO_FILES - Number(existingAttachmentCount || 0));
+  if (mergedFiles.length > allowedCount) {
+    return {
+      files: mergedFiles.slice(0, allowedCount),
+      error: existingAttachmentCount
+        ? `This quote can store up to ${MAX_QUOTE_PHOTO_FILES} photos. You can add ${allowedCount} more right now.`
+        : `Attach up to ${MAX_QUOTE_PHOTO_FILES} photos per quote.`
+    };
+  }
+
+  return {
+    files: mergedFiles,
+    error: ''
+  };
 };
 
 const createEstimateFormState = (overrides = {}) => ({
@@ -735,40 +808,30 @@ function OverviewPage() {
   const { user } = useAuth();
   const role = normalizeText(user?.role || 'client');
   const staffMode = isStaffRole(role);
-  const projects = useAsyncState(() => v2Api.getProjects(), [role], []);
-  const quotes = useAsyncState(() => v2Api.getQuotes(), [role], []);
-  const threads = useAsyncState(() => v2Api.getThreads(), [role], []);
-  const directThreads = useAsyncState(() => v2Api.getDirectThreads(), [role], []);
-  const notifications = useAsyncState(() => v2Api.getNotifications(), [role], []);
-  const unreadCount = useAsyncState(() => v2Api.getNotificationsUnreadCount(), [role], 0);
-  const clients = useAsyncState(() => (staffMode ? v2Api.getCrmClients() : Promise.resolve([])), [staffMode], []);
-  const staff = useAsyncState(() => (staffMode ? v2Api.getCrmStaff() : Promise.resolve([])), [staffMode], []);
-  const materials = useAsyncState(() => (staffMode ? v2Api.getInventoryMaterials() : Promise.resolve([])), [staffMode], []);
-  const publicServices = useAsyncState(() => v2Api.getPublicServices(), [], []);
-
-  const sortedProjects = sortByRecent(projects.data, ['updatedAt', 'endDate', 'startDate', 'createdAt']);
-  const sortedThreads = sortByRecent(threads.data, ['latestMessageAt', 'updatedAt', 'createdAt']);
-  const sortedNotifications = sortByRecent(notifications.data, ['createdAt', 'updatedAt']);
-  const activeProjects = sortedProjects.filter((project) => activeProjectStatuses.has(normalizeText(project?.status)));
-  const openQuotes = quotes.data.filter((quote) => openQuoteStatuses.has(normalizeText(quote?.status)));
-  const lowStockMaterials = materials.data.filter(
-    (material) => Number(material?.stockQty || 0) <= Number(material?.minStockQty || 0)
-  );
+  const overview = useAsyncState(() => v2Api.getOverview(), [role], createEmptyOverviewSummary());
+  const overviewData = overview.data || createEmptyOverviewSummary();
+  const metrics = overviewData.metrics || createEmptyOverviewSummary().metrics;
+  const sortedProjects = sortByRecent(overviewData.projects, ['updatedAt', 'endDate', 'startDate', 'createdAt']);
+  const sortedThreads = sortByRecent(overviewData.threads, ['latestMessageAt', 'updatedAt', 'createdAt']);
+  const sortedDirectThreads = sortByRecent(overviewData.directThreads, ['latestMessageAt', 'updatedAt', 'createdAt']);
+  const sortedNotifications = sortByRecent(overviewData.notifications, ['createdAt', 'updatedAt']);
+  const lowStockMaterials = Array.isArray(overviewData.lowStockMaterials) ? overviewData.lowStockMaterials : [];
+  const publicServices = Array.isArray(overviewData.publicServices) ? overviewData.publicServices : [];
 
   const quickLinks = staffMode
     ? [
-        { to: '/projects', label: 'Project flow', detail: 'Review live jobs, ownership and media counts.', meta: `${activeProjects.length} active` },
-        { to: '/private-inbox', label: 'Private inbox', detail: 'Run one-to-one client and staff communication routes.', meta: `${directThreads.data.length} private` },
-        { to: '/messages', label: 'Project chat', detail: 'Open project threads and keep delivery moving.', meta: `${threads.data.length} threads` },
-        { to: '/quotes', label: 'Quote board', detail: 'Track pending and in-progress quote work.', meta: `${openQuotes.length} open` },
-        { to: '/inventory', label: 'Stock watch', detail: 'Spot low-stock items before they block delivery.', meta: `${lowStockMaterials.length} flagged` }
+        { to: '/projects', label: 'Project flow', detail: 'Review live jobs, ownership and media counts.', meta: `${metrics.activeProjectCount} active` },
+        { to: '/private-inbox', label: 'Private inbox', detail: 'Run one-to-one client and staff communication routes.', meta: `${metrics.directThreadCount} private` },
+        { to: '/messages', label: 'Project chat', detail: 'Open project threads and keep delivery moving.', meta: `${metrics.projectThreadCount} threads` },
+        { to: '/quotes', label: 'Quote board', detail: 'Track pending and in-progress quote work.', meta: `${metrics.openQuoteCount} open` },
+        { to: '/inventory', label: 'Stock watch', detail: 'Spot low-stock items before they block delivery.', meta: `${metrics.lowStockMaterialCount} flagged` }
       ]
     : [
-        { to: '/projects', label: 'Projects', detail: 'Check progress, media counts and assigned manager routes.', meta: `${activeProjects.length} active` },
-        { to: '/private-inbox', label: 'Direct manager', detail: 'Keep the private route open with your assigned manager.', meta: `${directThreads.data.length} threads` },
-        { to: '/messages', label: 'Project chat', detail: 'Open the shared route for delivery questions and updates.', meta: `${threads.data.length} threads` },
-        { to: '/quotes', label: 'Quote follow-up', detail: 'Track active quote requests and priorities.', meta: `${openQuotes.length} open` },
-        { to: '/notifications', label: 'Alerts', detail: 'Clear unread notifications without losing the project thread.', meta: `${unreadCount.data || 0} unread` }
+        { to: '/projects', label: 'Projects', detail: 'Check progress, media counts and assigned manager routes.', meta: `${metrics.activeProjectCount} active` },
+        { to: '/private-inbox', label: 'Direct manager', detail: 'Keep the private route open with your assigned manager.', meta: `${metrics.directThreadCount} threads` },
+        { to: '/messages', label: 'Project chat', detail: 'Open the shared route for delivery questions and updates.', meta: `${metrics.projectThreadCount} threads` },
+        { to: '/quotes', label: 'Quote follow-up', detail: 'Track active quote requests and priorities.', meta: `${metrics.openQuoteCount} open` },
+        { to: '/notifications', label: 'Alerts', detail: 'Clear unread notifications without losing the project thread.', meta: `${metrics.unreadNotificationCount} unread` }
       ];
 
   return (
@@ -787,19 +850,19 @@ function OverviewPage() {
       </Surface>
 
       <div className="metrics-grid">
-        <MetricCard label="Projects" value={projects.data.length} detail={`${activeProjects.length} active routes`} tone="accent" />
-        <MetricCard label="Quotes" value={quotes.data.length} detail={`${openQuotes.length} open requests`} />
+        <MetricCard label="Projects" value={metrics.projectCount} detail={`${metrics.activeProjectCount} active routes`} tone="accent" />
+        <MetricCard label="Quotes" value={metrics.quoteCount} detail={`${metrics.openQuoteCount} open requests`} />
         <MetricCard
           label="Inbox routes"
-          value={threads.data.length + directThreads.data.length}
-          detail={`${directThreads.data.length} private / ${threads.data.length} project`}
+          value={metrics.projectThreadCount + metrics.directThreadCount}
+          detail={`${metrics.directThreadCount} private / ${metrics.projectThreadCount} project`}
         />
-        <MetricCard label="Unread alerts" value={unreadCount.data} detail="Notifications still waiting for acknowledgement" tone="danger" />
-        {staffMode ? <MetricCard label="Clients" value={clients.data.length} detail={`${staff.data.length} staff profiles loaded`} /> : null}
+        <MetricCard label="Unread alerts" value={metrics.unreadNotificationCount} detail="Notifications still waiting for acknowledgement" tone="danger" />
+        {staffMode ? <MetricCard label="Clients" value={metrics.clientCount} detail={`${metrics.staffCount} staff profiles loaded`} /> : null}
         {staffMode ? (
-          <MetricCard label="Low stock" value={lowStockMaterials.length} detail="Materials at or below minimum stock" tone="danger" />
+          <MetricCard label="Low stock" value={metrics.lowStockMaterialCount} detail="Materials at or below minimum stock" tone="danger" />
         ) : (
-          <MetricCard label="Service routes" value={publicServices.data.length} detail="Current brochure catalogue contract" />
+          <MetricCard label="Service routes" value={metrics.publicServiceCount} detail="Current brochure catalogue contract" />
         )}
       </div>
 
@@ -811,9 +874,9 @@ function OverviewPage() {
           actions={<Link to="/projects">Open all</Link>}
         >
           <div className="stack-list">
-            {projects.loading ? <p className="muted">Loading project routes...</p> : null}
-            {projects.error ? <p className="error">{projects.error}</p> : null}
-            {!projects.loading && !projects.error && !sortedProjects.length ? (
+            {overview.loading ? <p className="muted">Loading project routes...</p> : null}
+            {overview.error ? <p className="error">{overview.error}</p> : null}
+            {!overview.loading && !overview.error && !sortedProjects.length ? (
               <EmptyState text="Projects will appear here as soon as the workspace is linked." />
             ) : null}
             {sortedProjects.slice(0, 3).map((project) => (
@@ -829,13 +892,12 @@ function OverviewPage() {
           actions={<Link to="/messages">Open inbox</Link>}
         >
           <div className="stack-list">
-            {threads.loading || directThreads.loading ? <p className="muted">Loading thread summaries...</p> : null}
-            {threads.error ? <p className="error">{threads.error}</p> : null}
-            {directThreads.error ? <p className="error">{directThreads.error}</p> : null}
-            {!threads.loading && !threads.error && !directThreads.loading && !directThreads.error && !sortedThreads.length && !directThreads.data.length ? (
+            {overview.loading ? <p className="muted">Loading thread summaries...</p> : null}
+            {overview.error ? <p className="error">{overview.error}</p> : null}
+            {!overview.loading && !overview.error && !sortedThreads.length && !sortedDirectThreads.length ? (
               <EmptyState text="Thread previews will appear here once the first project or quote route is created." />
             ) : null}
-            {sortByRecent(directThreads.data, ['latestMessageAt', 'updatedAt', 'createdAt']).slice(0, 2).map((thread) => (
+            {sortedDirectThreads.slice(0, 2).map((thread) => (
               <article key={thread.id} className="summary-row">
                 <div>
                   <strong>{getDirectThreadTitle(thread, user?.id)}</strong>
@@ -866,10 +928,10 @@ function OverviewPage() {
       <div className="grid-two">
         <Surface eyebrow="Quotes" title="Current quote pipeline" description="Open and recently active quote requests." actions={<Link to="/quotes">Open quotes</Link>}>
           <div className="stack-list">
-            {quotes.loading ? <p className="muted">Loading quotes...</p> : null}
-            {quotes.error ? <p className="error">{quotes.error}</p> : null}
-            {!quotes.loading && !quotes.error && !quotes.data.length ? <EmptyState text="No quotes are currently linked to this workspace." /> : null}
-            {sortByRecent(quotes.data, ['updatedAt', 'createdAt']).slice(0, 3).map((quote) => (
+            {overview.loading ? <p className="muted">Loading quotes...</p> : null}
+            {overview.error ? <p className="error">{overview.error}</p> : null}
+            {!overview.loading && !overview.error && !overviewData.quotes.length ? <EmptyState text="No quotes are currently linked to this workspace." /> : null}
+            {sortByRecent(overviewData.quotes, ['updatedAt', 'createdAt']).slice(0, 3).map((quote) => (
               <QuoteCard key={quote.id} quote={quote} />
             ))}
           </div>
@@ -882,9 +944,9 @@ function OverviewPage() {
           actions={<Link to="/notifications">Open alerts</Link>}
         >
           <div className="stack-list">
-            {notifications.loading ? <p className="muted">Loading notifications...</p> : null}
-            {notifications.error ? <p className="error">{notifications.error}</p> : null}
-            {!notifications.loading && !notifications.error && !sortedNotifications.length ? (
+            {overview.loading ? <p className="muted">Loading notifications...</p> : null}
+            {overview.error ? <p className="error">{overview.error}</p> : null}
+            {!overview.loading && !overview.error && !sortedNotifications.length ? (
               <EmptyState text="Notifications will appear here once the workspace starts generating events." />
             ) : null}
             {sortedNotifications.slice(0, 4).map((notification) => (
@@ -909,16 +971,16 @@ function OverviewPage() {
         <div className="grid-two">
           <Surface eyebrow="CRM" title="People pulse" description="Client and staff counts from the current CRM contract." actions={<Link to="/crm">Open CRM</Link>}>
             <div className="mini-grid">
-              <MetricCard label="Clients" value={clients.data.length} detail="Active CRM client records" />
-              <MetricCard label="Staff" value={staff.data.length} detail="Employee, manager and admin profiles" />
+              <MetricCard label="Clients" value={overviewData.crm?.clientCount || 0} detail="Active CRM client records" />
+              <MetricCard label="Staff" value={overviewData.crm?.staffCount || 0} detail="Employee, manager and admin profiles" />
             </div>
           </Surface>
 
           <Surface eyebrow="Inventory" title="Stock watch" description="Quick signal for material levels that need follow-up." actions={<Link to="/inventory">Open inventory</Link>}>
             <div className="stack-list">
-              {materials.loading ? <p className="muted">Loading stock levels...</p> : null}
-              {materials.error ? <p className="error">{materials.error}</p> : null}
-              {!materials.loading && !materials.error && !lowStockMaterials.length ? <EmptyState text="No low-stock materials right now." /> : null}
+              {overview.loading ? <p className="muted">Loading stock levels...</p> : null}
+              {overview.error ? <p className="error">{overview.error}</p> : null}
+              {!overview.loading && !overview.error && !lowStockMaterials.length ? <EmptyState text="No low-stock materials right now." /> : null}
               {lowStockMaterials.slice(0, 4).map((material) => (
                 <article key={material.id} className="summary-row">
                   <div>
@@ -938,7 +1000,7 @@ function OverviewPage() {
       ) : (
         <Surface eyebrow="Services" title="Recommended service routes" description="Current public service catalogue summaries that also feed future mobile surfaces." actions={<Link to="/services-catalogue">Open services</Link>}>
           <div className="quick-link-grid">
-            {publicServices.data.slice(0, 4).map((service) => (
+            {publicServices.slice(0, 4).map((service) => (
               <article key={service.id || service.slug || service.title} className="quick-link-card quick-link-card--static">
                 <strong>{service.title}</strong>
                 <span>{service.shortDescription || 'Service summary pending.'}</span>
@@ -1253,6 +1315,8 @@ function QuotesPage() {
   const [actionMessage, setActionMessage] = React.useState('');
   const [form, setForm] = React.useState(() => createQuoteFormState());
   const [quoteFiles, setQuoteFiles] = React.useState([]);
+  const [followUpQuoteFiles, setFollowUpQuoteFiles] = React.useState([]);
+  const [followUpUploadInputKey, setFollowUpUploadInputKey] = React.useState(0);
   const [estimateForm, setEstimateForm] = React.useState(() => createEstimateFormState());
   const [responseNote, setResponseNote] = React.useState('');
   const [detailState, setDetailState] = React.useState({
@@ -1296,19 +1360,24 @@ function QuotesPage() {
   };
 
   const onQuoteFilesChange = (event) => {
-    const nextFiles = Array.from(event.target.files || []);
-    if (nextFiles.length > MAX_QUOTE_PHOTO_FILES) {
-      setActionError(`Attach up to ${MAX_QUOTE_PHOTO_FILES} photos per quote.`);
-      setQuoteFiles(nextFiles.slice(0, MAX_QUOTE_PHOTO_FILES));
-      return;
-    }
-    if (nextFiles.some((file) => !String(file.type || '').toLowerCase().startsWith('image/'))) {
-      setActionError('Only image files are allowed for quote photo attachments.');
-      setQuoteFiles([]);
-      return;
-    }
-    setActionError('');
-    setQuoteFiles(nextFiles);
+    const { files, error } = validateQuotePhotoSelection({
+      currentFiles: quoteFiles,
+      incomingFiles: Array.from(event.target.files || [])
+    });
+    event.target.value = '';
+    setActionError(error);
+    setQuoteFiles(files);
+  };
+
+  const onFollowUpQuoteFilesChange = (event) => {
+    const { files, error } = validateQuotePhotoSelection({
+      currentFiles: followUpQuoteFiles,
+      incomingFiles: Array.from(event.target.files || []),
+      existingAttachmentCount: Number(selectedQuote?.attachmentCount || 0)
+    });
+    event.target.value = '';
+    setActionError(error);
+    setFollowUpQuoteFiles(files);
   };
 
   const loadQuoteWorkspace = async (quoteId = selectedQuoteId) => {
@@ -1380,6 +1449,7 @@ function QuotesPage() {
   }, [selectedQuoteId, isCreatingQuote]);
 
   const selectedQuote = detailState.quote || quotes.data.find((quote) => quote.id === selectedQuoteId) || null;
+  const remainingQuotePhotoSlots = getRemainingQuotePhotoSlots(selectedQuote);
   const currentEstimate =
     detailState.estimates.find((estimate) => estimate?.isCurrentVersion)
     || detailState.estimates[0]
@@ -1418,6 +1488,8 @@ function QuotesPage() {
     );
     setEstimateForm(createEstimateFormState());
     setQuoteFiles([]);
+    setFollowUpQuoteFiles([]);
+    setFollowUpUploadInputKey((value) => value + 1);
     setResponseNote('');
     setDetailState({ loading: false, error: '', quote: null, estimates: [], events: [] });
     setActionError('');
@@ -1428,6 +1500,8 @@ function QuotesPage() {
     setIsCreatingQuote(false);
     setSelectedQuoteId(quote.id);
     setQuoteFiles([]);
+    setFollowUpQuoteFiles([]);
+    setFollowUpUploadInputKey((value) => value + 1);
     if (canManageQuotes) setForm(quoteToFormState(quote));
     setActionError('');
     setActionMessage('');
@@ -1605,6 +1679,40 @@ function QuotesPage() {
       setActionMessage(`Project created: ${result.project?.title || result.project?.id}.`);
     } catch (error) {
       setActionError(error.message || 'Could not convert quote into project');
+    } finally {
+      setSecondarySaving(false);
+    }
+  };
+
+  const onUploadFollowUpPhotos = async () => {
+    if (!selectedQuote?.id || !followUpQuoteFiles.length || secondarySaving) return;
+    if (remainingQuotePhotoSlots <= 0) {
+      setActionError(`This quote already has the maximum ${MAX_QUOTE_PHOTO_FILES} photos.`);
+      return;
+    }
+    if (followUpQuoteFiles.length > remainingQuotePhotoSlots) {
+      setActionError(`This quote can store up to ${MAX_QUOTE_PHOTO_FILES} photos. You can add ${remainingQuotePhotoSlots} more right now.`);
+      return;
+    }
+
+    setSecondarySaving(true);
+    setActionError('');
+    setActionMessage('');
+    try {
+      const attachmentResult = await v2Api.uploadQuoteAttachments(selectedQuote.id, { files: followUpQuoteFiles });
+      if (attachmentResult?.quote?.id) {
+        upsertQuote(attachmentResult.quote);
+      }
+      await loadQuoteWorkspace(selectedQuote.id);
+      setFollowUpQuoteFiles([]);
+      setFollowUpUploadInputKey((value) => value + 1);
+      setActionMessage(
+        followUpQuoteFiles.length === 1
+          ? 'Added 1 more quote photo.'
+          : `Added ${followUpQuoteFiles.length} more quote photos.`
+      );
+    } catch (error) {
+      setActionError(error.message || 'Could not upload additional quote photos');
     } finally {
       setSecondarySaving(false);
     }
@@ -1849,6 +1957,33 @@ function QuotesPage() {
             }
           >
             <QuoteAttachmentList attachments={selectedQuote.attachments} />
+            {!canManageQuotes ? (
+              <div className="editor-form">
+                <label className="file-input">
+                  <span>Add more reference photos</span>
+                  <input key={followUpUploadInputKey} type="file" accept="image/*" multiple onChange={onFollowUpQuoteFilesChange} />
+                </label>
+                <p className="muted">
+                  {remainingQuotePhotoSlots > 0
+                    ? `This quote currently stores ${selectedQuote.attachmentCount || 0} of ${MAX_QUOTE_PHOTO_FILES} photos. You can add ${remainingQuotePhotoSlots} more.`
+                    : `This quote already stores the maximum ${MAX_QUOTE_PHOTO_FILES} photos.`}
+                </p>
+                {followUpQuoteFiles.length ? (
+                  <div className="attachment-list">
+                    {followUpQuoteFiles.map((file) => (
+                      <span key={getSelectedFileKey(file)} className="attachment-chip attachment-chip--muted">
+                        {file.name}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+                <div className="action-row">
+                  <button type="button" onClick={onUploadFollowUpPhotos} disabled={!followUpQuoteFiles.length || secondarySaving || remainingQuotePhotoSlots <= 0}>
+                    {secondarySaving ? 'Uploading...' : 'Upload more photos'}
+                  </button>
+                </div>
+              </div>
+            ) : null}
           </Surface>
         ) : null}
 

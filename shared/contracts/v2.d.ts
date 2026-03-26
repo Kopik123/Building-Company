@@ -239,6 +239,37 @@ export interface InventoryMaterial {
   updatedAt: string | null;
 }
 
+export interface OverviewMetricsSummary {
+  projectCount: number;
+  activeProjectCount: number;
+  quoteCount: number;
+  openQuoteCount: number;
+  projectThreadCount: number;
+  directThreadCount: number;
+  unreadNotificationCount: number;
+  clientCount: number;
+  staffCount: number;
+  lowStockMaterialCount: number;
+  publicServiceCount: number;
+}
+
+export interface OverviewCrmSummary {
+  clientCount: number;
+  staffCount: number;
+}
+
+export interface OverviewSummary {
+  metrics: OverviewMetricsSummary;
+  projects: ProjectSummary[];
+  quotes: QuoteSummary[];
+  threads: ThreadSummary[];
+  directThreads: DirectThreadSummary[];
+  notifications: NotificationSummary[];
+  lowStockMaterials: InventoryMaterial[];
+  publicServices: InventoryService[];
+  crm: OverviewCrmSummary;
+}
+
 export const PROJECT_STATUSES: readonly ProjectStatus[];
 export const QUOTE_STATUSES: readonly QuoteStatus[];
 export const QUOTE_WORKFLOW_STATUSES: readonly QuoteWorkflowStatus[];
@@ -265,6 +296,9 @@ export const crmClientSchema: z.ZodType<CrmClient>;
 export const crmStaffMemberSchema: z.ZodType<CrmStaffMember>;
 export const inventoryServiceSchema: z.ZodType<InventoryService>;
 export const inventoryMaterialSchema: z.ZodType<InventoryMaterial>;
+export const overviewMetricsSchema: z.ZodType<OverviewMetricsSummary>;
+export const overviewCrmSchema: z.ZodType<OverviewCrmSummary>;
+export const overviewSummarySchema: z.ZodType<OverviewSummary>;
 
 export function normalizeUserSummary(value: unknown): UserSummary;
 export function normalizeThreadMessage(value: unknown): ThreadMessage;
@@ -279,5 +313,6 @@ export function normalizeCrmClient(value: unknown): CrmClient;
 export function normalizeCrmStaffMember(value: unknown): CrmStaffMember;
 export function normalizeInventoryService(value: unknown): InventoryService;
 export function normalizeInventoryMaterial(value: unknown): InventoryMaterial;
+export function normalizeOverviewSummary(value: unknown): OverviewSummary;
 export function normalizeListResponse<T>(payload: unknown, key: string, normalizer: (value: unknown) => T, schema?: z.ZodType<T>): T[];
 export function normalizeItemResponse<T>(payload: unknown, key: string, normalizer: (value: unknown) => T, schema?: z.ZodType<T>): T | null;

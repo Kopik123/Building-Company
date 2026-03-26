@@ -317,6 +317,37 @@ const inventoryMaterialSchema = z.object({
   updatedAt: nullableStringSchema
 });
 
+const overviewMetricsSchema = z.object({
+  projectCount: z.number(),
+  activeProjectCount: z.number(),
+  quoteCount: z.number(),
+  openQuoteCount: z.number(),
+  projectThreadCount: z.number(),
+  directThreadCount: z.number(),
+  unreadNotificationCount: z.number(),
+  clientCount: z.number(),
+  staffCount: z.number(),
+  lowStockMaterialCount: z.number(),
+  publicServiceCount: z.number()
+});
+
+const overviewCrmSchema = z.object({
+  clientCount: z.number(),
+  staffCount: z.number()
+});
+
+const overviewSummarySchema = z.object({
+  metrics: overviewMetricsSchema,
+  projects: z.array(projectSummarySchema),
+  quotes: z.array(quoteSummarySchema),
+  threads: z.array(threadSummarySchema),
+  directThreads: z.array(directThreadSummarySchema),
+  notifications: z.array(notificationSchema),
+  lowStockMaterials: z.array(inventoryMaterialSchema),
+  publicServices: z.array(inventoryServiceSchema),
+  crm: overviewCrmSchema
+});
+
 const threadMessageSchema = z.object({
   id: z.string(),
   threadId: nullableStringSchema,
@@ -576,6 +607,39 @@ const normalizeInventoryMaterial = (value) => {
   };
 };
 
+const normalizeOverviewSummary = (value) => {
+  const plain = toPlainObject(value);
+  const metrics = toPlainObject(plain.metrics);
+  const crm = toPlainObject(plain.crm);
+
+  return {
+    metrics: {
+      projectCount: toNullableNumber(metrics.projectCount) ?? 0,
+      activeProjectCount: toNullableNumber(metrics.activeProjectCount) ?? 0,
+      quoteCount: toNullableNumber(metrics.quoteCount) ?? 0,
+      openQuoteCount: toNullableNumber(metrics.openQuoteCount) ?? 0,
+      projectThreadCount: toNullableNumber(metrics.projectThreadCount) ?? 0,
+      directThreadCount: toNullableNumber(metrics.directThreadCount) ?? 0,
+      unreadNotificationCount: toNullableNumber(metrics.unreadNotificationCount) ?? 0,
+      clientCount: toNullableNumber(metrics.clientCount) ?? 0,
+      staffCount: toNullableNumber(metrics.staffCount) ?? 0,
+      lowStockMaterialCount: toNullableNumber(metrics.lowStockMaterialCount) ?? 0,
+      publicServiceCount: toNullableNumber(metrics.publicServiceCount) ?? 0
+    },
+    projects: toArray(plain.projects).map(normalizeProjectSummary),
+    quotes: toArray(plain.quotes).map(normalizeQuoteSummary),
+    threads: toArray(plain.threads).map(normalizeThreadSummary),
+    directThreads: toArray(plain.directThreads).map(normalizeDirectThreadSummary),
+    notifications: toArray(plain.notifications).map(normalizeNotification),
+    lowStockMaterials: toArray(plain.lowStockMaterials).map(normalizeInventoryMaterial),
+    publicServices: toArray(plain.publicServices).map(normalizeInventoryService),
+    crm: {
+      clientCount: toNullableNumber(crm.clientCount) ?? 0,
+      staffCount: toNullableNumber(crm.staffCount) ?? 0
+    }
+  };
+};
+
 const normalizeCollection = (value, normalizer) => toArray(value).map((item) => normalizer(item));
 const normalizeEntity = (value, normalizer) => {
   if (!value || typeof value !== 'object') return null;
@@ -612,6 +676,9 @@ module.exports = {
   crmStaffMemberSchema,
   inventoryServiceSchema,
   inventoryMaterialSchema,
+  overviewMetricsSchema,
+  overviewCrmSchema,
+  overviewSummarySchema,
   normalizeUserSummary,
   normalizeMessageAttachment,
   normalizeThreadMessage,
@@ -626,6 +693,7 @@ module.exports = {
   normalizeCrmStaffMember,
   normalizeInventoryService,
   normalizeInventoryMaterial,
+  normalizeOverviewSummary,
   normalizeListResponse,
   normalizeItemResponse
 };

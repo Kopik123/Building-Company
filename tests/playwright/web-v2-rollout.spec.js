@@ -2,6 +2,18 @@ const path = require('node:path');
 const { test, expect } = require('@playwright/test');
 
 const messageAttachmentFixture = path.join(__dirname, '..', 'fixtures', 'message-attachment.txt');
+const quotePhotoFixtures = [
+  {
+    name: 'quote-photo-1.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9pZ0Sq8AAAAASUVORK5CYII=', 'base64')
+  },
+  {
+    name: 'quote-photo-2.png',
+    mimeType: 'image/png',
+    buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9pZ0Sq8AAAAASUVORK5CYII=', 'base64')
+  }
+];
 
 const fulfillJson = (route, payload, status = 200) =>
   route.fulfill({
@@ -32,6 +44,292 @@ const mockWebV2Auth = async (page, user) => {
     await fulfillJson(route, { data: { user } });
   });
 };
+
+test('web-v2 overview uses the aggregated overview contract for workspace summaries', async ({ page }) => {
+  const managerUser = {
+    id: 'manager-1',
+    name: 'Daniel Manager',
+    email: 'manager@example.com',
+    role: 'manager'
+  };
+
+  await mockWebV2Auth(page, managerUser);
+  await page.route('**/api/v2/overview', async (route) => {
+    await fulfillJson(route, {
+      data: {
+        overview: {
+          metrics: {
+            projectCount: 2,
+            activeProjectCount: 1,
+            quoteCount: 3,
+            openQuoteCount: 2,
+            projectThreadCount: 1,
+            directThreadCount: 1,
+            unreadNotificationCount: 4,
+            clientCount: 5,
+            staffCount: 2,
+            lowStockMaterialCount: 1,
+            publicServiceCount: 0
+          },
+          projects: [
+            {
+              id: 'project-1',
+              title: 'Prestige Kitchen',
+              location: 'Manchester',
+              status: 'in_progress',
+              clientId: 'client-1',
+              assignedManagerId: 'manager-1',
+              quoteId: 'quote-1',
+              acceptedEstimateId: null,
+              description: 'Stone island and oak storage.',
+              budgetEstimate: 'GBP 32000.00',
+              startDate: '2026-03-20',
+              endDate: null,
+              showInGallery: true,
+              galleryOrder: 1,
+              isActive: true,
+              imageCount: 2,
+              documentCount: 1,
+              createdAt: '2026-03-20T08:00:00Z',
+              updatedAt: '2026-03-26T09:00:00Z',
+              client: {
+                id: 'client-1',
+                name: 'Marta Client',
+                email: 'client@example.com',
+                role: 'client',
+                phone: '+44 7000 000 000',
+                companyName: 'Client Co',
+                isActive: true,
+                createdAt: null,
+                updatedAt: null
+              },
+              assignedManager: {
+                id: 'manager-1',
+                name: 'Daniel Manager',
+                email: 'manager@example.com',
+                role: 'manager',
+                phone: '+44 7000 000 001',
+                companyName: null,
+                isActive: true,
+                createdAt: null,
+                updatedAt: null
+              },
+              quote: null,
+              media: []
+            }
+          ],
+          quotes: [
+            {
+              id: 'quote-1',
+              projectType: 'kitchen',
+              location: 'Manchester',
+              status: 'pending',
+              workflowStatus: 'submitted',
+              priority: 'high',
+              description: 'Kitchen quote request.',
+              isGuest: false,
+              guestName: null,
+              guestEmail: null,
+              guestPhone: null,
+              contactMethod: 'email',
+              postcode: null,
+              budgetRange: '£12,000-£20,000',
+              contactEmail: 'client@example.com',
+              contactPhone: '+44 7000 000 000',
+              assignedManagerId: 'manager-1',
+              clientId: 'client-1',
+              sourceChannel: 'client_portal',
+              currentEstimateId: null,
+              convertedProjectId: null,
+              submittedAt: '2026-03-26T07:30:00Z',
+              assignedAt: '2026-03-26T07:45:00Z',
+              convertedAt: null,
+              closedAt: null,
+              lossReason: null,
+              attachmentCount: 1,
+              attachments: [{
+                name: 'brief-photo.png',
+                url: '/uploads/brief-photo.png',
+                size: 2048,
+                mimeType: 'image/png'
+              }],
+              estimateCount: 0,
+              canConvertToProject: false,
+              createdAt: '2026-03-26T07:30:00Z',
+              updatedAt: '2026-03-26T09:00:00Z',
+              client: {
+                id: 'client-1',
+                name: 'Marta Client',
+                email: 'client@example.com',
+                role: 'client',
+                phone: '+44 7000 000 000',
+                companyName: 'Client Co',
+                isActive: true,
+                createdAt: null,
+                updatedAt: null
+              },
+              assignedManager: {
+                id: 'manager-1',
+                name: 'Daniel Manager',
+                email: 'manager@example.com',
+                role: 'manager',
+                phone: '+44 7000 000 001',
+                companyName: null,
+                isActive: true,
+                createdAt: null,
+                updatedAt: null
+              },
+              latestEstimate: null
+            }
+          ],
+          threads: [
+            {
+              id: 'group-thread-1',
+              name: 'Prestige Kitchen route',
+              subject: null,
+              latestMessagePreview: 'Stone samples booked for Friday.',
+              latestMessageAt: '2026-03-26T09:12:00Z',
+              latestMessageSenderId: 'manager-1',
+              messageCount: 3,
+              memberCount: 2,
+              currentUserMembershipRole: 'admin',
+              createdAt: '2026-03-26T08:10:00Z',
+              updatedAt: '2026-03-26T09:12:00Z',
+              latestMessageSender: {
+                id: 'manager-1',
+                name: 'Daniel Manager',
+                email: 'manager@example.com',
+                role: 'manager',
+                phone: null,
+                companyName: null,
+                isActive: true,
+                createdAt: null,
+                updatedAt: null
+              },
+              project: {
+                id: 'project-1',
+                title: 'Prestige Kitchen',
+                location: 'Manchester',
+                status: 'in_progress',
+                clientId: 'client-1',
+                assignedManagerId: 'manager-1',
+                quoteId: 'quote-1',
+                acceptedEstimateId: null,
+                description: null,
+                budgetEstimate: null,
+                startDate: null,
+                endDate: null,
+                showInGallery: false,
+                galleryOrder: 0,
+                isActive: true,
+                imageCount: 0,
+                documentCount: 0,
+                createdAt: null,
+                updatedAt: null,
+                client: { id: '', name: null, email: null, role: null, phone: null, companyName: null, isActive: true, createdAt: null, updatedAt: null },
+                assignedManager: { id: '', name: null, email: null, role: null, phone: null, companyName: null, isActive: true, createdAt: null, updatedAt: null },
+                quote: null,
+                media: []
+              },
+              quote: null
+            }
+          ],
+          directThreads: [
+            {
+              id: 'direct-thread-1',
+              subject: 'Kitchen follow-up',
+              participantAId: 'manager-1',
+              participantBId: 'client-1',
+              participantCount: 2,
+              latestMessagePreview: 'Please confirm the delivery slot.',
+              latestMessageAt: '2026-03-26T09:05:00Z',
+              latestMessageSenderId: 'client-1',
+              unreadCount: 1,
+              createdAt: '2026-03-26T08:20:00Z',
+              updatedAt: '2026-03-26T09:05:00Z',
+              counterparty: {
+                id: 'client-1',
+                name: 'Marta Client',
+                email: 'client@example.com',
+                role: 'client',
+                phone: '+44 7000 000 000',
+                companyName: 'Client Co',
+                isActive: true,
+                createdAt: null,
+                updatedAt: null
+              },
+              participantA: {
+                id: 'manager-1',
+                name: 'Daniel Manager',
+                email: 'manager@example.com',
+                role: 'manager',
+                phone: '+44 7000 000 001',
+                companyName: null,
+                isActive: true,
+                createdAt: null,
+                updatedAt: null
+              },
+              participantB: {
+                id: 'client-1',
+                name: 'Marta Client',
+                email: 'client@example.com',
+                role: 'client',
+                phone: '+44 7000 000 000',
+                companyName: 'Client Co',
+                isActive: true,
+                createdAt: null,
+                updatedAt: null
+              }
+            }
+          ],
+          notifications: [
+            {
+              id: 'notification-1',
+              type: 'quote',
+              title: 'New quote update',
+              body: 'Client added more detail.',
+              isRead: false,
+              createdAt: '2026-03-26T09:15:00Z',
+              updatedAt: '2026-03-26T09:15:00Z'
+            }
+          ],
+          lowStockMaterials: [
+            {
+              id: 'material-1',
+              sku: 'BRASS-1',
+              name: 'Brass trim',
+              category: 'hardware',
+              unit: 'pcs',
+              stockQty: 2,
+              minStockQty: 4,
+              unitCost: 18,
+              supplier: 'Trim House',
+              notes: null,
+              isActive: true,
+              createdAt: null,
+              updatedAt: null
+            }
+          ],
+          publicServices: [],
+          crm: {
+            clientCount: 5,
+            staffCount: 2
+          }
+        }
+      }
+    });
+  });
+
+  await page.goto('/app-v2/overview');
+
+  await expect(page.getByRole('heading', { name: 'Manager Workspace overview' })).toBeVisible();
+  await expect(page.locator('.metrics-grid')).toContainText('Projects');
+  await expect(page.locator('.metrics-grid')).toContainText('Low stock');
+  await expect(page.locator('.quick-link-grid').first()).toContainText('2 open');
+  await expect(page.locator('.quick-link-grid').first()).toContainText('1 flagged');
+  await expect(page.locator('.grid-two').first()).toContainText('Prestige Kitchen');
+  await expect(page.locator('.grid-two').first()).toContainText('Stone samples booked for Friday.');
+});
 
 test('web-v2 private inbox clears unread state and supports attachment-first thread creation', async ({ page }) => {
   const managerUser = {
@@ -629,6 +927,16 @@ test('web-v2 client quotes surface can accept an estimate and submit a fresh quo
       }
     ]
   };
+  const quoteAttachmentsById = {
+    'quote-1': [
+      {
+        name: 'initial-brief-photo.png',
+        url: '/uploads/initial-brief-photo.png',
+        size: 2048,
+        mimeType: 'image/png'
+      }
+    ]
+  };
   const quotes = [
     {
       id: 'quote-1',
@@ -659,6 +967,8 @@ test('web-v2 client quotes surface can accept an estimate and submit a fresh quo
     convertedAt: null,
     closedAt: null,
     lossReason: null,
+    attachmentCount: (quoteAttachmentsById[quote.id] || []).length,
+    attachments: quoteAttachmentsById[quote.id] || [],
     estimateCount: (quoteEstimatesById[quote.id] || []).length,
     latestEstimate: (quoteEstimatesById[quote.id] || [])[0] || null,
     ...quote
@@ -733,6 +1043,31 @@ test('web-v2 client quotes surface can accept an estimate and submit a fresh quo
     });
   });
 
+  await page.route(/\/api\/v2\/quotes\/[^/]+\/attachments$/, async (route) => {
+    await handleRouteMethod(route, 'POST', async () => {
+      const quoteId = route.request().url().match(/quotes\/([^/]+)\/attachments/)?.[1] || '';
+      const quote = quotes.find((item) => item.id === quoteId);
+      const nextAttachments = quotePhotoFixtures.map((file, index) => ({
+        name: file.name,
+        url: `/uploads/${file.name}`,
+        size: 4096 + index,
+        mimeType: file.mimeType
+      }));
+
+      quoteAttachmentsById[quoteId] = [...(quoteAttachmentsById[quoteId] || []), ...nextAttachments];
+      if (quote) {
+        quote.updatedAt = '2026-03-23T10:45:00Z';
+      }
+
+      await fulfillJson(route, {
+        data: {
+          quote: enrichQuote(quote),
+          attachments: nextAttachments
+        }
+      }, 201);
+    });
+  });
+
   await page.route(/\/api\/v2\/quotes\/[^/]+$/, async (route) => {
     if (route.request().method() !== 'GET') {
       await route.fallback();
@@ -754,11 +1089,20 @@ test('web-v2 client quotes surface can accept an estimate and submit a fresh quo
   await page.goto('/app-v2/quotes');
 
   const quoteBoardList = page.locator('.grid-two > .surface').first().locator('.stack-list');
+  const attachmentSurface = page.locator('.surface').filter({ has: page.getByRole('heading', { name: 'Quote photos' }) });
   await expect(page.getByRole('heading', { name: 'Quote board' })).toBeVisible();
   await expect(quoteBoardList).toContainText('Manchester');
   await page.getByLabel('Response note').fill('Please lock the March installation slot.');
   await page.getByRole('button', { name: 'Accept estimate' }).click();
   await expect(quoteBoardList).toContainText('Approved Ready For Project');
+
+  await attachmentSurface.locator('input[type="file"]').setInputFiles(quotePhotoFixtures);
+  await page.getByRole('button', { name: 'Upload more photos' }).click();
+  await expect(attachmentSurface).toContainText('initial-brief-photo.png');
+  await expect(attachmentSurface).toContainText('quote-photo-1.png');
+  await expect(attachmentSurface).toContainText('quote-photo-2.png');
+  await expect(page.getByText('Added 2 more quote photos.')).toBeVisible();
+  await expect(attachmentSurface).toContainText('This quote currently stores 3 of 8 photos.');
 
   await page.getByRole('button', { name: 'New quote' }).click();
   await page.getByLabel('Project type').selectOption('kitchen');

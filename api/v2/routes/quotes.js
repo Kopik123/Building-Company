@@ -359,6 +359,17 @@ router.post(
       return fail(res, 400, 'missing_attachments', 'Attach at least one photo');
     }
 
+    const existingCount = Array.isArray(quote.attachments) ? quote.attachments.length : 0;
+    const remainingSlots = Math.max(0, MAX_QUOTE_ATTACHMENT_FILES - existingCount);
+    if (remainingSlots <= 0) {
+      await cleanupUploadedFiles(files);
+      return fail(res, 400, 'attachment_limit_reached', `This quote already has the maximum ${MAX_QUOTE_ATTACHMENT_FILES} photos.`);
+    }
+    if (files.length > remainingSlots) {
+      await cleanupUploadedFiles(files);
+      return fail(res, 400, 'attachment_limit_reached', `This quote can store up to ${MAX_QUOTE_ATTACHMENT_FILES} photos. You can add ${remainingSlots} more right now.`);
+    }
+
     let attachments = [];
     try {
       attachments = await persistQuoteAttachments({
@@ -381,6 +392,7 @@ router.post(
         message: `${attachments.length} quote attachment(s) added.`,
         data: {
           attachmentCount: attachments.length,
+          totalAttachmentCount: existingCount + attachments.length,
           attachments: attachments.map(toQuoteAttachmentSummary)
         }
       });

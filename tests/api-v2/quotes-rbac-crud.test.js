@@ -55,9 +55,11 @@ const createQuoteStubs = () => {
 
   const attachQuoteMethods = (quote) => ({
     ...quote,
+    attachments: quoteAttachments.filter((attachment) => attachment.quoteId === quote.id),
     async update(payload) {
       Object.assign(quote, payload, { updatedAt: '2026-03-24T09:10:00Z' });
       Object.assign(this, quote);
+      this.attachments = quoteAttachments.filter((attachment) => attachment.quoteId === quote.id);
       return this;
     },
     toJSON() {
@@ -415,7 +417,7 @@ test('quotes v2 supports client submit, manager assignment, estimate approval an
   assert.equal(stubs.quoteEvents.length >= 4, true);
 });
 
-test('quotes v2 lets a client attach reference photos to an existing quote', async () => {
+test('quotes v2 lets a client append reference photos to an existing quote and enforces the total photo cap', async () => {
   const stubs = createQuoteStubs();
   mockModels(stubs.models);
 
@@ -447,4 +449,24 @@ test('quotes v2 lets a client attach reference photos to an existing quote', asy
   assert.equal(attachResponse.body?.data?.quote?.attachmentCount, 2);
   assert.equal(attachResponse.body?.data?.attachments?.length, 2);
   assert.equal(stubs.quoteEvents.some((event) => event.eventType === 'quote_attachments_added'), true);
+
+  const followUpAttachResponse = await request(app)
+    .post(`/api/v2/quotes/${quoteId}/attachments`)
+    .set('Authorization', `Bearer ${clientToken}`)
+    .attach('files', Buffer.from('fake-image-c'), { filename: 'kitchen-c.jpg', contentType: 'image/jpeg' })
+    .expect(201);
+
+  assert.equal(followUpAttachResponse.body?.data?.quote?.attachmentCount, 3);
+  assert.equal(followUpAttachResponse.body?.data?.attachments?.length, 1);
+
+  await request(app)
+    .post(`/api/v2/quotes/${quoteId}/attachments`)
+    .set('Authorization', `Bearer ${clientToken}`)
+    .attach('files', Buffer.from('fake-image-d'), { filename: 'kitchen-d.jpg', contentType: 'image/jpeg' })
+    .attach('files', Buffer.from('fake-image-e'), { filename: 'kitchen-e.jpg', contentType: 'image/jpeg' })
+    .attach('files', Buffer.from('fake-image-f'), { filename: 'kitchen-f.jpg', contentType: 'image/jpeg' })
+    .attach('files', Buffer.from('fake-image-g'), { filename: 'kitchen-g.jpg', contentType: 'image/jpeg' })
+    .attach('files', Buffer.from('fake-image-h'), { filename: 'kitchen-h.jpg', contentType: 'image/jpeg' })
+    .attach('files', Buffer.from('fake-image-i'), { filename: 'kitchen-i.jpg', contentType: 'image/jpeg' })
+    .expect(400);
 });

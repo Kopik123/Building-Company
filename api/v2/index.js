@@ -8,6 +8,7 @@ const messagesRoutes = require('./routes/messages');
 const notificationsRoutes = require('./routes/notifications');
 const inventoryRoutes = require('./routes/inventory');
 const publicRoutes = require('./routes/public');
+const overviewRoutes = require('./routes/overview');
 const { fail } = require('./utils/response');
 
 const router = express.Router();
@@ -30,6 +31,7 @@ router.use('/quotes', quotesRoutes);
 router.use('/messages', messagesRoutes);
 router.use('/notifications', notificationsRoutes);
 router.use('/inventory', inventoryRoutes);
+router.use('/overview', overviewRoutes);
 
 // Public endpoints mounted on v2 root:
 // /api/v2/services, /api/v2/gallery/projects, /api/v2/gallery/services

@@ -369,6 +369,7 @@
     const hasActivePendingClaim = pendingClaim?.quoteId === preview.quoteId && isPendingQuoteClaimActive(pendingClaim);
     const wrapper = document.createElement('section');
     wrapper.className = 'quote-claim-card';
+    wrapper.setAttribute('data-quote-claim-panel', '');
 
     const heading = document.createElement('div');
     heading.className = 'quote-claim-head';
@@ -792,6 +793,7 @@
     const remainingSlots = getRemainingPhotoSlots(preview);
     const wrapper = document.createElement('section');
     wrapper.className = 'quote-claim-card quote-followup-upload-card';
+    wrapper.setAttribute('data-quote-followup-upload-panel', '');
 
     const heading = document.createElement('div');
     heading.className = 'quote-claim-head';

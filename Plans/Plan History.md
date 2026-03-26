@@ -21,3 +21,4 @@
 - 2026-03-26 18:55 | Guest Quote Claim Handoff Between Quote Preview And Auth Account | Plans/Guest Quote Claim Handoff Between Quote Preview And Auth Account.md
 - 2026-03-26 20:56 | Guest Quote Follow Up Photo Upload From Private Preview | Plans/Guest Quote Follow Up Photo Upload From Private Preview.md
 - 2026-03-26 21:04 | Quote File Picker Append And Thumbnail Preview Hotfix | Plans/Quote File Picker Append And Thumbnail Preview Hotfix.md
+- 2026-03-26 21:40 | Web-v2 Overview Aggregation, Claimed Quote Follow Up Uploads And Mobile API Environment Hardening | Plans/Web-v2 Overview Aggregation, Claimed Quote Follow Up Uploads And Mobile API Environment Hardening.md
