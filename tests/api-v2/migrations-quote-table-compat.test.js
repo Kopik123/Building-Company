@@ -8,6 +8,7 @@ const quoteWorkflowAndEvents = require('../../migrations/202603240001-quote-work
 const relaxQuotesClientIdNullability = require('../../migrations/202603240002-relax-quotes-clientid-nullability.js');
 const forceDropQuotesClientIdNotNull = require('../../migrations/202603240003-force-drop-quotes-clientid-not-null.js');
 const quoteAttachmentsMigration = require('../../migrations/202603240004-quote-attachments.js');
+const estimateVersioningMigration = require('../../migrations/202603270001-estimate-versioning-and-approval.js');
 
 const createQueryInterfaceStub = (tables) => {
   const queries = [];
@@ -439,6 +440,45 @@ test('quote attachments migration creates the table and both supporting indexes 
   );
   assert.equal(
     addedIndexes.some((item) => item.options?.name === 'quote_attachments_uploader_idx'),
+    true
+  );
+});
+
+test('estimate versioning migration adds superseded status support, decision notes and replacement tracking', async () => {
+  const { queryInterface, queries, addedIndexes } = createQueryInterfaceStub({
+    Estimates: {
+      id: {},
+      quoteId: {},
+      status: {},
+      clientMessage: {},
+      respondedAt: {}
+    }
+  });
+
+  await assert.doesNotReject(() =>
+    estimateVersioningMigration.up(queryInterface, {
+      DataTypes: {
+        UUID: 'UUID',
+        TEXT: 'TEXT',
+        DATE: 'DATE'
+      }
+    })
+  );
+
+  const estimatesTable = await queryInterface.describeTable('Estimates');
+  assert.equal(
+    queries.some((sql) => sql.includes('ALTER TYPE "enum_Estimates_status" ADD VALUE IF NOT EXISTS \'superseded\'')),
+    true
+  );
+  assert.equal(Object.hasOwn(estimatesTable, 'decisionNote'), true);
+  assert.equal(Object.hasOwn(estimatesTable, 'supersededById'), true);
+  assert.equal(Object.hasOwn(estimatesTable, 'supersededAt'), true);
+  assert.equal(
+    queries.some((sql) => sql.includes('SET "decisionNote" = "clientMessage"')),
+    true
+  );
+  assert.equal(
+    addedIndexes.some((item) => item.options?.name === 'estimates_superseded_by_idx'),
     true
   );
 });

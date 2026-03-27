@@ -179,6 +179,7 @@ const createQuoteStubs = () => {
         isCurrentVersion: typeof payload.isCurrentVersion === 'boolean' ? payload.isCurrentVersion : true,
         notes: payload.notes || null,
         clientMessage: payload.clientMessage || null,
+        decisionNote: payload.decisionNote || null,
         subtotal: payload.subtotal || 0,
         total: payload.total || 0,
         sentAt: payload.sentAt || null,
@@ -186,6 +187,8 @@ const createQuoteStubs = () => {
         respondedAt: payload.respondedAt || null,
         approvedAt: payload.approvedAt || null,
         declinedAt: payload.declinedAt || null,
+        supersededById: payload.supersededById || null,
+        supersededAt: payload.supersededAt || null,
         createdAt: '2026-03-24T09:05:00Z',
         updatedAt: '2026-03-24T09:05:00Z'
       });
@@ -394,8 +397,61 @@ test('quotes v2 supports client submit, manager assignment, estimate approval an
 
   assert.equal(sendEstimateResponse.body?.data?.quote?.workflowStatus, 'estimate_sent');
 
-  const respondResponse = await request(app)
+  const revisionResponse = await request(app)
     .post(`/api/v2/quotes/estimates/${estimateId}/respond`)
+    .set('Authorization', `Bearer ${clientToken}`)
+    .send({
+      decision: 'revision_requested',
+      note: 'Please add a premium storage option.'
+    })
+    .expect(200);
+
+  assert.equal(revisionResponse.body?.data?.quote?.workflowStatus, 'estimate_in_progress');
+  assert.equal(revisionResponse.body?.data?.estimate?.clientMessage, 'Please review the current offer.');
+  assert.equal(revisionResponse.body?.data?.estimate?.decisionNote, 'Please add a premium storage option.');
+
+  const revisedDraftResponse = await request(app)
+    .post(`/api/v2/quotes/${quoteId}/estimates`)
+    .set('Authorization', `Bearer ${managerToken}`)
+    .send({
+      title: 'Bathroom Offer Revised',
+      total: 13950,
+      description: 'Premium bathroom fit-out with extra storage'
+    })
+    .expect(201);
+
+  const revisedEstimateId = revisedDraftResponse.body?.data?.estimate?.id;
+  assert.ok(revisedEstimateId);
+  assert.equal(revisedDraftResponse.body?.data?.estimate?.versionNumber, 2);
+
+  const supersededEstimate = stubs.estimates.find((estimate) => estimate.id === estimateId);
+  assert.equal(supersededEstimate?.status, 'superseded');
+  assert.equal(supersededEstimate?.isCurrentVersion, false);
+  assert.equal(supersededEstimate?.supersededById, revisedEstimateId);
+  assert.equal(Boolean(supersededEstimate?.supersededAt), true);
+  assert.equal(stubs.quoteEvents.some((event) => event.eventType === 'estimate_superseded'), true);
+
+  await request(app)
+    .post(`/api/v2/quotes/estimates/${estimateId}/respond`)
+    .set('Authorization', `Bearer ${clientToken}`)
+    .send({
+      decision: 'accepted',
+      note: 'Trying to accept an old version.'
+    })
+    .expect(409);
+
+  const sendRevisedEstimateResponse = await request(app)
+    .post(`/api/v2/quotes/estimates/${revisedEstimateId}/send`)
+    .set('Authorization', `Bearer ${managerToken}`)
+    .send({
+      clientMessage: 'Updated offer with the premium storage option included.'
+    })
+    .expect(200);
+
+  assert.equal(sendRevisedEstimateResponse.body?.data?.quote?.workflowStatus, 'estimate_sent');
+
+  const respondResponse = await request(app)
+    .post(`/api/v2/quotes/estimates/${revisedEstimateId}/respond`)
     .set('Authorization', `Bearer ${clientToken}`)
     .send({
       decision: 'accepted',
@@ -404,6 +460,7 @@ test('quotes v2 supports client submit, manager assignment, estimate approval an
     .expect(200);
 
   assert.equal(respondResponse.body?.data?.quote?.workflowStatus, 'approved_ready_for_project');
+  assert.equal(respondResponse.body?.data?.estimate?.decisionNote, 'Looks good to proceed.');
 
   const convertResponse = await request(app)
     .post(`/api/v2/quotes/${quoteId}/convert-to-project`)

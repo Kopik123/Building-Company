@@ -404,6 +404,25 @@ const formatMoney = (value) => {
   return Number.isFinite(parsed) ? `GBP ${parsed.toFixed(2)}` : 'Value pending';
 };
 
+const getEstimateHistoryLabel = (estimate) => {
+  if (estimate?.isCurrentVersion) return 'Current version';
+  if (normalizeText(estimate?.status) === 'superseded') return 'Version history';
+  return 'History';
+};
+
+const getEstimateCardSummary = (estimate) => {
+  const parts = [
+    `v${estimate?.versionNumber || 1}`,
+    titleCase(estimate?.status || 'draft'),
+    titleCase(estimate?.decisionStatus || 'pending'),
+    getEstimateHistoryLabel(estimate)
+  ];
+  if (estimate?.supersededById && normalizeText(estimate?.status) === 'superseded') {
+    parts.push('Replaced by a newer version');
+  }
+  return parts.join(' | ');
+};
+
 const getSelectedFileKey = (file) => [file?.name || '', file?.size || 0, file?.lastModified || 0].join(':');
 
 const mergeSelectedFiles = (currentFiles, incomingFiles) => {
@@ -644,7 +663,7 @@ function QuoteCard({ quote }) {
         <span>Manager: {managerName}</span>
         <span>Photos: {quote?.attachmentCount || 0}</span>
         <span>Estimates: {quote?.estimateCount || 0}</span>
-        {latestEstimate ? <span>Latest offer: {titleCase(latestEstimate.decisionStatus || latestEstimate.status || 'draft')}</span> : null}
+        {latestEstimate ? <span>Latest offer: {`v${latestEstimate.versionNumber || 1} ${titleCase(latestEstimate.decisionStatus || latestEstimate.status || 'draft')}`}</span> : null}
         <span>Created: {formatDateTime(quote?.createdAt)}</span>
       </div>
     </article>
@@ -656,9 +675,9 @@ function EstimateCard({ estimate, actions = null }) {
     <article className="summary-row">
       <div>
         <strong>{estimate?.title || 'Estimate'}</strong>
-        <p>
-          v{estimate?.versionNumber || 1} | {titleCase(estimate?.status || 'draft')} | {titleCase(estimate?.decisionStatus || 'pending')}
-        </p>
+        <p>{getEstimateCardSummary(estimate)}</p>
+        {estimate?.clientMessage ? <p className="muted">Client message: {estimate.clientMessage}</p> : null}
+        {estimate?.decisionNote ? <p className="muted">Decision note: {estimate.decisionNote}</p> : null}
       </div>
       <div className="summary-row-meta">
         <span>{estimate?.total != null ? `GBP ${Number(estimate.total).toFixed(2)}` : 'Value pending'}</span>
@@ -2169,6 +2188,11 @@ function QuotesPage() {
 
             {canManageQuotes ? (
               <form className="editor-form" onSubmit={onCreateEstimate}>
+                {currentEstimate ? (
+                  <p className="muted">
+                    Drafting a new estimate version will move {`v${currentEstimate.versionNumber || 1}`} into version history and keep only the new version actionable for the client.
+                  </p>
+                ) : null}
                 <div className="form-grid">
                   <label>
                     Estimate title
@@ -2213,7 +2237,7 @@ function QuotesPage() {
                 </label>
                 <div className="action-row">
                   <button type="submit" disabled={secondarySaving}>
-                    {secondarySaving ? 'Saving...' : 'Draft estimate'}
+                    {secondarySaving ? 'Saving...' : currentEstimate ? 'Draft new version' : 'Draft estimate'}
                   </button>
                   {selectedQuote.canConvertToProject ? (
                     <button type="button" className="button-secondary" onClick={onConvertToProject} disabled={secondarySaving}>
@@ -2228,10 +2252,13 @@ function QuotesPage() {
               <div className="editor-form">
                 <div className="meta-wrap">
                   <span>Current offer: {currentEstimate.title || 'Estimate'}</span>
+                  <span>Version: v{currentEstimate.versionNumber || 1}</span>
                   <span>Status: {titleCase(currentEstimate.status || 'draft')}</span>
                   <span>Decision: {titleCase(currentEstimate.decisionStatus || ESTIMATE_DECISION_STATUSES[0])}</span>
                   <span>Total: {formatMoney(currentEstimate.total)}</span>
                 </div>
+                {currentEstimate.clientMessage ? <p className="muted">Manager note: {currentEstimate.clientMessage}</p> : null}
+                {currentEstimate.decisionNote ? <p className="muted">Latest decision note: {currentEstimate.decisionNote}</p> : null}
                 <label>
                   Response note
                   <textarea

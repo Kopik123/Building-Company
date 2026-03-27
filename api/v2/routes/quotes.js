@@ -31,6 +31,7 @@ const {
   buildQuoteThreadName,
   deriveLegacyQuoteStatus,
   normalizeEstimateDecisionStatus,
+  normalizeEstimateStatus,
   normalizeWorkflowStatus
 } = require('../../../utils/quoteWorkflow');
 const { advanceClientLifecycle } = require('../../../utils/crmLifecycle');
@@ -75,7 +76,7 @@ const quoteIncludes = [
   {
     model: Estimate,
     as: 'currentEstimate',
-    attributes: ['id', 'quoteId', 'title', 'status', 'decisionStatus', 'versionNumber', 'isCurrentVersion', 'notes', 'clientMessage', 'subtotal', 'total', 'sentAt', 'viewedAt', 'respondedAt', 'approvedAt', 'declinedAt', 'createdAt', 'updatedAt'],
+    attributes: ['id', 'quoteId', 'title', 'status', 'decisionStatus', 'versionNumber', 'isCurrentVersion', 'notes', 'clientMessage', 'decisionNote', 'subtotal', 'total', 'sentAt', 'viewedAt', 'respondedAt', 'approvedAt', 'declinedAt', 'supersededById', 'supersededAt', 'createdAt', 'updatedAt'],
     required: false,
     include: [{ model: User, as: 'creator', attributes: ['id', 'name', 'email'], required: false }]
   },
@@ -126,6 +127,20 @@ const normalizedCanConvert = ({ workflowStatus, currentEstimate, convertedProjec
   !convertedProjectId
   && normalizeWorkflowStatus(workflowStatus) === 'approved_ready_for_project'
   && normalizeEstimateDecisionStatus(currentEstimate?.decisionStatus) === 'accepted';
+
+const formatEstimateVersionLabel = (estimate) => `v${Number(estimate?.versionNumber || 1)}`;
+const canSendEstimateVersion = (estimate) =>
+  Boolean(estimate?.isCurrentVersion)
+  && normalizeEstimateStatus(estimate?.status) === 'draft';
+const canRespondToEstimateVersion = (estimate) =>
+  Boolean(estimate?.isCurrentVersion)
+  && normalizeEstimateStatus(estimate?.status) === 'sent'
+  && ['pending', 'viewed', 'revision_requested'].includes(normalizeEstimateDecisionStatus(estimate?.decisionStatus));
+
+const buildSupersededEstimateMessage = (supersededEstimates, replacementEstimate) => {
+  const supersededLabels = supersededEstimates.map((estimate) => formatEstimateVersionLabel(estimate)).join(', ');
+  return `${supersededLabels} superseded by ${formatEstimateVersionLabel(replacementEstimate)}.`;
+};
 
 const normalizeAttachmentList = (attachments) =>
   sortQuoteAttachments(attachments).map(toQuoteAttachmentSummary);
@@ -197,6 +212,57 @@ const loadQuoteEstimates = async (quoteId, options = {}) => {
     include: [{ model: User, as: 'creator', attributes: ['id', 'name', 'email'], required: false }],
     order: [['versionNumber', 'DESC'], ['createdAt', 'DESC']]
   });
+};
+
+const supersedePreviousEstimates = async ({ quote, replacementEstimate, previousEstimates, actorUserId }) => {
+  const currentEstimates = (previousEstimates || []).filter((estimate) => estimate?.id && estimate.id !== replacementEstimate.id && estimate.isCurrentVersion);
+  if (!currentEstimates.length) return [];
+
+  const supersededAt = new Date();
+  await Promise.all(currentEstimates.map((estimate) => {
+    if (typeof estimate.update !== 'function') return null;
+    return estimate.update({
+      isCurrentVersion: false,
+      status: normalizeEstimateStatus(estimate.status) === 'archived' ? 'archived' : 'superseded',
+      supersededById: replacementEstimate.id,
+      supersededAt
+    });
+  }));
+
+  const message = buildSupersededEstimateMessage(currentEstimates, replacementEstimate);
+  await createQuoteEvent({
+    quoteId: quote.id,
+    actorUserId,
+    eventType: 'estimate_superseded',
+    visibility: 'internal',
+    message,
+    data: {
+      supersededEstimateIds: currentEstimates.map((estimate) => estimate.id),
+      supersededVersionNumbers: currentEstimates.map((estimate) => Number(estimate.versionNumber || 1)),
+      replacementEstimateId: replacementEstimate.id,
+      replacementVersionNumber: Number(replacementEstimate.versionNumber || 1)
+    }
+  });
+
+  await createActivityEvent(ActivityEvent, {
+    actorUserId,
+    entityType: 'estimate',
+    entityId: replacementEstimate.id,
+    quoteId: quote.id,
+    clientId: quote.clientId || null,
+    visibility: 'internal',
+    eventType: 'estimate_superseded',
+    title: 'Estimate version replaced',
+    message,
+    data: {
+      supersededEstimateIds: currentEstimates.map((estimate) => estimate.id),
+      supersededVersionNumbers: currentEstimates.map((estimate) => Number(estimate.versionNumber || 1)),
+      replacementEstimateId: replacementEstimate.id,
+      replacementVersionNumber: Number(replacementEstimate.versionNumber || 1)
+    }
+  }, 'estimate_superseded_activity');
+
+  return currentEstimates;
 };
 
 const ensureQuoteThread = async ({ quote, currentUserId }) => {
@@ -771,6 +837,7 @@ router.post(
       versionNumber,
       isCurrentVersion: true,
       notes: toNullableString(req.body.notes),
+      decisionNote: null,
       subtotal: 0,
       total: 0,
       isActive: true
@@ -801,6 +868,13 @@ router.post(
       }
     }
 
+    const supersededEstimates = await supersedePreviousEstimates({
+      quote,
+      replacementEstimate: estimate,
+      previousEstimates: estimates,
+      actorUserId: req.v2User.id
+    });
+
     await quote.update(resolveWorkflowPayload('estimate_in_progress', {
       currentEstimateId: estimate.id
     }));
@@ -809,10 +883,13 @@ router.post(
       actorUserId: req.v2User.id,
       eventType: 'estimate_drafted',
       visibility: 'internal',
-      message: `Estimate v${versionNumber} drafted.`,
+      message: supersededEstimates.length
+        ? `Estimate v${versionNumber} drafted and moved the previous current version to history.`
+        : `Estimate v${versionNumber} drafted.`,
       data: {
         estimateId: estimate.id,
-        versionNumber
+        versionNumber,
+        supersededEstimateIds: supersededEstimates.map((item) => item.id)
       }
     });
 
@@ -825,10 +902,13 @@ router.post(
       visibility: 'internal',
       eventType: 'estimate_drafted',
       title: `Estimate v${versionNumber} drafted`,
-      message: `Estimate v${versionNumber} drafted.`,
+      message: supersededEstimates.length
+        ? `Estimate v${versionNumber} drafted and moved the previous current version to history.`
+        : `Estimate v${versionNumber} drafted.`,
       data: {
         estimateId: estimate.id,
-        versionNumber
+        versionNumber,
+        supersededEstimateIds: supersededEstimates.map((item) => item.id)
       }
     }, 'estimate_draft_activity');
 
@@ -855,16 +935,22 @@ router.post(
     if (!estimate) return fail(res, 404, 'estimate_not_found', 'Estimate not found');
     const quote = await Quote.findByPk(estimate.quoteId, { include: quoteIncludes });
     if (!quote) return fail(res, 404, 'quote_not_found', 'Quote not found');
+    if (!canSendEstimateVersion(estimate)) {
+      return fail(res, 409, 'estimate_not_sendable', 'Only the current draft estimate can be sent to the client');
+    }
 
     await estimate.update({
       status: 'sent',
       decisionStatus: 'pending',
       clientMessage: toNullableString(req.body.clientMessage),
+      decisionNote: null,
       sentAt: new Date(),
       viewedAt: null,
       respondedAt: null,
       approvedAt: null,
-      declinedAt: null
+      declinedAt: null,
+      supersededById: null,
+      supersededAt: null
     });
 
     await quote.update(resolveWorkflowPayload('estimate_sent', {
@@ -938,11 +1024,15 @@ router.post(
     if (!quote || quote.clientId !== req.v2User.id) {
       return fail(res, 404, 'quote_not_found', 'Quote not found');
     }
+    if (!canRespondToEstimateVersion(estimate)) {
+      return fail(res, 409, 'estimate_not_actionable', 'Only the current sent estimate can receive a client decision');
+    }
 
     const decision = req.body.decision;
+    const decisionNote = toNullableString(req.body.note);
     const updatePayload = {
       decisionStatus: decision,
-      clientMessage: toNullableString(req.body.note),
+      decisionNote,
       respondedAt: new Date()
     };
     let workflowStatus = 'estimate_in_progress';
@@ -950,15 +1040,20 @@ router.post(
     if (decision === 'accepted') {
       updatePayload.status = 'approved';
       updatePayload.approvedAt = new Date();
+      updatePayload.declinedAt = null;
       workflowStatus = 'approved_ready_for_project';
     } else if (decision === 'declined') {
       updatePayload.declinedAt = new Date();
+      updatePayload.approvedAt = null;
       workflowStatus = 'closed_lost';
+    } else {
+      updatePayload.approvedAt = null;
+      updatePayload.declinedAt = null;
     }
 
     await estimate.update(updatePayload);
     await quote.update(resolveWorkflowPayload(workflowStatus, {
-      lossReason: decision === 'declined' ? toNullableString(req.body.note) : quote.lossReason
+      lossReason: decision === 'declined' ? decisionNote : null
     }));
     if (decision === 'accepted') {
       const clientRecord = await loadClientRecord(quote.clientId);
@@ -973,7 +1068,7 @@ router.post(
       message: `Client ${decision.replaceAll('_', ' ')} the estimate.`,
       data: {
         estimateId: estimate.id,
-        note: toNullableString(req.body.note)
+        note: decisionNote
       }
     });
 
@@ -990,7 +1085,7 @@ router.post(
       data: {
         estimateId: estimate.id,
         decision,
-        note: toNullableString(req.body.note)
+        note: decisionNote
       }
     }, 'estimate_response_activity');
 
@@ -1009,7 +1104,10 @@ router.post(
     }));
 
     const refreshedQuote = await attachEstimateMeta(quote);
-    return ok(res, { quote: refreshedQuote, estimate });
+    const refreshedEstimate = await Estimate.findByPk(estimate.id, {
+      include: [{ model: User, as: 'creator', attributes: ['id', 'name', 'email'], required: false }]
+    });
+    return ok(res, { quote: refreshedQuote, estimate: refreshedEstimate || estimate });
   })
 );
 

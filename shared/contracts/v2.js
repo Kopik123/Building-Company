@@ -21,6 +21,14 @@ const ESTIMATE_DECISION_STATUSES = Object.freeze([
   'declined'
 ]);
 
+const ESTIMATE_STATUSES = Object.freeze([
+  'draft',
+  'sent',
+  'approved',
+  'archived',
+  'superseded'
+]);
+
 const LEGACY_TO_WORKFLOW_STATUS = Object.freeze({
   pending: 'submitted',
   in_progress: 'assigned',
@@ -39,6 +47,12 @@ const normalizeEstimateDecisionStatusValue = (value, fallback = ESTIMATE_DECISIO
   const normalized = String(value || '').trim().toLowerCase();
   if (ESTIMATE_DECISION_STATUSES.includes(normalized)) return normalized;
   if (normalized === 'approved') return 'accepted';
+  return fallback;
+};
+
+const normalizeEstimateStatusValue = (value, fallback = ESTIMATE_STATUSES[0]) => {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (ESTIMATE_STATUSES.includes(normalized)) return normalized;
   return fallback;
 };
 
@@ -139,12 +153,13 @@ const estimateSummarySchema = z.object({
   quoteId: nullableStringSchema,
   projectId: nullableStringSchema,
   title: nullableStringSchema,
-  status: z.enum(['draft', 'sent', 'approved', 'archived']),
+  status: z.enum(ESTIMATE_STATUSES),
   decisionStatus: z.enum(ESTIMATE_DECISION_STATUSES),
   versionNumber: z.number(),
   isCurrentVersion: z.boolean(),
   notes: nullableStringSchema,
   clientMessage: nullableStringSchema,
+  decisionNote: nullableStringSchema,
   subtotal: nullableNumberSchema,
   total: nullableNumberSchema,
   sentAt: nullableStringSchema,
@@ -152,6 +167,8 @@ const estimateSummarySchema = z.object({
   respondedAt: nullableStringSchema,
   approvedAt: nullableStringSchema,
   declinedAt: nullableStringSchema,
+  supersededById: nullableStringSchema,
+  supersededAt: nullableStringSchema,
   createdAt: nullableStringSchema,
   updatedAt: nullableStringSchema,
   creator: userSummarySchema
@@ -411,12 +428,13 @@ const normalizeEstimateSummary = (value) => {
     quoteId: toNullableString(plain.quoteId),
     projectId: toNullableString(plain.projectId),
     title: toNullableString(plain.title),
-    status: toNullableString(plain.status) || 'draft',
+    status: normalizeEstimateStatusValue(plain.status),
     decisionStatus: normalizeEstimateDecisionStatusValue(plain.decisionStatus),
     versionNumber: toNullableNumber(plain.versionNumber) ?? 1,
     isCurrentVersion: toBoolean(plain.isCurrentVersion, false),
     notes: toNullableString(plain.notes),
     clientMessage: toNullableString(plain.clientMessage),
+    decisionNote: toNullableString(plain.decisionNote),
     subtotal: toNullableNumber(plain.subtotal),
     total: toNullableNumber(plain.total),
     sentAt: toNullableString(plain.sentAt),
@@ -424,6 +442,8 @@ const normalizeEstimateSummary = (value) => {
     respondedAt: toNullableString(plain.respondedAt),
     approvedAt: toNullableString(plain.approvedAt),
     declinedAt: toNullableString(plain.declinedAt),
+    supersededById: toNullableString(plain.supersededById),
+    supersededAt: toNullableString(plain.supersededAt),
     createdAt: toNullableString(plain.createdAt),
     updatedAt: toNullableString(plain.updatedAt),
     creator: normalizeUserSummary(plain.creator)
@@ -706,6 +726,7 @@ module.exports = {
   QUOTE_PROJECT_TYPES,
   QUOTE_CONTACT_METHODS,
   ESTIMATE_DECISION_STATUSES,
+  ESTIMATE_STATUSES,
   CLIENT_LIFECYCLE_STATUSES,
   SERVICE_CATEGORIES,
   MATERIAL_CATEGORIES,
@@ -734,6 +755,7 @@ module.exports = {
   normalizeUserSummary,
   normalizeMessageAttachment,
   normalizeThreadMessage,
+  normalizeEstimateStatusValue,
   normalizeEstimateSummary,
   normalizeQuoteEvent,
   normalizeProjectSummary,

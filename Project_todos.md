@@ -102,7 +102,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [x] Define one explicit CRM lifecycle for clients: `lead`, `quoted`, `approved`, `active project`, `completed`, `archived`.
 - [ ] Add a real project workflow model with `stage`, `milestone`, `task/work package`, `owner` and `due date`.
 - [x] Design and implement a durable activity/audit feed for company, client and project timelines.
-- [ ] Close the operational gap in `quote -> estimate -> approval -> project` so estimate approvals are explicit, versioned and portable to mobile clients.
+- [x] Close the operational gap in `quote -> estimate -> approval -> project` so estimate approvals are explicit, versioned and portable to mobile clients.
 - [x] Add the first public guest quote follow-up layer by showing a private status/preview panel from `publicToken`, including reference, workflow state and attached quote photos after submit.
 - [ ] Finish public guest quote portal parity on a v2 contract (`submit`, `preview`, `claim`, later response access) so guest quote UX no longer depends on legacy-only routes.
 - [x] Move the live public guest quote browser flow onto `/api/v2/public/quotes` paths for submit, preview, follow-up uploads and claim handoff, while keeping the current legacy guest router only as a temporary adapter behind the v2 contract.

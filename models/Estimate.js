@@ -24,7 +24,7 @@ const Estimate = sequelize.define('Estimate', {
     allowNull: false
   },
   status: {
-    type: DataTypes.ENUM('draft', 'sent', 'approved', 'archived'),
+    type: DataTypes.ENUM('draft', 'sent', 'approved', 'archived', 'superseded'),
     allowNull: false,
     defaultValue: 'draft'
   },
@@ -48,6 +48,10 @@ const Estimate = sequelize.define('Estimate', {
     allowNull: true
   },
   clientMessage: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  decisionNote: {
     type: DataTypes.TEXT,
     allowNull: true
   },
@@ -83,6 +87,14 @@ const Estimate = sequelize.define('Estimate', {
     allowNull: true
   },
   declinedAt: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  supersededById: {
+    type: DataTypes.UUID,
+    allowNull: true
+  },
+  supersededAt: {
     type: DataTypes.DATE,
     allowNull: true
   }

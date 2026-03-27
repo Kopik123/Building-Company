@@ -91,6 +91,8 @@ Quote.belongsTo(Project, { foreignKey: 'convertedProjectId', as: 'convertedProje
 Project.belongsTo(Estimate, { foreignKey: 'acceptedEstimateId', as: 'acceptedEstimate' });
 User.hasMany(Estimate, { foreignKey: 'createdById', as: 'createdEstimates' });
 Estimate.belongsTo(User, { foreignKey: 'createdById', as: 'creator' });
+Estimate.belongsTo(Estimate, { foreignKey: 'supersededById', as: 'supersededBy' });
+Estimate.hasMany(Estimate, { foreignKey: 'supersededById', as: 'supersededVersions' });
 Estimate.hasMany(EstimateLine, { foreignKey: 'estimateId', as: 'lines', onDelete: 'CASCADE', hooks: true });
 EstimateLine.belongsTo(Estimate, { foreignKey: 'estimateId', as: 'estimate' });
 EstimateLine.belongsTo(ServiceOffering, { foreignKey: 'serviceId', as: 'service' });
@@ -196,6 +198,7 @@ const ensureIndexes = async () => {
     { table: Estimate.getTableName(), name: 'estimates_quote_status_idx', fields: ['quoteId', 'status'] },
     { table: Estimate.getTableName(), name: 'estimates_quote_version_idx', fields: ['quoteId', 'versionNumber'] },
     { table: Estimate.getTableName(), name: 'estimates_quote_current_idx', fields: ['quoteId', 'isCurrentVersion'] },
+    { table: Estimate.getTableName(), name: 'estimates_superseded_by_idx', fields: ['supersededById'] },
     { table: Estimate.getTableName(), name: 'estimates_creator_created_idx', fields: ['createdById', 'createdAt'] },
     { table: EstimateLine.getTableName(), name: 'estimate_lines_estimate_order_idx', fields: ['estimateId', 'sortOrder'] },
     { table: EstimateLine.getTableName(), name: 'estimate_lines_service_idx', fields: ['serviceId'] },

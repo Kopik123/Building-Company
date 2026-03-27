@@ -19,6 +19,14 @@ const ESTIMATE_DECISION_STATUSES = Object.freeze([
   'declined'
 ]);
 
+const ESTIMATE_STATUSES = Object.freeze([
+  'draft',
+  'sent',
+  'approved',
+  'archived',
+  'superseded'
+]);
+
 const LEGACY_QUOTE_STATUSES = Object.freeze(['pending', 'in_progress', 'responded', 'closed']);
 const LEGACY_TO_WORKFLOW_STATUS = Object.freeze({
   pending: 'submitted',
@@ -65,6 +73,12 @@ const normalizeEstimateDecisionStatus = (value, fallback = ESTIMATE_DECISION_STA
   return fallback;
 };
 
+const normalizeEstimateStatus = (value, fallback = ESTIMATE_STATUSES[0]) => {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (ESTIMATE_STATUSES.includes(normalized)) return normalized;
+  return fallback;
+};
+
 const buildQuoteProjectTitle = (quote, acceptedEstimate) => {
   const estimateTitle = String(acceptedEstimate?.title || '').trim();
   if (estimateTitle) return estimateTitle;
@@ -85,11 +99,13 @@ const buildQuoteThreadName = (quote) => {
 module.exports = {
   QUOTE_WORKFLOW_STATUSES,
   ESTIMATE_DECISION_STATUSES,
+  ESTIMATE_STATUSES,
   LEGACY_QUOTE_STATUSES,
   QUOTE_EVENT_VISIBILITIES,
   normalizeWorkflowStatus,
   normalizeLegacyQuoteStatus,
   normalizeEstimateDecisionStatus,
+  normalizeEstimateStatus,
   deriveLegacyQuoteStatus,
   buildQuoteProjectTitle,
   buildQuoteThreadName

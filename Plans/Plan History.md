@@ -25,3 +25,4 @@
 - 2026-03-26 22:09 | Auth Session Bridge, Deploy-time Migrations And Project Lifecycle Hardening | Plans/Auth Session Bridge, Deploy-time Migrations And Project Lifecycle Hardening.md
 - 2026-03-26 23:17 | CRM Lifecycle, Activity Feed And V2 Public Quote Portal | Plans/CRM Lifecycle, Activity Feed And V2 Public Quote Portal.md
 - 2026-03-26 23:32 | Auth Account Panel Card Navigation | Plans/Auth Account Panel Card Navigation.md
+- 2026-03-27 20:22 | Estimate Versioning And Explicit Quote Approval | Plans/Estimate Versioning And Explicit Quote Approval.md
