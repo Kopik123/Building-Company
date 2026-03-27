@@ -1,6 +1,7 @@
 import type { z } from 'zod';
 
 export type ProjectStatus = 'planning' | 'in_progress' | 'completed' | 'on_hold';
+export type ProjectStage = 'briefing' | 'scope_locked' | 'procurement' | 'site_prep' | 'installation' | 'finishing' | 'handover' | 'aftercare';
 export type ClientLifecycleStatus = 'lead' | 'quoted' | 'approved' | 'active_project' | 'completed' | 'archived';
 export type QuoteStatus = 'pending' | 'in_progress' | 'responded' | 'closed';
 export type QuoteWorkflowStatus =
@@ -142,14 +143,18 @@ export interface ProjectSummary {
   title: string | null;
   location: string | null;
   status: ProjectStatus;
+  projectStage: ProjectStage;
   clientId: string | null;
   assignedManagerId: string | null;
   quoteId: string | null;
   acceptedEstimateId: string | null;
   description: string | null;
+  currentMilestone: string | null;
+  workPackage: string | null;
   budgetEstimate: string | null;
   startDate: string | null;
   endDate: string | null;
+  dueDate: string | null;
   showInGallery: boolean;
   galleryOrder: number;
   isActive: boolean;
@@ -298,6 +303,7 @@ export interface OverviewSummary {
 }
 
 export const PROJECT_STATUSES: readonly ProjectStatus[];
+export const PROJECT_STAGES: readonly ProjectStage[];
 export const CLIENT_LIFECYCLE_STATUSES: readonly ClientLifecycleStatus[];
 export const QUOTE_STATUSES: readonly QuoteStatus[];
 export const QUOTE_WORKFLOW_STATUSES: readonly QuoteWorkflowStatus[];

@@ -587,9 +587,13 @@ test('web-v2 manager operations surfaces can create projects, update quotes, cre
       title: 'Prestige Kitchen',
       location: 'Stockport',
       status: 'in_progress',
+      projectStage: 'installation',
       clientId: 'client-1',
       assignedManagerId: 'manager-1',
       description: 'Stone island and oak storage.',
+      currentMilestone: 'Cabinet installation',
+      workPackage: 'Kitchen joinery and lighting',
+      dueDate: '2026-04-15',
       imageCount: 2,
       documentCount: 1,
       showInGallery: true,
@@ -685,6 +689,10 @@ test('web-v2 manager operations surfaces can create projects, update quotes, cre
       const createdProject = {
         id: `project-${projectCounter++}`,
         ...payload,
+        projectStage: payload.projectStage || 'briefing',
+        currentMilestone: payload.currentMilestone || null,
+        workPackage: payload.workPackage || null,
+        dueDate: payload.dueDate || null,
         imageCount: 0,
         documentCount: 0,
         client: clients.find((client) => client.id === payload.clientId) || null,
@@ -857,11 +865,19 @@ test('web-v2 manager operations surfaces can create projects, update quotes, cre
   await page.getByRole('button', { name: 'New project' }).click();
   await page.getByLabel('Title').fill('Gallery Penthouse Fit-out');
   await page.getByLabel('Client').selectOption('client-1');
-  await page.getByLabel('Assigned manager').selectOption('manager-1');
+  await page.getByLabel('Project stage').selectOption('procurement');
+  await page.getByLabel('Project owner').selectOption('manager-1');
   await page.getByLabel('Location').fill('Manchester');
+  await page.getByLabel('Current milestone').fill('Stone templates signed off');
+  await page.getByLabel('Work package').fill('Penthouse shell-and-core package');
+  await page.getByLabel('Due date').fill('2026-04-30');
   await page.getByLabel('Description').fill('Premium shell-and-core finishing package.');
   await page.getByRole('button', { name: 'Create project' }).click();
   await expect(projectBoardList).toContainText('Gallery Penthouse Fit-out');
+  await expect(projectBoardList).toContainText('Procurement');
+  await expect(projectBoardList).toContainText('Stone templates signed off');
+  await page.getByRole('button', { name: 'Advance stage' }).click();
+  await expect(projectBoardList).toContainText('Site Prep');
   await page.getByRole('button', { name: 'Mark completed' }).click();
   await expect(projectBoardList).toContainText('Completed');
   await page.getByRole('button', { name: 'Archive project' }).click();

@@ -21,7 +21,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [x] Add a compatibility fallback for legacy `/api/quotes/guest` so public quote intake still returns `201` when the first insert rejects lifecycle columns and the route needs a legacy-safe retry.
 - [x] Ship a production schema hotfix that makes `Quotes.clientId` nullable again, so guest quote intake no longer depends on route-level fallbacks to survive an outdated DB constraint.
 - [x] Force-drop the real Postgres `NOT NULL` constraint from `Quotes.clientId` on production, because the earlier Sequelize `changeColumn(...)` hotfix was not enough for the live table.
-- [ ] Finish the remaining manager parity gaps in `web-v2`: richer project lifecycle actions, broader delete/archive ownership, and the last legacy-only manager flows.
+- [x] Finish the remaining manager parity gaps in `web-v2`: richer project lifecycle actions, broader delete/archive ownership, and the last legacy-only manager flows.
 - [x] Add one aggregated `api/v2/overview` contract (or equivalent typed dashboard summary layer) before default cutover so `web-v2` stops composing the top board from many separate requests.
 - [x] Add direct `/app-v2` UI regression coverage for `Private Inbox` and `Project Chat`, including attachment-first direct-thread creation, so rollout-shell messaging is covered outside legacy dashboard smoke tests.
 - [ ] Move new authenticated web feature work to `apps/web-v2` first unless the task is explicitly legacy-only or cutover-critical.
@@ -86,7 +86,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [x] Continue the next `web-v2` parity wave with direct/private messaging by shipping `api/v2` private-thread contracts and `web-v2` `Private Inbox`.
 - [x] Continue the next `web-v2` parity wave with manager CRUD actions and deeper `crm` / `inventory` operations now that direct/private messaging parity is in place.
 - [x] Continue the following `web-v2` parity wave with quote creation and CRM editing so those manager flows no longer stay trapped in legacy dashboards.
-- [ ] Continue the following `web-v2` parity wave with the remaining manager gaps: richer project operations and broader legacy-action replacement.
+- [x] Continue the following `web-v2` parity wave with the remaining manager gaps: richer project operations and broader legacy-action replacement.
 - [x] Continue splitting `manager-dashboard.js` into feature modules: `messages` after the `projects`, `quotes`, `services`, `materials`, `clients`, `staff` and `estimates` domain extraction.
 - [x] Trim `manager-dashboard.js` down to a thin orchestration shell now that `projects`, `quotes`, `services/materials`, `clients/staff`, `estimates` and `messages` all live in dedicated controllers.
 - [x] Extract `overview` and `projects/documents` from `client-dashboard.js` into dedicated controllers and wire them through the shared client workspace shell.
@@ -100,7 +100,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [ ] Implement the planned `client_proposal_quote` structure on the public quote page with phased UX, richer project fields and mobile-safe validation.
 - [ ] Decide whether richer quote intake should be stored as structured quote metadata in phase 1 or temporarily mapped into the existing `description` field.
 - [x] Define one explicit CRM lifecycle for clients: `lead`, `quoted`, `approved`, `active project`, `completed`, `archived`.
-- [ ] Add a real project workflow model with `stage`, `milestone`, `task/work package`, `owner` and `due date`.
+- [x] Add a real project workflow model with `stage`, `milestone`, `task/work package`, `owner` and `due date`.
 - [x] Design and implement a durable activity/audit feed for company, client and project timelines.
 - [x] Close the operational gap in `quote -> estimate -> approval -> project` so estimate approvals are explicit, versioned and portable to mobile clients.
 - [x] Add the first public guest quote follow-up layer by showing a private status/preview panel from `publicToken`, including reference, workflow state and attached quote photos after submit.

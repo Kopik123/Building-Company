@@ -187,6 +187,8 @@ const ensureIndexes = async () => {
     { table: Project.getTableName(), name: 'projects_status_created_idx', fields: ['status', 'createdAt'] },
     { table: Project.getTableName(), name: 'projects_client_status_idx', fields: ['clientId', 'status'] },
     { table: Project.getTableName(), name: 'projects_manager_status_idx', fields: ['assignedManagerId', 'status'] },
+    { table: Project.getTableName(), name: 'projects_stage_due_idx', fields: ['projectStage', 'dueDate'] },
+    { table: Project.getTableName(), name: 'projects_owner_due_idx', fields: ['assignedManagerId', 'dueDate'] },
     { table: Project.getTableName(), name: 'projects_accepted_estimate_idx', fields: ['acceptedEstimateId'] },
     { table: ProjectMedia.getTableName(), name: 'project_media_project_type_idx', fields: ['projectId', 'mediaType'] },
     { table: ProjectMedia.getTableName(), name: 'project_media_gallery_idx', fields: ['projectId', 'showInGallery', 'galleryOrder'] },

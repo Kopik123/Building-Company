@@ -10,6 +10,7 @@ const {
   MATERIAL_CATEGORIES,
   QUOTE_CONTACT_METHODS,
   PROJECT_STATUSES,
+  PROJECT_STAGES,
   QUOTE_PRIORITIES,
   QUOTE_PROJECT_TYPES,
   QUOTE_STATUSES,
@@ -36,6 +37,7 @@ const roleDescriptions = {
 const activeProjectStatuses = new Set(['planning', 'in_progress', 'on_hold']);
 const openQuoteStatuses = new Set(['pending', 'in_progress']);
 const MAX_QUOTE_PHOTO_FILES = 8;
+const FINAL_PROJECT_STAGE = PROJECT_STAGES[PROJECT_STAGES.length - 1];
 
 const createEmptyOverviewSummary = () => ({
   metrics: {
@@ -221,12 +223,17 @@ const createProjectFormState = (overrides = {}) => ({
   location: '',
   description: '',
   status: PROJECT_STATUSES[0],
+  projectStage: PROJECT_STAGES[0],
   clientId: '',
   assignedManagerId: '',
   quoteId: '',
+  acceptedEstimateId: '',
+  currentMilestone: '',
+  workPackage: '',
   budgetEstimate: '',
   startDate: '',
   endDate: '',
+  dueDate: '',
   showInGallery: false,
   galleryOrder: '0',
   isActive: true,
@@ -239,12 +246,17 @@ const projectToFormState = (project) =>
     location: project?.location || '',
     description: project?.description || '',
     status: project?.status || PROJECT_STATUSES[0],
+    projectStage: project?.projectStage || PROJECT_STAGES[0],
     clientId: project?.clientId || '',
     assignedManagerId: project?.assignedManagerId || '',
     quoteId: project?.quoteId || '',
+    acceptedEstimateId: project?.acceptedEstimateId || '',
+    currentMilestone: project?.currentMilestone || '',
+    workPackage: project?.workPackage || '',
     budgetEstimate: project?.budgetEstimate || '',
     startDate: project?.startDate ? String(project.startDate).slice(0, 10) : '',
     endDate: project?.endDate ? String(project.endDate).slice(0, 10) : '',
+    dueDate: project?.dueDate ? String(project.dueDate).slice(0, 10) : '',
     showInGallery: Boolean(project?.showInGallery),
     galleryOrder: toInputValue(project?.galleryOrder || 0),
     isActive: typeof project?.isActive === 'boolean' ? project.isActive : true
@@ -402,6 +414,12 @@ const toNumberPayload = (value, fallback = 0) => {
 const formatMoney = (value) => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? `GBP ${parsed.toFixed(2)}` : 'Value pending';
+};
+
+const getNextProjectStage = (projectStage) => {
+  const currentIndex = PROJECT_STAGES.indexOf(normalizeText(projectStage));
+  if (currentIndex < 0 || currentIndex >= PROJECT_STAGES.length - 1) return null;
+  return PROJECT_STAGES[currentIndex + 1];
 };
 
 const getEstimateHistoryLabel = (estimate) => {
@@ -617,7 +635,7 @@ function SelectableCard({ selected, onSelect, children }) {
 }
 
 function ProjectCard({ project }) {
-  const managerName = project?.assignedManager?.name || project?.assignedManager?.email || 'Manager pending';
+  const ownerName = project?.assignedManager?.name || project?.assignedManager?.email || 'Owner pending';
   const clientName = project?.client?.name || project?.client?.email || 'Client pending';
   const mediaSummary = `${project?.imageCount || 0} images / ${project?.documentCount || 0} docs`;
 
@@ -634,9 +652,13 @@ function ProjectCard({ project }) {
       </div>
       <p className="stack-card-copy">{project?.description || 'Project summary will appear here as the route matures.'}</p>
       <div className="meta-wrap">
+        <span>Stage: {titleCase(project?.projectStage || PROJECT_STAGES[0])}</span>
+        {project?.currentMilestone ? <span>Milestone: {project.currentMilestone}</span> : null}
+        {project?.workPackage ? <span>Work package: {project.workPackage}</span> : null}
+        {project?.dueDate ? <span>Due: {formatDateTime(project.dueDate, { dateOnly: true })}</span> : null}
         <span>{mediaSummary}</span>
         <span>{project?.isActive ? 'Active route' : 'Archived route'}</span>
-        <span>Manager: {managerName}</span>
+        <span>Owner: {ownerName}</span>
         <span>Client: {clientName}</span>
         <span>Updated: {formatDateTime(project?.updatedAt)}</span>
       </div>
@@ -1084,6 +1106,7 @@ function ProjectsPage() {
   const { user } = useAuth();
   const role = normalizeText(user?.role || 'client');
   const staffMode = isStaffRole(role);
+  const canReassignProjectOwner = role === 'manager' || role === 'admin';
   const projects = useAsyncState(() => v2Api.getProjects(), [], []);
   const clients = useAsyncState(() => (staffMode ? v2Api.getCrmClients() : Promise.resolve([])), [staffMode], []);
   const staff = useAsyncState(() => (staffMode ? v2Api.getCrmStaff() : Promise.resolve([])), [staffMode], []);
@@ -1100,7 +1123,18 @@ function ProjectsPage() {
   const filteredProjects = sortByRecent(projects.data, ['updatedAt', 'endDate', 'startDate', 'createdAt']).filter((project) => {
     const needle = normalizeText(deferredSearch);
     if (!needle) return true;
-    return [project?.title, project?.location, project?.description, project?.status, project?.client?.email, project?.assignedManager?.email]
+    return [
+      project?.title,
+      project?.location,
+      project?.description,
+      project?.status,
+      project?.projectStage,
+      project?.currentMilestone,
+      project?.workPackage,
+      project?.dueDate,
+      project?.client?.email,
+      project?.assignedManager?.email
+    ]
       .join(' ')
       .toLowerCase()
       .includes(needle);
@@ -1183,12 +1217,17 @@ function ProjectsPage() {
         location: toNullablePayload(form.location),
         description: toNullablePayload(form.description),
         status: form.status,
+        projectStage: form.projectStage,
         clientId: form.clientId || null,
         assignedManagerId: form.assignedManagerId || null,
         quoteId: form.quoteId || null,
+        acceptedEstimateId: form.acceptedEstimateId || null,
+        currentMilestone: toNullablePayload(form.currentMilestone),
+        workPackage: toNullablePayload(form.workPackage),
         budgetEstimate: toNullablePayload(form.budgetEstimate),
         startDate: form.startDate || null,
         endDate: form.endDate || null,
+        dueDate: form.dueDate || null,
         showInGallery: Boolean(form.showInGallery),
         galleryOrder: toNumberPayload(form.galleryOrder, 0),
         isActive: Boolean(form.isActive)
@@ -1233,6 +1272,14 @@ function ProjectsPage() {
   const setProjectLifecycleStatus = (status) => () => applyProjectPatch({
     status
   }, `Project moved to ${titleCase(status)}.`);
+
+  const advanceProjectStage = () => {
+    const nextStage = getNextProjectStage(selectedProject?.projectStage);
+    if (!nextStage) return;
+    applyProjectPatch({
+      projectStage: nextStage
+    }, `Project stage moved to ${titleCase(nextStage)}.`);
+  };
 
   const deleteProject = async () => {
     if (!selectedProjectId || saving) return;
@@ -1288,7 +1335,7 @@ function ProjectsPage() {
       <Surface
         eyebrow="Projects"
         title="Project board"
-        description="Manager-side parity: create and update project routes without leaving the rollout shell."
+        description="Manager-side parity: create, own and move project routes through a richer workflow without leaving the rollout shell."
         actions={
           <div className="surface-actions cluster">
             <label className="inline-search">
@@ -1337,6 +1384,16 @@ function ProjectsPage() {
               </select>
             </label>
             <label>
+              Project stage
+              <select value={form.projectStage} onChange={onFieldChange('projectStage')}>
+                {PROJECT_STAGES.map((stage) => (
+                  <option key={stage} value={stage}>
+                    {titleCase(stage)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
               Client
               <select value={form.clientId} onChange={onFieldChange('clientId')}>
                 <option value="">Unassigned</option>
@@ -1348,8 +1405,8 @@ function ProjectsPage() {
               </select>
             </label>
             <label>
-              Assigned manager
-              <select value={form.assignedManagerId} onChange={onFieldChange('assignedManagerId')}>
+              Project owner
+              <select value={form.assignedManagerId} onChange={onFieldChange('assignedManagerId')} disabled={!canReassignProjectOwner}>
                 <option value="">Unassigned</option>
                 {staff.data.map((member) => (
                   <option key={member.id} value={member.id}>
@@ -1370,6 +1427,10 @@ function ProjectsPage() {
               </select>
             </label>
             <label>
+              Accepted estimate
+              <input value={form.acceptedEstimateId} onChange={onFieldChange('acceptedEstimateId')} placeholder="Auto-seeded from quote when available" />
+            </label>
+            <label>
               Location
               <input value={form.location} onChange={onFieldChange('location')} placeholder="Manchester" />
             </label>
@@ -1388,6 +1449,21 @@ function ProjectsPage() {
             <label>
               End date
               <input value={form.endDate} onChange={onFieldChange('endDate')} type="date" />
+            </label>
+            <label>
+              Due date
+              <input value={form.dueDate} onChange={onFieldChange('dueDate')} type="date" />
+            </label>
+          </div>
+
+          <div className="form-grid">
+            <label>
+              Current milestone
+              <input value={form.currentMilestone} onChange={onFieldChange('currentMilestone')} placeholder="Site survey complete" />
+            </label>
+            <label>
+              Work package
+              <input value={form.workPackage} onChange={onFieldChange('workPackage')} placeholder="Bathroom strip-out and waterproofing" />
             </label>
           </div>
 
@@ -1430,6 +1506,14 @@ function ProjectsPage() {
               </button>
               <button type="button" className="button-secondary" onClick={setProjectLifecycleStatus('completed')} disabled={saving}>
                 Mark completed
+              </button>
+              <button
+                type="button"
+                className="button-secondary"
+                onClick={advanceProjectStage}
+                disabled={saving || !selectedProject || normalizeText(selectedProject.projectStage) === FINAL_PROJECT_STAGE}
+              >
+                Advance stage
               </button>
               <button type="button" className="button-secondary" onClick={selectedProject?.isActive ? archiveProject : restoreProject} disabled={saving}>
                 {selectedProject?.isActive ? 'Archive project' : 'Restore project'}

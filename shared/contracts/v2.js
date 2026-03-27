@@ -57,6 +57,7 @@ const normalizeEstimateStatusValue = (value, fallback = ESTIMATE_STATUSES[0]) =>
 };
 
 const PROJECT_STATUSES = Object.freeze(['planning', 'in_progress', 'completed', 'on_hold']);
+const PROJECT_STAGES = Object.freeze(['briefing', 'scope_locked', 'procurement', 'site_prep', 'installation', 'finishing', 'handover', 'aftercare']);
 const CLIENT_LIFECYCLE_STATUSES = Object.freeze(['lead', 'quoted', 'approved', 'active_project', 'completed', 'archived']);
 const QUOTE_STATUSES = Object.freeze(['pending', 'in_progress', 'responded', 'closed']);
 const QUOTE_PRIORITIES = Object.freeze(['low', 'medium', 'high']);
@@ -237,14 +238,18 @@ const projectSummarySchema = z.object({
   title: nullableStringSchema,
   location: nullableStringSchema,
   status: z.enum(PROJECT_STATUSES),
+  projectStage: z.enum(PROJECT_STAGES),
   clientId: nullableStringSchema,
   assignedManagerId: nullableStringSchema,
   quoteId: nullableStringSchema,
   acceptedEstimateId: nullableStringSchema,
   description: nullableStringSchema,
+  currentMilestone: nullableStringSchema,
+  workPackage: nullableStringSchema,
   budgetEstimate: nullableStringSchema,
   startDate: nullableStringSchema,
   endDate: nullableStringSchema,
+  dueDate: nullableStringSchema,
   showInGallery: z.boolean(),
   galleryOrder: z.number(),
   isActive: z.boolean(),
@@ -474,14 +479,18 @@ const normalizeProjectSummary = (value) => {
     title: toNullableString(plain.title),
     location: toNullableString(plain.location),
     status: toNullableString(plain.status) || PROJECT_STATUSES[0],
+    projectStage: PROJECT_STAGES.includes(toNullableString(plain.projectStage) || '') ? plain.projectStage : PROJECT_STAGES[0],
     clientId: toNullableString(plain.clientId),
     assignedManagerId: toNullableString(plain.assignedManagerId),
     quoteId: toNullableString(plain.quoteId),
     acceptedEstimateId: toNullableString(plain.acceptedEstimateId),
     description: toNullableString(plain.description),
+    currentMilestone: toNullableString(plain.currentMilestone),
+    workPackage: toNullableString(plain.workPackage),
     budgetEstimate: toNullableString(plain.budgetEstimate),
     startDate: toNullableString(plain.startDate),
     endDate: toNullableString(plain.endDate),
+    dueDate: toNullableString(plain.dueDate),
     showInGallery: toBoolean(plain.showInGallery, false),
     galleryOrder: toNullableNumber(plain.galleryOrder) ?? 0,
     isActive: toBoolean(plain.isActive, true),
@@ -720,6 +729,7 @@ const normalizeItemResponse = (payload, key, normalizer, schema) =>
 
 module.exports = {
   PROJECT_STATUSES,
+  PROJECT_STAGES,
   QUOTE_STATUSES,
   QUOTE_WORKFLOW_STATUSES,
   QUOTE_PRIORITIES,

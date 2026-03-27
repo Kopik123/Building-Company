@@ -9,6 +9,7 @@ const relaxQuotesClientIdNullability = require('../../migrations/202603240002-re
 const forceDropQuotesClientIdNotNull = require('../../migrations/202603240003-force-drop-quotes-clientid-not-null.js');
 const quoteAttachmentsMigration = require('../../migrations/202603240004-quote-attachments.js');
 const estimateVersioningMigration = require('../../migrations/202603270001-estimate-versioning-and-approval.js');
+const projectWorkflowParityMigration = require('../../migrations/202603270002-project-workflow-and-owner-parity.js');
 
 const createQueryInterfaceStub = (tables) => {
   const queries = [];
@@ -479,6 +480,47 @@ test('estimate versioning migration adds superseded status support, decision not
   );
   assert.equal(
     addedIndexes.some((item) => item.options?.name === 'estimates_superseded_by_idx'),
+    true
+  );
+});
+
+test('project workflow parity migration adds workflow columns, backfills stage data and owner indexes', async () => {
+  const { queryInterface, queries, addedIndexes } = createQueryInterfaceStub({
+    Projects: {
+      id: {},
+      status: {},
+      endDate: {}
+    }
+  });
+
+  await assert.doesNotReject(() =>
+    projectWorkflowParityMigration.up(queryInterface, {
+      DataTypes: {
+        STRING: 'STRING',
+        DATEONLY: 'DATEONLY'
+      }
+    })
+  );
+
+  const projectsTable = await queryInterface.describeTable('Projects');
+  assert.equal(Object.hasOwn(projectsTable, 'projectStage'), true);
+  assert.equal(Object.hasOwn(projectsTable, 'currentMilestone'), true);
+  assert.equal(Object.hasOwn(projectsTable, 'workPackage'), true);
+  assert.equal(Object.hasOwn(projectsTable, 'dueDate'), true);
+  assert.equal(
+    queries.some((sql) => sql.includes('CREATE TYPE "enum_Projects_projectStage"')),
+    true
+  );
+  assert.equal(
+    queries.some((sql) => sql.includes('"dueDate" = COALESCE("dueDate", "endDate")')),
+    true
+  );
+  assert.equal(
+    addedIndexes.some((item) => item.options?.name === 'projects_stage_due_idx'),
+    true
+  );
+  assert.equal(
+    addedIndexes.some((item) => item.options?.name === 'projects_owner_due_idx'),
     true
   );
 });
