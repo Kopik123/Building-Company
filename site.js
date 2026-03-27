@@ -41,6 +41,7 @@
   const isManagerWorkspace = body.classList.contains('page-manager-dashboard');
   const isWorkspacePage = isClientWorkspace || isManagerWorkspace;
   const isPublicPage = !isAuthPage && !isWorkspacePage;
+  const isManagerQuickAccessSurface = isPublicPage || isManagerWorkspace;
 
   const readAuthMeCache = (token) => {
     if (!token || !globalThis.sessionStorage) return null;
@@ -448,7 +449,7 @@
     if (!headerQuickAccess) return false;
 
     const role = String(user?.role || '').toLowerCase();
-    const showQuickAccess = Boolean(user) && isPublicPage && canUseManagerQuickAccess(role);
+    const showQuickAccess = Boolean(user) && isManagerQuickAccessSurface && canUseManagerQuickAccess(role);
 
     setHidden(headerQuickAccess.panel, !showQuickAccess);
     headerQuickAccess.links.replaceChildren();
@@ -471,7 +472,7 @@
     const showHeaderAuthPanel = (!loggedIn && !isWorkspacePage) || (loggedIn && isPublicPage);
     const showHeaderLoginForm = !loggedIn && !isWorkspacePage;
     const showHeaderSession = loggedIn && isPublicPage;
-    const showHeaderQuickAccess = loggedIn && isPublicPage && canUseManagerQuickAccess(user?.role);
+    const showHeaderQuickAccess = loggedIn && isManagerQuickAccessSurface && canUseManagerQuickAccess(user?.role);
     const hideHeaderAccountLink = (loggedIn && (isAuthPage || isWorkspacePage)) || showHeaderQuickAccess;
 
     let authView = 'hidden';
@@ -523,7 +524,7 @@
       return;
     }
     const identity = user?.name || user?.email || 'Signed in';
-    if (isPublicPage && canUseManagerQuickAccess(user?.role)) {
+    if (isManagerQuickAccessSurface && canUseManagerQuickAccess(user?.role)) {
       inlineSessionCopy.textContent = `${identity} is signed in. Use Account Panel or Log out.`;
       return;
     }

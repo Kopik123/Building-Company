@@ -741,11 +741,25 @@ test('manager dashboard mobile menu opens', async ({ page }) => {
   await page.goto('/manager-dashboard.html');
   await expect(page.locator('body.public-site.workspace-site.page-manager-dashboard')).toBeVisible();
   await expectCanonicalFooterServices(page);
+  await expect(page.locator('[data-header-account-panel]')).toBeVisible();
+  await expect(page.locator('[data-header-account-links]').getByRole('link', { name: 'ProjectManager', exact: true })).toHaveCount(1);
   await openNavIfNeeded(page);
   await expect(page.locator('[data-nav-menu] [data-auth-link]')).toBeHidden();
   await expect(page.locator('[data-account-settings-link]')).toBeVisible();
   await expect(page.locator('#dashboard-logout')).toBeVisible();
   await expectNoHorizontalScroll(page);
+});
+
+test('manager dashboard keeps the header quick access panel visible after choosing a management card', async ({ page }) => {
+  await mockManagerSession(page);
+  await page.goto('/manager-dashboard.html');
+
+  const headerPanel = page.locator('[data-header-account-panel]');
+  await expect(headerPanel).toBeVisible();
+  await page.locator('[data-header-account-links]').getByRole('link', { name: 'QuotesReview', exact: true }).click();
+  await expect(page).toHaveURL(/\/manager-dashboard\.html#manager-quotes-section$/);
+  await expect(headerPanel).toBeVisible();
+  await expect(page.locator('#manager-quotes-section')).toBeVisible();
 });
 
 test('guest is redirected away from client workspace to auth route with next param', async ({ page }) => {
