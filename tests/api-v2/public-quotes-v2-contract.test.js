@@ -120,13 +120,47 @@ test('v2 public quotes creates a guest quote through the live public contract pa
       projectType: 'kitchen',
       budgetRange: '£8,000-£12,000',
       description: 'Kitchen installation and refurbishment with bespoke joinery.',
-      location: 'Manchester and the North West'
+      location: 'Manchester and the North West',
+      proposalDetails: {
+        version: 1,
+        source: 'public_quote_form_v2',
+        projectScope: {
+          propertyType: 'semi_detached',
+          roomsInvolved: ['kitchen'],
+          occupancyStatus: 'living_in_home',
+          planningStage: 'getting_prices',
+          targetStartWindow: 'within_3_months',
+          siteAccess: 'easy_ground_floor'
+        },
+        commercial: {
+          budgetRange: 'Â£8,000-Â£12,000',
+          finishLevel: 'premium'
+        },
+        logistics: {
+          location: 'Manchester and the North West',
+          postcode: 'M20 2AB'
+        },
+        priorities: ['finish_quality', 'storage'],
+        brief: {
+          summary: 'Kitchen installation and refurbishment with bespoke joinery.',
+          mustHaves: 'Pantry wall and better task lighting.',
+          constraints: 'Family stays in the home during works.'
+        }
+      }
     })
     .expect(201);
 
   assert.equal(response.body?.quoteId, 'quote-1');
   assert.match(String(response.body?.publicToken || ''), /^[a-f0-9]{32}$/);
   assert.equal(state.createdQuotes.length, 1);
+  assert.equal(
+    state.createdQuotes[0]?.proposalDetails?.projectScope?.propertyType,
+    'semi_detached'
+  );
+  assert.match(
+    String(state.createdQuotes[0]?.description || ''),
+    /Property type: Semi Detached/i
+  );
   assert.equal(state.createdEvents[0]?.eventType, 'quote_submitted');
 });
 
@@ -154,6 +188,32 @@ test('v2 public quotes returns guest preview data from the private public token 
               guestEmail: 'guest@example.com',
               guestPhone: '07395448487',
               priority: 'medium',
+              proposalDetails: {
+                version: 1,
+                source: 'public_quote_form_v2',
+                projectScope: {
+                  propertyType: 'detached',
+                  roomsInvolved: ['kitchen'],
+                  occupancyStatus: 'empty_property',
+                  planningStage: 'ready_to_start',
+                  targetStartWindow: 'within_1_month',
+                  siteAccess: 'easy_ground_floor'
+                },
+                commercial: {
+                  budgetRange: 'Â£20,000-Â£35,000',
+                  finishLevel: 'bespoke'
+                },
+                logistics: {
+                  location: 'Manchester and the North West',
+                  postcode: 'M20 2AB'
+                },
+                priorities: ['finish_quality'],
+                brief: {
+                  summary: 'Kitchen remodelling with island.',
+                  mustHaves: 'Stone worktop and hidden storage.',
+                  constraints: 'Need a fixed appliance delivery date.'
+                }
+              },
               createdAt: '2026-03-26T21:30:00Z',
               updatedAt: '2026-03-26T21:45:00Z',
               submittedAt: '2026-03-26T21:30:00Z',
@@ -216,6 +276,7 @@ test('v2 public quotes returns guest preview data from the private public token 
   assert.equal(response.body?.quote?.attachmentCount, 1);
   assert.equal(response.body?.quote?.canClaim, true);
   assert.deepEqual(response.body?.quote?.claimChannels, ['email', 'phone']);
+  assert.equal(response.body?.quote?.proposalDetails?.projectScope?.propertyType, 'detached');
 });
 
 test('v2 public quotes sends a guest claim code through the v2 contract path', async () => {

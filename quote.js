@@ -13,6 +13,7 @@
   const previewUrlsByRoot = new WeakMap();
   const followupContextByForm = new WeakMap();
   const selectedFilesByInput = new WeakMap();
+  const quoteStepStateByForm = new WeakMap();
   const quotePreviewToken = new URLSearchParams(window.location.search).get(QUOTE_PREVIEW_QUERY_KEY);
   let quotePreviewRequest;
 
@@ -157,6 +158,45 @@
     String(value || '')
       .replace(/[_-]+/g, ' ')
       .replace(/\b\w/g, (character) => character.toUpperCase());
+  const isValidEmail = (value) => !value || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value).trim());
+  const buildQuoteProposalDetails = ({ formData, location, postcode, budgetRange }) => ({
+    version: 1,
+    source: 'public_quote_form_v2',
+    projectScope: {
+      propertyType: String(formData.get('propertyType') || '').trim() || null,
+      roomsInvolved: formData.getAll('roomsInvolved').map((value) => String(value || '').trim()).filter(Boolean),
+      occupancyStatus: String(formData.get('occupancyStatus') || '').trim() || null,
+      planningStage: String(formData.get('planningStage') || '').trim() || null,
+      targetStartWindow: String(formData.get('targetStartWindow') || '').trim() || null,
+      siteAccess: String(formData.get('siteAccess') || '').trim() || null
+    },
+    commercial: {
+      budgetRange: budgetRange || null,
+      finishLevel: String(formData.get('finishLevel') || '').trim() || null
+    },
+    logistics: {
+      location: location || null,
+      postcode: postcode || null
+    },
+    priorities: formData.getAll('priorities').map((value) => String(value || '').trim()).filter(Boolean),
+    brief: {
+      summary: String(formData.get('message') || '').trim() || null,
+      mustHaves: String(formData.get('mustHaves') || '').trim() || null,
+      constraints: String(formData.get('constraints') || '').trim() || null
+    }
+  });
+  const getProposalMetaItems = (proposalDetails) => {
+    if (!proposalDetails || typeof proposalDetails !== 'object') return [];
+    const rooms = Array.isArray(proposalDetails?.projectScope?.roomsInvolved)
+      ? proposalDetails.projectScope.roomsInvolved.map((entry) => humanizeToken(entry)).filter(Boolean).join(', ')
+      : '';
+    return [
+      ['Property', humanizeToken(proposalDetails?.projectScope?.propertyType)],
+      ['Start', humanizeToken(proposalDetails?.projectScope?.targetStartWindow)],
+      ['Finish', humanizeToken(proposalDetails?.commercial?.finishLevel)],
+      ['Rooms', rooms]
+    ].filter(([, value]) => Boolean(String(value || '').trim()));
+  };
   const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
   const normalizePhone = (value) => String(value || '').trim();
   const setStatus = (node, message = '', type = '') => {
@@ -302,6 +342,7 @@
         : (Array.isArray(payload?.claimChannels) ? payload.claimChannels.filter(Boolean) : []),
       maskedGuestEmail: quote.maskedGuestEmail || payload?.maskedGuestEmail || '',
       maskedGuestPhone: quote.maskedGuestPhone || payload?.maskedGuestPhone || '',
+      proposalDetails: quote.proposalDetails || payload?.proposalDetails || null,
       attachments,
       createdAt: quote.createdAt || payload?.createdAt || '',
       updatedAt: quote.updatedAt || payload?.updatedAt || '',
@@ -595,7 +636,8 @@
         preview.assignedAt ? ['Assigned', formatTimestamp(preview.assignedAt)] : null,
         preview.convertedAt ? ['Converted', formatTimestamp(preview.convertedAt)] : null,
         preview.closedAt ? ['Closed', formatTimestamp(preview.closedAt)] : null,
-        ['Photos', String(preview.attachmentCount || 0)]
+        ['Photos', String(preview.attachmentCount || 0)],
+        ...getProposalMetaItems(preview.proposalDetails)
       ].filter(Boolean);
 
       items.forEach(([label, value]) => {
@@ -979,10 +1021,127 @@
     const filesInput = form.querySelector('input[type="file"][name="files"]');
     const filesStatus = form.querySelector('[data-quote-files-status]');
     const filesPreview = form.querySelector('[data-quote-file-preview]');
+    const stepPanels = Array.from(form.querySelectorAll('[data-quote-step-panel]'));
+    const stepTabs = Array.from(form.querySelectorAll('[data-quote-step-tab]'));
+    const prevStepButton = form.querySelector('[data-quote-step-prev]');
+    const nextStepButton = form.querySelector('[data-quote-step-next]');
     if (!submitButton || !status) return;
+
+    const getCurrentStep = () => quoteStepStateByForm.get(form)?.currentStep || 0;
+    const setCurrentStep = (nextIndex) => {
+      if (!stepPanels.length) return;
+      const safeIndex = Math.max(0, Math.min(stepPanels.length - 1, Number(nextIndex) || 0));
+      quoteStepStateByForm.set(form, { currentStep: safeIndex });
+
+      stepPanels.forEach((panel, index) => {
+        panel.hidden = index !== safeIndex;
+      });
+
+      stepTabs.forEach((tab, index) => {
+        tab.classList.toggle('is-active', index === safeIndex);
+        tab.classList.toggle('is-complete', index < safeIndex);
+        if (index === safeIndex) {
+          tab.setAttribute('aria-current', 'step');
+        } else {
+          tab.removeAttribute('aria-current');
+        }
+      });
+
+      if (prevStepButton) {
+        prevStepButton.hidden = safeIndex <= 0;
+      }
+      if (nextStepButton) {
+        nextStepButton.hidden = safeIndex >= stepPanels.length - 1;
+      }
+      submitButton.hidden = safeIndex < stepPanels.length - 1;
+    };
+
+    const getStepValidationMessage = (stepIndex) => {
+      const formData = new FormData(form);
+      const guestName = String(formData.get('name') || '').trim();
+      const guestPhone = normalizePhone(formData.get('phone'));
+      const guestEmail = normalizeEmail(formData.get('email'));
+      const projectType = normalizeProjectType(formData.get('projectType') || formData.get('project-type'));
+      const propertyType = String(formData.get('propertyType') || '').trim();
+      const occupancyStatus = String(formData.get('occupancyStatus') || '').trim();
+      const planningStage = String(formData.get('planningStage') || '').trim();
+      const targetStartWindow = String(formData.get('targetStartWindow') || '').trim();
+      const description = String(formData.get('message') || '').trim();
+      const files = getSelectedFiles(filesInput);
+
+      if (stepIndex === 0) {
+        if (!guestName) return 'Please provide your name before moving on.';
+        if (!guestPhone && !guestEmail) return 'Add either an email address or phone number before continuing.';
+        if (guestEmail && !isValidEmail(guestEmail)) return 'Enter a valid email address before continuing.';
+        if (guestPhone && guestPhone.length < 5) return 'Enter a valid phone number before continuing.';
+        if (!projectType || projectType === 'other' && !String(formData.get('projectType') || '').trim()) {
+          return 'Choose the project type before continuing.';
+        }
+        return '';
+      }
+
+      if (stepIndex === 1) {
+        if (!propertyType) return 'Choose the property type before continuing.';
+        if (!occupancyStatus) return 'Choose the occupancy status before continuing.';
+        if (!planningStage) return 'Choose the planning stage before continuing.';
+        if (!targetStartWindow) return 'Choose the target start window before continuing.';
+        return '';
+      }
+
+      if (!description) return 'Please describe the project brief before sending the quote.';
+      if (files.length > MAX_QUOTE_PHOTOS) return `Attach up to ${MAX_QUOTE_PHOTOS} photos per quote.`;
+      if (files.some((file) => !String(file.type || '').toLowerCase().startsWith('image/'))) {
+        return 'Only image files are allowed for quote photo attachments.';
+      }
+      return '';
+    };
+
+    const moveToStep = (targetIndex) => {
+      if (!stepPanels.length) return true;
+      const currentStep = getCurrentStep();
+      const safeTarget = Math.max(0, Math.min(stepPanels.length - 1, Number(targetIndex) || 0));
+
+      if (safeTarget <= currentStep) {
+        setCurrentStep(safeTarget);
+        setStatus(status, '');
+        return true;
+      }
+
+      for (let stepIndex = currentStep; stepIndex < safeTarget; stepIndex += 1) {
+        const validationMessage = getStepValidationMessage(stepIndex);
+        if (validationMessage) {
+          setCurrentStep(stepIndex);
+          setStatus(status, validationMessage, 'error');
+          return false;
+        }
+      }
+
+      setCurrentStep(safeTarget);
+      setStatus(status, '');
+      return true;
+    };
 
     applyProjectTypeContext(form);
     hideQuoteFollowup(form);
+    if (stepPanels.length) {
+      setCurrentStep(0);
+      stepTabs.forEach((tab, index) => {
+        tab.addEventListener('click', () => {
+          moveToStep(index);
+        });
+      });
+      if (prevStepButton) {
+        prevStepButton.addEventListener('click', () => {
+          moveToStep(getCurrentStep() - 1);
+        });
+      }
+      if (nextStepButton) {
+        nextStepButton.addEventListener('click', () => {
+          moveToStep(getCurrentStep() + 1);
+        });
+      }
+    }
+
     if (filesInput) {
       syncFilesUi(filesInput, filesStatus, filesPreview);
       filesInput.addEventListener('change', () => {
@@ -1009,6 +1168,9 @@
     form.addEventListener('reset', () => {
       setTimeout(() => {
         applyProjectTypeContext(form);
+        if (stepPanels.length) {
+          setCurrentStep(0);
+        }
         if (filesInput) {
           clearSelectedFiles(filesInput);
           syncFilesUi(filesInput, filesStatus, filesPreview);
@@ -1032,29 +1194,25 @@
       const location = String(formData.get('location') || '').trim() || 'Greater Manchester';
       const postcode = String(formData.get('postcode') || '').trim();
       const files = getSelectedFiles(filesInput);
+      const proposalDetails = buildQuoteProposalDetails({
+        formData,
+        location,
+        postcode,
+        budgetRange
+      });
 
-      status.className = 'form-status';
-      status.textContent = '';
+      setStatus(status, '');
       hideQuoteFollowup(form);
-      if (!guestName || !description || (!guestPhone && !guestEmail)) {
-        status.classList.add('is-error');
-        status.textContent = 'Please provide your name, project details, and either email or phone.';
-        return;
-      }
-      if (files.length > MAX_QUOTE_PHOTOS) {
-        status.classList.add('is-error');
-        status.textContent = `Attach up to ${MAX_QUOTE_PHOTOS} photos per quote.`;
-        return;
-      }
-      if (files.some((file) => !String(file.type || '').toLowerCase().startsWith('image/'))) {
-        status.classList.add('is-error');
-        status.textContent = 'Only image files are allowed for quote photo attachments.';
+
+      const invalidStepIndex = stepPanels.findIndex((_, stepIndex) => Boolean(getStepValidationMessage(stepIndex)));
+      if (invalidStepIndex >= 0) {
+        setCurrentStep(invalidStepIndex);
+        setStatus(status, getStepValidationMessage(invalidStepIndex), 'error');
         return;
       }
 
       submitButton.disabled = true;
-      status.classList.add('is-loading');
-      status.textContent = 'Sending your request...';
+      setStatus(status, 'Sending your request...', 'loading');
 
       try {
         const requestBody = new FormData();
@@ -1066,6 +1224,7 @@
         requestBody.set('description', description);
         requestBody.set('location', location);
         if (postcode) requestBody.set('postcode', postcode);
+        requestBody.set('proposalDetails', JSON.stringify(proposalDetails));
         files.forEach((file) => requestBody.append('files', file));
 
         const response = await fetch(PUBLIC_QUOTE_API_BASE, {
@@ -1078,12 +1237,15 @@
           throw new Error(responsePayload.error || 'Could not submit your consultation request.');
         }
 
-        status.className = 'form-status is-success';
-        status.textContent = responsePayload.quoteId
+        setStatus(
+          status,
+          responsePayload.quoteId
           ? responsePayload.attachmentCount
             ? `Request sent with ${responsePayload.attachmentCount} photo(s). Reference: ${responsePayload.quoteId}.`
             : `Request sent. Reference: ${responsePayload.quoteId}.`
-          : 'Request sent.';
+          : 'Request sent.',
+          'success'
+        );
         const previewPayload = normalizeQuotePreviewPayload({
           ...responsePayload,
           quote: {
@@ -1094,7 +1256,8 @@
             workflowStatus: responsePayload.workflowStatus || 'submitted',
             attachmentCount: responsePayload.attachmentCount || files.length,
             attachments: responsePayload.attachments || [],
-            submittedAt: new Date().toISOString()
+            submittedAt: new Date().toISOString(),
+            proposalDetails: responsePayload.proposalDetails || proposalDetails
           }
         }, responsePayload.publicToken || '');
         renderQuoteFollowup(form, previewPayload, {
@@ -1107,8 +1270,7 @@
         }
         form.reset();
       } catch (error) {
-        status.className = 'form-status is-error';
-        status.textContent = error.message || 'Could not submit your consultation request.';
+        setStatus(status, error.message || 'Could not submit your consultation request.', 'error');
       } finally {
         submitButton.disabled = false;
       }

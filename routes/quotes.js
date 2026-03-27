@@ -27,6 +27,7 @@ const asyncHandler = require('../utils/asyncHandler');
 const { deriveLegacyQuoteStatus } = require('../utils/quoteWorkflow');
 const { advanceClientLifecycle } = require('../utils/crmLifecycle');
 const { createActivityEvent } = require('../utils/activityFeed');
+const { parseQuoteProposalDetails, buildQuoteDescriptionFromProposal } = require('../utils/quoteProposal');
 
 const router = express.Router();
 
@@ -43,6 +44,10 @@ const GUEST_QUOTE_PREVIEW_ATTRIBUTES = [
   'guestPhone',
   'projectType',
   'location',
+  'postcode',
+  'budgetRange',
+  'description',
+  'proposalDetails',
   'status',
   'workflowStatus',
   'priority',
@@ -167,6 +172,8 @@ const createGuestQuoteRecord = async (basePayload, options = {}) => {
     sourceChannel: 'public_web',
     submittedAt: new Date()
   };
+  const proposalPayload = basePayload.proposalDetails ? { proposalDetails: basePayload.proposalDetails } : {};
+  const { proposalDetails, ...legacySafePayload } = basePayload;
 
   try {
     return await Quote.create({
@@ -180,7 +187,7 @@ const createGuestQuoteRecord = async (basePayload, options = {}) => {
 
     let quote;
     try {
-      quote = await Quote.create(basePayload, options);
+      quote = await Quote.create(legacySafePayload, options);
     } catch (fallbackError) {
       logBlockingQuoteFailure('guest_quote_create', fallbackError, {
         initialMessage: error?.message || String(error)
@@ -190,7 +197,10 @@ const createGuestQuoteRecord = async (basePayload, options = {}) => {
 
     if (typeof quote?.update === 'function') {
       try {
-        await quote.update(workflowPayload, options);
+        await quote.update({
+          ...workflowPayload,
+          ...proposalPayload
+        }, options);
       } catch (updateError) {
         logNonBlockingQuoteFailure('guest_quote_workflow_backfill', updateError, { quoteId: quote.id });
       }
@@ -283,7 +293,7 @@ router.post(
     body('projectType').isIn(['bathroom', 'kitchen', 'interior', 'tiling', 'extension', 'joinery', 'rendering', 'decorating', 'other']),
     body('location').optional({ checkFalsy: true }).trim(),
     body('postcode').optional({ checkFalsy: true }).trim(),
-    body('description').trim().notEmpty(),
+    body('description').optional({ checkFalsy: true }).trim(),
     body('guestName').trim().notEmpty(),
     body('guestEmail').optional().isEmail(),
     body('guestPhone').optional().trim().isLength({ min: 5 }),
@@ -298,17 +308,43 @@ router.post(
     }
 
     const projectType = String(req.body.projectType || '').trim();
-    const description = String(req.body.description || '').trim();
+    const rawDescription = String(req.body.description || '').trim();
     const guestName = String(req.body.guestName || '').trim();
     const guestEmail = normalizeEmail(req.body.guestEmail);
     const guestPhone = normalizePhone(req.body.guestPhone);
-    const budgetRange = String(req.body.budgetRange || '').trim() || null;
-    const location = String(req.body.location || '').trim() || 'Greater Manchester';
-    const postcode = String(req.body.postcode || '').trim() || null;
+    let proposalDetails;
+
+    try {
+      proposalDetails = parseQuoteProposalDetails(req.body.proposalDetails, {
+        source: 'public_quote_form_v2'
+      });
+    } catch (error) {
+      await cleanupUploadedFiles(files);
+      return res.status(error.statusCode || 400).json({
+        error: error.message || 'Invalid quote proposal payload.',
+        details: error.details || null
+      });
+    }
+
+    const budgetRange = String(req.body.budgetRange || '').trim() || proposalDetails?.commercial?.budgetRange || null;
+    const location = String(req.body.location || '').trim() || proposalDetails?.logistics?.location || 'Greater Manchester';
+    const postcode = String(req.body.postcode || '').trim() || proposalDetails?.logistics?.postcode || null;
+    const description = buildQuoteDescriptionFromProposal({
+      description: rawDescription,
+      proposalDetails,
+      location,
+      postcode,
+      budgetRange
+    });
 
     if (!guestEmail && !guestPhone) {
       await cleanupUploadedFiles(files);
       return res.status(400).json({ error: 'Provide guestEmail or guestPhone' });
+    }
+
+    if (!description) {
+      await cleanupUploadedFiles(files);
+      return res.status(400).json({ error: 'Provide a project brief before sending the quote.' });
     }
 
     const attachmentValidationError = validateQuoteAttachmentFiles(files);
@@ -333,6 +369,7 @@ router.post(
           projectType,
           location,
           postcode: postcode || null,
+          proposalDetails,
           description,
           budgetRange,
           contactEmail: guestEmail || null,
@@ -411,6 +448,8 @@ router.post(
       guestEmail ? `Email: ${guestEmail}` : null,
       guestPhone ? `Phone: ${guestPhone}` : null,
       budgetRange ? `Budget: ${budgetRange}` : null,
+      proposalDetails?.projectScope?.propertyType ? `Property type: ${proposalDetails.projectScope.propertyType}` : null,
+      proposalDetails?.projectScope?.targetStartWindow ? `Target start: ${proposalDetails.projectScope.targetStartWindow}` : null,
       attachments.length ? `Photos attached: ${attachments.length}` : null,
       `Description: ${description}`
     ].filter(Boolean).join('\n');
@@ -447,8 +486,10 @@ router.post(
       quoteId: quote.id,
       publicToken: quote.publicToken,
       status: quote.status,
+      workflowStatus: quote.workflowStatus,
       attachmentCount: attachments.length,
-      attachments: attachments.map(toQuoteAttachmentSummary)
+      attachments: attachments.map(toQuoteAttachmentSummary),
+      proposalDetails: quote.proposalDetails || proposalDetails || null
     });
   })
 );

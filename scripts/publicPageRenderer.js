@@ -45,6 +45,203 @@ const renderStylesheets = () => `  <link rel="stylesheet" href="/styles/tokens.c
   <link rel="stylesheet" href="/styles/public.css" />
   <link rel="stylesheet" href="/styles/workspace.css" />`;
 
+const renderQuoteCheckboxGroup = (name, items = []) =>
+  items
+    .map(
+      (item) => `              <label class="quote-choice-pill">
+                <input type="checkbox" name="${escapeHtml(name)}" value="${escapeHtml(item.value)}" />
+                <span>${escapeHtml(item.label)}</span>
+              </label>`
+    )
+    .join('\n');
+
+const renderQuoteFormInner = ({
+  locationValue,
+  selectedProjectType = '',
+  submitLabel = 'Request Private Consultation',
+  briefPlaceholder = 'Tell us about your scope, finish expectations and timing.'
+}) => `              <input type="hidden" name="location" value="${escapeHtml(locationValue)}" />
+              <div class="quote-stepper" data-quote-stepper>
+                <div class="quote-stepper-nav" aria-label="Quote brief steps">
+                  <button class="quote-stepper-tab" type="button" data-quote-step-tab data-step-index="0" aria-current="step">
+                    <span class="quote-stepper-tab-index">01</span>
+                    <span class="quote-stepper-tab-copy">
+                      <strong>Basics</strong>
+                      <span>Contact and project type</span>
+                    </span>
+                  </button>
+                  <button class="quote-stepper-tab" type="button" data-quote-step-tab data-step-index="1">
+                    <span class="quote-stepper-tab-index">02</span>
+                    <span class="quote-stepper-tab-copy">
+                      <strong>Scope</strong>
+                      <span>Property, stage and access</span>
+                    </span>
+                  </button>
+                  <button class="quote-stepper-tab" type="button" data-quote-step-tab data-step-index="2">
+                    <span class="quote-stepper-tab-index">03</span>
+                    <span class="quote-stepper-tab-copy">
+                      <strong>Brief</strong>
+                      <span>Budget, priorities and photos</span>
+                    </span>
+                  </button>
+                </div>
+
+                <div class="quote-stepper-panels">
+                  <section class="quote-step-panel" data-quote-step-panel data-step-index="0">
+                    <div class="quote-step-panel-head">
+                      <p class="section-eyebrow section-eyebrow--compact">Step 1</p>
+                      <h3>Start with the core enquiry.</h3>
+                      <p class="page-aside-copy">Share who should hear back, how to reach you and what kind of project this is.</p>
+                    </div>
+                    <div class="form-grid quote-form-grid">
+                      <label>Name<input type="text" name="name" autocomplete="name" required /></label>
+                      <label>Phone<input type="tel" name="phone" autocomplete="tel" /></label>
+                      <label>Email<input type="email" name="email" autocomplete="email" /></label>
+                      <label>Project type
+                        <select name="projectType" required data-brand-project-type-select data-default-label="Select" data-selected-value="${escapeHtml(selectedProjectType)}"></select>
+                      </label>
+                    </div>
+                  </section>
+
+                  <section class="quote-step-panel" data-quote-step-panel data-step-index="1" hidden>
+                    <div class="quote-step-panel-head">
+                      <p class="section-eyebrow section-eyebrow--compact">Step 2</p>
+                      <h3>Set the site and planning context.</h3>
+                      <p class="page-aside-copy">This helps us frame the right next step before anyone gives you a generic estimate answer.</p>
+                    </div>
+                    <div class="form-grid quote-form-grid">
+                      <label>Property type
+                        <select name="propertyType" required>
+                          <option value="">Select</option>
+                          <option value="flat">Flat / apartment</option>
+                          <option value="terraced">Terraced house</option>
+                          <option value="semi_detached">Semi-detached</option>
+                          <option value="detached">Detached</option>
+                          <option value="commercial">Commercial unit</option>
+                          <option value="other">Other</option>
+                        </select>
+                      </label>
+                      <label>Occupancy
+                        <select name="occupancyStatus" required>
+                          <option value="">Select</option>
+                          <option value="living_in_home">Living in home</option>
+                          <option value="partially_occupied">Partially occupied</option>
+                          <option value="empty_property">Empty property</option>
+                          <option value="tenanted">Tenanted</option>
+                          <option value="commercial_live">Commercial live site</option>
+                          <option value="other">Other</option>
+                        </select>
+                      </label>
+                      <label>Planning stage
+                        <select name="planningStage" required>
+                          <option value="">Select</option>
+                          <option value="idea">Early idea</option>
+                          <option value="getting_prices">Getting prices</option>
+                          <option value="ready_to_start">Ready to start</option>
+                          <option value="already_underway">Already underway</option>
+                          <option value="urgent_recovery">Urgent recovery</option>
+                        </select>
+                      </label>
+                      <label>Target start
+                        <select name="targetStartWindow" required>
+                          <option value="">Select</option>
+                          <option value="asap">ASAP</option>
+                          <option value="within_1_month">Within 1 month</option>
+                          <option value="within_3_months">Within 3 months</option>
+                          <option value="within_6_months">Within 6 months</option>
+                          <option value="planning_ahead">Planning ahead</option>
+                        </select>
+                      </label>
+                      <label>Finish level
+                        <select name="finishLevel">
+                          <option value="">Select</option>
+                          <option value="essential">Essential refresh</option>
+                          <option value="elevated">Elevated</option>
+                          <option value="premium">Premium</option>
+                          <option value="bespoke">Bespoke</option>
+                        </select>
+                      </label>
+                      <label>Site access
+                        <select name="siteAccess">
+                          <option value="">Select</option>
+                          <option value="easy_ground_floor">Easy ground-floor access</option>
+                          <option value="stairs_only">Stairs only</option>
+                          <option value="tight_access">Tight access</option>
+                          <option value="restricted_parking">Restricted parking</option>
+                          <option value="unknown">Not sure yet</option>
+                        </select>
+                      </label>
+                      <fieldset class="quote-choice-fieldset span-2">
+                        <legend>Rooms involved</legend>
+                        <div class="quote-choice-grid">
+${renderQuoteCheckboxGroup('roomsInvolved', [
+  { value: 'kitchen', label: 'Kitchen' },
+  { value: 'bathroom', label: 'Bathroom' },
+  { value: 'living_area', label: 'Living area' },
+  { value: 'bedroom', label: 'Bedroom' },
+  { value: 'utility', label: 'Utility' },
+  { value: 'hall_stairs', label: 'Hall / stairs' },
+  { value: 'extension_area', label: 'Extension area' },
+  { value: 'outdoor_connection', label: 'Outdoor connection' },
+  { value: 'whole_home', label: 'Whole home' },
+  { value: 'other', label: 'Other' }
+])}
+                        </div>
+                      </fieldset>
+                    </div>
+                  </section>
+
+                  <section class="quote-step-panel" data-quote-step-panel data-step-index="2" hidden>
+                    <div class="quote-step-panel-head">
+                      <p class="section-eyebrow section-eyebrow--compact">Step 3</p>
+                      <h3>Finish the working brief.</h3>
+                      <p class="page-aside-copy">Add the budget direction, must-haves, known constraints and any reference photos that will save a back-and-forth later.</p>
+                    </div>
+                    <div class="form-grid quote-form-grid">
+                      <label>Budget
+                        <select name="budget" data-brand-budget-select data-default-label="Select"></select>
+                      </label>
+                      <label>Postcode<input type="text" name="postcode" autocomplete="postal-code" /></label>
+                      <fieldset class="quote-choice-fieldset span-2">
+                        <legend>Priorities</legend>
+                        <div class="quote-choice-grid">
+${renderQuoteCheckboxGroup('priorities', [
+  { value: 'finish_quality', label: 'Finish quality' },
+  { value: 'budget_control', label: 'Budget control' },
+  { value: 'storage', label: 'Storage' },
+  { value: 'speed', label: 'Speed' },
+  { value: 'family_living', label: 'Family living' },
+  { value: 'low_maintenance', label: 'Low maintenance' },
+  { value: 'future_sale', label: 'Future sale' },
+  { value: 'energy_efficiency', label: 'Energy efficiency' }
+])}
+                        </div>
+                      </fieldset>
+                      <label class="span-2">Must-haves<textarea name="mustHaves" rows="3" placeholder="List the pieces that must make the project work."></textarea></label>
+                      <label class="span-2">Known constraints<textarea name="constraints" rows="3" placeholder="Access limits, neighbours, timescales, structural unknowns or anything else we should factor in."></textarea></label>
+                      <label class="span-2">Reference photos<input type="file" name="files" accept="image/*" multiple /></label>
+                      <label class="span-2">Project brief<textarea name="message" rows="6" required placeholder="${escapeHtml(briefPlaceholder)}"></textarea></label>
+                    </div>
+                  </section>
+                </div>
+              </div>
+              <div class="quote-step-actions">
+                <button class="btn-outline-gold" type="button" data-quote-step-prev hidden>Back</button>
+                <button class="btn-outline-gold" type="button" data-quote-step-next>Continue</button>
+              </div>
+              <p class="page-aside-copy" data-quote-files-status>Optional: attach up to 8 reference photos.</p>
+              <div class="quote-file-preview" data-quote-file-preview aria-live="polite" hidden></div>
+              <button class="btn btn-gold btn-block" type="submit">${escapeHtml(submitLabel)}</button>
+              <p class="form-status" aria-live="polite"></p>
+              <div class="quote-followup-panel" data-quote-followup hidden>
+                <p class="section-eyebrow section-eyebrow--compact">Quote status</p>
+                <h3 data-quote-followup-title>Your private quote link is ready.</h3>
+                <p class="page-aside-copy" data-quote-followup-summary>Keep this private link to check the quote status later and continue from the same enquiry context.</p>
+                <dl class="quote-followup-meta" data-quote-followup-meta></dl>
+                <div class="quote-file-preview quote-file-preview--readonly" data-quote-followup-attachments hidden></div>
+                <div class="page-actions quote-followup-actions" data-quote-followup-actions></div>
+              </div>`;
+
 const getResponsiveAsset = (src, options = {}) => {
   const asset = src ? galleryAssets[src] : null;
   return {
@@ -467,32 +664,12 @@ ${summarySections.map((section) => renderStudioSummarySection(section, shared)).
             <h2>${escapeHtml(fastQuote.title || shared.enquiryTitle || 'Send Enquiry')}</h2>
             <p class="section-lead">${escapeHtml(fastQuote.lead || shared.enquiryLead || '')}</p>
             <form class="quote-form studio-quote-form js-quote-form" data-form-context="${escapeHtml(fastQuote.formContext || 'Public Page Fast Quote')}" novalidate>
-              <input type="hidden" name="location" value="${escapeHtml(fastQuote.locationValue || shared.region)}" />
-              <div class="form-grid">
-                <label>Name<input type="text" name="name" autocomplete="name" required /></label>
-                <label>Phone<input type="tel" name="phone" autocomplete="tel" /></label>
-                <label>Email<input type="email" name="email" autocomplete="email" /></label>
-                <label>Project type
-                  <select name="projectType" required data-brand-project-type-select data-default-label="Select" data-selected-value="${escapeHtml(fastQuote.selectedProjectType || '')}"></select>
-                </label>
-                <label>Budget
-                  <select name="budget" data-brand-budget-select data-default-label="Select"></select>
-                </label>
-                <label class="span-2">Reference photos<input type="file" name="files" accept="image/*" multiple /></label>
-                <label class="span-2">Project brief<textarea name="message" rows="5" required placeholder="Tell us about your scope, finish expectations and timing."></textarea></label>
-              </div>
-              <p class="page-aside-copy" data-quote-files-status>Optional: attach up to 8 reference photos.</p>
-              <div class="quote-file-preview" data-quote-file-preview aria-live="polite" hidden></div>
-              <button class="btn btn-gold btn-block" type="submit">${escapeHtml(shared.consultationCtaLabel || 'Request Private Consultation')}</button>
-              <p class="form-status" aria-live="polite"></p>
-              <div class="quote-followup-panel" data-quote-followup hidden>
-                <p class="section-eyebrow section-eyebrow--compact">Quote status</p>
-                <h3 data-quote-followup-title>Your private quote link is ready.</h3>
-                <p class="page-aside-copy" data-quote-followup-summary>Keep this private link to check the quote status later and continue from the same enquiry context.</p>
-                <dl class="quote-followup-meta" data-quote-followup-meta></dl>
-                <div class="quote-file-preview quote-file-preview--readonly" data-quote-followup-attachments hidden></div>
-                <div class="page-actions quote-followup-actions" data-quote-followup-actions></div>
-              </div>
+${renderQuoteFormInner({
+  locationValue: fastQuote.locationValue || shared.region,
+  selectedProjectType: fastQuote.selectedProjectType || '',
+  submitLabel: shared.consultationCtaLabel || 'Request Private Consultation',
+  briefPlaceholder: 'Tell us about your scope, finish expectations and timing.'
+})}
             </form>
           </article>
         </div>
@@ -529,32 +706,12 @@ const renderConsultationSection = ({ title, lead, formContext, locationValue, se
         </div>
       </div>
       <form class="quote-form surface-card surface-card--light js-quote-form" data-form-context="${escapeHtml(formContext)}" novalidate>
-        <input type="hidden" name="location" value="${escapeHtml(locationValue)}" />
-        <div class="form-grid">
-          <label>Name<input type="text" name="name" autocomplete="name" required /></label>
-          <label>Phone<input type="tel" name="phone" autocomplete="tel" /></label>
-          <label>Email<input type="email" name="email" autocomplete="email" /></label>
-          <label>Project type
-            <select name="projectType" required data-brand-project-type-select data-default-label="Select" data-selected-value="${escapeHtml(selectedProjectType)}"></select>
-          </label>
-          <label>Budget
-            <select name="budget" data-brand-budget-select data-default-label="Select"></select>
-          </label>
-          <label class="span-2">Reference photos<input type="file" name="files" accept="image/*" multiple /></label>
-          <label class="span-2">Project brief<textarea name="message" rows="5" required placeholder="Tell us about your scope, finish expectations and timing."></textarea></label>
-        </div>
-        <p class="page-aside-copy" data-quote-files-status>Optional: attach up to 8 reference photos.</p>
-        <div class="quote-file-preview" data-quote-file-preview aria-live="polite" hidden></div>
-        <button class="btn btn-gold btn-block" type="submit">${escapeHtml(shared.consultationCtaLabel || 'Request Private Consultation')}</button>
-        <p class="form-status" aria-live="polite"></p>
-        <div class="quote-followup-panel" data-quote-followup hidden>
-          <p class="section-eyebrow section-eyebrow--compact">Quote status</p>
-          <h3 data-quote-followup-title>Your private quote link is ready.</h3>
-          <p class="page-aside-copy" data-quote-followup-summary>Keep this private link to check the quote status later and continue from the same enquiry context.</p>
-          <dl class="quote-followup-meta" data-quote-followup-meta></dl>
-          <div class="quote-file-preview quote-file-preview--readonly" data-quote-followup-attachments hidden></div>
-          <div class="page-actions quote-followup-actions" data-quote-followup-actions></div>
-        </div>
+${renderQuoteFormInner({
+  locationValue,
+  selectedProjectType,
+  submitLabel: shared.consultationCtaLabel || 'Request Private Consultation',
+  briefPlaceholder: 'Tell us about your scope, finish expectations and timing.'
+})}
       </form>
     </div>
   </section>`;

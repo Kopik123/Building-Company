@@ -18,6 +18,14 @@ export type QuoteWorkflowStatus =
 export type QuotePriority = 'low' | 'medium' | 'high';
 export type QuoteProjectType = 'bathroom' | 'kitchen' | 'interior' | 'tiling' | 'extension' | 'joinery' | 'rendering' | 'decorating' | 'other';
 export type QuoteContactMethod = 'email' | 'phone' | 'both';
+export type QuoteProposalPropertyType = 'flat' | 'terraced' | 'semi_detached' | 'detached' | 'commercial' | 'other';
+export type QuoteProposalRoomType = 'kitchen' | 'bathroom' | 'living_area' | 'bedroom' | 'utility' | 'hall_stairs' | 'extension_area' | 'outdoor_connection' | 'whole_home' | 'other';
+export type QuoteProposalOccupancyStatus = 'living_in_home' | 'partially_occupied' | 'empty_property' | 'tenanted' | 'commercial_live' | 'other';
+export type QuoteProposalPlanningStage = 'idea' | 'getting_prices' | 'ready_to_start' | 'already_underway' | 'urgent_recovery';
+export type QuoteProposalStartWindow = 'asap' | 'within_1_month' | 'within_3_months' | 'within_6_months' | 'planning_ahead';
+export type QuoteProposalFinishLevel = 'essential' | 'elevated' | 'premium' | 'bespoke';
+export type QuoteProposalSiteAccess = 'easy_ground_floor' | 'stairs_only' | 'tight_access' | 'restricted_parking' | 'unknown';
+export type QuoteProposalPriority = 'finish_quality' | 'budget_control' | 'storage' | 'speed' | 'family_living' | 'low_maintenance' | 'future_sale' | 'energy_efficiency';
 export type EstimateDecisionStatus = 'pending' | 'viewed' | 'revision_requested' | 'accepted' | 'declined';
 export type EstimateStatus = 'draft' | 'sent' | 'approved' | 'archived' | 'superseded';
 export type ServiceCategory = 'bathroom' | 'kitchen' | 'interior' | 'outdoor' | 'other';
@@ -61,6 +69,33 @@ export interface ThreadMessage {
   attachments: MessageAttachment[];
 }
 
+export interface QuoteProposalDetails {
+  version: 1;
+  source: string;
+  projectScope: {
+    propertyType: QuoteProposalPropertyType | null;
+    roomsInvolved: QuoteProposalRoomType[];
+    occupancyStatus: QuoteProposalOccupancyStatus | null;
+    planningStage: QuoteProposalPlanningStage | null;
+    targetStartWindow: QuoteProposalStartWindow | null;
+    siteAccess: QuoteProposalSiteAccess | null;
+  };
+  commercial: {
+    budgetRange: string | null;
+    finishLevel: QuoteProposalFinishLevel | null;
+  };
+  logistics: {
+    location: string | null;
+    postcode: string | null;
+  };
+  priorities: QuoteProposalPriority[];
+  brief: {
+    summary: string | null;
+    mustHaves: string | null;
+    constraints: string | null;
+  };
+}
+
 export interface QuoteSummary {
   id: string;
   projectType: string | null;
@@ -76,6 +111,7 @@ export interface QuoteSummary {
   contactMethod: string | null;
   postcode: string | null;
   budgetRange: string | null;
+  proposalDetails: QuoteProposalDetails | null;
   contactEmail: string | null;
   contactPhone: string | null;
   assignedManagerId: string | null;
@@ -310,6 +346,14 @@ export const QUOTE_WORKFLOW_STATUSES: readonly QuoteWorkflowStatus[];
 export const QUOTE_PRIORITIES: readonly QuotePriority[];
 export const QUOTE_PROJECT_TYPES: readonly QuoteProjectType[];
 export const QUOTE_CONTACT_METHODS: readonly QuoteContactMethod[];
+export const QUOTE_PROPOSAL_PROPERTY_TYPES: readonly QuoteProposalPropertyType[];
+export const QUOTE_PROPOSAL_ROOM_TYPES: readonly QuoteProposalRoomType[];
+export const QUOTE_PROPOSAL_OCCUPANCY_STATUSES: readonly QuoteProposalOccupancyStatus[];
+export const QUOTE_PROPOSAL_PLANNING_STAGES: readonly QuoteProposalPlanningStage[];
+export const QUOTE_PROPOSAL_START_WINDOWS: readonly QuoteProposalStartWindow[];
+export const QUOTE_PROPOSAL_FINISH_LEVELS: readonly QuoteProposalFinishLevel[];
+export const QUOTE_PROPOSAL_SITE_ACCESS: readonly QuoteProposalSiteAccess[];
+export const QUOTE_PROPOSAL_PRIORITIES: readonly QuoteProposalPriority[];
 export const ESTIMATE_DECISION_STATUSES: readonly EstimateDecisionStatus[];
 export const ESTIMATE_STATUSES: readonly EstimateStatus[];
 export const SERVICE_CATEGORIES: readonly ServiceCategory[];
@@ -324,6 +368,7 @@ export const messageAttachmentSchema: z.ZodType<MessageAttachment>;
 export const threadMessageSchema: z.ZodType<ThreadMessage>;
 export const estimateSummarySchema: z.ZodType<EstimateSummary>;
 export const quoteEventSchema: z.ZodType<QuoteEventSummary>;
+export const quoteProposalSchema: z.ZodType<QuoteProposalDetails>;
 export const projectSummarySchema: z.ZodType<ProjectSummary>;
 export const quoteSummarySchema: z.ZodType<QuoteSummary>;
 export const threadSummarySchema: z.ZodType<ThreadSummary>;
@@ -343,6 +388,7 @@ export function normalizeThreadMessage(value: unknown): ThreadMessage;
 export function normalizeEstimateStatusValue(value: unknown, fallback?: EstimateStatus): EstimateStatus;
 export function normalizeEstimateSummary(value: unknown): EstimateSummary;
 export function normalizeQuoteEvent(value: unknown): QuoteEventSummary;
+export function normalizeQuoteProposalDetails(value: unknown): QuoteProposalDetails;
 export function normalizeProjectSummary(value: unknown): ProjectSummary;
 export function normalizeQuoteSummary(value: unknown): QuoteSummary;
 export function normalizeThreadSummary(value: unknown): ThreadSummary;

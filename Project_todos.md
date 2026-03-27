@@ -98,8 +98,8 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 
 ## Product And Workflow
 
-- [ ] Implement the planned `client_proposal_quote` structure on the public quote page with phased UX, richer project fields and mobile-safe validation.
-- [ ] Decide whether richer quote intake should be stored as structured quote metadata in phase 1 or temporarily mapped into the existing `description` field.
+- [x] Implement the planned `client_proposal_quote` structure on the public quote page with phased UX, richer project fields and mobile-safe validation.
+- [x] Decide whether richer quote intake should be stored as structured quote metadata in phase 1 or temporarily mapped into the existing `description` field.
 - [x] Define one explicit CRM lifecycle for clients: `lead`, `quoted`, `approved`, `active project`, `completed`, `archived`.
 - [x] Add a real project workflow model with `stage`, `milestone`, `task/work package`, `owner` and `due date`.
 - [x] Design and implement a durable activity/audit feed for company, client and project timelines.

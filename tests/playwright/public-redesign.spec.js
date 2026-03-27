@@ -32,6 +32,32 @@ const createGuestQuotePreviewPayload = () => ({
     claimChannels: ['email', 'phone'],
     maskedGuestEmail: 'gu***@e***.com',
     maskedGuestPhone: '0739***87',
+    proposalDetails: {
+      version: 1,
+      source: 'public_quote_form_v2',
+      projectScope: {
+        propertyType: 'semi_detached',
+        roomsInvolved: ['kitchen'],
+        occupancyStatus: 'living_in_home',
+        planningStage: 'getting_prices',
+        targetStartWindow: 'within_3_months',
+        siteAccess: 'easy_ground_floor'
+      },
+      commercial: {
+        budgetRange: '£8,000-£12,000',
+        finishLevel: 'premium'
+      },
+      logistics: {
+        location: 'Manchester and the North West',
+        postcode: 'M20 2AB'
+      },
+      priorities: ['finish_quality', 'storage'],
+      brief: {
+        summary: 'Kitchen refresh with appliance wall and new finishes.',
+        mustHaves: 'Hidden pantry storage and layered task lighting.',
+        constraints: 'Need the kitchen operational at weekends.'
+      }
+    },
     attachmentCount: 2,
     submittedAt: '2026-03-24T21:30:00Z',
     attachments: quotePhotoFixtures.map((file, index) => ({
@@ -42,6 +68,62 @@ const createGuestQuotePreviewPayload = () => ({
     }))
   }
 });
+
+const fillPhasedQuoteForm = async (form, options = {}) => {
+  const settings = {
+    name: 'Marta Client',
+    phone: '07395448487',
+    email: 'client@example.com',
+    projectType: 'kitchen',
+    propertyType: 'semi_detached',
+    occupancyStatus: 'living_in_home',
+    planningStage: 'getting_prices',
+    targetStartWindow: 'within_3_months',
+    finishLevel: 'premium',
+    siteAccess: 'easy_ground_floor',
+    roomsInvolved: ['kitchen'],
+    budget: '£8,000-£12,000',
+    postcode: 'M20 2AB',
+    priorities: ['finish_quality', 'storage'],
+    mustHaves: 'Hidden pantry storage and layered task lighting.',
+    constraints: 'Need the kitchen operational at weekends.',
+    message: 'Kitchen refresh with appliance wall and new finishes.',
+    ...options
+  };
+
+  await expect(form.locator('[data-quote-step-panel][data-step-index="0"]')).toBeVisible();
+  await form.locator('input[name="name"]').fill(settings.name);
+  await form.locator('input[name="phone"]').fill(settings.phone);
+  await form.locator('input[name="email"]').fill(settings.email);
+  await form.locator('select[name="projectType"]').selectOption(settings.projectType);
+  await form.locator('[data-quote-step-next]').click();
+
+  await expect(form.locator('[data-quote-step-panel][data-step-index="1"]')).toBeVisible();
+  await form.locator('select[name="propertyType"]').selectOption(settings.propertyType);
+  await form.locator('select[name="occupancyStatus"]').selectOption(settings.occupancyStatus);
+  await form.locator('select[name="planningStage"]').selectOption(settings.planningStage);
+  await form.locator('select[name="targetStartWindow"]').selectOption(settings.targetStartWindow);
+  if (settings.finishLevel) {
+    await form.locator('select[name="finishLevel"]').selectOption(settings.finishLevel);
+  }
+  if (settings.siteAccess) {
+    await form.locator('select[name="siteAccess"]').selectOption(settings.siteAccess);
+  }
+  for (const room of settings.roomsInvolved) {
+    await form.locator(`input[name="roomsInvolved"][value="${room}"]`).check();
+  }
+  await form.locator('[data-quote-step-next]').click();
+
+  await expect(form.locator('[data-quote-step-panel][data-step-index="2"]')).toBeVisible();
+  await form.locator('select[name="budget"]').selectOption(settings.budget);
+  await form.locator('input[name="postcode"]').fill(settings.postcode);
+  for (const priority of settings.priorities) {
+    await form.locator(`input[name="priorities"][value="${priority}"]`).check();
+  }
+  await form.locator('textarea[name="mustHaves"]').fill(settings.mustHaves);
+  await form.locator('textarea[name="constraints"]').fill(settings.constraints);
+  await form.locator('textarea[name="message"]').fill(settings.message);
+};
 
 const openNavIfNeeded = async (page) => {
   const toggle = page.locator('[data-nav-toggle]');
@@ -238,11 +320,20 @@ test('core brochure pages render about, services, gallery, contact and quote rou
   await page.goto('/quote.html');
   await expect(page.locator('body.public-site.page-quote')).toBeVisible();
   await expect(page.getByRole('heading', { name: /send one private enquiry for bathrooms, kitchens/i })).toBeVisible();
-  await expect(page.locator('form.js-quote-form')).toBeVisible();
-  await expect(page.locator('form.js-quote-form input[type="file"][name="files"]')).toHaveAttribute('accept', /image\/\*/i);
+  const quoteForm = page.locator('form.js-quote-form');
+  await expect(quoteForm).toBeVisible();
+  await expect(quoteForm.locator('[data-quote-step-tab]')).toHaveCount(3);
+  await expect(quoteForm.locator('[data-quote-step-tab]').nth(0)).toContainText(/Basics/i);
+  await expect(quoteForm.locator('[data-quote-step-tab]').nth(1)).toContainText(/Scope/i);
+  await expect(quoteForm.locator('[data-quote-step-tab]').nth(2)).toContainText(/Brief/i);
+  await expect(quoteForm.locator('[data-quote-step-panel][data-step-index="0"]')).toBeVisible();
+  await expect(quoteForm.locator('[data-quote-step-panel][data-step-index="1"]')).toBeHidden();
+  await expect(quoteForm.locator('[data-quote-step-panel][data-step-index="2"]')).toBeHidden();
+  await fillPhasedQuoteForm(quoteForm);
+  await expect(quoteForm.locator('input[type="file"][name="files"]')).toHaveAttribute('accept', /image\/\*/i);
   await expect(page.locator('[data-quote-files-status]')).toContainText(/attach up to 8 reference photos/i);
   await expect(page.locator('[data-quote-file-preview]')).toBeHidden();
-  const quoteFileInput = page.locator('form.js-quote-form input[type="file"][name="files"]');
+  const quoteFileInput = quoteForm.locator('input[type="file"][name="files"]');
   await quoteFileInput.setInputFiles([quotePhotoFixtures[0]]);
   await quoteFileInput.setInputFiles([quotePhotoFixtures[1]]);
   await expect(page.locator('[data-quote-files-status]')).toContainText(/2 photos selected/i);
@@ -322,11 +413,7 @@ test('quote page shows a private guest quote preview after submit and from the s
 
   await page.goto('/quote.html');
   const quoteForm = page.locator('form.js-quote-form');
-  await quoteForm.locator('input[name="name"]').fill('Marta Client');
-  await quoteForm.locator('input[name="phone"]').fill('07395448487');
-  await quoteForm.locator('input[name="email"]').fill('client@example.com');
-  await quoteForm.locator('select[name="projectType"]').selectOption('kitchen');
-  await quoteForm.locator('textarea[name="message"]').fill('Kitchen refresh with appliance wall and new finishes.');
+  await fillPhasedQuoteForm(quoteForm);
   await quoteForm.locator('input[type="file"][name="files"]').setInputFiles(quotePhotoFixtures);
   await page.getByRole('button', { name: /send enquiry/i }).click();
 
@@ -334,6 +421,8 @@ test('quote page shows a private guest quote preview after submit and from the s
   await expect(quoteForm.locator('[data-quote-followup]')).toBeVisible();
   await expect(quoteForm.locator('[data-quote-followup-title]')).toContainText(/quote status: submitted/i);
   await expect(quoteForm.locator('[data-quote-followup-meta]')).toContainText(/quote-preview-1/i);
+  await expect(quoteForm.locator('[data-quote-followup-meta]')).toContainText(/Semi Detached/i);
+  await expect(quoteForm.locator('[data-quote-followup-meta]')).toContainText(/Within 3 Months/i);
   await expect(quoteForm.locator('[data-quote-followup-attachments] .quote-file-preview-card')).toHaveCount(2);
   await expect(quoteForm.locator('[data-quote-followup-actions] a').first()).toHaveAttribute('href', /quote\.html\?quote=guest-preview-token#quote-card$/);
   await expect(page).toHaveURL(/\/quote\.html\?quote=guest-preview-token#quote-card$/);

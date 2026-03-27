@@ -36,6 +36,7 @@ const {
 } = require('../../../utils/quoteWorkflow');
 const { advanceClientLifecycle } = require('../../../utils/crmLifecycle');
 const { createActivityEvent } = require('../../../utils/activityFeed');
+const { parseQuoteProposalDetails, buildQuoteDescriptionFromProposal } = require('../../../utils/quoteProposal');
 const { authV2 } = require('../middleware/auth');
 const { roleCheckV2 } = require('../middleware/roles');
 const { ok, fail } = require('../utils/response');
@@ -504,8 +505,8 @@ router.post(
     authV2,
     roleCheckV2('client', 'manager', 'admin'),
     body('projectType').isIn(QUOTE_PROJECT_TYPES),
-    body('location').trim().notEmpty(),
-    body('description').trim().notEmpty(),
+    body('location').optional({ checkFalsy: true }).trim(),
+    body('description').optional({ checkFalsy: true }).trim(),
     body('priority').optional().isIn(QUOTE_PRIORITIES),
     body('contactMethod').optional({ nullable: true }).isIn(QUOTE_CONTACT_METHODS),
     body('clientId').optional({ nullable: true }).isUUID(),
@@ -525,12 +526,39 @@ router.post(
     const contactEmail = toNullableString(req.body.contactEmail);
     const contactPhone = toNullableString(req.body.contactPhone);
     const isGuest = !clientId;
+    let proposalDetails;
+
+    try {
+      proposalDetails = parseQuoteProposalDetails(req.body.proposalDetails, {
+        source: isClientCreate ? 'client_portal_quote_v2' : isGuest ? 'manager_created_guest_quote_v2' : 'manager_created_quote_v2'
+      });
+    } catch (error) {
+      return fail(res, error.statusCode || 400, error.code || 'invalid_quote_proposal', error.message || 'Invalid quote proposal payload', error.details || null);
+    }
 
     if (!clientId && !guestName && !guestEmail && !contactEmail) {
       return fail(res, 400, 'quote_contact_required', 'Guest quotes require at least a guest name or email');
     }
 
     const sourceChannel = isClientCreate ? 'client_portal' : isGuest ? 'manager_created_guest' : 'manager_created';
+    const location = String(req.body.location || '').trim() || proposalDetails?.logistics?.location || '';
+    const postcode = toNullableString(req.body.postcode) || proposalDetails?.logistics?.postcode || null;
+    const budgetRange = toNullableString(req.body.budgetRange) || proposalDetails?.commercial?.budgetRange || null;
+    const description = buildQuoteDescriptionFromProposal({
+      description: String(req.body.description || '').trim(),
+      proposalDetails,
+      location,
+      postcode,
+      budgetRange
+    });
+
+    if (!description) {
+      return fail(res, 400, 'quote_description_required', 'Provide a project brief before creating the quote');
+    }
+    if (!location) {
+      return fail(res, 400, 'quote_location_required', 'Provide the project location before creating the quote');
+    }
+
     const quote = await Quote.create({
       clientId,
       isGuest,
@@ -540,10 +568,11 @@ router.post(
       contactMethod: req.body.contactMethod || null,
       publicToken: isGuest ? crypto.randomBytes(16).toString('hex') : null,
       projectType: req.body.projectType,
-      location: String(req.body.location || '').trim(),
-      postcode: toNullableString(req.body.postcode),
-      budgetRange: toNullableString(req.body.budgetRange),
-      description: String(req.body.description || '').trim(),
+      location,
+      postcode,
+      budgetRange,
+      proposalDetails,
+      description,
       contactEmail,
       contactPhone,
       status: deriveLegacyQuoteStatus('submitted'),
@@ -643,6 +672,37 @@ router.patch(
     if (Object.prototype.hasOwnProperty.call(req.body, 'budgetRange')) payload.budgetRange = toNullableString(req.body.budgetRange);
     if (Object.prototype.hasOwnProperty.call(req.body, 'contactEmail')) payload.contactEmail = toNullableString(req.body.contactEmail);
     if (Object.prototype.hasOwnProperty.call(req.body, 'contactPhone')) payload.contactPhone = toNullableString(req.body.contactPhone);
+    if (Object.prototype.hasOwnProperty.call(req.body, 'proposalDetails')) {
+      try {
+        payload.proposalDetails = parseQuoteProposalDetails(req.body.proposalDetails, {
+          source: 'manager_quote_update_v2'
+        });
+      } catch (error) {
+        return fail(res, error.statusCode || 400, error.code || 'invalid_quote_proposal', error.message || 'Invalid quote proposal payload', error.details || null);
+      }
+    }
+
+    if (
+      Object.prototype.hasOwnProperty.call(req.body, 'description')
+      || Object.prototype.hasOwnProperty.call(payload, 'proposalDetails')
+      || Object.prototype.hasOwnProperty.call(payload, 'location')
+      || Object.prototype.hasOwnProperty.call(payload, 'postcode')
+      || Object.prototype.hasOwnProperty.call(payload, 'budgetRange')
+    ) {
+      const nextDescription = buildQuoteDescriptionFromProposal({
+        description: Object.prototype.hasOwnProperty.call(req.body, 'description') ? payload.description : quote.description,
+        proposalDetails: Object.prototype.hasOwnProperty.call(payload, 'proposalDetails') ? payload.proposalDetails : quote.proposalDetails,
+        location: Object.prototype.hasOwnProperty.call(payload, 'location') ? payload.location : quote.location,
+        postcode: Object.prototype.hasOwnProperty.call(payload, 'postcode') ? payload.postcode : quote.postcode,
+        budgetRange: Object.prototype.hasOwnProperty.call(payload, 'budgetRange') ? payload.budgetRange : quote.budgetRange
+      });
+
+      if (!nextDescription) {
+        return fail(res, 400, 'quote_description_required', 'Provide a project brief before updating the quote');
+      }
+
+      payload.description = nextDescription;
+    }
 
     const nextWorkflowStatus = req.body.workflowStatus || req.body.status || quote.workflowStatus || quote.status;
     Object.assign(payload, resolveWorkflowPayload(nextWorkflowStatus, payload));

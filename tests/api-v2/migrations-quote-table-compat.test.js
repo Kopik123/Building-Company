@@ -10,6 +10,7 @@ const forceDropQuotesClientIdNotNull = require('../../migrations/202603240003-fo
 const quoteAttachmentsMigration = require('../../migrations/202603240004-quote-attachments.js');
 const estimateVersioningMigration = require('../../migrations/202603270001-estimate-versioning-and-approval.js');
 const projectWorkflowParityMigration = require('../../migrations/202603270002-project-workflow-and-owner-parity.js');
+const quoteProposalDetailsMigration = require('../../migrations/202603270003-quote-proposal-details.js');
 
 const createQueryInterfaceStub = (tables) => {
   const queries = [];
@@ -523,4 +524,29 @@ test('project workflow parity migration adds workflow columns, backfills stage d
     addedIndexes.some((item) => item.options?.name === 'projects_owner_due_idx'),
     true
   );
+});
+
+test('quote proposal details migration adds a nullable JSON proposalDetails column when missing', async () => {
+  const { queryInterface } = createQueryInterfaceStub({
+    Quotes: {
+      id: {},
+      description: {}
+    }
+  });
+
+  await assert.doesNotReject(() =>
+    quoteProposalDetailsMigration.up(queryInterface, {
+      DataTypes: {
+        JSON: 'JSON'
+      },
+      JSON: 'JSON'
+    })
+  );
+
+  const quotesTable = await queryInterface.describeTable('Quotes');
+  assert.equal(Object.hasOwn(quotesTable, 'proposalDetails'), true);
+  assert.deepEqual(quotesTable.proposalDetails, {
+    type: 'JSON',
+    allowNull: true
+  });
 });

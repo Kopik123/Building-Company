@@ -1125,6 +1125,173 @@
   border-color: rgba(209, 164, 74, 0.6);
 }
 
+.quote-stepper {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.quote-stepper-nav {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.quote-stepper-tab {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.7rem;
+  align-items: center;
+  min-height: 72px;
+  width: 100%;
+  padding: 0.78rem 0.92rem;
+  border: 1px solid rgba(209, 164, 74, 0.34);
+  border-radius: var(--radius-sm);
+  background:
+    linear-gradient(165deg, rgba(10, 10, 10, 0.86), rgba(4, 4, 4, 0.92)),
+    url('/boxbackground.png') center center / 100% 100% no-repeat;
+  color: var(--color-text);
+  text-align: left;
+}
+
+.quote-stepper-tab.is-active,
+.quote-stepper-tab[aria-current="step"] {
+  border-color: rgba(242, 206, 119, 0.76);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.26);
+}
+
+.quote-stepper-tab.is-complete {
+  border-color: rgba(209, 164, 74, 0.56);
+}
+
+.quote-stepper-tab-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  min-width: 42px;
+  height: 42px;
+  border: 1px solid rgba(209, 164, 74, 0.46);
+  border-radius: 50%;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.quote-stepper-tab-copy {
+  display: grid;
+  gap: 0.12rem;
+}
+
+.quote-stepper-tab-copy strong,
+.quote-stepper-tab-copy span {
+  display: block;
+}
+
+.quote-stepper-tab-copy strong {
+  font-size: 0.92rem;
+}
+
+.quote-stepper-tab-copy span {
+  font-size: 0.76rem;
+  color: var(--color-text-muted);
+}
+
+.quote-stepper-panels {
+  display: grid;
+}
+
+.quote-step-panel {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.quote-step-panel[hidden] {
+  display: none;
+}
+
+.quote-step-panel-head {
+  display: grid;
+  gap: 0.28rem;
+}
+
+.quote-step-panel-head h3,
+.quote-choice-fieldset legend {
+  margin: 0;
+}
+
+.quote-step-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  margin: var(--space-4) 0 var(--space-3);
+}
+
+.quote-step-actions [hidden] {
+  display: none !important;
+}
+
+.quote-choice-fieldset {
+  margin: 0;
+  padding: 0.85rem 0.9rem 0.95rem;
+  border: 1px solid rgba(209, 164, 74, 0.34);
+  border-radius: var(--radius-sm);
+  background:
+    linear-gradient(165deg, rgba(10, 10, 10, 0.72), rgba(4, 4, 4, 0.86)),
+    url('/boxbackground.png') center center / 100% 100% no-repeat;
+}
+
+.quote-choice-fieldset legend {
+  padding: 0 0.25rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.quote-choice-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.quote-choice-pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+}
+
+.quote-choice-pill input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.quote-choice-pill span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0.42rem 0.82rem;
+  border: 1px solid rgba(209, 164, 74, 0.34);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.26);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.quote-choice-pill input:checked + span {
+  border-color: rgba(242, 206, 119, 0.82);
+  background: rgba(209, 164, 74, 0.14);
+}
+
+.quote-choice-pill input:focus-visible + span {
+  outline: 2px solid rgba(242, 206, 119, 0.9);
+  outline-offset: 2px;
+}
+
 .quote-file-preview[hidden] {
   display: none;
 }
@@ -1505,6 +1672,10 @@
   .quote-claim-grid {
     grid-template-columns: 1fr;
   }
+
+  .quote-stepper-nav {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 640px) {
@@ -1548,6 +1719,14 @@
   }
 
   .page-actions > * {
+    width: 100%;
+  }
+
+  .quote-step-actions {
+    display: grid;
+  }
+
+  .quote-step-actions > * {
     width: 100%;
   }
 

@@ -63,6 +63,14 @@ const QUOTE_STATUSES = Object.freeze(['pending', 'in_progress', 'responded', 'cl
 const QUOTE_PRIORITIES = Object.freeze(['low', 'medium', 'high']);
 const QUOTE_PROJECT_TYPES = Object.freeze(['bathroom', 'kitchen', 'interior', 'tiling', 'extension', 'joinery', 'rendering', 'decorating', 'other']);
 const QUOTE_CONTACT_METHODS = Object.freeze(['email', 'phone', 'both']);
+const QUOTE_PROPOSAL_PROPERTY_TYPES = Object.freeze(['flat', 'terraced', 'semi_detached', 'detached', 'commercial', 'other']);
+const QUOTE_PROPOSAL_ROOM_TYPES = Object.freeze(['kitchen', 'bathroom', 'living_area', 'bedroom', 'utility', 'hall_stairs', 'extension_area', 'outdoor_connection', 'whole_home', 'other']);
+const QUOTE_PROPOSAL_OCCUPANCY_STATUSES = Object.freeze(['living_in_home', 'partially_occupied', 'empty_property', 'tenanted', 'commercial_live', 'other']);
+const QUOTE_PROPOSAL_PLANNING_STAGES = Object.freeze(['idea', 'getting_prices', 'ready_to_start', 'already_underway', 'urgent_recovery']);
+const QUOTE_PROPOSAL_START_WINDOWS = Object.freeze(['asap', 'within_1_month', 'within_3_months', 'within_6_months', 'planning_ahead']);
+const QUOTE_PROPOSAL_FINISH_LEVELS = Object.freeze(['essential', 'elevated', 'premium', 'bespoke']);
+const QUOTE_PROPOSAL_SITE_ACCESS = Object.freeze(['easy_ground_floor', 'stairs_only', 'tight_access', 'restricted_parking', 'unknown']);
+const QUOTE_PROPOSAL_PRIORITIES = Object.freeze(['finish_quality', 'budget_control', 'storage', 'speed', 'family_living', 'low_maintenance', 'future_sale', 'energy_efficiency']);
 const SERVICE_CATEGORIES = Object.freeze(['bathroom', 'kitchen', 'interior', 'outdoor', 'other']);
 const MATERIAL_CATEGORIES = Object.freeze(['tiles', 'plumbing', 'electrical', 'joinery', 'paint', 'hardware', 'other']);
 const STAFF_ROLES = Object.freeze(['employee', 'manager', 'admin']);
@@ -77,6 +85,22 @@ const toNullableString = (value) => {
   if (typeof value !== 'string') return null;
   const trimmed = value.trim();
   return trimmed ? trimmed : null;
+};
+const toNormalizedToken = (value) => {
+  const trimmed = toNullableString(value);
+  return trimmed ? trimmed.toLowerCase() : null;
+};
+const toNullableEnum = (value, allowed) => {
+  const normalized = toNormalizedToken(value);
+  return normalized && allowed.includes(normalized) ? normalized : null;
+};
+const toEnumArray = (value, allowed, maxItems = 12) => {
+  const normalized = [...new Set(
+    toArray(value)
+      .map((entry) => toNormalizedToken(entry))
+      .filter(Boolean)
+  )];
+  return normalized.filter((entry) => allowed.includes(entry)).slice(0, maxItems);
 };
 const toBoolean = (value, fallback = false) => (typeof value === 'boolean' ? value : fallback);
 const toNullableNumber = (value) => {
@@ -188,6 +212,33 @@ const quoteEventSchema = z.object({
   data: z.record(z.string(), z.any()).nullable()
 });
 
+const quoteProposalSchema = z.object({
+  version: z.literal(1),
+  source: z.string(),
+  projectScope: z.object({
+    propertyType: z.enum(QUOTE_PROPOSAL_PROPERTY_TYPES).nullable(),
+    roomsInvolved: z.array(z.enum(QUOTE_PROPOSAL_ROOM_TYPES)),
+    occupancyStatus: z.enum(QUOTE_PROPOSAL_OCCUPANCY_STATUSES).nullable(),
+    planningStage: z.enum(QUOTE_PROPOSAL_PLANNING_STAGES).nullable(),
+    targetStartWindow: z.enum(QUOTE_PROPOSAL_START_WINDOWS).nullable(),
+    siteAccess: z.enum(QUOTE_PROPOSAL_SITE_ACCESS).nullable()
+  }),
+  commercial: z.object({
+    budgetRange: nullableStringSchema,
+    finishLevel: z.enum(QUOTE_PROPOSAL_FINISH_LEVELS).nullable()
+  }),
+  logistics: z.object({
+    location: nullableStringSchema,
+    postcode: nullableStringSchema
+  }),
+  priorities: z.array(z.enum(QUOTE_PROPOSAL_PRIORITIES)),
+  brief: z.object({
+    summary: nullableStringSchema,
+    mustHaves: nullableStringSchema,
+    constraints: nullableStringSchema
+  })
+});
+
 const quoteSummarySchema = z.object({
   id: z.string(),
   projectType: nullableStringSchema,
@@ -203,6 +254,7 @@ const quoteSummarySchema = z.object({
   contactMethod: nullableStringSchema,
   postcode: nullableStringSchema,
   budgetRange: nullableStringSchema,
+  proposalDetails: quoteProposalSchema.nullable(),
   contactEmail: nullableStringSchema,
   contactPhone: nullableStringSchema,
   assignedManagerId: nullableStringSchema,
@@ -472,6 +524,41 @@ const normalizeQuoteEvent = (value) => {
   };
 };
 
+const normalizeQuoteProposalDetails = (value) => {
+  const plain = toPlainObject(value);
+  const projectScope = toPlainObject(plain.projectScope);
+  const commercial = toPlainObject(plain.commercial);
+  const logistics = toPlainObject(plain.logistics);
+  const brief = toPlainObject(plain.brief);
+
+  return {
+    version: 1,
+    source: toNullableString(plain.source) || 'public_quote_form_v2',
+    projectScope: {
+      propertyType: toNullableEnum(projectScope.propertyType, QUOTE_PROPOSAL_PROPERTY_TYPES),
+      roomsInvolved: toEnumArray(projectScope.roomsInvolved, QUOTE_PROPOSAL_ROOM_TYPES),
+      occupancyStatus: toNullableEnum(projectScope.occupancyStatus, QUOTE_PROPOSAL_OCCUPANCY_STATUSES),
+      planningStage: toNullableEnum(projectScope.planningStage, QUOTE_PROPOSAL_PLANNING_STAGES),
+      targetStartWindow: toNullableEnum(projectScope.targetStartWindow, QUOTE_PROPOSAL_START_WINDOWS),
+      siteAccess: toNullableEnum(projectScope.siteAccess, QUOTE_PROPOSAL_SITE_ACCESS)
+    },
+    commercial: {
+      budgetRange: toNullableString(commercial.budgetRange),
+      finishLevel: toNullableEnum(commercial.finishLevel, QUOTE_PROPOSAL_FINISH_LEVELS)
+    },
+    logistics: {
+      location: toNullableString(logistics.location),
+      postcode: toNullableString(logistics.postcode)
+    },
+    priorities: toEnumArray(plain.priorities, QUOTE_PROPOSAL_PRIORITIES),
+    brief: {
+      summary: toNullableString(brief.summary),
+      mustHaves: toNullableString(brief.mustHaves),
+      constraints: toNullableString(brief.constraints)
+    }
+  };
+};
+
 const normalizeProjectSummary = (value) => {
   const plain = toPlainObject(value);
   return {
@@ -528,6 +615,7 @@ const normalizeQuoteSummary = (value) => {
     contactMethod: toNullableString(plain.contactMethod),
     postcode: toNullableString(plain.postcode),
     budgetRange: toNullableString(plain.budgetRange),
+    proposalDetails: normalizeEntity(plain.proposalDetails, normalizeQuoteProposalDetails),
     contactEmail: toNullableString(plain.contactEmail),
     contactPhone: toNullableString(plain.contactPhone),
     assignedManagerId: toNullableString(plain.assignedManagerId),
@@ -735,6 +823,14 @@ module.exports = {
   QUOTE_PRIORITIES,
   QUOTE_PROJECT_TYPES,
   QUOTE_CONTACT_METHODS,
+  QUOTE_PROPOSAL_PROPERTY_TYPES,
+  QUOTE_PROPOSAL_ROOM_TYPES,
+  QUOTE_PROPOSAL_OCCUPANCY_STATUSES,
+  QUOTE_PROPOSAL_PLANNING_STAGES,
+  QUOTE_PROPOSAL_START_WINDOWS,
+  QUOTE_PROPOSAL_FINISH_LEVELS,
+  QUOTE_PROPOSAL_SITE_ACCESS,
+  QUOTE_PROPOSAL_PRIORITIES,
   ESTIMATE_DECISION_STATUSES,
   ESTIMATE_STATUSES,
   CLIENT_LIFECYCLE_STATUSES,
@@ -749,6 +845,7 @@ module.exports = {
   threadMessageSchema,
   estimateSummarySchema,
   quoteEventSchema,
+  quoteProposalSchema,
   projectSummarySchema,
   quoteSummarySchema,
   threadSummarySchema,
@@ -768,6 +865,7 @@ module.exports = {
   normalizeEstimateStatusValue,
   normalizeEstimateSummary,
   normalizeQuoteEvent,
+  normalizeQuoteProposalDetails,
   normalizeProjectSummary,
   normalizeQuoteSummary,
   normalizeThreadSummary,

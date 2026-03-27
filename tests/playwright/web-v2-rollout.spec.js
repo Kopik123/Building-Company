@@ -770,11 +770,13 @@ test('web-v2 manager operations surfaces can create projects, update quotes, cre
       const quoteId = route.request().url().match(/quotes\/([^/?]+)/)?.[1] || '';
       const payload = route.request().postDataJSON();
       const quote = quotes.find((item) => item.id === quoteId);
+      const nextWorkflowStatus = payload.workflowStatus
+        || (payload.status === 'responded' ? 'estimate_sent' : null);
       Object.assign(quote, payload, {
         updatedAt: '2026-03-23T10:25:00Z'
       });
-      if (payload.status === 'responded') {
-        quote.workflowStatus = 'estimate_sent';
+      if (nextWorkflowStatus) {
+        quote.workflowStatus = nextWorkflowStatus;
       }
       await fulfillJson(route, { data: { quote: enrichQuote(quote) } });
       return;
@@ -894,7 +896,10 @@ test('web-v2 manager operations surfaces can create projects, update quotes, cre
   await page.getByLabel('Description').fill('Guest-led marble bathroom renovation scope.');
   await page.getByRole('button', { name: 'Create quote' }).click();
   await expect(quoteBoardList).toContainText('Leeds');
-  await page.getByLabel('Quote status').selectOption('responded');
+  await quoteBoardList.locator('.stack-select').filter({ hasText: 'Leeds' }).first().click();
+  const quoteStatusSelect = page.locator('label:has-text("Quote status") select').first();
+  await quoteStatusSelect.selectOption('responded');
+  await expect(quoteStatusSelect).toHaveValue('responded');
   await page.getByRole('button', { name: 'Save quote' }).click();
   await expect(quoteBoardList).toContainText('Estimate Sent');
 

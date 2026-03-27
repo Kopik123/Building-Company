@@ -415,6 +415,32 @@ test('legacy /api/quotes/guest creates a guest quote and manager notifications f
       projectType: 'kitchen',
       budgetRange: '£8,000-£12,000',
       description: 'Kitchen installation and refurbishment with bespoke joinery.',
+      proposalDetails: JSON.stringify({
+        version: 1,
+        source: 'public_quote_form_v2',
+        projectScope: {
+          propertyType: 'semi_detached',
+          roomsInvolved: ['kitchen', 'utility'],
+          occupancyStatus: 'living_in_home',
+          planningStage: 'getting_prices',
+          targetStartWindow: 'within_3_months',
+          siteAccess: 'easy_ground_floor'
+        },
+        commercial: {
+          budgetRange: 'Â£8,000-Â£12,000',
+          finishLevel: 'premium'
+        },
+        logistics: {
+          location: 'Manchester and the North West',
+          postcode: 'M20 1AA'
+        },
+        priorities: ['finish_quality', 'storage'],
+        brief: {
+          summary: 'Kitchen installation and refurbishment with bespoke joinery.',
+          mustHaves: 'Island seating and integrated storage.',
+          constraints: 'We are living in the home during works.'
+        }
+      }),
       location: 'Manchester and the North West'
     })
     .expect(201);
@@ -424,6 +450,9 @@ test('legacy /api/quotes/guest creates a guest quote and manager notifications f
   assert.equal(state.createdQuotes.length, 1);
   assert.equal(state.createdQuotes[0].workflowStatus, 'submitted');
   assert.equal(state.createdQuotes[0].sourceChannel, 'public_web');
+  assert.equal(state.createdQuotes[0].proposalDetails?.projectScope?.propertyType, 'semi_detached');
+  assert.match(state.createdQuotes[0].description || '', /Property type: Semi Detached/i);
+  assert.match(state.createdQuotes[0].description || '', /Must haves: Island seating and integrated storage\./i);
   assert.equal(state.createdEvents.length, 1);
   assert.equal(state.notificationBatches.length, 1);
   assert.equal(state.notificationBatches[0][0].type, 'new_quote');
@@ -482,6 +511,32 @@ test('legacy /api/quotes/guest/:publicToken returns private quote preview data w
               workflowStatus: 'submitted',
               guestEmail: 'guest@example.com',
               guestPhone: '07395448487',
+              proposalDetails: {
+                version: 1,
+                source: 'public_quote_form_v2',
+                projectScope: {
+                  propertyType: 'detached',
+                  roomsInvolved: ['kitchen'],
+                  occupancyStatus: 'empty_property',
+                  planningStage: 'ready_to_start',
+                  targetStartWindow: 'asap',
+                  siteAccess: 'restricted_parking'
+                },
+                commercial: {
+                  budgetRange: 'Â£12,000-Â£20,000',
+                  finishLevel: 'premium'
+                },
+                logistics: {
+                  location: 'Manchester and the North West',
+                  postcode: 'M20 1AA'
+                },
+                priorities: ['speed'],
+                brief: {
+                  summary: 'Fast kitchen turnaround.',
+                  mustHaves: 'Stone worktop.',
+                  constraints: 'Parking permits nearby.'
+                }
+              },
               priority: 'medium',
               createdAt: '2026-03-24T21:30:00Z',
               updatedAt: '2026-03-24T21:45:00Z',
@@ -551,6 +606,7 @@ test('legacy /api/quotes/guest/:publicToken returns private quote preview data w
 
   assert.equal(response.body?.quote?.id, 'quote-preview-1');
   assert.equal(response.body?.quote?.attachmentCount, 2);
+  assert.equal(response.body?.quote?.proposalDetails?.projectScope?.propertyType, 'detached');
   assert.deepEqual(response.body?.quote?.attachments, [
     {
       name: 'quote-photo-a.jpg',
@@ -828,7 +884,33 @@ test('legacy /api/quotes/guest still succeeds when quote side effects fail', asy
         projectType: 'kitchen',
         budgetRange: '£8,000-£12,000',
         description: 'Kitchen installation and refurbishment with bespoke joinery.',
-        location: 'Manchester and the North West'
+        location: 'Manchester and the North West',
+        proposalDetails: JSON.stringify({
+          version: 1,
+          source: 'public_quote_form_v2',
+          projectScope: {
+            propertyType: 'terraced',
+            roomsInvolved: ['kitchen'],
+            occupancyStatus: 'living_in_home',
+            planningStage: 'getting_prices',
+            targetStartWindow: 'within_3_months',
+            siteAccess: 'easy_ground_floor'
+          },
+          commercial: {
+            budgetRange: 'Â£8,000-Â£12,000',
+            finishLevel: 'elevated'
+          },
+          logistics: {
+            location: 'Manchester and the North West',
+            postcode: 'M20 2AB'
+          },
+          priorities: ['finish_quality'],
+          brief: {
+            summary: 'Kitchen installation and refurbishment with bespoke joinery.',
+            mustHaves: 'Tall pantry storage and layered task lighting.',
+            constraints: 'Need the kitchen working at weekends.'
+          }
+        })
       })
       .expect(201);
 
@@ -894,7 +976,33 @@ test('legacy /api/quotes/guest falls back to a legacy-safe create when lifecycle
         projectType: 'kitchen',
         budgetRange: '£8,000-£12,000',
         description: 'Kitchen installation and refurbishment with bespoke joinery.',
-        location: 'Manchester and the North West'
+        location: 'Manchester and the North West',
+        proposalDetails: JSON.stringify({
+          version: 1,
+          source: 'public_quote_form_v2',
+          projectScope: {
+            propertyType: 'terraced',
+            roomsInvolved: ['kitchen'],
+            occupancyStatus: 'living_in_home',
+            planningStage: 'getting_prices',
+            targetStartWindow: 'within_3_months',
+            siteAccess: 'easy_ground_floor'
+          },
+          commercial: {
+            budgetRange: 'Â£8,000-Â£12,000',
+            finishLevel: 'elevated'
+          },
+          logistics: {
+            location: 'Manchester and the North West',
+            postcode: 'M20 2AB'
+          },
+          priorities: ['finish_quality'],
+          brief: {
+            summary: 'Kitchen installation and refurbishment with bespoke joinery.',
+            mustHaves: 'Tall pantry storage and layered task lighting.',
+            constraints: 'Need the kitchen working at weekends.'
+          }
+        })
       })
       .expect(201);
 
@@ -902,8 +1010,17 @@ test('legacy /api/quotes/guest falls back to a legacy-safe create when lifecycle
     assert.equal(state.createPayloads.length, 2);
     assert.equal(Object.hasOwn(state.createPayloads[0], 'workflowStatus'), true);
     assert.equal(Object.hasOwn(state.createPayloads[1], 'workflowStatus'), false);
+    assert.equal(
+      state.createPayloads[0].proposalDetails?.projectScope?.propertyType,
+      'terraced'
+    );
+    assert.equal(Object.hasOwn(state.createPayloads[1], 'proposalDetails'), false);
     assert.equal(state.updatedQuotes.length, 1);
     assert.equal(state.updatedQuotes[0].patch.workflowStatus, 'submitted');
+    assert.equal(
+      state.updatedQuotes[0].patch.proposalDetails?.projectScope?.propertyType,
+      'terraced'
+    );
     assert.equal(
       warnings.some((entry) => JSON.stringify(entry).includes('Guest quote compatibility fallback engaged')),
       true

@@ -53,6 +53,10 @@ const Quote = sequelize.define('Quote', {
     type: DataTypes.STRING,
     allowNull: true
   },
+  proposalDetails: {
+    type: DataTypes.JSON,
+    allowNull: true
+  },
   description: {
     type: DataTypes.TEXT,
     allowNull: false
