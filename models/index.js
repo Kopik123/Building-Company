@@ -207,7 +207,8 @@ const ensureIndexes = async () => {
     { table: EstimateLine.getTableName(), name: 'estimate_lines_material_idx', fields: ['materialId'] },
     { table: SessionRefreshToken.getTableName(), name: 'session_refresh_tokens_user_expires_idx', fields: ['userId', 'expiresAt'] },
     { table: SessionRefreshToken.getTableName(), name: 'session_refresh_tokens_revoked_idx', fields: ['revokedAt'] },
-    { table: DevicePushToken.getTableName(), name: 'device_push_tokens_user_platform_idx', fields: ['userId', 'platform'] }
+    { table: DevicePushToken.getTableName(), name: 'device_push_tokens_user_platform_idx', fields: ['userId', 'platform'] },
+    { table: DevicePushToken.getTableName(), name: 'device_push_tokens_user_variant_platform_idx', fields: ['userId', 'appVariant', 'platform'] }
   ];
 
   for (const spec of indexSpecs) {

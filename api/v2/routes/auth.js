@@ -17,6 +17,55 @@ const router = express.Router();
 const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
 
 router.post(
+  '/register',
+  [
+    body('email').isEmail(),
+    body('password').isString().isLength({ min: 8 }),
+    body('name').trim().isLength({ min: 2, max: 120 }),
+    body('phone').optional({ nullable: true }).trim().isLength({ max: 40 }),
+    body('companyName').optional({ nullable: true }).trim().isLength({ max: 120 })
+  ],
+  asyncHandler(async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return fail(res, 400, 'validation_failed', 'Validation failed', errors.array());
+    }
+
+    const email = normalizeEmail(req.body.email);
+    const existing = await User.findOne({ where: { email } });
+    if (existing) {
+      return fail(res, 409, 'email_taken', 'Email already registered');
+    }
+
+    const user = await User.create({
+      email,
+      password: String(req.body.password || ''),
+      name: String(req.body.name || '').trim(),
+      phone: String(req.body.phone || '').trim() || null,
+      companyName: String(req.body.companyName || '').trim() || null,
+      role: 'client'
+    });
+
+    const tokens = await issueV2SessionTokens(user, req);
+    return ok(
+      res,
+      {
+        user,
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        legacyToken: signLegacyToken(user.id)
+      },
+      {
+        tokenType: 'Bearer',
+        accessTokenExpiresIn: ACCESS_TOKEN_EXPIRES_IN,
+        refreshTokenExpiresInDays: REFRESH_TOKEN_EXPIRES_DAYS
+      },
+      201
+    );
+  })
+);
+
+router.post(
   '/login',
   [body('email').isEmail(), body('password').isString().isLength({ min: 1 })],
   asyncHandler(async (req, res) => {

@@ -30,6 +30,8 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [x] Remove the hardcoded production fallback from `apps/mobile-v1/src/api.js` and switch mobile API base selection to explicit local/staging/production config.
 - [x] Add an initial shared contract layer for `api/v2`, `web-v2` and future mobile clients by centralising enums and response normalizers in `shared/contracts/v2`, with TS-ready declarations for the first portable dashboard domains.
 - [x] Promote the shared contract layer to Zod-backed runtime validation for `api/v2` and `web-v2`, so the rollout shell stops trusting shared payload shapes without schema checks.
+- [x] Split the future Android surface into `apps/mobile-client` and `apps/mobile-company` with shared `packages/mobile-contracts`, `packages/mobile-core` and `packages/mobile-ui`, while keeping `apps/mobile-v1` as the prototype/seed.
+- [x] Extend `/api/v2/auth` and `/api/v2/devices/push-token` for mobile-native onboarding by adding client `register` plus `DevicePushTokens.appVariant/deviceName` metadata ready for company-vs-client push ownership.
 - [ ] Promote the initial shared contract layer into a generated `TypeScript + Zod` or `TypeScript + OpenAPI` package shared by backend, `web-v2` and `mobile-v1` once the current parity wave settles.
 - [x] Move DB migrations to deploy-time only and stop running them automatically on every app boot, so schema changes happen in a deliberate deploy step before `pm2 restart`.
 - [x] Wire `models.ensureIndexes()` into a deliberate CLI/deploy path via `npm run ensure:indexes`, instead of leaving index ownership ambiguous between runtime startup and migrations.
@@ -113,7 +115,8 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [x] Extend the claimed/logged-in quote portal so customers can add follow-up quote photos after claim/login as well, not only from the guest private link.
 - [x] Refactor the logged-in `auth.html` account management panel into quick-access card navigation so `Overview`, `Profile`, `Security` and `Workspace` switch as separate cards instead of rendering as one long combined panel.
 - [ ] Consolidate manual public pages and generated SEO pages onto one content model/source so brochure copy, metadata, FAQ and CTA logic stop drifting.
-- [ ] Create a shared web/mobile contract layer for auth/session, project summaries, thread summaries, notifications and estimate state before expanding `mobile-v1` further.
+- [x] Create a shared web/mobile contract layer for auth/session, project summaries, thread summaries, notifications and estimate state before expanding `mobile-v1` further.
+- [ ] Add persistent mobile session storage, deep-link routing and native Expo/EAS push-token capture on top of the new `mobile-client` / `mobile-company` foundation.
 - [ ] Keep every new feature review aligned with future Android/iOS app readiness, especially API contracts, auth/session handling, messaging and media flows.
 - [ ] Decide whether group/project chat needs per-member unread tracking now that thread summaries already expose latest-message preview and message counts; current group-chat UX still has no unread badge model.
 
