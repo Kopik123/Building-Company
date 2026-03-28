@@ -2,6 +2,11 @@
 
 ## 2026-03-28
 
+- Saved `Plans/Project Workflow Status Enum Text Cast Hotfix.md`, registered it in `Plans/Plan History.md`, and recorded the second production migration failure variant as a closed checklist item in `Project_todos.md`.
+- Diagnosed the next droplet failure in `202603270002-project-workflow-and-owner-parity.js`: the backfill compared enum `Projects.status` through `COALESCE("status", '')`, which made Postgres treat the empty fallback as an enum value candidate and abort the migration.
+- Updated `migrations/202603270002-project-workflow-and-owner-parity.js` so the stage backfill compares `Projects.status` via `COALESCE("status"::text, '')`, preserving the same status-to-stage mapping while making the SQL safe for enum columns and `NULL` rows.
+- Extended `tests/api-v2/migrations-quote-table-compat.test.js` with a regression assertion that the generated backfill SQL now includes the enum-to-text cast in the `completed` branch check.
+- Re-ran `node --test tests/api-v2/migrations-quote-table-compat.test.js` to confirm the migration compatibility suite stays green after the text-cast hotfix.
 - Saved `Plans/Project Workflow Stage Enum Quoting Production Hotfix.md`, registered it in `Plans/Plan History.md`, and recorded the production migration failure as a closed checklist item in `Project_todos.md`.
 - Diagnosed the droplet deploy failure in `202603270002-project-workflow-and-owner-parity.js`: Sequelize was generating an unquoted `enum_Projects_projectStage` type reference, which Postgres folded to lowercase and rejected because the real enum type had been created as a quoted mixed-case identifier.
 - Updated `migrations/202603270002-project-workflow-and-owner-parity.js` to use a shared quoted enum constant for type creation, `addColumn(...)`, cast-based backfill SQL and `DROP TYPE`, so the migration now survives the real production Postgres naming rules.

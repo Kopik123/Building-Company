@@ -105,9 +105,9 @@ module.exports = {
         UPDATE "Projects"
         SET
           "projectStage" = CASE
-            WHEN COALESCE("status", '') = 'completed' THEN 'handover'::${PROJECT_STAGE_ENUM_NAME}
-            WHEN COALESCE("status", '') = 'in_progress' THEN 'installation'::${PROJECT_STAGE_ENUM_NAME}
-            WHEN COALESCE("status", '') = 'on_hold' THEN 'procurement'::${PROJECT_STAGE_ENUM_NAME}
+            WHEN COALESCE("status"::text, '') = 'completed' THEN 'handover'::${PROJECT_STAGE_ENUM_NAME}
+            WHEN COALESCE("status"::text, '') = 'in_progress' THEN 'installation'::${PROJECT_STAGE_ENUM_NAME}
+            WHEN COALESCE("status"::text, '') = 'on_hold' THEN 'procurement'::${PROJECT_STAGE_ENUM_NAME}
             ELSE 'briefing'::${PROJECT_STAGE_ENUM_NAME}
           END,
           "dueDate" = COALESCE("dueDate", "endDate")

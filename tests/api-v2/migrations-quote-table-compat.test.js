@@ -518,6 +518,10 @@ test('project workflow parity migration adds workflow columns, backfills stage d
     true
   );
   assert.equal(
+    queries.some((sql) => sql.includes(`COALESCE("status"::text, '') = 'completed'`)),
+    true
+  );
+  assert.equal(
     queries.some((sql) => sql.includes('"dueDate" = COALESCE("dueDate", "endDate")')),
     true
   );
