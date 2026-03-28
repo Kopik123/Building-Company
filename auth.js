@@ -456,6 +456,18 @@
       renderSession(payload.user);
       return payload.user || null;
     } catch {
+      try {
+        const refreshedUser = typeof runtime.refreshSessionFromV2 === 'function'
+          ? await runtime.refreshSessionFromV2()
+          : null;
+        if (refreshedUser) {
+          renderSession(refreshedUser);
+          return refreshedUser;
+        }
+      } catch {
+        // Fall through to the signed-out state when both auth/me and v2 refresh fail.
+      }
+
       clearSession();
       renderSession(null);
       return null;

@@ -22,6 +22,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [x] Ship a production schema hotfix that makes `Quotes.clientId` nullable again, so guest quote intake no longer depends on route-level fallbacks to survive an outdated DB constraint.
 - [x] Force-drop the real Postgres `NOT NULL` constraint from `Quotes.clientId` on production, because the earlier Sequelize `changeColumn(...)` hotfix was not enough for the live table.
 - [x] Make legacy and v2 auth/session flows treat only explicit `isActive === false` as inactive, so older user rows with `null` do not log in successfully and then get auto-logged-out by `/api/auth/me` or `/api/v2/auth/refresh`.
+- [x] Add a legacy auth-shell fallback that rotates a stale `ll_auth_token` through `/api/v2/auth/refresh` before clearing browser storage, so users are not logged out a second after login when only the legacy token has expired.
 - [x] Finish the remaining manager parity gaps in `web-v2`: richer project lifecycle actions, broader delete/archive ownership, and the last legacy-only manager flows.
 - [x] Add one aggregated `api/v2/overview` contract (or equivalent typed dashboard summary layer) before default cutover so `web-v2` stops composing the top board from many separate requests.
 - [x] Add direct `/app-v2` UI regression coverage for `Private Inbox` and `Project Chat`, including attachment-first direct-thread creation, so rollout-shell messaging is covered outside legacy dashboard smoke tests.

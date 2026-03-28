@@ -646,6 +646,22 @@
       updateNavigationForSession(payload.user);
       if (syncProtectedRoute(payload.user)) return;
     } catch {
+      try {
+        const refreshedUser = typeof runtime.refreshSessionFromV2 === 'function'
+          ? await runtime.refreshSessionFromV2()
+          : null;
+        if (refreshedUser) {
+          const refreshedToken = localStorage.getItem(TOKEN_KEY);
+          if (refreshedToken) {
+            writeAuthMeCache(refreshedToken, refreshedUser);
+          }
+          updateNavigationForSession(refreshedUser);
+          if (syncProtectedRoute(refreshedUser)) return;
+          return;
+        }
+      } catch {
+        // Fall through to the normal signed-out state when both legacy and v2 refresh fail.
+      }
       clearSession();
       updateNavigationForSession(null);
       syncProtectedRoute(null);

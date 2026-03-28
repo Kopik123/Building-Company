@@ -758,6 +758,79 @@ test('auth page shows manager quick access panel for logged manager session', as
   }
 });
 
+
+test('auth page restores the session from v2 refresh when the legacy token is stale', async ({ page }) => {
+  let refreshCalls = 0;
+
+  await page.addInitScript(() => {
+    localStorage.setItem('ll_auth_token', 'stale-legacy-token');
+    localStorage.setItem('ll_v2_access_token', 'stale-access-token');
+    localStorage.setItem('ll_v2_refresh_token', 'valid-refresh-token');
+    localStorage.setItem('ll_auth_user', JSON.stringify({
+      id: 'manager-1',
+      name: 'Daniel Manager',
+      email: 'manager@example.com',
+      role: 'manager'
+    }));
+  });
+
+  await page.route('**/api/auth/me', async (route) => {
+    const authHeader = route.request().headers().authorization || '';
+    if (authHeader === 'Bearer fresh-legacy-token') {
+      await route.fulfill({
+        json: {
+          user: {
+            id: 'manager-1',
+            name: 'Daniel Manager',
+            email: 'manager@example.com',
+            role: 'manager',
+            phone: '+44 7942 874 446',
+            companyName: 'Level Lines Studio'
+          }
+        }
+      });
+      return;
+    }
+
+    await route.fulfill({
+      status: 401,
+      json: {
+        error: 'Session expired'
+      }
+    });
+  });
+
+  await page.route('**/api/v2/auth/refresh', async (route) => {
+    refreshCalls += 1;
+    await route.fulfill({
+      json: {
+        data: {
+          user: {
+            id: 'manager-1',
+            name: 'Daniel Manager',
+            email: 'manager@example.com',
+            role: 'manager',
+            phone: '+44 7942 874 446',
+            companyName: 'Level Lines Studio'
+          },
+          accessToken: 'fresh-access-token',
+          refreshToken: 'fresh-refresh-token',
+          legacyToken: 'fresh-legacy-token'
+        },
+        meta: {}
+      }
+    });
+  });
+
+  await page.goto('/auth.html');
+
+  await expect(page.locator('#auth-account-panel')).toBeVisible();
+  await expect(page.locator('#auth-quick-access-panel')).toBeVisible();
+  await expect(page.locator('#auth-session-state')).toContainText(/logged in as:/i);
+  expect(refreshCalls).toBeGreaterThan(0);
+  await expect.poll(async () => page.evaluate(() => localStorage.getItem('ll_auth_token'))).toBe('fresh-legacy-token');
+  await expect.poll(async () => page.evaluate(() => localStorage.getItem('ll_v2_refresh_token'))).toBe('fresh-refresh-token');
+});
 test('client dashboard mobile menu opens', async ({ page }) => {
   await mockClientSession(page);
   await page.goto('/client-dashboard.html');

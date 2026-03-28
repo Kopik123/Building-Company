@@ -86,6 +86,35 @@
       tick();
     });
 
+  // Let legacy pages recover when the old auth token expires but the v2 refresh token is still valid.
+  const refreshSessionFromV2 = async () => {
+    const currentRefreshToken = String(localStorage.getItem(V2_REFRESH_KEY) || '').trim();
+    if (!currentRefreshToken) {
+      return null;
+    }
+    const response = await fetch('/api/v2/auth/refresh', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ refreshToken: currentRefreshToken })
+    });
+    const payload = await response.json().catch(() => ({}));
+    const sessionPayload = payload?.data && typeof payload.data === 'object' ? payload.data : payload;
+    const nextLegacyToken = String(sessionPayload?.legacyToken || '').trim();
+    const nextAccessToken = String(sessionPayload?.accessToken || '').trim();
+    const nextRefreshToken = String(sessionPayload?.refreshToken || '').trim();
+    const nextUser = sessionPayload?.user || null;
+    if (!response.ok || !nextUser || !nextLegacyToken) {
+      clearSession();
+      throw new Error(payload?.error?.message || parseError(payload) || 'Session expired.');
+    }
+    saveSession(nextLegacyToken, nextUser, {
+      accessToken: nextAccessToken,
+      refreshToken: nextRefreshToken || currentRefreshToken
+    });
+    return nextUser;
+  };
   const buildQuery = (params) => {
     const q = new URLSearchParams();
     Object.entries(params || {}).forEach(([key, value]) => {
@@ -351,6 +380,7 @@
     saveSession,
     clearSession,
     waitForStoredUser,
+    refreshSessionFromV2,
     buildQuery,
     debounce,
     createApiClient,
