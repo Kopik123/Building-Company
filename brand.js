@@ -27,61 +27,61 @@ const managerQuickAccess = [
   {
     key: 'createProject',
     label: 'Create Project',
-    href: '/manager-dashboard.html#manager-project-create',
+    href: '/manager-dashboard.html#projects',
     roles: ['employee', 'manager', 'admin']
   },
   {
     key: 'projectManager',
     label: 'ProjectManager',
-    href: '/manager-dashboard.html#manager-projects-section',
+    href: '/manager-dashboard.html#projects',
     roles: ['employee', 'manager', 'admin']
   },
   {
     key: 'quotesReview',
     label: 'QuotesReview',
-    href: '/manager-dashboard.html#manager-quotes-section',
+    href: '/manager-dashboard.html#quotes',
     roles: ['manager', 'admin']
   },
   {
     key: 'servicesManage',
     label: 'ServicesManage',
-    href: '/manager-dashboard.html#manager-services-section',
+    href: '/manager-dashboard.html#services',
     roles: ['manager', 'admin']
   },
   {
     key: 'materialsTrack',
     label: 'MaterialsTrack',
-    href: '/manager-dashboard.html#manager-materials-section',
+    href: '/manager-dashboard.html#stock',
     roles: ['manager', 'admin']
   },
   {
     key: 'clients',
     label: 'Clients',
-    href: '/manager-dashboard.html#manager-clients-section',
+    href: '/manager-dashboard.html#crm',
     roles: ['manager', 'admin']
   },
   {
     key: 'staff',
     label: 'Staff',
-    href: '/manager-dashboard.html#manager-staff-section',
+    href: '/manager-dashboard.html#staff',
     roles: ['manager', 'admin']
   },
   {
     key: 'estimate',
     label: 'Estimate',
-    href: '/manager-dashboard.html#manager-estimates-section',
+    href: '/manager-dashboard.html#estimates',
     roles: ['manager', 'admin']
   },
   {
     key: 'privateChat',
     label: 'PrivateChat',
-    href: '/manager-dashboard.html#manager-private-inbox',
+    href: '/manager-dashboard.html#inbox:private',
     roles: ['employee', 'manager', 'admin']
   },
   {
     key: 'projectChat',
     label: 'ProjectChat',
-    href: '/manager-dashboard.html#manager-project-chat',
+    href: '/manager-dashboard.html#inbox:project',
     roles: ['employee', 'manager', 'admin']
   }
 ];

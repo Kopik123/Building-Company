@@ -60,7 +60,8 @@ module.exports = function createCatalogRoutes({
         where[Op.or] = [
           sqlWhere(fn('LOWER', col('title')), { [Op.like]: needle }),
           sqlWhere(fn('LOWER', col('slug')), { [Op.like]: needle }),
-          sqlWhere(fn('LOWER', col('shortDescription')), { [Op.like]: needle })
+          sqlWhere(fn('LOWER', col('shortDescription')), { [Op.like]: needle }),
+          sqlWhere(fn('LOWER', col('summaryLine')), { [Op.like]: needle })
         ];
       }
 
@@ -86,10 +87,12 @@ module.exports = function createCatalogRoutes({
       body('title').trim().notEmpty(),
       body('slug').optional().trim(),
       body('shortDescription').optional().trim(),
+      body('summaryLine').optional().trim(),
       body('fullDescription').optional().trim(),
       body('category').optional().isIn(SERVICE_CATEGORIES),
       body('basePriceFrom').optional({ nullable: true }).isNumeric(),
       body('heroImageUrl').optional().trim(),
+      body('serviceCtaLabel').optional().trim(),
       body('isFeatured').optional().isBoolean(),
       body('showOnWebsite').optional().isBoolean(),
       body('displayOrder').optional().isInt(),
@@ -115,10 +118,12 @@ module.exports = function createCatalogRoutes({
         slug,
         title: String(req.body.title || '').trim(),
         shortDescription: req.body.shortDescription ? String(req.body.shortDescription).trim() : null,
+        summaryLine: req.body.summaryLine ? String(req.body.summaryLine).trim() : null,
         fullDescription: req.body.fullDescription ? String(req.body.fullDescription).trim() : null,
         category: req.body.category || 'other',
         basePriceFrom: toNullableNumber(req.body.basePriceFrom),
         heroImageUrl: req.body.heroImageUrl ? String(req.body.heroImageUrl).trim() : null,
+        serviceCtaLabel: req.body.serviceCtaLabel ? String(req.body.serviceCtaLabel).trim() : null,
         isFeatured: parseBoolean(req.body.isFeatured, false),
         showOnWebsite: parseBoolean(req.body.showOnWebsite, true),
         displayOrder: Number.parseInt(req.body.displayOrder, 10) || 0,
@@ -138,10 +143,12 @@ module.exports = function createCatalogRoutes({
       body('title').optional().trim().notEmpty(),
       body('slug').optional().trim(),
       body('shortDescription').optional().trim(),
+      body('summaryLine').optional().trim(),
       body('fullDescription').optional().trim(),
       body('category').optional().isIn(SERVICE_CATEGORIES),
       body('basePriceFrom').optional({ nullable: true }).isNumeric(),
       body('heroImageUrl').optional().trim(),
+      body('serviceCtaLabel').optional().trim(),
       body('isFeatured').optional().isBoolean(),
       body('showOnWebsite').optional().isBoolean(),
       body('displayOrder').optional().isInt(),
@@ -161,10 +168,12 @@ module.exports = function createCatalogRoutes({
       const payload = {};
       if (typeof req.body.title !== 'undefined') payload.title = String(req.body.title || '').trim();
       if (typeof req.body.shortDescription !== 'undefined') payload.shortDescription = String(req.body.shortDescription || '').trim() || null;
+      if (typeof req.body.summaryLine !== 'undefined') payload.summaryLine = String(req.body.summaryLine || '').trim() || null;
       if (typeof req.body.fullDescription !== 'undefined') payload.fullDescription = String(req.body.fullDescription || '').trim() || null;
       if (typeof req.body.category !== 'undefined') payload.category = req.body.category;
       if (typeof req.body.basePriceFrom !== 'undefined') payload.basePriceFrom = toNullableNumber(req.body.basePriceFrom);
       if (typeof req.body.heroImageUrl !== 'undefined') payload.heroImageUrl = String(req.body.heroImageUrl || '').trim() || null;
+      if (typeof req.body.serviceCtaLabel !== 'undefined') payload.serviceCtaLabel = String(req.body.serviceCtaLabel || '').trim() || null;
       if (typeof req.body.isFeatured !== 'undefined') payload.isFeatured = parseBoolean(req.body.isFeatured);
       if (typeof req.body.showOnWebsite !== 'undefined') payload.showOnWebsite = parseBoolean(req.body.showOnWebsite);
       if (typeof req.body.displayOrder !== 'undefined') payload.displayOrder = Number.parseInt(req.body.displayOrder, 10) || 0;
@@ -283,8 +292,11 @@ module.exports = function createCatalogRoutes({
       body('unit').optional().trim(),
       body('stockQty').optional({ nullable: true }).isNumeric(),
       body('minStockQty').optional({ nullable: true }).isNumeric(),
+      body('reorderTargetQty').optional({ nullable: true }).isNumeric(),
       body('unitCost').optional({ nullable: true }).isNumeric(),
       body('supplier').optional().trim(),
+      body('supplierContact').optional().trim(),
+      body('lastRestockedAt').optional().isISO8601(),
       body('notes').optional().trim(),
       body('isActive').optional().isBoolean()
     ],
@@ -307,8 +319,11 @@ module.exports = function createCatalogRoutes({
         unit: String(req.body.unit || 'pcs').trim() || 'pcs',
         stockQty: toNullableNumber(req.body.stockQty) ?? 0,
         minStockQty: toNullableNumber(req.body.minStockQty) ?? 0,
+        reorderTargetQty: toNullableNumber(req.body.reorderTargetQty),
         unitCost: toNullableNumber(req.body.unitCost),
         supplier: req.body.supplier ? String(req.body.supplier).trim() : null,
+        supplierContact: req.body.supplierContact ? String(req.body.supplierContact).trim() : null,
+        lastRestockedAt: req.body.lastRestockedAt || null,
         notes: req.body.notes ? String(req.body.notes).trim() : null,
         isActive: parseBoolean(req.body.isActive, true)
       });
@@ -328,8 +343,11 @@ module.exports = function createCatalogRoutes({
       body('unit').optional().trim(),
       body('stockQty').optional({ nullable: true }).isNumeric(),
       body('minStockQty').optional({ nullable: true }).isNumeric(),
+      body('reorderTargetQty').optional({ nullable: true }).isNumeric(),
       body('unitCost').optional({ nullable: true }).isNumeric(),
       body('supplier').optional().trim(),
+      body('supplierContact').optional().trim(),
+      body('lastRestockedAt').optional().isISO8601(),
       body('notes').optional().trim(),
       body('isActive').optional().isBoolean()
     ],
@@ -350,8 +368,11 @@ module.exports = function createCatalogRoutes({
       if (typeof req.body.unit !== 'undefined') payload.unit = String(req.body.unit || '').trim() || 'pcs';
       if (typeof req.body.stockQty !== 'undefined') payload.stockQty = toNullableNumber(req.body.stockQty) ?? 0;
       if (typeof req.body.minStockQty !== 'undefined') payload.minStockQty = toNullableNumber(req.body.minStockQty) ?? 0;
+      if (typeof req.body.reorderTargetQty !== 'undefined') payload.reorderTargetQty = toNullableNumber(req.body.reorderTargetQty);
       if (typeof req.body.unitCost !== 'undefined') payload.unitCost = toNullableNumber(req.body.unitCost);
       if (typeof req.body.supplier !== 'undefined') payload.supplier = String(req.body.supplier || '').trim() || null;
+      if (typeof req.body.supplierContact !== 'undefined') payload.supplierContact = String(req.body.supplierContact || '').trim() || null;
+      if (typeof req.body.lastRestockedAt !== 'undefined') payload.lastRestockedAt = req.body.lastRestockedAt || null;
       if (typeof req.body.notes !== 'undefined') payload.notes = String(req.body.notes || '').trim() || null;
       if (typeof req.body.isActive !== 'undefined') payload.isActive = parseBoolean(req.body.isActive);
 

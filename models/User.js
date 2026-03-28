@@ -35,6 +35,19 @@ const User = sequelize.define(
       type: DataTypes.STRING,
       allowNull: true
     },
+    jobTitle: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    specialism: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    availabilityStatus: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: 'available'
+    },
     companyName: {
       type: DataTypes.STRING,
       allowNull: true

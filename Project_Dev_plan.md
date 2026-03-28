@@ -1,5 +1,18 @@
 # Project Dev Plan
 
+## 2026-03-28
+
+- Saved `Plans/Nowy Wygląd Manager Workspace Z Kartami, Quick Access I Polami Operacyjnymi.md` and registered it in `Plans/Plan History.md` so the manager workspace redesign has a tracked execution record.
+- Rebuilt `manager-dashboard.html` into a real app shell with a compact manager header, left `Quick Access Rail`, one active card panel at a time and a shared `context strip` layout instead of the previous long section stack.
+- Extended `styles/workspace.css` with the new manager workspace visual hierarchy: branded app header, rail navigation, card panels, KPI grids, two-column work areas and responsive mobile collapse without horizontal scroll.
+- Upgraded `manager-dashboard.shell.js` into a card router with `activeManagerCard` / `activeManagerSubcard`, hash parsing, reload-safe card activation, lazy per-card data loading and overview KPI rendering from the aggregated manager summary.
+- Updated `brand.js` and the manager quick-access surface so header shortcuts, auth quick-access and in-dashboard rail links all target the new manager card hashes consistently.
+- Expanded manager workspace metadata and UI fields across quotes, services, stock and staff by updating the relevant models, routes, dashboard controllers, shared contracts and create/edit forms.
+- Added `migrations/202603270005-manager-workspace-metadata-fields.js` for service/material/staff workspace metadata and `migrations/202603270006-quote-workspace-follow-up-fields.js` for quote follow-up scheduling fields.
+- Refreshed Playwright manager smoke coverage so the new quick-access rail, hash persistence and card-based workspace routing are covered directly instead of relying on the old section-scrolling behavior.
+- Re-ran focused manager Playwright coverage and `npm.cmd run test:ci` after the shell refactor to confirm the new manager workspace card model stays green.
+- Attempted a full `npm.cmd run test:e2e:mobile` pass after the manager workspace rollout; the command exceeded the local timeout, so only the focused manager Playwright pass is recorded as green in this session.
+
 ## 2026-03-10
 
 - Added `scripts/setup-vscode.ps1` to install the recommended VS Code extensions and merge workspace settings.

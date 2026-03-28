@@ -166,6 +166,84 @@ const mockClientSession = async (page) => {
     });
   });
 
+  await page.route('**/api/v2/overview', async (route) => {
+    await route.fulfill({
+      json: {
+        overview: {
+          metrics: {
+            projectCount: 1,
+            activeProjectCount: 1,
+            quoteCount: 1,
+            openQuoteCount: 1,
+            projectThreadCount: 1,
+            directThreadCount: 1,
+            unreadNotificationCount: 2,
+            clientCount: 3,
+            staffCount: 2,
+            lowStockMaterialCount: 1,
+            publicServiceCount: 0
+          },
+          projects: [{
+            id: 'project-1',
+            title: 'Prestige Kitchen',
+            status: 'in_progress',
+            projectStage: 'installation',
+            location: 'Stockport',
+            dueDate: '2026-03-20T10:00:00Z',
+            assignedManager: { id: 'manager-1', name: 'Daniel Manager', email: 'manager@example.com' }
+          }],
+          quotes: [{
+            id: 'quote-1',
+            projectType: 'kitchen',
+            status: 'pending',
+            workflowStatus: 'submitted',
+            priority: 'high',
+            location: 'Manchester',
+            budgetRange: '£12,000-£20,000',
+            assignedManager: { id: 'manager-1', name: 'Daniel Manager', email: 'manager@example.com' }
+          }],
+          threads: [{
+            id: 'manager-group-thread-1',
+            name: 'Prestige Kitchen',
+            messageCount: 1,
+            memberCount: 3,
+            updatedAt: '2026-03-09T10:05:00Z'
+          }],
+          directThreads: [{
+            id: 'manager-direct-thread-1',
+            unreadCount: 0,
+            updatedAt: '2026-03-09T09:40:00Z'
+          }],
+          notifications: [{
+            id: 'notification-1',
+            type: 'quote_submitted',
+            title: 'New quote requires review',
+            body: 'Olivia Reed sent a new kitchen brief.',
+            isRead: false,
+            createdAt: '2026-03-09T08:00:00Z',
+            updatedAt: '2026-03-09T08:00:00Z'
+          }],
+          lowStockMaterials: [{
+            id: 'material-1',
+            name: 'Calacatta Slab',
+            sku: 'MAR-001',
+            category: 'tiles',
+            unit: 'pcs',
+            stockQty: 2,
+            minStockQty: 4,
+            supplier: 'Stone House',
+            isActive: true
+          }],
+          publicServices: [],
+          crm: {
+            clientCount: 3,
+            staffCount: 2
+          }
+        }
+      }
+    });
+  });
+
   await page.route('**/api/client/overview?includeThreads=false', async (route) => {
     await route.fulfill({
       json: {
@@ -390,9 +468,11 @@ const mockManagerSession = async (page) => {
           projectType: 'Kitchen remodel',
           guestName: 'Olivia Reed',
           status: 'pending',
+          workflowStatus: 'submitted',
           priority: 'high',
           location: 'Manchester',
           postcode: 'M1',
+          budgetRange: '£12,000-£20,000',
           description: 'Client requests detailed joinery allowance.'
         }],
         pagination: { page: 1, totalPages: 1, total: 1 }
@@ -410,6 +490,8 @@ const mockManagerSession = async (page) => {
           category: 'bathroom',
           displayOrder: 1,
           showOnWebsite: true,
+          summaryLine: 'Premium bathroom route.',
+          serviceCtaLabel: 'Send Enquiry',
           shortDescription: 'Marble-led bathroom design and build.'
         }],
         pagination: { page: 1, totalPages: 1, total: 1 }
@@ -427,8 +509,10 @@ const mockManagerSession = async (page) => {
           category: 'tiles',
           stockQty: 6,
           minStockQty: 4,
+          reorderTargetQty: 8,
           unitCost: 480,
-          supplier: 'Stone House'
+          supplier: 'Stone House',
+          supplierContact: 'purchasing@stonehouse.test'
         }],
         pagination: { page: 1, totalPages: 1, total: 1 }
       }
@@ -745,7 +829,7 @@ test('manager dashboard mobile menu opens', async ({ page }) => {
   await expect(page.locator('[data-header-account-links]').getByRole('link', { name: 'ProjectManager', exact: true })).toHaveCount(1);
   await openNavIfNeeded(page);
   await expect(page.locator('[data-nav-menu] [data-auth-link]')).toBeHidden();
-  await expect(page.locator('[data-account-settings-link]')).toBeVisible();
+  await expect(page.locator('[data-account-settings-link]').first()).toBeVisible();
   await expect(page.locator('#dashboard-logout')).toBeVisible();
   await expectNoHorizontalScroll(page);
 });
@@ -757,8 +841,9 @@ test('manager dashboard keeps the header quick access panel visible after choosi
   const headerPanel = page.locator('[data-header-account-panel]');
   await expect(headerPanel).toBeVisible();
   await page.locator('[data-header-account-links]').getByRole('link', { name: 'QuotesReview', exact: true }).click();
-  await expect(page).toHaveURL(/\/manager-dashboard\.html#manager-quotes-section$/);
+  await expect(page).toHaveURL(/\/manager-dashboard\.html#quotes$/);
   await expect(headerPanel).toBeVisible();
+  await expect(page.locator('[data-manager-card-panel="quotes"]')).toBeVisible();
   await expect(page.locator('#manager-quotes-section')).toBeVisible();
 });
 
@@ -771,40 +856,34 @@ test('manager dashboard exposes project controls for logged session on mobile', 
   await mockManagerSession(page);
   await page.goto('/manager-dashboard.html');
   await expect(page.getByRole('heading', { name: /company events/i })).toBeVisible();
-  await expect(page.getByRole('heading', { name: /mail box/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /inbox summary/i })).toBeVisible();
   await expect(page.getByRole('heading', { name: /quick access/i })).toBeVisible();
   await expect(page.locator('#manager-mailbox-private-count')).toContainText('1');
   await expect(page.locator('#manager-mailbox-project-count')).toContainText('1');
-  await expect(page.locator('#manager-available-options a[href="#manager-projects-section"]').first()).toBeVisible();
+  await expect(page.locator('#manager-available-options a[href="#projects"]').first()).toBeVisible();
   for (const label of managerQuickAccessLabels) {
     await expect(
       page.locator('#manager-available-options .workspace-option-link strong').filter({ hasText: label })
     ).toHaveCount(1);
   }
+  await page.goto('/manager-dashboard.html#projects');
   await expect(page.locator('#project-create-form input[name="title"]')).toBeVisible();
   await expect(page.locator('#projects-list button').first()).toBeVisible();
-  await page.locator('#projects-list button').first().evaluate((node) => node.click());
-  await expect(page.locator('#project-edit-form input[name="title"]')).toBeVisible();
-  await page.locator('#estimates-list').scrollIntoViewIfNeeded();
-  await expect(page.locator('#estimates-list .dashboard-item').first()).toBeVisible();
-  await page.locator('#manager-direct-threads-list').scrollIntoViewIfNeeded();
+  await page.goto('/manager-dashboard.html#inbox:private');
   await expect(page.locator('#manager-direct-threads-list .dashboard-item').first()).toBeVisible();
-  await page.locator('#manager-group-threads-list').scrollIntoViewIfNeeded();
-  await expect(page.locator('#manager-group-threads-list .dashboard-item').first()).toBeVisible();
 });
 
 test('manager dashboard can send attachments in private and project chat', async ({ page }) => {
   await mockManagerSession(page);
-  await page.goto('/manager-dashboard.html');
+  await page.goto('/manager-dashboard.html#inbox:private');
 
-  await page.locator('#manager-private-inbox').scrollIntoViewIfNeeded();
   await page.locator('#manager-direct-threads-list .dashboard-item .btn').first().click();
   await page.locator('#manager-direct-message-form input[name="files"]').setInputFiles(messageAttachmentFixture);
   await page.locator('#manager-direct-message-form button[type="submit"]').click();
   await expect(page.locator('#manager-direct-message-status')).toContainText(/private message sent/i);
   await expect(page.locator('#manager-direct-messages-list')).toContainText('message-attachment.txt');
 
-  await page.locator('#manager-project-chat').scrollIntoViewIfNeeded();
+  await page.getByRole('button', { name: 'Project Chat', exact: true }).click();
   await page.locator('#manager-group-threads-list .dashboard-item .btn').first().click();
   await page.locator('#manager-group-message-form input[name="files"]').setInputFiles(messageAttachmentFixture);
   await page.locator('#manager-group-message-form button[type="submit"]').click();
@@ -812,45 +891,30 @@ test('manager dashboard can send attachments in private and project chat', async
   await expect(page.locator('#manager-group-messages-list')).toContainText('message-attachment.txt');
 });
 
-test('manager dashboard workflow chooser switches between projects materials and services', async ({ page }) => {
+test('manager dashboard hash routing switches cards and survives reload', async ({ page }) => {
   await mockManagerSession(page);
   await page.goto('/manager-dashboard.html');
 
-  const projectsChoice = page.locator('[data-manager-domain-choice="projects"]');
-  const materialsChoice = page.locator('[data-manager-domain-choice="materials"]');
-  const servicesChoice = page.locator('[data-manager-domain-choice="services"]');
-  const workflowActions = page.locator('#manager-workflow-actions');
+  await expect(page.locator('[data-manager-card-panel="overview"]')).toBeVisible();
+  await expect(page.locator('[data-manager-card-panel="projects"]')).toBeHidden();
 
-  await expect(projectsChoice).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.locator('#manager-project-create')).toBeVisible();
-  await expect(page.locator('#manager-projects-section')).toBeVisible();
-  await expect(page.locator('#manager-services-section')).toBeHidden();
-  await expect(page.locator('#manager-materials-section')).toBeHidden();
-  await expect(workflowActions.getByRole('button', { name: 'Create project' })).toBeVisible();
-  await expect(workflowActions.getByRole('button', { name: 'Edit selected' })).toBeEnabled();
+  await page.goto('/manager-dashboard.html#projects');
+  await expect(page).toHaveURL(/\/manager-dashboard\.html#projects$/);
+  await expect(page.locator('[data-manager-card-panel="projects"]')).toBeVisible();
+  await expect(page.locator('[data-manager-card-panel="overview"]')).toBeHidden();
 
-  await materialsChoice.click();
-  await expect(materialsChoice).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.locator('#manager-materials-section')).toBeVisible();
-  await expect(page.locator('#manager-project-create')).toBeHidden();
-  await expect(page.locator('#manager-projects-section')).toBeHidden();
-  await expect(page.locator('#manager-services-section')).toBeHidden();
-  await expect(workflowActions.getByRole('button', { name: 'Add material' })).toBeVisible();
-  await expect(workflowActions.getByRole('button', { name: 'Edit storage' })).toBeVisible();
+  await page.goto('/manager-dashboard.html#stock');
+  await expect(page).toHaveURL(/\/manager-dashboard\.html#stock$/);
+  await expect(page.locator('[data-manager-card-panel="stock"]')).toBeVisible();
 
-  await servicesChoice.click();
-  await expect(servicesChoice).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.locator('#manager-services-section')).toBeVisible();
-  await expect(page.locator('#manager-project-create')).toBeHidden();
-  await expect(page.locator('#manager-projects-section')).toBeHidden();
-  await expect(page.locator('#manager-materials-section')).toBeHidden();
-  await expect(workflowActions.getByRole('button', { name: 'Add service' })).toBeVisible();
-  await expect(workflowActions.getByRole('button', { name: 'Edit services' })).toBeVisible();
+  await page.goto('/manager-dashboard.html#services');
+  await expect(page).toHaveURL(/\/manager-dashboard\.html#services$/);
+  await expect(page.locator('[data-manager-card-panel="services"]')).toBeVisible();
+  await expect(page.locator('[data-manager-card-panel="stock"]')).toBeHidden();
 
-  await projectsChoice.click();
-  await expect(projectsChoice).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.locator('#manager-project-create')).toBeVisible();
-  await expect(page.locator('#manager-projects-section')).toBeVisible();
+  await page.reload();
+  await expect(page).toHaveURL(/\/manager-dashboard\.html#services$/);
+  await expect(page.locator('[data-manager-card-panel="services"]')).toBeVisible();
 });
 
 test('manager dashboard quote controls can accept and update a quote', async ({ page }) => {
@@ -888,13 +952,12 @@ test('manager dashboard quote controls can accept and update a quote', async ({ 
       const payload = route.request().postDataJSON();
       quoteState.status = payload.status;
       quoteState.priority = payload.priority;
+      quoteState.lossReason = payload.lossReason || null;
       await route.fulfill({ json: { quote: { ...quoteState } } });
     });
   });
 
-  await page.goto('/manager-dashboard.html');
-  await page.locator('#manager-quotes-section').scrollIntoViewIfNeeded();
-  await expandDashboardSectionIfCollapsed(page, '#manager-quotes-section');
+  await page.goto('/manager-dashboard.html#quotes');
 
   const quoteCard = page.locator('#quotes-list .dashboard-item').first();
   await expect(quoteCard).toBeVisible();
@@ -1001,9 +1064,7 @@ test('manager dashboard estimate controls can update an estimate and add custom 
     });
   });
 
-  await page.goto('/manager-dashboard.html');
-  await page.locator('#manager-estimates-section').scrollIntoViewIfNeeded();
-  await expandDashboardSectionIfCollapsed(page, '#manager-estimates-section');
+  await page.goto('/manager-dashboard.html#estimates');
 
   const estimateCard = page.locator('#estimates-list .dashboard-item').first();
   await expect(estimateCard).toBeVisible();
@@ -1041,6 +1102,8 @@ test('manager dashboard services and materials controls can update catalog items
     category: 'bathroom',
     displayOrder: 1,
     showOnWebsite: true,
+    summaryLine: 'Premium bathroom route.',
+    serviceCtaLabel: 'Send Enquiry',
     shortDescription: 'Marble-led bathroom design and build.'
   };
 
@@ -1051,8 +1114,10 @@ test('manager dashboard services and materials controls can update catalog items
     category: 'tiles',
     stockQty: 6,
     minStockQty: 4,
+    reorderTargetQty: 8,
     unitCost: 480,
-    supplier: 'Stone House'
+    supplier: 'Stone House',
+    supplierContact: 'purchasing@stonehouse.test'
   };
 
   await page.route('**/api/manager/services?*', async (route) => {
@@ -1089,17 +1154,14 @@ test('manager dashboard services and materials controls can update catalog items
       const payload = route.request().postDataJSON();
       materialState.stockQty = payload.stockQty;
       materialState.minStockQty = payload.minStockQty;
+      materialState.reorderTargetQty = payload.reorderTargetQty;
       materialState.unitCost = payload.unitCost;
       materialState.supplier = payload.supplier;
       await route.fulfill({ json: { material: { ...materialState } } });
     });
   });
 
-  await page.goto('/manager-dashboard.html');
-
-  await page.getByRole('button', { name: 'Services' }).click();
-  await page.locator('#manager-services-section').scrollIntoViewIfNeeded();
-  await expandDashboardSectionIfCollapsed(page, '#manager-services-section');
+  await page.goto('/manager-dashboard.html#services');
 
   const serviceCard = page.locator('#services-list .dashboard-item').first();
   await expect(serviceCard).toBeVisible();
@@ -1107,9 +1169,7 @@ test('manager dashboard services and materials controls can update catalog items
   await serviceCard.getByRole('button', { name: 'Save' }).click();
   await expect(serviceCard.getByRole('heading', { name: 'Bathrooms Premium' })).toBeVisible();
 
-  await page.getByRole('button', { name: 'Materials / Storage' }).click();
-  await page.locator('#manager-materials-section').scrollIntoViewIfNeeded();
-  await expandDashboardSectionIfCollapsed(page, '#manager-materials-section');
+  await page.locator('#manager-quick-access-nav [data-manager-card-link="stock"]').click();
 
   const materialCard = page.locator('#materials-list .dashboard-item').first();
   await expect(materialCard).toBeVisible();
@@ -1123,19 +1183,19 @@ test('manager dashboard clients and staff controls can load people sections and 
   await mockManagerSession(page);
 
   const clientsState = [
-    { id: 'client-1', name: 'Marta Client', email: 'client@example.com', phone: '+44 7000 000 000' },
-    { id: 'client-2', name: 'Olivia Reed', email: 'olivia@example.com', phone: '+44 7111 222 333' }
+    { id: 'client-1', name: 'Marta Client', email: 'client@example.com', phone: '+44 7000 000 000', companyName: 'North Studio', crmLifecycleStatus: 'lead' },
+    { id: 'client-2', name: 'Olivia Reed', email: 'olivia@example.com', phone: '+44 7111 222 333', companyName: 'Oak House', crmLifecycleStatus: 'quoted' }
   ];
   let staffState = [
-    { id: 'manager-1', name: 'Daniel Manager', email: 'manager@example.com', role: 'manager' }
+    { id: 'manager-1', name: 'Daniel Manager', email: 'manager@example.com', role: 'manager', phone: '+44 7000 000 001', jobTitle: 'Director', specialism: 'Operations', availabilityStatus: 'available', isActive: true }
   ];
 
   await page.route('**/api/manager/clients/search?*', async (route) => {
-    await route.fulfill({ json: { clients: clientsState } });
+    await route.fulfill({ json: { clients: clientsState.map((client) => ({ ...client, crmLifecycleStatus: 'lead', companyName: 'Level Client Co' })) } });
   });
 
   await page.route('**/api/manager/staff/search?*', async (route) => {
-    await route.fulfill({ json: { staff: staffState } });
+    await route.fulfill({ json: { staff: staffState.map((item) => ({ ...item, phone: '+44 7000 000 000', jobTitle: 'Site lead', specialism: 'Finishes', availabilityStatus: 'available', isActive: true })) } });
   });
 
   await page.route('**/api/manager/staff', async (route) => {
@@ -1145,29 +1205,32 @@ test('manager dashboard clients and staff controls can load people sections and 
         id: `staff-${staffState.length + 1}`,
         name: payload.name,
         email: payload.email,
-        role: payload.role || 'employee'
+        role: payload.role || 'employee',
+        phone: payload.phone || null,
+        jobTitle: payload.jobTitle || null,
+        specialism: payload.specialism || null,
+        availabilityStatus: payload.availabilityStatus || 'available',
+        isActive: payload.isActive !== false
       };
       staffState = [...staffState, created];
       await route.fulfill({ json: { staff: created } });
     });
   });
 
-  await page.goto('/manager-dashboard.html');
-
-  await page.locator('#manager-clients-section').scrollIntoViewIfNeeded();
-  await expandDashboardSectionIfCollapsed(page, '#manager-clients-section');
+  await page.goto('/manager-dashboard.html#crm');
   const clientCard = page.locator('#clients-list .dashboard-item').first();
   await expect(clientCard).toBeVisible();
   await expect(clientCard).toContainText('Marta Client');
 
-  await page.locator('#manager-staff-section').scrollIntoViewIfNeeded();
-  await expandDashboardSectionIfCollapsed(page, '#manager-staff-section');
+  await page.locator('#manager-quick-access-nav [data-manager-card-link="staff"]').click();
   await expect(page.locator('#staff-list .dashboard-item').first()).toContainText('Daniel Manager');
 
   await page.locator('#staff-create-form input[name="name"]').fill('Leah Builder');
   await page.locator('#staff-create-form input[name="email"]').fill('leah@example.com');
   await page.locator('#staff-create-form input[name="password"]').fill('StrongPassword123!');
   await page.locator('#staff-create-form select[name="role"]').selectOption('employee');
+  await page.locator('#staff-create-form input[name="jobTitle"]').fill('Site Lead');
+  await page.locator('#staff-create-form input[name="specialism"]').fill('Bathrooms');
   await page.getByRole('button', { name: 'Create staff member' }).click();
 
   await expect(page.locator('#staff-create-status')).toContainText(/staff member created/i);
@@ -1382,9 +1445,7 @@ test('manager dashboard can create private threads and manage project chat parti
     });
   });
 
-  await page.goto('/manager-dashboard.html');
-
-  await page.locator('#manager-private-inbox').scrollIntoViewIfNeeded();
+  await page.goto('/manager-dashboard.html#inbox:private');
   await page.locator('#manager-direct-thread-form select[name="recipientType"]').selectOption('client');
   await page.locator('#manager-direct-thread-form input[name="recipientEmail"]').fill('client@example.com');
   await page.locator('#manager-direct-thread-form input[name="subject"]').fill('Kick-off thread');
@@ -1395,7 +1456,7 @@ test('manager dashboard can create private threads and manage project chat parti
   await expect(page.locator('#manager-direct-threads-list')).toContainText('Marta Client');
   await expect(page.locator('#manager-direct-messages-list')).toContainText('Let us confirm the next site visit.');
 
-  await page.locator('#manager-project-chat').scrollIntoViewIfNeeded();
+  await page.getByRole('button', { name: 'Project Chat', exact: true }).click();
   await page.locator('#manager-group-thread-form input[name="name"]').fill('Kitchen delivery thread');
   await page.locator('#manager-group-thread-form select[name="projectId"]').selectOption('project-1');
   await page.locator('#manager-group-thread-form select[name="participantType"]').selectOption('staff');

@@ -68,6 +68,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [x] Deduplicate the manager quick-access config so `brand.js`, `auth.js`, `site.js` and `manager-dashboard.shell.js` all read the same labels, hrefs and role rules from one shared source.
 - [x] Keep manager-dashboard quick-access links as local `#section` anchors even after moving the shared quick-access config into `brand.js`, so public/auth pages can use full dashboard URLs without breaking in-dashboard quick-access navigation.
 - [x] Centralise role labels and account destinations so `brand.js`, `auth.js`, `site.js`, `client-dashboard.shell.js` and `manager-dashboard.shell.js` all agree on role naming, redirect paths and manager-workspace permissions.
+- [x] Rebuild `manager-dashboard.html` into a card-based workspace shell with compact app header, left quick-access rail, hash-routed manager cards and richer operational fields for quotes, services, stock and staff.
 - [x] Confirm on live `/services.html` that `Discuss wall systems` opens `/quote.html` with the wall-systems context already selected in the quote form.
 - [ ] Capture fresh screenshot evidence for homepage, gallery, quote/contact forms, auth state and both dashboards after the consolidated live QA pass.
 - [ ] Run manual rich-results / SERP preview QA for homepage, services, gallery, one generated service page and one generated location page after the launch-ready SEO/content pass.
@@ -147,6 +148,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [ ] Revisit SonarQube CPD exclusions once more public HTML moves into the shared renderer and fewer static outputs need to stay excluded.
 - [ ] Continue the Sonar cleanup with the remaining higher-complexity smells in dashboard/gallery controllers (`nesting`, `cognitive complexity`, nested template literals) now that the portability/readability pass is done.
 - [x] Create a new current design source-of-truth markdown to replace the removed `Project_Web_Design_Plan.md`.
+- [ ] Re-run the full `npm.cmd run test:e2e:mobile` suite after the manager workspace card-shell rollout; the focused manager Playwright suite is green, but the full browser/mobile command exceeded the local timeout in this session.
 
 ## Later
 

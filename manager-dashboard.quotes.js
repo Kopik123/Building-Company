@@ -13,6 +13,18 @@
     renderOperationsShell
   }) => {
     const canManageQuotes = () => ['manager', 'admin'].includes(String(state.user?.role || '').toLowerCase());
+    const toInputDate = (value) => {
+      if (!value) return '';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return '';
+      return date.toISOString().slice(0, 10);
+    };
+    const toInputDateTime = (value) => {
+      if (!value) return '';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return '';
+      return date.toISOString().slice(0, 16);
+    };
 
     const createQuoteCard = () => {
       const card = document.createElement('article');
@@ -50,8 +62,25 @@
         updateNode: (card, quote) => {
           const owner = quote.guestName || quote.client?.name || quote.client?.email || 'Unknown client';
           card.children[0].textContent = `${escapeHtml(quote.projectType)} | ${escapeHtml(owner)}`;
-          card.children[1].textContent = `${escapeHtml(quote.status)} | priority ${escapeHtml(quote.priority)} | ${escapeHtml(quote.location || '-')} ${escapeHtml(quote.postcode || '')}`;
-          card.children[2].textContent = quote.description || '';
+          const metaParts = [
+            escapeHtml(quote.status),
+            `workflow ${escapeHtml(quote.workflowStatus || 'submitted')}`,
+            `priority ${escapeHtml(quote.priority)}`,
+            escapeHtml(quote.location || '-'),
+            escapeHtml(quote.postcode || ''),
+            quote.sourceChannel ? `via ${escapeHtml(quote.sourceChannel)}` : '',
+            quote.assignedManager?.email ? `owner ${escapeHtml(quote.assignedManager.email)}` : 'unassigned'
+          ].filter(Boolean);
+          card.children[1].textContent = metaParts.join(' | ');
+          const descriptionParts = [
+            quote.budgetRange ? `Budget ${quote.budgetRange}` : '',
+            quote.currentEstimateId ? `Estimate linked` : '',
+            quote.nextActionAt ? `Next action ${quote.nextActionAt}` : '',
+            quote.responseDeadline ? `Deadline ${quote.responseDeadline}` : '',
+            quote.lossReason ? `Loss reason: ${quote.lossReason}` : '',
+            quote.description || ''
+          ].filter(Boolean);
+          card.children[2].textContent = descriptionParts.join(' | ');
 
           const controls = card.children[3];
           controls.replaceChildren();
@@ -74,6 +103,18 @@
             prioritySelect.appendChild(option);
           });
 
+          const nextActionInput = document.createElement('input');
+          nextActionInput.type = 'datetime-local';
+          nextActionInput.value = toInputDateTime(quote.nextActionAt);
+
+          const responseDeadlineInput = document.createElement('input');
+          responseDeadlineInput.type = 'date';
+          responseDeadlineInput.value = toInputDate(quote.responseDeadline);
+
+          const lossReasonInput = document.createElement('textarea');
+          lossReasonInput.rows = 2;
+          lossReasonInput.value = quote.lossReason || '';
+
           const saveBtn = document.createElement('button');
           saveBtn.type = 'button';
           saveBtn.className = 'btn btn-gold';
@@ -84,7 +125,13 @@
               await api(`/api/manager/quotes/${quote.id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: statusSelect.value, priority: prioritySelect.value })
+                body: JSON.stringify({
+                  status: statusSelect.value,
+                  priority: prioritySelect.value,
+                  nextActionAt: nextActionInput.value || null,
+                  responseDeadline: responseDeadlineInput.value || null,
+                  lossReason: lossReasonInput.value || null
+                })
               });
               await loadQuotes();
             } catch (error) {
@@ -110,6 +157,9 @@
 
           controls.appendChild(createControlField('Status', statusSelect));
           controls.appendChild(createControlField('Priority', prioritySelect));
+          controls.appendChild(createControlField('Next action', nextActionInput));
+          controls.appendChild(createControlField('Response deadline', responseDeadlineInput));
+          controls.appendChild(createControlField('Loss reason', lossReasonInput));
           controls.appendChild(createEditActions([acceptBtn, saveBtn]));
         },
         createEmptyNode: () => createMutedNode('No quotes found for current filters.')
@@ -124,7 +174,10 @@
         page: state.quotesQuery.page,
         pageSize: state.quotesQuery.pageSize,
         q: state.quotesQuery.q,
-        status: state.quotesQuery.status
+        status: state.quotesQuery.status,
+        workflowStatus: state.quotesQuery.workflowStatus,
+        priority: state.quotesQuery.priority,
+        projectType: state.quotesQuery.projectType
       })}`);
       state.quotes = Array.isArray(payload.quotes) ? payload.quotes : [];
       state.quotesPagination = payload.pagination || state.quotesPagination;
@@ -134,6 +187,9 @@
     const applyQuotesFiltersFromUI = () => {
       state.quotesQuery.q = String(el.quotesFilterQ.value || '').trim();
       state.quotesQuery.status = String(el.quotesFilterStatus.value || '').trim();
+      state.quotesQuery.workflowStatus = String(el.quotesFilterWorkflowStatus?.value || '').trim();
+      state.quotesQuery.priority = String(el.quotesFilterPriority?.value || '').trim();
+      state.quotesQuery.projectType = String(el.quotesFilterProjectType?.value || '').trim();
       state.quotesQuery.pageSize = Number.parseInt(el.quotesPageSize.value, 10) || 25;
       state.quotesQuery.page = 1;
     };

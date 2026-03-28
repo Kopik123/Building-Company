@@ -46,7 +46,17 @@
           card.dataset.projectId = project.id;
           card.className = `dashboard-item ${project.id === state.selectedProjectId ? 'is-active' : ''}`;
           card.children[0].textContent = project.title || 'Project';
-          card.children[1].textContent = `${project.status || '-'} | ${project.location || 'No location'} | ${project.imageCount || 0} images/${project.documentCount || 0} docs | Client: ${project.client?.email || 'No client'} | Staff: ${project.assignedManager?.email || 'No staff'}`;
+          const detailParts = [
+            project.status || '-',
+            project.projectStage || 'briefing',
+            project.location || 'No location',
+            project.currentMilestone || 'No milestone',
+            project.dueDate ? `Due ${project.dueDate}` : 'No due date',
+            `${project.imageCount || 0} images/${project.documentCount || 0} docs`,
+            `Client: ${project.client?.email || 'No client'}`,
+            `Staff: ${project.assignedManager?.email || 'No staff'}`
+          ];
+          card.children[1].textContent = detailParts.join(' | ');
         },
         createEmptyNode: () => createMutedNode('No projects found for current filters.')
       });
@@ -121,13 +131,17 @@
       form.title.value = project.title || '';
       form.location.value = project.location || '';
       form.status.value = project.status || 'planning';
+      if (form.projectStage) form.projectStage.value = project.projectStage || 'briefing';
       form.quoteId.value = project.quoteId || '';
       form.clientEmail.value = project.client?.email || '';
       form.assignedManagerEmail.value = project.assignedManager?.email || '';
       form.galleryOrder.value = Number.isFinite(project.galleryOrder) ? project.galleryOrder : 0;
       form.budgetEstimate.value = project.budgetEstimate || '';
+      if (form.currentMilestone) form.currentMilestone.value = project.currentMilestone || '';
+      if (form.workPackage) form.workPackage.value = project.workPackage || '';
       form.startDate.value = toDateInputValue(project.startDate);
       form.endDate.value = toDateInputValue(project.endDate);
+      if (form.dueDate) form.dueDate.value = toDateInputValue(project.dueDate);
       form.showInGallery.checked = Boolean(project.showInGallery);
       form.isActive.checked = Boolean(project.isActive);
       form.description.value = project.description || '';
@@ -163,6 +177,9 @@
         pageSize: state.projectsQuery.pageSize,
         q: state.projectsQuery.q,
         status: state.projectsQuery.status,
+        projectStage: state.projectsQuery.projectStage,
+        clientEmail: state.projectsQuery.clientEmail,
+        assignedManagerEmail: state.projectsQuery.assignedManagerEmail,
         showInGallery: state.projectsQuery.showInGallery
       })}`);
 
@@ -193,6 +210,9 @@
     const applyProjectsFiltersFromUI = () => {
       state.projectsQuery.q = String(el.projectsFilterQ.value || '').trim();
       state.projectsQuery.status = String(el.projectsFilterStatus.value || '').trim();
+      state.projectsQuery.projectStage = String(el.projectsFilterStage?.value || '').trim();
+      state.projectsQuery.clientEmail = String(el.projectsFilterClient?.value || '').trim();
+      state.projectsQuery.assignedManagerEmail = String(el.projectsFilterOwner?.value || '').trim();
       state.projectsQuery.showInGallery = String(el.projectsFilterGallery.value || '').trim();
       state.projectsQuery.pageSize = Number.parseInt(el.projectsPageSize.value, 10) || 25;
       state.projectsQuery.page = 1;
@@ -253,12 +273,20 @@
           title: String(form.title.value || '').trim(),
           location: String(form.location.value || '').trim(),
           status: String(form.status.value || 'planning'),
+          projectStage: String(form.projectStage?.value || 'briefing').trim(),
           quoteId: normUuid(form.quoteId.value),
           clientEmail: normEmail(form.clientEmail.value),
           assignedManagerEmail: normEmail(form.assignedManagerEmail.value),
           galleryOrder: Number.parseInt(form.galleryOrder.value, 10) || 0,
+          currentMilestone: String(form.currentMilestone?.value || '').trim(),
+          workPackage: String(form.workPackage?.value || '').trim(),
+          budgetEstimate: String(form.budgetEstimate?.value || '').trim(),
+          startDate: form.startDate?.value || null,
+          endDate: form.endDate?.value || null,
+          dueDate: form.dueDate?.value || null,
           description: String(form.description.value || '').trim(),
-          showInGallery: Boolean(form.showInGallery.checked)
+          showInGallery: Boolean(form.showInGallery.checked),
+          isActive: Boolean(form.isActive?.checked ?? true)
         };
         if (!payload.title) return setStatus(el.projectCreateStatus, 'Title is required.', 'error');
         try {
@@ -266,7 +294,9 @@
           setStatus(el.projectCreateStatus, 'Project created.', 'success');
           el.projectCreateForm.reset();
           form.status.value = 'planning';
+          if (form.projectStage) form.projectStage.value = 'briefing';
           form.galleryOrder.value = '0';
+          if (form.isActive) form.isActive.checked = true;
           applyProjectsFiltersFromUI();
           await loadProjects(result.project?.id);
         } catch (error) {
@@ -284,13 +314,17 @@
           title: String(form.title.value || '').trim(),
           location: String(form.location.value || '').trim(),
           status: String(form.status.value || 'planning'),
+          projectStage: String(form.projectStage?.value || 'briefing').trim(),
           quoteId: normUuid(form.quoteId.value),
           clientEmail: normEmail(form.clientEmail.value),
           assignedManagerEmail: normEmail(form.assignedManagerEmail.value),
           galleryOrder: Number.parseInt(form.galleryOrder.value, 10) || 0,
+          currentMilestone: String(form.currentMilestone?.value || '').trim(),
+          workPackage: String(form.workPackage?.value || '').trim(),
           budgetEstimate: String(form.budgetEstimate.value || '').trim(),
           startDate: form.startDate.value || null,
           endDate: form.endDate.value || null,
+          dueDate: form.dueDate?.value || null,
           showInGallery: Boolean(form.showInGallery.checked),
           isActive: Boolean(form.isActive.checked),
           description: String(form.description.value || '').trim()

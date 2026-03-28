@@ -43,7 +43,11 @@ module.exports = function createStaffSearchSeedRoutes({
       body('password').isLength({ min: 8 }),
       body('name').trim().notEmpty(),
       body('role').isIn(['employee', 'manager']),
-      body('phone').optional().trim()
+      body('phone').optional().trim(),
+      body('jobTitle').optional().trim(),
+      body('specialism').optional().trim(),
+      body('availabilityStatus').optional().trim(),
+      body('isActive').optional().isBoolean()
     ],
     asyncHandler(async (req, res) => {
       const errors = validationResult(req);
@@ -63,7 +67,17 @@ module.exports = function createStaffSearchSeedRoutes({
         return res.status(400).json({ error: 'Email already registered' });
       }
 
-      const user = await User.create({ email, password, name, phone: phone || null, role });
+      const user = await User.create({
+        email,
+        password,
+        name,
+        phone: phone || null,
+        role,
+        jobTitle: req.body.jobTitle ? String(req.body.jobTitle).trim() : null,
+        specialism: req.body.specialism ? String(req.body.specialism).trim() : null,
+        availabilityStatus: req.body.availabilityStatus ? String(req.body.availabilityStatus).trim() : 'available',
+        isActive: typeof req.body.isActive === 'boolean' ? req.body.isActive : true
+      });
       return res.status(201).json({ user });
     })
   );
@@ -74,6 +88,7 @@ module.exports = function createStaffSearchSeedRoutes({
       ...staffGuard,
       query('email').optional().trim().isLength({ min: 1, max: 255 }),
       query('q').optional().trim().isLength({ min: 1, max: 255 }),
+      query('crmLifecycleStatus').optional().trim().isLength({ min: 1, max: 255 }),
       query('page').optional().isInt({ min: 1 }).toInt(),
       query('pageSize').optional().isInt({ min: 1, max: MAX_PAGE_SIZE }).toInt()
     ],
@@ -86,6 +101,9 @@ module.exports = function createStaffSearchSeedRoutes({
       const { page, pageSize, offset } = getPagination(req);
       const needleRaw = String(req.query.email || req.query.q || '').trim().toLowerCase();
       const where = { role: 'client', isActive: true };
+      if (req.query.crmLifecycleStatus) {
+        where.crmLifecycleStatus = String(req.query.crmLifecycleStatus).trim();
+      }
 
       if (needleRaw) {
         const pattern = `%${escapeLike(needleRaw)}%`;
@@ -97,7 +115,7 @@ module.exports = function createStaffSearchSeedRoutes({
 
       const { rows, count } = await User.findAndCountAll({
         where,
-        attributes: ['id', 'name', 'email', 'phone'],
+        attributes: ['id', 'name', 'email', 'phone', 'companyName', 'crmLifecycleStatus', 'crmLifecycleUpdatedAt'],
         order: [['email', 'ASC']],
         limit: pageSize,
         offset
@@ -113,6 +131,7 @@ module.exports = function createStaffSearchSeedRoutes({
       ...staffGuard,
       query('email').optional().trim().isLength({ min: 1, max: 255 }),
       query('q').optional().trim().isLength({ min: 1, max: 255 }),
+      query('role').optional().trim().isLength({ min: 1, max: 255 }),
       query('page').optional().isInt({ min: 1 }).toInt(),
       query('pageSize').optional().isInt({ min: 1, max: MAX_PAGE_SIZE }).toInt()
     ],
@@ -128,6 +147,9 @@ module.exports = function createStaffSearchSeedRoutes({
         role: { [Op.in]: ['employee', 'manager', 'admin'] },
         isActive: true
       };
+      if (req.query.role) {
+        where.role = String(req.query.role).trim();
+      }
 
       if (needleRaw) {
         const pattern = `%${escapeLike(needleRaw)}%`;
@@ -139,7 +161,7 @@ module.exports = function createStaffSearchSeedRoutes({
 
       const { rows, count } = await User.findAndCountAll({
         where,
-        attributes: ['id', 'name', 'email', 'role'],
+        attributes: ['id', 'name', 'email', 'phone', 'role', 'jobTitle', 'specialism', 'availabilityStatus', 'isActive'],
         order: [['email', 'ASC']],
         limit: pageSize,
         offset

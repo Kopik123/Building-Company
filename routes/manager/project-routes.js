@@ -53,6 +53,7 @@ module.exports = function createProjectRoutes({
     [
       ...staffGuard,
       query('status').optional().isIn(PROJECT_STATUSES),
+      query('projectStage').optional().trim().isLength({ min: 1, max: 255 }),
       query('showInGallery').optional().isIn(['true', 'false', '1', '0']),
       query('includeMedia').optional().isIn(['true', 'false', '1', '0']),
       query('q').optional().trim().isLength({ min: 1, max: 255 }),
@@ -69,6 +70,7 @@ module.exports = function createProjectRoutes({
 
       const where = {};
       if (req.query.status) where.status = req.query.status;
+      if (req.query.projectStage) where.projectStage = String(req.query.projectStage).trim();
       if (typeof req.query.showInGallery !== 'undefined') {
         where.showInGallery = parseBoolean(req.query.showInGallery);
       }
@@ -147,6 +149,9 @@ module.exports = function createProjectRoutes({
       body('location').optional().trim(),
       body('description').optional().trim(),
       body('status').optional().isIn(PROJECT_STATUSES),
+      body('projectStage').optional().trim(),
+      body('currentMilestone').optional().trim(),
+      body('workPackage').optional().trim(),
       body('quoteId').optional({ nullable: true }).isUUID(),
       body('clientId').optional({ nullable: true }).isUUID(),
       body('clientEmail').optional({ checkFalsy: true }).isEmail(),
@@ -155,6 +160,7 @@ module.exports = function createProjectRoutes({
       body('budgetEstimate').optional().trim(),
       body('startDate').optional().isISO8601(),
       body('endDate').optional().isISO8601(),
+      body('dueDate').optional().isISO8601(),
       body('showInGallery').optional().isBoolean(),
       body('galleryOrder').optional().isInt(),
       body('isActive').optional().isBoolean()
@@ -173,9 +179,13 @@ module.exports = function createProjectRoutes({
         location: req.body.location ? String(req.body.location).trim() : null,
         description: req.body.description ? String(req.body.description).trim() : null,
         status: req.body.status || 'planning',
+        projectStage: req.body.projectStage ? String(req.body.projectStage).trim() : 'briefing',
+        currentMilestone: req.body.currentMilestone ? String(req.body.currentMilestone).trim() : null,
+        workPackage: req.body.workPackage ? String(req.body.workPackage).trim() : null,
         budgetEstimate: req.body.budgetEstimate ? String(req.body.budgetEstimate).trim() : null,
         startDate: req.body.startDate || null,
         endDate: req.body.endDate || null,
+        dueDate: req.body.dueDate || null,
         showInGallery: parseBoolean(req.body.showInGallery, false),
         galleryOrder: Number.parseInt(req.body.galleryOrder, 10) || 0,
         isActive: parseBoolean(req.body.isActive, true)
@@ -221,6 +231,9 @@ module.exports = function createProjectRoutes({
       body('location').optional().trim(),
       body('description').optional().trim(),
       body('status').optional().isIn(PROJECT_STATUSES),
+      body('projectStage').optional().trim(),
+      body('currentMilestone').optional().trim(),
+      body('workPackage').optional().trim(),
       body('quoteId').optional({ nullable: true }).isUUID(),
       body('clientId').optional({ nullable: true }).isUUID(),
       body('clientEmail').optional({ checkFalsy: true }).isEmail(),
@@ -229,6 +242,7 @@ module.exports = function createProjectRoutes({
       body('budgetEstimate').optional().trim(),
       body('startDate').optional().isISO8601(),
       body('endDate').optional().isISO8601(),
+      body('dueDate').optional().isISO8601(),
       body('showInGallery').optional().isBoolean(),
       body('galleryOrder').optional().isInt(),
       body('isActive').optional().isBoolean()
@@ -252,9 +266,13 @@ module.exports = function createProjectRoutes({
       if (typeof req.body.location !== 'undefined') payload.location = String(req.body.location || '').trim() || null;
       if (typeof req.body.description !== 'undefined') payload.description = String(req.body.description || '').trim() || null;
       if (typeof req.body.status !== 'undefined') payload.status = req.body.status;
+      if (typeof req.body.projectStage !== 'undefined') payload.projectStage = String(req.body.projectStage || '').trim() || 'briefing';
+      if (typeof req.body.currentMilestone !== 'undefined') payload.currentMilestone = String(req.body.currentMilestone || '').trim() || null;
+      if (typeof req.body.workPackage !== 'undefined') payload.workPackage = String(req.body.workPackage || '').trim() || null;
       if (typeof req.body.budgetEstimate !== 'undefined') payload.budgetEstimate = String(req.body.budgetEstimate || '').trim() || null;
       if (typeof req.body.startDate !== 'undefined') payload.startDate = req.body.startDate || null;
       if (typeof req.body.endDate !== 'undefined') payload.endDate = req.body.endDate || null;
+      if (typeof req.body.dueDate !== 'undefined') payload.dueDate = req.body.dueDate || null;
       if (typeof req.body.showInGallery !== 'undefined') payload.showInGallery = parseBoolean(req.body.showInGallery);
       if (typeof req.body.galleryOrder !== 'undefined') payload.galleryOrder = Number.parseInt(req.body.galleryOrder, 10) || 0;
       if (typeof req.body.isActive !== 'undefined') payload.isActive = parseBoolean(req.body.isActive);

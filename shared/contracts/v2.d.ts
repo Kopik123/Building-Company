@@ -122,6 +122,8 @@ export interface QuoteSummary {
   submittedAt: string | null;
   assignedAt: string | null;
   convertedAt: string | null;
+  nextActionAt: string | null;
+  responseDeadline: string | null;
   closedAt: string | null;
   lossReason: string | null;
   attachmentCount: number;

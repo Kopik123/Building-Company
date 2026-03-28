@@ -36,12 +36,24 @@ const Material = sequelize.define('Material', {
     allowNull: false,
     defaultValue: 0
   },
+  reorderTargetQty: {
+    type: DataTypes.DECIMAL(12, 2),
+    allowNull: true
+  },
   unitCost: {
     type: DataTypes.DECIMAL(12, 2),
     allowNull: true
   },
   supplier: {
     type: DataTypes.STRING,
+    allowNull: true
+  },
+  supplierContact: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  lastRestockedAt: {
+    type: DataTypes.DATEONLY,
     allowNull: true
   },
   notes: {

@@ -103,6 +103,7 @@ module.exports = function createQuoteRoutes({
     [
       ...managerGuard,
       query('status').optional().isIn(QUOTE_STATUSES),
+      query('workflowStatus').optional().trim().isLength({ min: 1, max: 255 }),
       query('priority').optional().isIn(['low', 'medium', 'high']),
       query('projectType').optional().isIn(QUOTE_PROJECT_TYPES),
       query('q').optional().trim().isLength({ min: 1, max: 255 }),
@@ -117,6 +118,7 @@ module.exports = function createQuoteRoutes({
 
       const where = {};
       if (req.query.status) where.status = req.query.status;
+      if (req.query.workflowStatus) where.workflowStatus = String(req.query.workflowStatus).trim();
       if (req.query.priority) where.priority = req.query.priority;
       if (req.query.projectType) where.projectType = req.query.projectType;
       if (req.query.q) {
@@ -181,7 +183,10 @@ module.exports = function createQuoteRoutes({
       ...managerGuard,
       param('id').isUUID(),
       body('status').optional().isIn(QUOTE_STATUSES),
-      body('priority').optional().isIn(['low', 'medium', 'high'])
+      body('priority').optional().isIn(['low', 'medium', 'high']),
+      body('nextActionAt').optional({ nullable: true }).isISO8601(),
+      body('responseDeadline').optional({ nullable: true }).isISO8601(),
+      body('lossReason').optional().trim()
     ],
     asyncHandler(async (req, res) => {
       const errors = validationResult(req);
@@ -197,6 +202,9 @@ module.exports = function createQuoteRoutes({
       const payload = {};
       if (req.body.status) payload.status = req.body.status;
       if (req.body.priority) payload.priority = req.body.priority;
+      if (Object.prototype.hasOwnProperty.call(req.body, 'nextActionAt')) payload.nextActionAt = req.body.nextActionAt || null;
+      if (Object.prototype.hasOwnProperty.call(req.body, 'responseDeadline')) payload.responseDeadline = req.body.responseDeadline || null;
+      if (Object.prototype.hasOwnProperty.call(req.body, 'lossReason')) payload.lossReason = String(req.body.lossReason || '').trim() || null;
 
       if (!Object.keys(payload).length) {
         return res.status(400).json({ error: 'No changes provided' });

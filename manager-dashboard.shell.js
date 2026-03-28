@@ -44,7 +44,115 @@
       messagesController: null
     };
 
+    const CARD_CONFIG = {
+      overview: {
+        label: 'Overview',
+        description: 'Active projects, alerts, inbox and current workload in one shell.'
+      },
+      projects: {
+        label: 'Projects',
+        description: 'Create briefs, assign owners, tune stage and delivery timing.'
+      },
+      quotes: {
+        label: 'Quotes',
+        description: 'Review enquiries, workflow status, priorities and conversion readiness.'
+      },
+      estimates: {
+        label: 'Estimates',
+        description: 'Draft, revise and approve pricing with quote and project context.'
+      },
+      inbox: {
+        label: 'Inbox',
+        description: 'Switch between private inbox and project chat without losing context.'
+      },
+      website: {
+        label: 'Website',
+        description: 'Control brochure copy, metadata, CTAs and public SEO structure.'
+      },
+      services: {
+        label: 'Services',
+        description: 'Manage brochure-facing service rows, ordering and visibility.'
+      },
+      stock: {
+        label: 'Stock',
+        description: 'Track materials, supplier details and low-stock routes.'
+      },
+      crm: {
+        label: 'Clients / CRM',
+        description: 'See lifecycle, contact context and linked work for active clients.'
+      },
+      staff: {
+        label: 'Staff',
+        description: 'Control roles, access, availability and team visibility.'
+      }
+    };
+
+    const LEGACY_SECTION_TO_CARD = {
+      'manager-project-create': 'projects',
+      'manager-projects-section': 'projects',
+      'project-editor-card': 'projects',
+      'manager-quotes-section': 'quotes',
+      'manager-estimates-section': 'estimates',
+      'estimate-editor-card': 'estimates',
+      'manager-private-inbox': 'inbox',
+      'manager-project-chat': 'inbox',
+      'manager-services-section': 'services',
+      'manager-materials-section': 'stock',
+      'manager-clients-section': 'crm',
+      'manager-staff-section': 'staff'
+    };
+
+    const LEGACY_SECTION_TO_SUBCARD = {
+      'manager-private-inbox': 'private',
+      'manager-project-chat': 'project'
+    };
+
+    const normalizeCardId = (value) => {
+      const normalized = String(value || '').trim().toLowerCase();
+      return CARD_CONFIG[normalized] ? normalized : 'overview';
+    };
+
+    const normalizeSubcardId = (value) => {
+      const normalized = String(value || '').trim().toLowerCase();
+      return normalized === 'project' ? 'project' : 'private';
+    };
+
+    const buildCardHash = (cardId, subcardId = state.activeManagerSubcard) => {
+      const card = normalizeCardId(cardId);
+      if (card !== 'inbox') return `#${card}`;
+      return `#inbox:${normalizeSubcardId(subcardId)}`;
+    };
+
+    const parseManagerHash = () => {
+      const raw = String(globalThis.location.hash || '').replace(/^#/, '').trim();
+      if (!raw) {
+        return { cardId: 'overview', subcardId: 'private', focusId: '' };
+      }
+
+      if (LEGACY_SECTION_TO_CARD[raw]) {
+        return {
+          cardId: LEGACY_SECTION_TO_CARD[raw],
+          subcardId: normalizeSubcardId(LEGACY_SECTION_TO_SUBCARD[raw]),
+          focusId: raw
+        };
+      }
+
+      const [cardRaw, subcardRaw] = raw.split(':');
+      return {
+        cardId: normalizeCardId(cardRaw),
+        subcardId: normalizeSubcardId(subcardRaw),
+        focusId: ''
+      };
+    };
+
     const scrollToSection = (sectionId, focusNode) => {
+      const mappedCardId = LEGACY_SECTION_TO_CARD[sectionId];
+      if (mappedCardId) {
+        activateManagerCard(mappedCardId, {
+          subcardId: LEGACY_SECTION_TO_SUBCARD[sectionId],
+          updateHash: true
+        });
+      }
       const section = document.getElementById(sectionId);
       if (!section) return;
       section.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -62,111 +170,250 @@
       return participantB || participantA;
     };
 
-    const MANAGER_DOMAIN_CONFIG = {
-      projects: {
-        description: 'Choose the project route first, then create a new project or edit the selected one.',
-        actions: [
-          {
-            label: 'Create project',
-            variant: 'gold',
-            run: () => scrollToSection('manager-project-create', el.projectCreateForm?.elements?.title)
-          },
-          {
-            label: 'Browse projects',
-            variant: 'outline',
-            run: () => scrollToSection('manager-projects-section', el.projectsFilterQ)
-          },
-          {
-            label: 'Edit selected',
-            variant: 'outline',
-            disabled: () => !state.selectedProjectId,
-            run: () => dependencies.openProjectEditor?.()
-          }
-        ]
-      },
-      materials: {
-        description: 'Choose storage first, then add new materials or edit the current inventory list.',
-        actions: [
-          {
-            label: 'Add material',
-            variant: 'gold',
-            run: () => scrollToSection('manager-materials-section', el.materialCreateForm?.elements?.name)
-          },
-          {
-            label: 'Edit storage',
-            variant: 'outline',
-            run: () => scrollToSection('manager-materials-section', el.materialsFilterQ)
-          }
-        ]
-      },
-      services: {
-        description: 'Choose services first, then add a new website offer or edit the current service catalogue.',
-        actions: [
-          {
-            label: 'Add service',
-            variant: 'gold',
-            run: () => scrollToSection('manager-services-section', el.serviceCreateForm?.elements?.title)
-          },
-          {
-            label: 'Edit services',
-            variant: 'outline',
-            run: () => scrollToSection('manager-services-section', el.servicesFilterQ)
-          }
-        ]
-      }
-    };
-
-    const getSelectedManagerDomain = () => (
-      MANAGER_DOMAIN_CONFIG[state.selectedManagerDomain] ? state.selectedManagerDomain : 'projects'
-    );
-
-    const updateManagerDomainButtonStates = (selectedDomain) => {
-      (managerDomainButtons || []).forEach((button) => {
-        const isActive = button.dataset.managerDomainChoice === selectedDomain;
+    const activateInboxSubcard = (subcardId, { updateHash = false } = {}) => {
+      const nextSubcardId = normalizeSubcardId(subcardId);
+      state.activeManagerSubcard = nextSubcardId;
+      (el.managerInboxPanels || []).forEach((panel) => {
+        const isActive = panel.dataset.managerInboxPanel === nextSubcardId;
+        panel.hidden = !isActive;
+        panel.classList.toggle('is-active', isActive);
+      });
+      (el.managerSubcardLinks || []).forEach((button) => {
+        const isActive = button.dataset.managerSubcardLink === nextSubcardId;
         button.classList.toggle('btn-gold', isActive);
         button.classList.toggle('btn-outline', !isActive);
         button.classList.toggle('is-active', isActive);
-        button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
       });
+      if (updateHash && state.activeManagerCard === 'inbox') {
+        globalThis.history.replaceState(null, '', buildCardHash('inbox', nextSubcardId));
+      }
     };
 
-    const updateManagerDomainSectionVisibility = (selectedDomain) => {
-      (managerDomainSections || []).forEach((section) => {
-        section.classList.toggle('manager-domain-hidden', section.dataset.managerDomainSection !== selectedDomain);
-      });
+    const loadManagerCardData = async (cardId, subcardId = state.activeManagerSubcard) => {
+      const normalizedCardId = normalizeCardId(cardId);
+      switch (normalizedCardId) {
+        case 'projects':
+          await dependencies.loadProjects?.();
+          break;
+        case 'quotes':
+          await dependencies.quotesController?.loadQuotesForRole?.(getManagerRole());
+          break;
+        case 'estimates':
+          await dependencies.estimatesController?.loadEstimatesIfNeeded?.();
+          break;
+        case 'inbox':
+          if (normalizeSubcardId(subcardId) === 'project') {
+            await dependencies.messagesController?.loadGroupThreadsIfNeeded?.();
+          } else {
+            await dependencies.messagesController?.loadDirectThreadsIfNeeded?.();
+          }
+          break;
+        case 'services':
+          await dependencies.catalogController?.loadServicesIfNeeded?.();
+          break;
+        case 'stock':
+          await dependencies.catalogController?.loadMaterialsIfNeeded?.();
+          break;
+        case 'crm':
+          await dependencies.peopleController?.loadClientsIfNeeded?.();
+          break;
+        case 'staff':
+          await dependencies.peopleController?.loadStaffIfNeeded?.();
+          break;
+        default:
+          break;
+      }
     };
 
-    const createManagerWorkflowActionButton = (action) => {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = action.variant === 'gold'
-        ? 'btn btn-gold manager-workflow-action'
-        : 'btn btn-outline manager-workflow-action';
-      button.textContent = action.label;
-      button.disabled = typeof action.disabled === 'function' ? action.disabled() : false;
-      button.addEventListener('click', () => {
-        action.run();
-        renderManagerWorkflow();
+    const activateManagerCard = (cardId, { subcardId, updateHash = false, focusNode = null, focusId = '' } = {}) => {
+      const nextCardId = normalizeCardId(cardId);
+      state.activeManagerCard = nextCardId;
+      (el.managerCardPanels || []).forEach((panel) => {
+        const isActive = panel.dataset.managerCardPanel === nextCardId;
+        panel.hidden = !isActive;
+        panel.classList.toggle('is-active', isActive);
       });
-      return button;
+      (el.managerCardLinks || []).forEach((link) => {
+        const isActive = normalizeCardId(link.dataset.managerCardLink) === nextCardId;
+        link.classList.toggle('is-active', isActive);
+      });
+
+      if (nextCardId === 'inbox') {
+        activateInboxSubcard(subcardId, { updateHash: false });
+      }
+
+      if (updateHash) {
+        globalThis.history.replaceState(null, '', buildCardHash(nextCardId, subcardId));
+      }
+
+      const targetFocus = focusNode || (focusId ? document.getElementById(focusId) : null);
+      if (targetFocus && typeof targetFocus.focus === 'function') {
+        globalThis.setTimeout(() => targetFocus.focus({ preventScroll: true }), 140);
+      }
+
+      loadManagerCardData(nextCardId, subcardId).catch(() => {});
+    };
+
+    const getOverviewMetrics = () => state.overviewSummary?.metrics || {};
+
+    const getCardBadge = (cardId) => {
+      const metrics = getOverviewMetrics();
+      switch (normalizeCardId(cardId)) {
+        case 'overview':
+          return 'Home';
+        case 'projects':
+          return `${state.projectsPagination.total || metrics.projectCount || state.projects.length || 0} live`;
+        case 'quotes':
+          return `${state.quotesPagination.total || metrics.quoteCount || state.quotes.length || 0} in queue`;
+        case 'estimates':
+          return `${state.estimates.length || 0} loaded`;
+        case 'inbox':
+          return `${(state.directThreads.length || 0) + (state.groupThreads.length || 0)} threads`;
+        case 'website':
+          return 'SEO / content';
+        case 'services':
+          return `${state.servicesPagination.total || state.services.length || metrics.publicServiceCount || 0} live`;
+        case 'stock':
+          return `${state.materialsPagination.total || state.materials.length || metrics.lowStockMaterialCount || 0} lines`;
+        case 'crm':
+          return `${metrics.clientCount || state.clients.length || 0} clients`;
+        case 'staff':
+          return `${metrics.staffCount || state.staff.length || 0} staff`;
+        default:
+          return '';
+      }
+    };
+
+    const renderOverviewList = (container, items, emptyText) => {
+      if (!container) return;
+      container.innerHTML = '';
+      if (!items.length) {
+        const text = document.createElement('p');
+        text.className = 'muted';
+        text.textContent = emptyText;
+        container.appendChild(text);
+        return;
+      }
+
+      const fragment = document.createDocumentFragment();
+      items.forEach((item) => fragment.appendChild(createOverviewEntry(item)));
+      container.appendChild(fragment);
+    };
+
+    const renderOverviewMetrics = () => {
+      const summary = state.overviewSummary || null;
+      const metrics = summary?.metrics || {};
+      const unreadInboxCount = Number(metrics.projectThreadCount || 0) + Number(metrics.directThreadCount || 0);
+      const draftOrSentEstimates = state.estimates.filter((estimate) => {
+        const status = String(estimate.status || '').toLowerCase();
+        return status === 'draft' || status === 'sent';
+      }).length;
+      const crmOpenCount = Number(metrics.clientCount || 0) + Number(metrics.staffCount || 0);
+
+      if (el.managerOverviewActiveProjects) el.managerOverviewActiveProjects.textContent = String(metrics.activeProjectCount || state.projects.length || 0);
+      if (el.managerOverviewOpenQuotes) el.managerOverviewOpenQuotes.textContent = String(metrics.openQuoteCount || state.quotes.length || 0);
+      if (el.managerOverviewEstimates) el.managerOverviewEstimates.textContent = String(draftOrSentEstimates || state.estimates.length || 0);
+      if (el.managerOverviewUnreadInbox) el.managerOverviewUnreadInbox.textContent = String(unreadInboxCount);
+      if (el.managerOverviewLowStock) el.managerOverviewLowStock.textContent = String(metrics.lowStockMaterialCount || 0);
+      if (el.managerOverviewCrmOpen) el.managerOverviewCrmOpen.textContent = String(crmOpenCount);
+
+      const dueProjects = [...(summary?.projects || state.projects || [])]
+        .filter((project) => project?.dueDate || project?.endDate)
+        .sort((left, right) => {
+          const leftDate = Date.parse(left.dueDate || left.endDate || 0) || Number.MAX_SAFE_INTEGER;
+          const rightDate = Date.parse(right.dueDate || right.endDate || 0) || Number.MAX_SAFE_INTEGER;
+          return leftDate - rightDate;
+        })
+        .slice(0, 4)
+        .map((project) => ({
+          title: project.title || 'Project',
+          detail: `${titleCase(project.status || 'planning')} | ${titleCase(project.projectStage || 'briefing')}`,
+          meta: [
+            project.location || '',
+            project.dueDate ? `Due ${formatDateTime(project.dueDate)}` : '',
+            project.assignedManager?.email ? `Owner ${project.assignedManager.email}` : ''
+          ].filter(Boolean).join(' | ')
+        }));
+
+      const priorityQuotes = [...(summary?.quotes || state.quotes || [])]
+        .sort((left, right) => {
+          const priorityScore = { high: 0, medium: 1, low: 2 };
+          return (priorityScore[String(left.priority || '').toLowerCase()] ?? 3) - (priorityScore[String(right.priority || '').toLowerCase()] ?? 3);
+        })
+        .slice(0, 2)
+        .map((quote) => ({
+          title: `${titleCase(quote.projectType || 'quote')} quote`,
+          detail: `${titleCase(quote.workflowStatus || quote.status || 'submitted')} | ${titleCase(quote.priority || 'medium')} priority`,
+          meta: [
+            quote.location || '',
+            quote.budgetRange ? `Budget ${quote.budgetRange}` : '',
+            quote.assignedManager?.email ? `Owner ${quote.assignedManager.email}` : 'Unassigned'
+          ].filter(Boolean).join(' | ')
+        }));
+
+      const lowStockItems = [...(summary?.lowStockMaterials || [])]
+        .slice(0, 2)
+        .map((material) => ({
+          title: material.name || 'Material',
+          detail: `Low stock | ${material.category || 'Uncategorised'}`,
+          meta: [
+            material.supplier || '',
+            `${material.stockQty || 0}/${material.minStockQty || 0}`
+          ].filter(Boolean).join(' | ')
+        }));
+
+      const notificationItems = [...(summary?.notifications || [])]
+        .slice(0, 2)
+        .map((notification) => ({
+          title: notification.title || 'Notification',
+          detail: notification.body || notification.type || 'Unread update',
+          meta: formatDateTime(notification.createdAt) || ''
+        }));
+
+      renderOverviewList(
+        el.managerOverviewDueList,
+        dueProjects,
+        'Project deadlines and estimate response dates will appear here.'
+      );
+      renderOverviewList(
+        el.managerOverviewPriorityList,
+        [...priorityQuotes, ...lowStockItems, ...notificationItems].slice(0, 4),
+        'Projects, estimates and CRM routes needing action will appear here.'
+      );
+    };
+
+    const loadOverviewSummary = async () => {
+      try {
+        const payload = await api('/api/v2/overview');
+        state.overviewSummary = payload?.overview || null;
+      } catch (error) {
+        state.overviewSummary = null;
+      }
     };
 
     const renderManagerWorkflow = () => {
-      const selectedDomain = getSelectedManagerDomain();
-      state.selectedManagerDomain = selectedDomain;
-      updateManagerDomainButtonStates(selectedDomain);
-      updateManagerDomainSectionVisibility(selectedDomain);
-
-      const config = MANAGER_DOMAIN_CONFIG[selectedDomain];
-      if (el.managerWorkflowDescription) {
-        el.managerWorkflowDescription.textContent = config.description;
-      }
-      if (!el.managerWorkflowActions) return;
-
-      el.managerWorkflowActions.replaceChildren();
-      const actionsFragment = document.createDocumentFragment();
-      config.actions.forEach((action) => actionsFragment.appendChild(createManagerWorkflowActionButton(action)));
-      el.managerWorkflowActions.appendChild(actionsFragment);
+      const cardEntries = Object.entries(CARD_CONFIG);
+      el.managerQuickAccessNav.replaceChildren();
+      const fragment = document.createDocumentFragment();
+      cardEntries.forEach(([cardId, config]) => {
+        const link = document.createElement('a');
+        link.href = buildCardHash(cardId);
+        link.className = `manager-quick-access-link ${state.activeManagerCard === cardId ? 'is-active' : ''}`.trim();
+        link.dataset.managerCardLink = cardId;
+        const heading = document.createElement('strong');
+        heading.textContent = config.label;
+        const detail = document.createElement('span');
+        detail.textContent = config.description;
+        const meta = document.createElement('small');
+        meta.textContent = getCardBadge(cardId);
+        link.appendChild(heading);
+        link.appendChild(detail);
+        link.appendChild(meta);
+        fragment.appendChild(link);
+      });
+      el.managerQuickAccessNav.appendChild(fragment);
+      el.managerCardLinks = Array.from(document.querySelectorAll('[data-manager-card-link]'));
+      activateManagerCard(state.activeManagerCard, { subcardId: state.activeManagerSubcard, updateHash: false });
     };
 
     const getRecentProjects = () => (
@@ -310,6 +557,95 @@
       });
     };
 
+    const focusManagerTarget = (targetId) => {
+      const target = document.getElementById(String(targetId || '').trim());
+      if (!target) return;
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (typeof target.focus === 'function') {
+        globalThis.setTimeout(() => target.focus({ preventScroll: true }), 120);
+      }
+    };
+
+    const applyManagerSearchRoute = async (rawQuery) => {
+      const query = String(rawQuery || '').trim();
+      if (!query) {
+        setSmallStatus(el.managerGlobalSearchStatus, 'Type a project, quote, client or stock query.', '');
+        return;
+      }
+
+      const [prefixRaw, ...rest] = query.split(':');
+      const normalizedPrefix = String(prefixRaw || '').trim().toLowerCase();
+      const hasPrefix = rest.length > 0;
+      const value = (hasPrefix ? rest.join(':') : query).trim();
+
+      if (!value) {
+        setSmallStatus(el.managerGlobalSearchStatus, 'Search text cannot be empty.', 'error');
+        return;
+      }
+
+      const routeMap = {
+        quote: async () => {
+          state.quotesQuery.q = value;
+          if (el.quotesFilterQ) el.quotesFilterQ.value = value;
+          await dependencies.quotesController?.loadQuotes?.();
+          activateManagerCard('quotes', { updateHash: true, focusId: 'manager-quotes-section' });
+        },
+        service: async () => {
+          state.servicesQuery.q = value;
+          if (el.servicesFilterQ) el.servicesFilterQ.value = value;
+          if (dependencies.catalogController?.loadServices) {
+            await dependencies.catalogController.loadServices();
+          } else {
+            await dependencies.catalogController?.loadServicesIfNeeded?.();
+          }
+          activateManagerCard('services', { updateHash: true, focusId: 'manager-services-section' });
+        },
+        stock: async () => {
+          state.materialsQuery.q = value;
+          if (el.materialsFilterQ) el.materialsFilterQ.value = value;
+          if (dependencies.catalogController?.loadMaterials) {
+            await dependencies.catalogController.loadMaterials();
+          } else {
+            await dependencies.catalogController?.loadMaterialsIfNeeded?.();
+          }
+          activateManagerCard('stock', { updateHash: true, focusId: 'manager-materials-section' });
+        },
+        client: async () => {
+          state.clientsQuery.q = value;
+          if (el.clientsFilterQ) el.clientsFilterQ.value = value;
+          if (dependencies.peopleController?.loadClients) {
+            await dependencies.peopleController.loadClients();
+          } else {
+            await dependencies.peopleController?.loadClientsIfNeeded?.();
+          }
+          activateManagerCard('crm', { updateHash: true, focusId: 'manager-clients-section' });
+        },
+        staff: async () => {
+          state.staffQuery.q = value;
+          if (el.staffFilterQ) el.staffFilterQ.value = value;
+          if (dependencies.peopleController?.loadStaff) {
+            await dependencies.peopleController.loadStaff();
+          } else {
+            await dependencies.peopleController?.loadStaffIfNeeded?.();
+          }
+          activateManagerCard('staff', { updateHash: true, focusId: 'manager-staff-section' });
+        },
+        default: async () => {
+          state.projectsQuery.q = value;
+          if (el.projectsFilterQ) el.projectsFilterQ.value = value;
+          await dependencies.loadProjects?.();
+          activateManagerCard('projects', { updateHash: true, focusId: 'manager-projects-section' });
+        }
+      };
+
+      const handler = hasPrefix && routeMap[normalizedPrefix]
+        ? routeMap[normalizedPrefix]
+        : routeMap.default;
+
+      await handler();
+      setSmallStatus(el.managerGlobalSearchStatus, `Showing results for "${value}".`, 'success');
+    };
+
     const getAvailableOptionDetail = (key) => {
       switch (key) {
         case 'createProject':
@@ -443,7 +779,9 @@
     const renderOperationsShell = () => {
       renderCompanyEvents();
       renderMailboxOverview();
+      renderOverviewMetrics();
       renderAvailableOptions();
+      renderManagerWorkflow();
     };
 
     const renderSession = () => {
@@ -673,12 +1011,14 @@
           return;
         }
         renderSession();
-        renderManagerWorkflow();
         applyManagerSeedPermissions(role);
         await dependencies.loadProjects?.();
+        await loadOverviewSummary();
         await warmMailboxOverview();
         renderOperationsShell();
         setupLazySections(role);
+        const { cardId, subcardId, focusId } = parseManagerHash();
+        activateManagerCard(cardId, { subcardId, focusId, updateHash: false });
       } catch (error) {
         clearSession();
         redirectToManagerLogin(error.message || 'Session expired. Redirecting to login...', loginUrl);
@@ -735,10 +1075,8 @@
 
     const bindManagerDomainButtons = () => {
       (managerDomainButtons || []).forEach((button) => {
-        button.addEventListener('click', () => {
-          state.selectedManagerDomain = button.dataset.managerDomainChoice || 'projects';
-          renderManagerWorkflow();
-        });
+        button.disabled = true;
+        button.hidden = true;
       });
     };
 
@@ -751,6 +1089,7 @@
         refreshTasks.push(dependencies.loadProjects?.());
       }
 
+      refreshTasks.push(loadOverviewSummary());
       refreshTasks.push(dependencies.catalogController?.refreshAfterSeed(stats));
 
       if (refreshTasks.length) {
@@ -789,6 +1128,51 @@
       bindProjectAutocompleteInputs();
       bindMessagingAutocompleteInputs();
       bindManagerDomainButtons();
+      el.managerGlobalSearchForm?.addEventListener('submit', (event) => {
+        event.preventDefault();
+        applyManagerSearchRoute(el.managerGlobalSearch?.value || '').catch((error) => {
+          setSmallStatus(el.managerGlobalSearchStatus, error.message || 'Search failed.', 'error');
+        });
+      });
+      (el.managerCardLinks || []).forEach((link) => {
+        link.addEventListener('click', (event) => {
+          event.preventDefault();
+          activateManagerCard(link.dataset.managerCardLink, { updateHash: true });
+        });
+      });
+      (el.managerCardJumpButtons || []).forEach((button) => {
+        button.addEventListener('click', () => {
+          activateManagerCard(button.dataset.managerCardJump, {
+            updateHash: true,
+            focusId: button.dataset.managerCardFocus || ''
+          });
+        });
+      });
+      (el.managerCardFocusButtons || []).forEach((button) => {
+        button.addEventListener('click', () => {
+          const focusId = button.dataset.managerCardFocus || '';
+          if (focusId) {
+            focusManagerTarget(focusId);
+          }
+        });
+      });
+      (el.managerSubcardLinks || []).forEach((button) => {
+        button.addEventListener('click', () => {
+          activateManagerCard('inbox', {
+            subcardId: button.dataset.managerSubcardLink,
+            updateHash: true
+          });
+        });
+      });
+      globalThis.addEventListener('hashchange', () => {
+        const { cardId, subcardId, focusId } = parseManagerHash();
+        activateManagerCard(cardId, { subcardId, focusId, updateHash: false });
+      });
+      el.managerRailToggle?.addEventListener('click', () => {
+        const isCollapsed = el.managerQuickAccessNav.classList.toggle('is-collapsed');
+        el.managerAvailableOptions.classList.toggle('is-collapsed', isCollapsed);
+        el.managerRailToggle.setAttribute('aria-expanded', String(!isCollapsed));
+      });
       el.seedBtn.addEventListener('click', handleSeedClick);
       el.logout.addEventListener('click', handleManagerLogout);
     };

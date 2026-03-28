@@ -114,9 +114,11 @@
       return row;
     };
 
-    const buildServiceUpdatePayload = ({ title, shortDescription, order, publicCheck }) => ({
+    const buildServiceUpdatePayload = ({ title, shortDescription, summaryLine, serviceCtaLabel, order, publicCheck }) => ({
       title: title.value.trim(),
       shortDescription: shortDescription.value.trim(),
+      summaryLine: summaryLine.value.trim(),
+      serviceCtaLabel: serviceCtaLabel.value.trim(),
       displayOrder: parseIntegerInput(order.value),
       showOnWebsite: publicCheck.checked
     });
@@ -159,14 +161,16 @@
     const createServiceCard = (service) => {
       const card = document.createElement('article');
       card.className = 'dashboard-item';
-      card.innerHTML = `<h3>${escapeHtml(service.title)}</h3><p class="muted">${escapeHtml(service.slug)} | ${escapeHtml(service.category)} | order ${escapeHtml(service.displayOrder)} | ${service.showOnWebsite ? 'public' : 'hidden'}</p>`;
+      card.innerHTML = `<h3>${escapeHtml(service.title)}</h3><p class="muted">${escapeHtml(service.slug)} | ${escapeHtml(service.category)} | order ${escapeHtml(service.displayOrder)} | ${service.showOnWebsite ? 'public' : 'hidden'} | CTA ${escapeHtml(service.serviceCtaLabel || 'Send Enquiry')}</p>`;
 
       const row = createCatalogEditRow();
       const title = createTextInput('Service title', service.title || '');
       const shortDescription = createTextInput('Short description', service.shortDescription || '');
+      const summaryLine = createTextInput('Summary line', service.summaryLine || '');
+      const serviceCtaLabel = createTextInput('CTA label', service.serviceCtaLabel || 'Send Enquiry');
       const order = createNumberInput(Number.isFinite(service.displayOrder) ? service.displayOrder : 0);
       const { field: publicField, input: publicCheck } = createCheckboxField('Visibility', 'Show on website', service.showOnWebsite);
-      const fields = { title, shortDescription, order, publicCheck };
+      const fields = { title, shortDescription, summaryLine, serviceCtaLabel, order, publicCheck };
 
       const save = createButton('Save', 'btn btn-gold');
       save.addEventListener('click', () => {
@@ -180,6 +184,8 @@
 
       row.appendChild(createControlField('Title', title));
       row.appendChild(createControlField('Summary', shortDescription));
+      row.appendChild(createControlField('Summary Line', summaryLine));
+      row.appendChild(createControlField('CTA Label', serviceCtaLabel));
       row.appendChild(createControlField('Display Order', order));
       row.appendChild(publicField);
       row.appendChild(createEditActions([save, del]));
@@ -189,11 +195,14 @@
 
     const getMaterialStockState = (material) => Number(material.stockQty) <= Number(material.minStockQty);
 
-    const buildMaterialUpdatePayload = ({ stock, minStock, unitCost, supplier }) => ({
+    const buildMaterialUpdatePayload = ({ stock, minStock, reorderTarget, unitCost, supplier, supplierContact, lastRestockedAt }) => ({
       stockQty: parseDecimalInput(stock.value),
       minStockQty: parseDecimalInput(minStock.value),
+      reorderTargetQty: parseDecimalInput(reorderTarget.value),
       unitCost: unitCost.value ? Number(unitCost.value) : null,
-      supplier: supplier.value.trim()
+      supplier: supplier.value.trim(),
+      supplierContact: supplierContact.value.trim(),
+      lastRestockedAt: lastRestockedAt.value || null
     });
 
     const confirmMaterialDeletion = (material) => globalThis.confirm(`Delete material "${material.name}"?`);
@@ -235,14 +244,19 @@
       const lowStock = getMaterialStockState(material);
       const card = document.createElement('article');
       card.className = 'dashboard-item';
-      card.innerHTML = `<h3>${escapeHtml(material.name)}</h3><p class="muted">${escapeHtml(material.category)} | SKU: ${escapeHtml(material.sku || '-')} | stock ${escapeHtml(material.stockQty)}/${escapeHtml(material.minStockQty)} | ${lowStock ? 'LOW STOCK' : 'OK'}</p>`;
+      card.innerHTML = `<h3>${escapeHtml(material.name)}</h3><p class="muted">${escapeHtml(material.category)} | SKU: ${escapeHtml(material.sku || '-')} | stock ${escapeHtml(material.stockQty)}/${escapeHtml(material.minStockQty)} | reorder ${escapeHtml(material.reorderTargetQty ?? material.minStockQty ?? 0)} | ${lowStock ? 'LOW STOCK' : 'OK'}</p>`;
 
       const row = createCatalogEditRow();
       const stock = createNumberInput(material.stockQty ?? 0, { step: '0.01' });
       const minStock = createNumberInput(material.minStockQty ?? 0, { step: '0.01' });
+      const reorderTarget = createNumberInput(material.reorderTargetQty ?? material.minStockQty ?? 0, { step: '0.01' });
       const unitCost = createNumberInput(material.unitCost ?? '', { step: '0.01' });
       const supplier = createTextInput('Supplier', material.supplier || '');
-      const fields = { stock, minStock, unitCost, supplier };
+      const supplierContact = createTextInput('Supplier contact', material.supplierContact || '');
+      const lastRestockedAt = document.createElement('input');
+      lastRestockedAt.type = 'date';
+      lastRestockedAt.value = material.lastRestockedAt ? String(material.lastRestockedAt).slice(0, 10) : '';
+      const fields = { stock, minStock, reorderTarget, unitCost, supplier, supplierContact, lastRestockedAt };
 
       const save = createButton('Save', 'btn btn-gold');
       save.addEventListener('click', () => {
@@ -256,8 +270,11 @@
 
       row.appendChild(createControlField('Stock Qty', stock));
       row.appendChild(createControlField('Min Stock', minStock));
+      row.appendChild(createControlField('Reorder Target', reorderTarget));
       row.appendChild(createControlField('Unit Cost', unitCost));
       row.appendChild(createControlField('Supplier', supplier));
+      row.appendChild(createControlField('Supplier Contact', supplierContact));
+      row.appendChild(createControlField('Last Restocked', lastRestockedAt));
       row.appendChild(createEditActions([save, del]));
       card.appendChild(row);
       return card;
@@ -446,7 +463,9 @@
         category: String(f.category.value || 'other'),
         basePriceFrom: f.basePriceFrom.value ? Number(f.basePriceFrom.value) : null,
         shortDescription: String(f.shortDescription.value || '').trim(),
+        summaryLine: String(f.summaryLine.value || '').trim(),
         heroImageUrl: String(f.heroImageUrl.value || '').trim(),
+        serviceCtaLabel: String(f.serviceCtaLabel.value || '').trim(),
         displayOrder: Number.parseInt(f.displayOrder.value, 10) || 0,
         showOnWebsite: Boolean(f.showOnWebsite.checked),
         isFeatured: Boolean(f.isFeatured.checked)
@@ -468,6 +487,7 @@
           el.serviceCreateForm.reset();
           f.category.value = 'bathroom';
           f.displayOrder.value = '0';
+          f.serviceCtaLabel.value = 'Send Enquiry';
           f.showOnWebsite.checked = true;
           state.servicesQuery.page = 1;
           state.lazyLoaded.services = true;
@@ -487,8 +507,11 @@
         unit: String(f.unit.value || 'pcs').trim() || 'pcs',
         stockQty: Number(f.stockQty.value || 0),
         minStockQty: Number(f.minStockQty.value || 0),
+        reorderTargetQty: Number(f.reorderTargetQty.value || 0),
         unitCost: f.unitCost.value ? Number(f.unitCost.value) : null,
         supplier: String(f.supplier.value || '').trim(),
+        supplierContact: String(f.supplierContact.value || '').trim(),
+        lastRestockedAt: f.lastRestockedAt.value || null,
         notes: String(f.notes.value || '').trim()
       };
       if (!payload.name) {
@@ -510,6 +533,7 @@
           f.unit.value = 'pcs';
           f.stockQty.value = '0';
           f.minStockQty.value = '0';
+          f.reorderTargetQty.value = '0';
           state.materialsQuery.page = 1;
           state.lazyLoaded.materials = true;
           await refreshMaterials();

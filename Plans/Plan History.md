@@ -30,3 +30,4 @@
 - 2026-03-27 20:59 | Manager Header Quick Access Persistence On Workspace | Plans/Manager Header Quick Access Persistence On Workspace.md
 - 2026-03-27 22:05 | Structured Public Quote Intake And Phased Quote Form | Plans/Structured Public Quote Intake And Phased Quote Form.md
 - 2026-03-27 22:34 | 2 Aplikacje Mobilne Android Dla Level Lines | Plans/2 Aplikacje Mobilne Android Dla Level Lines.md
+- 2026-03-28 01:11 | Nowy Wygląd Manager Workspace Z Kartami, Quick Access I Polami Operacyjnymi | Plans/Nowy Wygląd Manager Workspace Z Kartami, Quick Access I Polami Operacyjnymi.md

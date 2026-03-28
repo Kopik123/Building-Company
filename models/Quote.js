@@ -118,6 +118,14 @@ const Quote = sequelize.define('Quote', {
     type: DataTypes.DATE,
     allowNull: true
   },
+  nextActionAt: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  responseDeadline: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
   closedAt: {
     type: DataTypes.DATE,
     allowNull: true

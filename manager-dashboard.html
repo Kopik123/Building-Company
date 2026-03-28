@@ -16,20 +16,37 @@
   <link rel="stylesheet" href="/styles/workspace.css" />
 </head>
 <body class="public-site workspace-site page-manager-dashboard">
-      <header class="site-header site-header--public-shell" id="top">
-    <div class="container public-shell-header">
-      <div class="public-brand-board">
-        <a class="public-brand-link" href="/index.html" aria-label="Level Lines Studio home">
+  <header class="site-header site-header--public-shell manager-app-header" id="top">
+    <div class="container manager-app-header__inner">
+      <div class="manager-app-brand">
+        <a class="public-brand-link manager-app-brand-link" href="/index.html" aria-label="Level Lines Studio home">
           <picture class="public-brand-picture">
             <source type="image/avif" srcset="/assets/optimized/brand/title.avif" />
             <source type="image/webp" srcset="/assets/optimized/brand/title.webp" />
             <img src="/assets/optimized/brand/title.png" alt="Level Lines Studio" class="public-brand-title-image" width="1536" height="232" decoding="async" />
           </picture>
         </a>
+        <div class="manager-app-brand-copy">
+          <p class="section-eyebrow section-eyebrow--compact">Manager Workspace</p>
+          <p class="manager-app-brand-note">Operational control, quote review, delivery tracking and studio communication under one brand shell.</p>
+        </div>
       </div>
-      <div class="public-shell-controls">
-        <button class="public-auth-toggle" type="button" data-auth-toggle aria-expanded="false" aria-controls="public-auth-panel">
-          <span class="public-auth-toggle-label">Login</span>
+      <div class="public-shell-controls manager-app-header-controls">
+        <form id="manager-global-search-form" class="manager-app-search" role="search">
+          <label class="manager-app-search-label" for="manager-global-search">Quick search</label>
+          <div class="manager-app-search-field">
+            <input id="manager-global-search" name="q" type="search" placeholder="Search projects, quotes, clients or materials..." autocomplete="off" />
+            <button type="submit" class="btn btn-outline">Go</button>
+          </div>
+          <p class="manager-app-search-status muted" id="manager-global-search-status" aria-live="polite"></p>
+        </form>
+        <div class="manager-app-utility-links">
+          <a class="btn btn-outline" href="#overview" data-manager-card-link="overview">Overview</a>
+          <a class="btn btn-outline" href="#inbox" data-manager-card-link="inbox">Inbox</a>
+          <a class="btn btn-outline" href="/auth.html" data-account-settings-link data-auth-user-only>Account</a>
+        </div>
+        <button class="public-auth-toggle manager-app-auth-toggle" type="button" data-auth-toggle aria-expanded="false" aria-controls="public-auth-panel">
+          <span class="public-auth-toggle-label">Account</span>
         </button>
         <section class="public-auth-panel" id="public-auth-panel" data-auth-panel aria-label="Studio login">
           <form class="public-inline-login-form" data-inline-login-form data-auth-guest-only novalidate>
@@ -47,16 +64,15 @@
           </div>
           <p class="form-status public-inline-login-status" data-inline-login-status aria-live="polite"></p>
         </section>
-        <div class="public-shell-nav menu-wrap" data-menu-wrap>
+        <div class="public-shell-nav menu-wrap manager-app-menu" data-menu-wrap>
           <button class="nav-toggle public-menu-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation menu">
             <span class="public-menu-toggle-label">Menu</span>
             <span class="nav-toggle-line"></span>
             <span class="nav-toggle-line"></span>
             <span class="nav-toggle-line"></span>
           </button>
-          <nav class="site-nav site-nav--public-shell" id="site-nav" data-nav-menu aria-label="Main navigation" hidden aria-hidden="true">
+          <nav class="site-nav site-nav--public-shell manager-app-nav" id="site-nav" data-nav-menu aria-label="Main navigation" hidden aria-hidden="true">
             <a href="/index.html" data-nav-link>Home</a>
-            <a href="/about.html" data-nav-link>About</a>
             <a href="/services.html" data-nav-link>Services</a>
             <a href="/gallery.html" data-nav-link>Gallery</a>
             <a href="/quote.html" data-nav-link>Quote</a>
@@ -67,427 +83,906 @@
       </div>
     </div>
   </header>
-
-  <main class="workspace-main dashboard-shell workspace-shell">
-    <section class="section workspace-hero-shell">
-      <div class="container">
-        <div class="workspace-operations-board">
-          <div class="workspace-operations-heading">
-            <p class="section-eyebrow">Operations</p>
-            <h1>Project control, recent movement and studio communication in one shell.</h1>
-            <p class="section-lead">Current activity, management routes and studio communication stay aligned without leaving the dashboard.</p>
+  <main class="workspace-main dashboard-shell workspace-shell manager-workspace-shell">
+    <section class="section workspace-content-shell manager-workspace-shell-section">
+      <div class="container manager-workspace-layout">
+        <aside class="manager-quick-rail card surface-card surface-card--dark" aria-label="Quick access">
+          <div class="manager-quick-rail-top">
+            <div>
+              <p class="workspace-card-label">Workspace shell</p>
+              <h1>Quick Access</h1>
+            </div>
+            <p id="dashboard-session" class="workspace-session-inline">Checking session...</p>
           </div>
-
-          <div class="workspace-operations-grid">
-            <section class="workspace-operations-card surface-card surface-card--dark" aria-labelledby="manager-company-events-heading">
-              <div class="workspace-operations-card-top">
-                <p class="workspace-card-label">Operational feed</p>
-                <h2 id="manager-company-events-heading">Company Events</h2>
-              </div>
-              <p class="workspace-operations-copy">Current project, quote and estimate movement across the studio.</p>
-              <div id="manager-company-events-list" class="workspace-operations-list" aria-live="polite">
-                <p class="muted">Loading current activity...</p>
-              </div>
-            </section>
-
-            <section class="workspace-operations-card surface-card surface-card--dark" aria-labelledby="manager-mailbox-heading">
-              <div class="workspace-operations-card-top">
-                <p class="workspace-card-label">Communication</p>
-                <h2 id="manager-mailbox-heading">Mail Box</h2>
-              </div>
-              <p class="workspace-operations-copy">Private client threads and project chat stay separated, with the latest routes visible here.</p>
-              <div class="workspace-mailbox-metrics" aria-label="Mailbox summary counts">
-                <article class="workspace-mailbox-stat">
-                  <span class="workspace-mailbox-stat-label">Private</span>
-                  <strong id="manager-mailbox-private-count">0</strong>
-                </article>
-                <article class="workspace-mailbox-stat">
-                  <span class="workspace-mailbox-stat-label">Project</span>
-                  <strong id="manager-mailbox-project-count">0</strong>
-                </article>
-              </div>
-              <div class="workspace-mailbox-grid">
-                <div class="workspace-mailbox-column">
-                  <p class="workspace-card-label">Private Inbox</p>
-                  <div id="manager-mailbox-private-preview" class="workspace-mailbox-preview" aria-live="polite">
-                    <p class="muted">Loading private threads...</p>
-                  </div>
-                  <a class="btn btn-outline btn-block" href="#manager-private-inbox">Open private inbox</a>
-                </div>
-                <div class="workspace-mailbox-column">
-                  <p class="workspace-card-label">Project Chat</p>
-                  <div id="manager-mailbox-project-preview" class="workspace-mailbox-preview" aria-live="polite">
-                    <p class="muted">Loading project threads...</p>
-                  </div>
-                  <a class="btn btn-outline btn-block" href="#manager-project-chat">Open project chat</a>
-                </div>
-              </div>
-            </section>
-
-            <section class="workspace-operations-card workspace-operations-card--wide surface-card surface-card--dark" aria-labelledby="manager-options-heading">
-              <div class="workspace-operations-card-top">
-                <div>
-                  <p class="workspace-card-label">Account Panel</p>
-                  <h2 id="manager-options-heading">Quick Access</h2>
-                </div>
-                <p id="dashboard-session" class="workspace-session-inline">Checking session...</p>
-              </div>
-              <p class="workspace-operations-copy">Move between project delivery, pricing, services, storage, people and communication without losing the current shell.</p>
-              <div id="manager-available-options" class="workspace-operations-options" aria-live="polite"></div>
-              <div class="dashboard-session-actions workspace-session-actions">
-                <button type="button" class="btn btn-outline" id="dashboard-seed-btn">Run starter seed</button>
-                <a class="btn btn-outline" href="/auth.html" data-account-settings-link data-auth-user-only>Account Settings</a>
-                <button type="button" class="btn btn-outline" id="dashboard-logout" data-auth-user-only>Log out</button>
-              </div>
-              <p class="form-status" id="dashboard-seed-status" aria-live="polite"></p>
-            </section>
+          <p class="manager-quick-rail-copy">Move between delivery, pricing, website content, stock, clients and chat without losing the current operational context.</p>
+          <button type="button" class="btn btn-outline manager-rail-toggle" id="manager-rail-toggle" aria-expanded="true" aria-controls="manager-quick-access-nav">Toggle navigation</button>
+          <nav id="manager-quick-access-nav" class="manager-quick-access-nav" aria-label="Manager cards"></nav>
+          <div id="manager-available-options" class="workspace-operations-options manager-legacy-options" aria-live="polite"></div>
+          <div class="dashboard-session-actions workspace-session-actions manager-quick-rail-actions">
+            <button type="button" class="btn btn-outline" id="dashboard-seed-btn">Run starter seed</button>
+            <a class="btn btn-outline" href="/auth.html" data-account-settings-link data-auth-user-only>Account Settings</a>
+            <button type="button" class="btn btn-outline" id="dashboard-logout" data-auth-user-only>Log out</button>
           </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section section--light workspace-content-shell">
-      <div class="container workspace-stack">
-        <section class="card surface-card surface-card--light manager-workflow-card" id="manager-workflow-card" data-dashboard-mobile-open="true">
-          <div class="manager-workflow-head">
+          <p class="form-status" id="dashboard-seed-status" aria-live="polite"></p>
+        </aside>
+        <div class="manager-stage">
+          <section class="manager-card-panel is-active" data-manager-card-panel="overview" aria-labelledby="manager-overview-title">
+            <div class="manager-card-context card surface-card surface-card--dark">
               <div>
-                <p class="section-eyebrow section-eyebrow--compact">Management flow</p>
-                <h2>Choose area first, then action.</h2>
+                <p class="section-eyebrow section-eyebrow--compact">Operational shell</p>
+                <h2 id="manager-overview-title">Overview</h2>
+                <p class="section-lead">Active projects, quotes, estimates, communication and low-stock routes in one operational entry point.</p>
               </div>
-            <p class="muted" id="manager-workflow-description">Start with projects, materials or services, then jump into create or edit.</p>
-          </div>
-          <div class="manager-workflow-choices" role="tablist" aria-label="Manager workflow areas">
-            <button type="button" class="btn btn-gold manager-workflow-choice" data-manager-domain-choice="projects" aria-pressed="true">Projects</button>
-            <button type="button" class="btn btn-outline manager-workflow-choice" data-manager-domain-choice="materials" aria-pressed="false">Materials / Storage</button>
-            <button type="button" class="btn btn-outline manager-workflow-choice" data-manager-domain-choice="services" aria-pressed="false">Services</button>
-          </div>
-          <div class="manager-workflow-actions" id="manager-workflow-actions" aria-live="polite"></div>
-        </section>
-
-        <div class="dashboard-grid dashboard-manager-top-grid">
-          <section class="card surface-card surface-card--light" id="manager-project-create" data-dashboard-mobile-open="true" data-manager-domain-section="projects">
-            <h2>Create Project</h2>
-            <form id="project-create-form" novalidate>
-              <div class="form-grid">
-                <label>Title
-                  <input type="text" name="title" required />
-                </label>
-                <label>Location
-                  <input type="text" name="location" />
-                </label>
-                <label>Status
-                  <select name="status">
+              <div class="manager-card-actions">
+                <button type="button" class="btn btn-gold" data-manager-card-jump="projects" data-manager-card-focus="manager-project-create">Create Project</button>
+                <button type="button" class="btn btn-outline" data-manager-card-jump="quotes">Review Quotes</button>
+                <button type="button" class="btn btn-outline" data-manager-card-jump="inbox">Open Inbox</button>
+              </div>
+            </div>
+            <div class="manager-kpi-grid">
+              <article class="manager-kpi-card card surface-card surface-card--light"><span class="manager-kpi-label">Active Projects</span><strong id="manager-overview-active-projects">0</strong></article>
+              <article class="manager-kpi-card card surface-card surface-card--light"><span class="manager-kpi-label">Open Quotes</span><strong id="manager-overview-open-quotes">0</strong></article>
+              <article class="manager-kpi-card card surface-card surface-card--light"><span class="manager-kpi-label">Draft / Sent Estimates</span><strong id="manager-overview-estimates">0</strong></article>
+              <article class="manager-kpi-card card surface-card surface-card--light"><span class="manager-kpi-label">Unread Inbox</span><strong id="manager-overview-unread-inbox">0</strong></article>
+              <article class="manager-kpi-card card surface-card surface-card--light"><span class="manager-kpi-label">Low Stock Lines</span><strong id="manager-overview-low-stock">0</strong></article>
+              <article class="manager-kpi-card card surface-card surface-card--light"><span class="manager-kpi-label">Open CRM Tasks</span><strong id="manager-overview-crm-open">0</strong></article>
+            </div>
+            <div class="manager-card-grid manager-card-grid--overview">
+              <section class="card surface-card surface-card--light">
+                <div class="manager-panel-head"><div><p class="workspace-card-label">Operational feed</p><h3 id="manager-company-events-heading">Company Events</h3></div><span class="manager-panel-chip">Live</span></div>
+                <div id="manager-company-events-list" class="workspace-operations-list" aria-live="polite"><p class="muted">Loading current activity...</p></div>
+              </section>
+              <section class="card surface-card surface-card--light">
+                <div class="manager-panel-head"><div><p class="workspace-card-label">Communication</p><h3 id="manager-mailbox-heading">Inbox Summary</h3></div><span class="manager-panel-chip">Messages</span></div>
+                <div class="workspace-mailbox-metrics" aria-label="Mailbox summary counts">
+                  <article class="workspace-mailbox-stat"><span class="workspace-mailbox-stat-label">Private</span><strong id="manager-mailbox-private-count">0</strong></article>
+                  <article class="workspace-mailbox-stat"><span class="workspace-mailbox-stat-label">Project</span><strong id="manager-mailbox-project-count">0</strong></article>
+                </div>
+                <div class="workspace-mailbox-grid">
+                  <div class="workspace-mailbox-column"><p class="workspace-card-label">Private Inbox</p><div id="manager-mailbox-private-preview" class="workspace-mailbox-preview" aria-live="polite"><p class="muted">Loading private threads...</p></div></div>
+                  <div class="workspace-mailbox-column"><p class="workspace-card-label">Project Chat</p><div id="manager-mailbox-project-preview" class="workspace-mailbox-preview" aria-live="polite"><p class="muted">Loading project threads...</p></div></div>
+                </div>
+              </section>
+              <section class="card surface-card surface-card--light"><div class="manager-panel-head"><div><p class="workspace-card-label">Next actions</p><h3>Due Dates</h3></div><span class="manager-panel-chip">Schedule</span></div><div id="manager-overview-due-list" class="workspace-operations-list" aria-live="polite"><p class="muted">Project deadlines and estimate response dates will appear here.</p></div></section>
+              <section class="card surface-card surface-card--light"><div class="manager-panel-head"><div><p class="workspace-card-label">Readiness</p><h3>Attention Queue</h3></div><span class="manager-panel-chip">Priority</span></div><div id="manager-overview-priority-list" class="workspace-operations-list" aria-live="polite"><p class="muted">Projects, estimates and CRM routes needing action will appear here.</p></div></section>
+            </div>
+          </section>
+          <section class="manager-card-panel" data-manager-card-panel="projects" aria-labelledby="manager-projects-title" hidden>
+            <div class="manager-card-context card surface-card surface-card--dark">
+              <div>
+                <p class="section-eyebrow section-eyebrow--compact">Delivery control</p>
+                <h2 id="manager-projects-title">Projects</h2>
+                <p class="section-lead">Create, assign, schedule and surface delivery detail without leaving the workspace shell.</p>
+              </div>
+              <div class="manager-card-actions">
+                <button type="button" class="btn btn-gold" data-manager-card-focus="manager-project-create">New brief</button>
+                <button type="button" class="btn btn-outline" data-manager-card-focus="project-editor-card">Open editor</button>
+              </div>
+            </div>
+            <div class="manager-card-grid manager-card-grid--work">
+              <section class="card surface-card surface-card--light manager-editor-card" id="manager-project-create">
+                <div class="manager-panel-head"><div><p class="workspace-card-label">Create</p><h3>New Project Brief</h3></div><span class="manager-panel-chip">Live</span></div>
+                <form id="project-create-form" novalidate>
+                  <div class="form-grid">
+                    <label>Title
+                      <input type="text" name="title" required />
+                    </label>
+                    <label>Location
+                      <input type="text" name="location" />
+                    </label>
+                    <label>Status
+                      <select name="status">
+                        <option value="planning">Planning</option>
+                        <option value="in_progress">In progress</option>
+                        <option value="completed">Completed</option>
+                        <option value="on_hold">On hold</option>
+                      </select>
+                    </label>
+                    <label>Stage
+                      <select name="projectStage">
+                        <option value="briefing">Briefing</option>
+                        <option value="scope_locked">Scope locked</option>
+                        <option value="procurement">Procurement</option>
+                        <option value="site_prep">Site prep</option>
+                        <option value="installation">Installation</option>
+                        <option value="finishing">Finishing</option>
+                        <option value="handover">Handover</option>
+                        <option value="aftercare">Aftercare</option>
+                      </select>
+                    </label>
+                    <label>Quote ID (optional)
+                      <input type="text" name="quoteId" placeholder="UUID" />
+                    </label>
+                    <label>Budget estimate
+                      <input type="text" name="budgetEstimate" />
+                    </label>
+                    <label>Current milestone
+                      <input type="text" name="currentMilestone" placeholder="Survey booked / deposit cleared" />
+                    </label>
+                    <label>Work package
+                      <input type="text" name="workPackage" placeholder="Bathroom fit / Kitchen joinery" />
+                    </label>
+                    <label>Start date
+                      <input type="date" name="startDate" />
+                    </label>
+                    <label>End date
+                      <input type="date" name="endDate" />
+                    </label>
+                    <label>Due date
+                      <input type="date" name="dueDate" />
+                    </label>
+                    <label>Gallery order
+                      <input type="number" name="galleryOrder" value="0" />
+                    </label>
+                    <label class="span-2">Client email
+                      <div class="dashboard-search-row">
+                        <input type="email" name="clientEmail" placeholder="client@email.com" list="project-create-client-suggestions" autocomplete="off" />
+                      </div>
+                      <datalist id="project-create-client-suggestions"></datalist>
+                      <small class="muted" id="project-create-client-lookup-status"></small>
+                    </label>
+                    <label class="span-2">Assigned staff email
+                      <div class="dashboard-search-row">
+                        <input type="email" name="assignedManagerEmail" placeholder="manager@email.com" list="project-create-manager-suggestions" autocomplete="off" />
+                      </div>
+                      <datalist id="project-create-manager-suggestions"></datalist>
+                      <small class="muted" id="project-create-manager-lookup-status"></small>
+                    </label>
+                    <label class="span-2">Description
+                      <textarea name="description" rows="4"></textarea>
+                    </label>
+                    <label class="dashboard-inline-check">
+                      <input type="checkbox" name="showInGallery" />
+                      <span>Show this project in public gallery</span>
+                    </label>
+                    <label class="dashboard-inline-check">
+                      <input type="checkbox" name="isActive" checked />
+                      <span>Project active</span>
+                    </label>
+                  </div>
+                  <button type="submit" class="btn btn-gold btn-block">Create project</button>
+                  <p class="form-status" id="project-create-status" aria-live="polite"></p>
+                </form>
+              </section>
+              <section class="card surface-card surface-card--light" id="manager-projects-section">
+                <div class="manager-panel-head"><div><p class="workspace-card-label">Queue</p><h3>Project Board</h3></div><span class="manager-panel-chip">Filtered</span></div>
+                <div class="dashboard-filters dashboard-filters--projects">
+                  <input type="search" id="projects-filter-q" placeholder="Search title/location/client email..." />
+                  <select id="projects-filter-status">
+                    <option value="">All statuses</option>
                     <option value="planning">Planning</option>
                     <option value="in_progress">In progress</option>
                     <option value="completed">Completed</option>
                     <option value="on_hold">On hold</option>
                   </select>
-                </label>
-                <label>Quote ID (optional)
-                  <input type="text" name="quoteId" placeholder="UUID" />
-                </label>
-                <label class="span-2">Client email
-                  <div class="dashboard-search-row">
-                    <input type="email" name="clientEmail" placeholder="client@email.com" list="project-create-client-suggestions" autocomplete="off" />
-                  </div>
-                  <datalist id="project-create-client-suggestions"></datalist>
-                  <small class="muted" id="project-create-client-lookup-status"></small>
-                </label>
-                <label class="span-2">Assigned staff email
-                  <div class="dashboard-search-row">
-                    <input type="email" name="assignedManagerEmail" placeholder="manager@email.com" list="project-create-manager-suggestions" autocomplete="off" />
-                  </div>
-                  <datalist id="project-create-manager-suggestions"></datalist>
-                  <small class="muted" id="project-create-manager-lookup-status"></small>
-                </label>
-                <label>Gallery order
-                  <input type="number" name="galleryOrder" value="0" />
-                </label>
-                <label class="span-2">Description
-                  <textarea name="description" rows="4"></textarea>
-                </label>
-                <label class="span-2 dashboard-inline-check">
-                  <input type="checkbox" name="showInGallery" />
-                  <span>Show this project in public gallery</span>
-                </label>
+                  <select id="projects-filter-stage">
+                    <option value="">All stages</option>
+                    <option value="briefing">Briefing</option>
+                    <option value="scope_locked">Scope locked</option>
+                    <option value="procurement">Procurement</option>
+                    <option value="site_prep">Site prep</option>
+                    <option value="installation">Installation</option>
+                    <option value="finishing">Finishing</option>
+                    <option value="handover">Handover</option>
+                    <option value="aftercare">Aftercare</option>
+                  </select>
+                  <input type="search" id="projects-filter-client" placeholder="Client email" />
+                  <input type="search" id="projects-filter-owner" placeholder="Owner / staff email" />
+                  <select id="projects-filter-gallery">
+                    <option value="">Gallery: all</option>
+                    <option value="true">Gallery: visible</option>
+                    <option value="false">Gallery: hidden</option>
+                  </select>
+                  <select id="projects-page-size">
+                    <option value="10">10 / page</option>
+                    <option value="25" selected>25 / page</option>
+                    <option value="50">50 / page</option>
+                  </select>
+                  <button type="button" class="btn btn-outline" id="projects-filter-apply">Apply</button>
+                </div>
+                <div id="projects-list" class="dashboard-list"></div>
+                <div class="dashboard-pagination">
+                  <button type="button" class="btn btn-outline" id="projects-prev-btn">Prev</button>
+                  <span class="muted" id="projects-pagination">Page 1 / 1</span>
+                  <button type="button" class="btn btn-outline" id="projects-next-btn">Next</button>
+                </div>
+              </section>
+            </div>
+            <section class="card surface-card surface-card--light manager-card-stack" id="project-editor-card" hidden>
+              <div class="manager-panel-head"><div><p class="workspace-card-label">Detail</p><h3>Project Editor</h3></div><span class="manager-panel-chip">Selected</span></div>
+              <form id="project-edit-form" novalidate>
+                <input type="hidden" name="id" />
+                <div class="form-grid">
+                  <label>Title
+                    <input type="text" name="title" required />
+                  </label>
+                  <label>Location
+                    <input type="text" name="location" />
+                  </label>
+                  <label>Status
+                    <select name="status">
+                      <option value="planning">Planning</option>
+                      <option value="in_progress">In progress</option>
+                      <option value="completed">Completed</option>
+                      <option value="on_hold">On hold</option>
+                    </select>
+                  </label>
+                  <label>Stage
+                    <select name="projectStage">
+                      <option value="briefing">Briefing</option>
+                      <option value="scope_locked">Scope locked</option>
+                      <option value="procurement">Procurement</option>
+                      <option value="site_prep">Site prep</option>
+                      <option value="installation">Installation</option>
+                      <option value="finishing">Finishing</option>
+                      <option value="handover">Handover</option>
+                      <option value="aftercare">Aftercare</option>
+                    </select>
+                  </label>
+                  <label>Quote ID
+                    <input type="text" name="quoteId" placeholder="UUID" />
+                  </label>
+                  <label>Budget estimate
+                    <input type="text" name="budgetEstimate" />
+                  </label>
+                  <label>Current milestone
+                    <input type="text" name="currentMilestone" />
+                  </label>
+                  <label>Work package
+                    <input type="text" name="workPackage" />
+                  </label>
+                  <label>Start date
+                    <input type="date" name="startDate" />
+                  </label>
+                  <label>End date
+                    <input type="date" name="endDate" />
+                  </label>
+                  <label>Due date
+                    <input type="date" name="dueDate" />
+                  </label>
+                  <label>Gallery order
+                    <input type="number" name="galleryOrder" />
+                  </label>
+                  <label class="span-2">Client email
+                    <div class="dashboard-search-row">
+                      <input type="email" name="clientEmail" placeholder="client@email.com" list="project-edit-client-suggestions" autocomplete="off" />
+                    </div>
+                    <datalist id="project-edit-client-suggestions"></datalist>
+                    <small class="muted" id="project-edit-client-lookup-status"></small>
+                  </label>
+                  <label class="span-2">Assigned staff email
+                    <div class="dashboard-search-row">
+                      <input type="email" name="assignedManagerEmail" placeholder="manager@email.com" list="project-edit-manager-suggestions" autocomplete="off" />
+                    </div>
+                    <datalist id="project-edit-manager-suggestions"></datalist>
+                    <small class="muted" id="project-edit-manager-lookup-status"></small>
+                  </label>
+                  <label class="dashboard-inline-check">
+                    <input type="checkbox" name="showInGallery" />
+                    <span>Project visible in gallery</span>
+                  </label>
+                  <label class="dashboard-inline-check">
+                    <input type="checkbox" name="isActive" />
+                    <span>Project active</span>
+                  </label>
+                  <label class="span-2">Description
+                    <textarea name="description" rows="4"></textarea>
+                  </label>
+                </div>
+                <div class="dashboard-actions-row">
+                  <button type="submit" class="btn btn-gold">Save project</button>
+                  <button type="button" class="btn btn-outline" id="project-delete-btn">Delete project</button>
+                </div>
+                <p class="form-status" id="project-edit-status" aria-live="polite"></p>
+              </form>
+              <hr class="dashboard-divider" />
+              <div class="manager-panel-head"><div><p class="workspace-card-label">Media</p><h3>Upload Photos / Documents</h3></div><span class="manager-panel-chip">Gallery</span></div>
+              <form id="media-upload-form" novalidate>
+                <div class="form-grid">
+                  <label class="span-2">Files
+                    <input type="file" name="files" multiple required />
+                  </label>
+                  <label>Type
+                    <select name="mediaType">
+                      <option value="">Auto detect</option>
+                      <option value="image">Image</option>
+                      <option value="document">Document</option>
+                    </select>
+                  </label>
+                  <label>Gallery order start
+                    <input type="number" name="galleryOrderStart" value="0" />
+                  </label>
+                  <label class="span-2">Caption (optional)
+                    <input type="text" name="caption" />
+                  </label>
+                  <label class="dashboard-inline-check">
+                    <input type="checkbox" name="showInGallery" />
+                    <span>Show uploaded images in gallery</span>
+                  </label>
+                  <label class="dashboard-inline-check">
+                    <input type="checkbox" name="isCover" />
+                    <span>Set first image as cover</span>
+                  </label>
+                </div>
+                <button type="submit" class="btn btn-gold">Upload</button>
+                <p class="form-status" id="media-upload-status" aria-live="polite"></p>
+              </form>
+              <h3>Media Library</h3>
+              <div id="media-list" class="dashboard-media-list"></div>
+            </section>
+          </section>
+
+          <section class="manager-card-panel" data-manager-card-panel="quotes" aria-labelledby="manager-quotes-title" hidden>
+            <div class="manager-card-context card surface-card surface-card--dark">
+              <div>
+                <p class="section-eyebrow section-eyebrow--compact">Commercial intake</p>
+                <h2 id="manager-quotes-title">Quotes</h2>
+                <p class="section-lead">Review guest and client enquiries, triage priorities and move accepted briefs toward estimates and projects.</p>
               </div>
-              <button type="submit" class="btn btn-gold btn-block">Create project</button>
-              <p class="form-status" id="project-create-status" aria-live="polite"></p>
-            </form>
+              <div class="manager-card-actions">
+                <button type="button" class="btn btn-outline" data-manager-card-jump="estimates">Open Estimates</button>
+                <button type="button" class="btn btn-outline" data-manager-card-jump="projects">Convert route</button>
+              </div>
+            </div>
+            <div class="manager-card-grid manager-card-grid--work">
+              <section class="card surface-card surface-card--light" id="manager-quotes-section">
+                <div class="manager-panel-head"><div><p class="workspace-card-label">Queue</p><h3>Quotes Review</h3></div><span class="manager-panel-chip">Live</span></div>
+                <div class="dashboard-filters dashboard-filters--quotes">
+                  <input type="search" id="quotes-filter-q" placeholder="Search email/name/location..." />
+                  <select id="quotes-filter-status">
+                    <option value="">All statuses</option>
+                    <option value="pending">Pending</option>
+                    <option value="in_progress">In progress</option>
+                    <option value="responded">Responded</option>
+                    <option value="closed">Closed</option>
+                  </select>
+                  <select id="quotes-filter-workflow-status">
+                    <option value="">All workflow states</option>
+                    <option value="submitted">Submitted</option>
+                    <option value="triaged">Triaged</option>
+                    <option value="assigned">Assigned</option>
+                    <option value="awaiting_client_info">Awaiting client info</option>
+                    <option value="estimate_in_progress">Estimate in progress</option>
+                    <option value="estimate_sent">Estimate sent</option>
+                    <option value="client_review">Client review</option>
+                    <option value="approved_ready_for_project">Approved ready for project</option>
+                    <option value="converted_to_project">Converted to project</option>
+                    <option value="closed_lost">Closed lost</option>
+                  </select>
+                  <select id="quotes-filter-priority">
+                    <option value="">All priorities</option>
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                  </select>
+                  <select id="quotes-filter-project-type">
+                    <option value="">All project types</option>
+                    <option value="bathroom">Bathroom</option>
+                    <option value="kitchen">Kitchen</option>
+                    <option value="interior">Interior</option>
+                    <option value="tiling">Tiling</option>
+                    <option value="extension">Extension</option>
+                    <option value="joinery">Joinery</option>
+                    <option value="rendering">Rendering</option>
+                    <option value="decorating">Decorating</option>
+                    <option value="other">Other</option>
+                  </select>
+                  <select id="quotes-page-size">
+                    <option value="10">10 / page</option>
+                    <option value="25" selected>25 / page</option>
+                    <option value="50">50 / page</option>
+                  </select>
+                  <button type="button" class="btn btn-outline" id="quotes-refresh-btn">Apply</button>
+                </div>
+                <div id="quotes-list" class="dashboard-list"></div>
+                <div class="dashboard-pagination">
+                  <button type="button" class="btn btn-outline" id="quotes-prev-btn">Prev</button>
+                  <span class="muted" id="quotes-pagination">Page 1 / 1</span>
+                  <button type="button" class="btn btn-outline" id="quotes-next-btn">Next</button>
+                </div>
+              </section>
+              <section class="card surface-card surface-card--light manager-aside-card">
+                <div class="manager-panel-head"><div><p class="workspace-card-label">Detail fields</p><h3>Operational focus</h3></div><span class="manager-panel-chip">Checklist</span></div>
+                <div class="workspace-operations-list">
+                  <article class="workspace-overview-entry"><h3>Client / guest identity</h3><p>Name, email, phone and claim state should remain visible in every quote card.</p></article>
+                  <article class="workspace-overview-entry"><h3>Scope + budget</h3><p>Project type, location, budget range and structured proposal details guide estimate drafting.</p></article>
+                  <article class="workspace-overview-entry"><h3>Commercial state</h3><p>Workflow, priority, latest estimate, response deadline and loss reason stay near the primary actions.</p></article>
+                  <article class="workspace-overview-entry"><h3>Attachments</h3><p>Photos and documents should open from quote detail without leaving the workspace shell.</p></article>
+                </div>
+              </section>
+            </div>
+          </section>
+          <section class="manager-card-panel" data-manager-card-panel="estimates" aria-labelledby="manager-estimates-title" hidden>
+            <div class="manager-card-context card surface-card surface-card--dark">
+              <div>
+                <p class="section-eyebrow section-eyebrow--compact">Pricing</p>
+                <h2 id="manager-estimates-title">Estimates</h2>
+                <p class="section-lead">Draft, version and update estimate routes while keeping project and quote references visible.</p>
+              </div>
+              <div class="manager-card-actions">
+                <button type="button" class="btn btn-gold" data-manager-card-focus="estimate-create-form">New estimate</button>
+                <button type="button" class="btn btn-outline" data-manager-card-jump="quotes">Back to Quotes</button>
+              </div>
+            </div>
+            <div class="manager-card-grid manager-card-grid--work">
+              <section class="card surface-card surface-card--light" id="manager-estimates-section">
+                <div class="manager-panel-head"><div><p class="workspace-card-label">Builder</p><h3>Estimate Builder</h3></div><span class="manager-panel-chip">Drafts</span></div>
+                <form id="estimate-create-form" novalidate>
+                  <div class="form-grid">
+                    <label>Title
+                      <input type="text" name="title" required />
+                    </label>
+                    <label>Project
+                      <select name="projectId">
+                        <option value="">Select project</option>
+                      </select>
+                    </label>
+                    <label>Quote ID
+                      <input type="text" name="quoteId" placeholder="UUID (optional)" />
+                    </label>
+                    <label>Status
+                      <select name="status">
+                        <option value="draft">Draft</option>
+                        <option value="sent">Sent</option>
+                        <option value="approved">Approved</option>
+                        <option value="archived">Archived</option>
+                      </select>
+                    </label>
+                    <label class="span-2">Notes
+                      <textarea name="notes" rows="3"></textarea>
+                    </label>
+                  </div>
+                  <button type="submit" class="btn btn-gold">Create estimate</button>
+                  <p class="form-status" id="estimate-create-status" aria-live="polite"></p>
+                </form>
+                <div id="estimates-list" class="dashboard-list"></div>
+              </section>
+              <section class="card surface-card surface-card--light manager-aside-card">
+                <div class="manager-panel-head"><div><p class="workspace-card-label">Versioning</p><h3>Approval flow</h3></div><span class="manager-panel-chip">Quote linked</span></div>
+                <div class="workspace-operations-list">
+                  <article class="workspace-overview-entry"><h3>Current</h3><p>Only the active version should be sent to the client for review.</p></article>
+                  <article class="workspace-overview-entry"><h3>Superseded</h3><p>Older versions remain in history once a new revision is issued.</p></article>
+                  <article class="workspace-overview-entry"><h3>Accepted</h3><p>Accepted estimates become the strongest candidate for project conversion.</p></article>
+                </div>
+              </section>
+            </div>
+            <section class="card surface-card surface-card--light manager-card-stack" id="estimate-editor-card" hidden>
+              <div class="auth-account-head">
+                <div>
+                  <p class="workspace-card-label">Estimate Editor</p>
+                  <h3 id="estimate-editor-title">Estimate</h3>
+                </div>
+                <p class="muted" id="estimate-editor-total"></p>
+              </div>
+              <form id="estimate-update-form" novalidate>
+                <input type="hidden" name="id" />
+                <div class="form-grid">
+                  <label>Title
+                    <input type="text" name="title" required />
+                  </label>
+                  <label>Status
+                    <select name="status">
+                      <option value="draft">Draft</option>
+                      <option value="sent">Sent</option>
+                      <option value="approved">Approved</option>
+                      <option value="archived">Archived</option>
+                    </select>
+                  </label>
+                  <label>Project
+                    <select name="projectId">
+                      <option value="">Select project</option>
+                    </select>
+                  </label>
+                  <label>Quote ID
+                    <input type="text" name="quoteId" placeholder="UUID (optional)" />
+                  </label>
+                  <label class="span-2">Notes
+                    <textarea name="notes" rows="3"></textarea>
+                  </label>
+                </div>
+                <div class="dashboard-actions-row">
+                  <button type="submit" class="btn btn-gold">Save estimate</button>
+                  <button type="button" class="btn btn-outline" id="estimate-delete-btn">Delete estimate</button>
+                </div>
+                <p class="form-status" id="estimate-update-status" aria-live="polite"></p>
+              </form>
+              <hr class="dashboard-divider" />
+              <h3>Add Estimate Line</h3>
+              <form id="estimate-line-form" novalidate>
+                <div class="form-grid">
+                  <label>Line type
+                    <select name="lineType">
+                      <option value="service">Service</option>
+                      <option value="material">Material</option>
+                      <option value="custom">Custom</option>
+                    </select>
+                  </label>
+                  <label>Service
+                    <select name="serviceId">
+                      <option value="">Select service</option>
+                    </select>
+                  </label>
+                  <label>Material
+                    <select name="materialId">
+                      <option value="">Select material</option>
+                    </select>
+                  </label>
+                  <label>Description
+                    <input type="text" name="description" />
+                  </label>
+                  <label>Unit
+                    <input type="text" name="unit" value="pcs" />
+                  </label>
+                  <label>Quantity
+                    <input type="number" name="quantity" step="0.01" value="1" required />
+                  </label>
+                  <label>Unit cost
+                    <input type="number" name="unitCost" step="0.01" />
+                  </label>
+                  <label>Line total override
+                    <input type="number" name="lineTotalOverride" step="0.01" />
+                  </label>
+                  <label class="span-2">Notes
+                    <input type="text" name="notes" />
+                  </label>
+                </div>
+                <button type="submit" class="btn btn-gold">Add line</button>
+                <p class="form-status" id="estimate-line-status" aria-live="polite"></p>
+              </form>
+              <div id="estimate-lines-list" class="dashboard-list"></div>
+            </section>
           </section>
 
-          <section class="card surface-card surface-card--light" id="manager-projects-section" data-dashboard-mobile-open="true" data-manager-domain-section="projects">
-            <h2>Projects</h2>
-            <div class="dashboard-filters">
-              <input type="search" id="projects-filter-q" placeholder="Search title/location/client email..." />
-              <select id="projects-filter-status">
-                <option value="">All statuses</option>
-                <option value="planning">Planning</option>
-                <option value="in_progress">In progress</option>
-                <option value="completed">Completed</option>
-                <option value="on_hold">On hold</option>
-              </select>
-              <select id="projects-filter-gallery">
-                <option value="">Gallery: all</option>
-                <option value="true">Gallery: visible</option>
-                <option value="false">Gallery: hidden</option>
-              </select>
-              <select id="projects-page-size">
-                <option value="10">10 / page</option>
-                <option value="25" selected>25 / page</option>
-                <option value="50">50 / page</option>
-              </select>
-              <button type="button" class="btn btn-outline" id="projects-filter-apply">Apply</button>
+          <section class="manager-card-panel" data-manager-card-panel="inbox" aria-labelledby="manager-inbox-title" hidden>
+            <div class="manager-card-context card surface-card surface-card--dark">
+              <div>
+                <p class="section-eyebrow section-eyebrow--compact">Communication</p>
+                <h2 id="manager-inbox-title">Inbox</h2>
+                <p class="section-lead">Switch between one-to-one client inbox routes and project chat without leaving the current workspace shell.</p>
+              </div>
+              <div class="manager-card-actions manager-subcard-switch">
+                <button type="button" class="btn btn-gold" data-manager-subcard-link="private">Private Inbox</button>
+                <button type="button" class="btn btn-outline" data-manager-subcard-link="project">Project Chat</button>
+              </div>
             </div>
-            <div id="projects-list" class="dashboard-list"></div>
-            <div class="dashboard-pagination">
-              <button type="button" class="btn btn-outline" id="projects-prev-btn">Prev</button>
-              <span class="muted" id="projects-pagination">Page 1 / 1</span>
-              <button type="button" class="btn btn-outline" id="projects-next-btn">Next</button>
+            <section class="manager-inbox-panel is-active" data-manager-inbox-panel="private">
+              <section class="card surface-card surface-card--light" id="manager-private-inbox">
+                <div class="manager-panel-head"><div><p class="workspace-card-label">Direct routes</p><h3>Private Inbox</h3></div><span class="manager-panel-chip">Client / staff</span></div>
+                <div class="workspace-form-panel">
+                  <h3>Start private thread</h3>
+                  <form id="manager-direct-thread-form" novalidate>
+                    <div class="form-grid">
+                      <label>Recipient type
+                        <select name="recipientType">
+                          <option value="client">Client</option>
+                          <option value="staff">Staff</option>
+                        </select>
+                      </label>
+                      <label>Recipient email
+                        <input type="email" name="recipientEmail" list="manager-direct-recipient-suggestions" placeholder="client@email.com" autocomplete="off" required />
+                      </label>
+                      <datalist id="manager-direct-recipient-suggestions"></datalist>
+                      <small class="muted span-2" id="manager-direct-recipient-lookup-status"></small>
+                      <label class="span-2">Subject
+                        <input type="text" name="subject" placeholder="Private studio thread" required />
+                      </label>
+                      <label class="span-2">Opening message
+                        <textarea name="body" rows="3" required></textarea>
+                      </label>
+                      <label class="span-2">Attachments
+                        <input type="file" name="files" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip" />
+                      </label>
+                    </div>
+                    <button type="submit" class="btn btn-gold">Create private thread</button>
+                    <p class="form-status" id="manager-direct-thread-status" aria-live="polite"></p>
+                  </form>
+                </div>
+                <div class="dashboard-grid dashboard-communication-grid">
+                  <div>
+                    <h3>Threads</h3>
+                    <div id="manager-direct-threads-list" class="dashboard-list"></div>
+                  </div>
+                  <div>
+                    <h3>Messages</h3>
+                    <div id="manager-direct-messages-list" class="dashboard-list"></div>
+                    <form id="manager-direct-message-form" novalidate>
+                      <div class="form-grid">
+                        <label class="span-2">Message
+                          <textarea name="body" rows="3"></textarea>
+                        </label>
+                        <label class="span-2">Attachments
+                          <input type="file" name="files" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip" />
+                        </label>
+                      </div>
+                      <button type="submit" class="btn btn-gold">Send private message</button>
+                      <p class="form-status" id="manager-direct-message-status" aria-live="polite"></p>
+                    </form>
+                  </div>
+                </div>
+              </section>
+            </section>
+            <section class="manager-inbox-panel" data-manager-inbox-panel="project" hidden>
+              <section class="card surface-card surface-card--light" id="manager-project-chat">
+                <div class="manager-panel-head"><div><p class="workspace-card-label">Project routes</p><h3>Project Chat</h3></div><span class="manager-panel-chip">Group</span></div>
+                <div class="workspace-form-panel">
+                  <h3>Create project chat</h3>
+                  <form id="manager-group-thread-form" novalidate>
+                    <div class="form-grid">
+                      <label>Chat name
+                        <input type="text" name="name" placeholder="Kitchen delivery thread" />
+                      </label>
+                      <label>Project
+                        <select name="projectId" required>
+                          <option value="">Select project</option>
+                        </select>
+                      </label>
+                      <label class="dashboard-inline-check span-2">
+                        <input type="checkbox" name="includeProjectClient" checked />
+                        <span>Invite linked client automatically</span>
+                      </label>
+                      <label class="dashboard-inline-check span-2">
+                        <input type="checkbox" name="includeAssignedStaff" checked />
+                        <span>Invite assigned staff automatically</span>
+                      </label>
+                      <label>Extra participant type
+                        <select name="participantType">
+                          <option value="client">Client</option>
+                          <option value="staff">Staff</option>
+                        </select>
+                      </label>
+                      <label>Extra participant email
+                        <input type="email" name="participantEmail" list="manager-group-create-participant-suggestions" placeholder="Optional extra invite" autocomplete="off" />
+                      </label>
+                      <datalist id="manager-group-create-participant-suggestions"></datalist>
+                      <small class="muted span-2" id="manager-group-create-participant-lookup-status"></small>
+                    </div>
+                    <button type="submit" class="btn btn-gold">Create project chat</button>
+                    <p class="form-status" id="manager-group-thread-status" aria-live="polite"></p>
+                  </form>
+                </div>
+                <div class="dashboard-grid dashboard-communication-grid">
+                  <div>
+                    <h3>Threads</h3>
+                    <div id="manager-group-threads-list" class="dashboard-list"></div>
+                  </div>
+                  <div>
+                    <h3>Participants</h3>
+                    <div id="manager-group-members-list" class="dashboard-list"></div>
+                    <form id="manager-group-member-form" novalidate>
+                      <div class="form-grid">
+                        <label>Participant type
+                          <select name="participantType">
+                            <option value="client">Client</option>
+                            <option value="staff">Staff</option>
+                          </select>
+                        </label>
+                        <label>Participant email
+                          <input type="email" name="participantEmail" list="manager-group-member-suggestions" placeholder="client@email.com" autocomplete="off" required />
+                        </label>
+                        <datalist id="manager-group-member-suggestions"></datalist>
+                        <small class="muted span-2" id="manager-group-member-lookup-status"></small>
+                      </div>
+                      <button type="submit" class="btn btn-outline">Add participant</button>
+                      <p class="form-status" id="manager-group-member-status" aria-live="polite"></p>
+                    </form>
+                    <h3>Messages</h3>
+                    <div id="manager-group-messages-list" class="dashboard-list"></div>
+                    <form id="manager-group-message-form" novalidate>
+                      <div class="form-grid">
+                        <label class="span-2">Message
+                          <textarea name="body" rows="3"></textarea>
+                        </label>
+                        <label class="span-2">Attachments
+                          <input type="file" name="files" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip" />
+                        </label>
+                      </div>
+                      <button type="submit" class="btn btn-gold">Send project message</button>
+                      <p class="form-status" id="manager-group-message-status" aria-live="polite"></p>
+                    </form>
+                  </div>
+                </div>
+              </section>
+            </section>
+          </section>
+          <section class="manager-card-panel" data-manager-card-panel="website" aria-labelledby="manager-website-title" hidden>
+            <div class="manager-card-context card surface-card surface-card--dark">
+              <div>
+                <p class="section-eyebrow section-eyebrow--compact">Brochure control</p>
+                <h2 id="manager-website-title">Website</h2>
+                <p class="section-lead">Keep brochure copy, SEO metadata and CTA structure aligned with the same brand system as the public site.</p>
+              </div>
+              <div class="manager-card-actions">
+                <a class="btn btn-outline" href="/services.html" target="_blank" rel="noreferrer">Open brochure</a>
+                <a class="btn btn-outline" href="/quote.html" target="_blank" rel="noreferrer">Open quote page</a>
+              </div>
+            </div>
+            <div class="manager-card-grid manager-card-grid--work">
+              <section class="card surface-card surface-card--light">
+                <div class="manager-panel-head"><div><p class="workspace-card-label">Content model</p><h3>Page Content Control</h3></div><span class="manager-panel-chip">Source of truth</span></div>
+                <form class="manager-website-form" novalidate>
+                  <div class="form-grid">
+                    <label>Page slug
+                      <input type="text" name="slug" value="premium-bathrooms-manchester" />
+                    </label>
+                    <label>Page type
+                      <select name="pageType">
+                        <option value="service">Service page</option>
+                        <option value="location">Location page</option>
+                        <option value="core">Core brochure page</option>
+                      </select>
+                    </label>
+                    <label>Primary keyword
+                      <input type="text" name="primaryKeyword" value="premium bathroom renovation manchester" />
+                    </label>
+                    <label>Search intent
+                      <input type="text" name="searchIntent" value="commercial investigation" />
+                    </label>
+                    <label class="span-2">Hero title
+                      <input type="text" name="heroTitle" value="Premium bathroom renovations shaped for cleaner waterproofing and calmer finish control." />
+                    </label>
+                    <label class="span-2">Hero lead
+                      <textarea name="heroLead" rows="3">Use this card as the source-of-truth editor for brochure hero copy, CTA logic and public metadata.</textarea>
+                    </label>
+                    <label class="span-2">Summary line
+                      <input type="text" name="summaryLine" value="Bathroom renovations planned for cleaner waterproofing, stronger tile lines and calmer final delivery." />
+                    </label>
+                    <label>Meta title
+                      <input type="text" name="metaTitle" value="Premium Bathrooms Manchester | Level Lines Studio" />
+                    </label>
+                    <label>Meta description
+                      <input type="text" name="metaDescription" value="Bathroom renovation planning, waterproof detailing, premium tiling and quieter finish control across Manchester." />
+                    </label>
+                    <label>Canonical
+                      <input type="url" name="canonical" value="https://levellines.co.uk/premium-bathrooms-manchester.html" />
+                    </label>
+                    <label>Robots
+                      <select name="robots">
+                        <option value="index,follow">index,follow</option>
+                        <option value="noindex,follow">noindex,follow</option>
+                      </select>
+                    </label>
+                    <label>CTA label
+                      <input type="text" name="ctaLabel" value="Send Enquiry" />
+                    </label>
+                    <label>CTA href
+                      <input type="text" name="ctaHref" value="/quote.html?projectType=bathroom#quote-card" />
+                    </label>
+                    <label class="span-2">Internal link cluster
+                      <textarea name="internalLinks" rows="3">/premium-bathrooms-manchester.html
+/premium-kitchens-manchester.html
+/quote.html</textarea>
+                    </label>
+                    <label class="dashboard-inline-check">
+                      <input type="checkbox" name="published" checked />
+                      <span>Published on website</span>
+                    </label>
+                    <label class="dashboard-inline-check">
+                      <input type="checkbox" name="indexed" checked />
+                      <span>Index allowed</span>
+                    </label>
+                  </div>
+                  <p class="muted">This card now defines the field set for future website editing parity without introducing a second CMS outside the current brochure source-of-truth.</p>
+                </form>
+              </section>
+              <section class="card surface-card surface-card--light manager-aside-card">
+                <div class="manager-panel-head"><div><p class="workspace-card-label">SEO checklist</p><h3>Public page governance</h3></div><span class="manager-panel-chip">Preview</span></div>
+                <div class="workspace-operations-list">
+                  <article class="workspace-overview-entry"><h3>Metadata</h3><p>Meta title, description, canonical and robots should move together.</p></article>
+                  <article class="workspace-overview-entry"><h3>CTA alignment</h3><p>Website CTA must stay in step with quote intake and service/category mapping.</p></article>
+                  <article class="workspace-overview-entry"><h3>Link clusters</h3><p>Use internal links to reinforce service, location and quote routes around each core page.</p></article>
+                </div>
+              </section>
             </div>
           </section>
-        </div>
 
-        <section class="card surface-card surface-card--light" id="project-editor-card" data-dashboard-mobile-open="true" data-manager-domain-section="projects" hidden>
-          <h2>Project Editor</h2>
-          <form id="project-edit-form" novalidate>
-            <input type="hidden" name="id" />
-            <div class="form-grid">
-              <label>Title
-                <input type="text" name="title" required />
-              </label>
-              <label>Location
-                <input type="text" name="location" />
-              </label>
-              <label>Status
-                <select name="status">
-                  <option value="planning">Planning</option>
-                  <option value="in_progress">In progress</option>
-                  <option value="completed">Completed</option>
-                  <option value="on_hold">On hold</option>
-                </select>
-              </label>
-              <label>Quote ID
-                <input type="text" name="quoteId" placeholder="UUID" />
-              </label>
-              <label class="span-2">Client email
-                <div class="dashboard-search-row">
-                  <input type="email" name="clientEmail" placeholder="client@email.com" list="project-edit-client-suggestions" autocomplete="off" />
-                </div>
-                <datalist id="project-edit-client-suggestions"></datalist>
-                <small class="muted" id="project-edit-client-lookup-status"></small>
-              </label>
-              <label class="span-2">Assigned staff email
-                <div class="dashboard-search-row">
-                  <input type="email" name="assignedManagerEmail" placeholder="manager@email.com" list="project-edit-manager-suggestions" autocomplete="off" />
-                </div>
-                <datalist id="project-edit-manager-suggestions"></datalist>
-                <small class="muted" id="project-edit-manager-lookup-status"></small>
-              </label>
-              <label>Gallery order
-                <input type="number" name="galleryOrder" />
-              </label>
-              <label>Budget estimate
-                <input type="text" name="budgetEstimate" />
-              </label>
-              <label>Start date
-                <input type="date" name="startDate" />
-              </label>
-              <label>End date
-                <input type="date" name="endDate" />
-              </label>
-              <label class="dashboard-inline-check">
-                <input type="checkbox" name="showInGallery" />
-                <span>Project visible in gallery</span>
-              </label>
-              <label class="dashboard-inline-check">
-                <input type="checkbox" name="isActive" />
-                <span>Project active</span>
-              </label>
-              <label class="span-2">Description
-                <textarea name="description" rows="4"></textarea>
-              </label>
+          <section class="manager-card-panel" data-manager-card-panel="services" aria-labelledby="manager-services-title" hidden>
+            <div class="manager-card-context card surface-card surface-card--dark">
+              <div>
+                <p class="section-eyebrow section-eyebrow--compact">Offer catalogue</p>
+                <h2 id="manager-services-title">Services</h2>
+                <p class="section-lead">Control brochure-facing services, display order and quote context from one service card.</p>
+              </div>
+              <div class="manager-card-actions">
+                <button type="button" class="btn btn-gold" data-manager-card-focus="service-create-form">Add service</button>
+              </div>
             </div>
-            <div class="dashboard-actions-row">
-              <button type="submit" class="btn btn-gold">Save project</button>
-              <button type="button" class="btn btn-outline" id="project-delete-btn">Delete project</button>
-            </div>
-            <p class="form-status" id="project-edit-status" aria-live="polite"></p>
-          </form>
-
-          <hr class="dashboard-divider" />
-
-          <h3>Upload Photos / Documents</h3>
-          <form id="media-upload-form" novalidate>
-            <div class="form-grid">
-              <label class="span-2">Files
-                <input type="file" name="files" multiple required />
-              </label>
-              <label>Type
-                <select name="mediaType">
-                  <option value="">Auto detect</option>
-                  <option value="image">Image</option>
-                  <option value="document">Document</option>
-                </select>
-              </label>
-              <label>Gallery order start
-                <input type="number" name="galleryOrderStart" value="0" />
-              </label>
-              <label class="span-2">Caption (optional)
-                <input type="text" name="caption" />
-              </label>
-              <label class="dashboard-inline-check">
-                <input type="checkbox" name="showInGallery" />
-                <span>Show uploaded images in gallery</span>
-              </label>
-              <label class="dashboard-inline-check">
-                <input type="checkbox" name="isCover" />
-                <span>Set first image as cover</span>
-              </label>
-            </div>
-            <button type="submit" class="btn btn-gold">Upload</button>
-            <p class="form-status" id="media-upload-status" aria-live="polite"></p>
-          </form>
-
-          <h3>Media Library</h3>
-          <div id="media-list" class="dashboard-media-list"></div>
-        </section>
-
-        <section class="card surface-card surface-card--light" id="manager-quotes-section">
-          <h2>Quotes / Wyceny</h2>
-          <div class="dashboard-filters">
-            <input type="search" id="quotes-filter-q" placeholder="Search email/name/location..." />
-            <select id="quotes-filter-status">
-              <option value="">All statuses</option>
-              <option value="pending">Pending</option>
-              <option value="in_progress">In progress</option>
-              <option value="responded">Responded</option>
-              <option value="closed">Closed</option>
-            </select>
-            <select id="quotes-page-size">
-              <option value="10">10 / page</option>
-              <option value="25" selected>25 / page</option>
-              <option value="50">50 / page</option>
-            </select>
-            <button type="button" class="btn btn-outline" id="quotes-refresh-btn">Apply</button>
-          </div>
-          <div id="quotes-list" class="dashboard-list"></div>
-          <div class="dashboard-pagination">
-            <button type="button" class="btn btn-outline" id="quotes-prev-btn">Prev</button>
-            <span class="muted" id="quotes-pagination">Page 1 / 1</span>
-            <button type="button" class="btn btn-outline" id="quotes-next-btn">Next</button>
-          </div>
-        </section>
-
-        <section class="card surface-card surface-card--light" id="manager-services-section" data-manager-domain-section="services">
-          <h2>Services (Website Offer)</h2>
-          <div class="dashboard-filters">
-            <input type="search" id="services-filter-q" placeholder="Search title/slug..." />
-            <select id="services-filter-category">
-              <option value="">All categories</option>
-              <option value="bathroom">Bathroom</option>
-              <option value="kitchen">Kitchen</option>
-              <option value="interior">Interior</option>
-              <option value="outdoor">Outdoor</option>
-              <option value="other">Other</option>
-            </select>
-            <select id="services-filter-public">
-              <option value="">Public: all</option>
-              <option value="true">Public only</option>
-              <option value="false">Hidden only</option>
-            </select>
-            <select id="services-page-size">
-              <option value="10">10 / page</option>
-              <option value="25" selected>25 / page</option>
-              <option value="50">50 / page</option>
-            </select>
-            <button type="button" class="btn btn-outline" id="services-refresh-btn">Apply</button>
-          </div>
-          <form id="service-create-form" novalidate>
-            <div class="form-grid">
-              <label>Title
-                <input type="text" name="title" required />
-              </label>
-              <label>Slug (optional)
-                <input type="text" name="slug" />
-              </label>
-              <label>Category
-                <select name="category">
+            <section class="card surface-card surface-card--light" id="manager-services-section">
+              <div class="manager-panel-head"><div><p class="workspace-card-label">Catalogue</p><h3>Website Offer</h3></div><span class="manager-panel-chip">Public / hidden</span></div>
+              <div class="dashboard-filters">
+                <input type="search" id="services-filter-q" placeholder="Search title/slug..." />
+                <select id="services-filter-category">
+                  <option value="">All categories</option>
                   <option value="bathroom">Bathroom</option>
                   <option value="kitchen">Kitchen</option>
                   <option value="interior">Interior</option>
                   <option value="outdoor">Outdoor</option>
                   <option value="other">Other</option>
                 </select>
-              </label>
-              <label>Price from
-                <input type="number" step="0.01" name="basePriceFrom" />
-              </label>
-              <label class="span-2">Short description
-                <input type="text" name="shortDescription" />
-              </label>
-              <label class="span-2">Hero image URL
-                <input type="text" name="heroImageUrl" />
-              </label>
-              <label>Display order
-                <input type="number" name="displayOrder" value="0" />
-              </label>
-              <label class="dashboard-inline-check">
-                <input type="checkbox" name="showOnWebsite" checked />
-                <span>Show on website</span>
-              </label>
-              <label class="dashboard-inline-check">
-                <input type="checkbox" name="isFeatured" />
-                <span>Featured</span>
-              </label>
-            </div>
-            <button type="submit" class="btn btn-gold">Add service</button>
-            <p class="form-status" id="service-create-status" aria-live="polite"></p>
-          </form>
-          <div id="services-list" class="dashboard-list"></div>
-          <div class="dashboard-pagination">
-            <button type="button" class="btn btn-outline" id="services-prev-btn">Prev</button>
-            <span class="muted" id="services-pagination">Page 1 / 1</span>
-            <button type="button" class="btn btn-outline" id="services-next-btn">Next</button>
-          </div>
-        </section>
+                <select id="services-filter-public">
+                  <option value="">Public: all</option>
+                  <option value="true">Public only</option>
+                  <option value="false">Hidden only</option>
+                </select>
+                <select id="services-page-size">
+                  <option value="10">10 / page</option>
+                  <option value="25" selected>25 / page</option>
+                  <option value="50">50 / page</option>
+                </select>
+                <button type="button" class="btn btn-outline" id="services-refresh-btn">Apply</button>
+              </div>
+              <form id="service-create-form" novalidate>
+                <div class="form-grid">
+                  <label>Title
+                    <input type="text" name="title" required />
+                  </label>
+                  <label>Slug (optional)
+                    <input type="text" name="slug" />
+                  </label>
+                  <label>Category
+                    <select name="category">
+                      <option value="bathroom">Bathroom</option>
+                      <option value="kitchen">Kitchen</option>
+                      <option value="interior">Interior</option>
+                      <option value="outdoor">Outdoor</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </label>
+                  <label>Price from
+                    <input type="number" step="0.01" name="basePriceFrom" />
+                  </label>
+                  <label class="span-2">Short description
+                    <input type="text" name="shortDescription" />
+                  </label>
+                  <label class="span-2">Summary line
+                    <input type="text" name="summaryLine" />
+                  </label>
+                  <label class="span-2">Hero image URL
+                    <input type="text" name="heroImageUrl" />
+                  </label>
+                  <label>Display order
+                    <input type="number" name="displayOrder" value="0" />
+                  </label>
+                  <label>Service CTA label
+                    <input type="text" name="serviceCtaLabel" value="Send Enquiry" />
+                  </label>
+                  <label class="dashboard-inline-check">
+                    <input type="checkbox" name="showOnWebsite" checked />
+                    <span>Show on website</span>
+                  </label>
+                  <label class="dashboard-inline-check">
+                    <input type="checkbox" name="isFeatured" />
+                    <span>Featured</span>
+                  </label>
+                </div>
+                <button type="submit" class="btn btn-gold">Add service</button>
+                <p class="form-status" id="service-create-status" aria-live="polite"></p>
+              </form>
+              <div id="services-list" class="dashboard-list"></div>
+              <div class="dashboard-pagination">
+                <button type="button" class="btn btn-outline" id="services-prev-btn">Prev</button>
+                <span class="muted" id="services-pagination">Page 1 / 1</span>
+                <button type="button" class="btn btn-outline" id="services-next-btn">Next</button>
+              </div>
+            </section>
+          </section>
 
-        <section class="card surface-card surface-card--light" id="manager-materials-section" data-manager-domain-section="materials">
-          <h2>Materials Inventory</h2>
-          <div class="dashboard-filters">
-            <input type="search" id="materials-filter-q" placeholder="Search name/SKU/supplier..." />
-            <select id="materials-filter-category">
-              <option value="">All categories</option>
-              <option value="tiles">Tiles</option>
-              <option value="plumbing">Plumbing</option>
-              <option value="electrical">Electrical</option>
-              <option value="joinery">Joinery</option>
-              <option value="paint">Paint</option>
-              <option value="hardware">Hardware</option>
-              <option value="other">Other</option>
-            </select>
-            <select id="materials-filter-low-stock">
-              <option value="">Stock: all</option>
-              <option value="true">Low stock only</option>
-              <option value="false">In stock only</option>
-            </select>
-            <select id="materials-page-size">
-              <option value="10">10 / page</option>
-              <option value="25" selected>25 / page</option>
-              <option value="50">50 / page</option>
-            </select>
-            <button type="button" class="btn btn-outline" id="materials-refresh-btn">Apply</button>
-          </div>
-          <form id="material-create-form" novalidate>
-            <div class="form-grid">
-              <label>Name
-                <input type="text" name="name" required />
-              </label>
-              <label>SKU
-                <input type="text" name="sku" />
-              </label>
-              <label>Category
-                <select name="category">
+          <section class="manager-card-panel" data-manager-card-panel="stock" aria-labelledby="manager-stock-title" hidden>
+            <div class="manager-card-context card surface-card surface-card--dark">
+              <div>
+                <p class="section-eyebrow section-eyebrow--compact">Materials</p>
+                <h2 id="manager-stock-title">Stock</h2>
+                <p class="section-lead">Track materials, supplier context and low-stock routes under the same operational shell.</p>
+              </div>
+              <div class="manager-card-actions">
+                <button type="button" class="btn btn-gold" data-manager-card-focus="material-create-form">Add material</button>
+              </div>
+            </div>
+            <section class="card surface-card surface-card--light" id="manager-materials-section">
+              <div class="manager-panel-head"><div><p class="workspace-card-label">Inventory</p><h3>Materials Inventory</h3></div><span class="manager-panel-chip">Live stock</span></div>
+              <div class="dashboard-filters">
+                <input type="search" id="materials-filter-q" placeholder="Search name/SKU/supplier..." />
+                <select id="materials-filter-category">
+                  <option value="">All categories</option>
                   <option value="tiles">Tiles</option>
                   <option value="plumbing">Plumbing</option>
                   <option value="electrical">Electrical</option>
@@ -496,339 +991,184 @@
                   <option value="hardware">Hardware</option>
                   <option value="other">Other</option>
                 </select>
-              </label>
-              <label>Unit
-                <input type="text" name="unit" value="pcs" />
-              </label>
-              <label>Stock qty
-                <input type="number" step="0.01" name="stockQty" value="0" />
-              </label>
-              <label>Min stock qty
-                <input type="number" step="0.01" name="minStockQty" value="0" />
-              </label>
-              <label>Unit cost
-                <input type="number" step="0.01" name="unitCost" />
-              </label>
-              <label>Supplier
-                <input type="text" name="supplier" />
-              </label>
-              <label class="span-2">Notes
-                <input type="text" name="notes" />
-              </label>
-            </div>
-            <button type="submit" class="btn btn-gold">Add material</button>
-            <p class="form-status" id="material-create-status" aria-live="polite"></p>
-          </form>
-          <div id="materials-list" class="dashboard-list"></div>
-          <div class="dashboard-pagination">
-            <button type="button" class="btn btn-outline" id="materials-prev-btn">Prev</button>
-            <span class="muted" id="materials-pagination">Page 1 / 1</span>
-            <button type="button" class="btn btn-outline" id="materials-next-btn">Next</button>
-          </div>
-        </section>
-
-        <div class="dashboard-grid dashboard-manager-top-grid">
-          <section class="card surface-card surface-card--light" id="manager-clients-section" data-dashboard-mobile-open="true">
-            <h2>Clients</h2>
-            <div class="dashboard-filters dashboard-filters--compact">
-              <input type="search" id="clients-filter-q" placeholder="Search client name or email..." />
-              <button type="button" class="btn btn-outline" id="clients-refresh-btn">Apply</button>
-            </div>
-            <div id="clients-list" class="dashboard-list"></div>
+                <select id="materials-filter-low-stock">
+                  <option value="">Stock: all</option>
+                  <option value="true">Low stock only</option>
+                  <option value="false">In stock only</option>
+                </select>
+                <select id="materials-page-size">
+                  <option value="10">10 / page</option>
+                  <option value="25" selected>25 / page</option>
+                  <option value="50">50 / page</option>
+                </select>
+                <button type="button" class="btn btn-outline" id="materials-refresh-btn">Apply</button>
+              </div>
+              <form id="material-create-form" novalidate>
+                <div class="form-grid">
+                  <label>Name
+                    <input type="text" name="name" required />
+                  </label>
+                  <label>SKU
+                    <input type="text" name="sku" />
+                  </label>
+                  <label>Category
+                    <select name="category">
+                      <option value="tiles">Tiles</option>
+                      <option value="plumbing">Plumbing</option>
+                      <option value="electrical">Electrical</option>
+                      <option value="joinery">Joinery</option>
+                      <option value="paint">Paint</option>
+                      <option value="hardware">Hardware</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </label>
+                  <label>Unit
+                    <input type="text" name="unit" value="pcs" />
+                  </label>
+                  <label>Stock qty
+                    <input type="number" step="0.01" name="stockQty" value="0" />
+                  </label>
+                  <label>Min stock qty
+                    <input type="number" step="0.01" name="minStockQty" value="0" />
+                  </label>
+                  <label>Reorder target qty
+                    <input type="number" step="0.01" name="reorderTargetQty" value="0" />
+                  </label>
+                  <label>Unit cost
+                    <input type="number" step="0.01" name="unitCost" />
+                  </label>
+                  <label>Supplier
+                    <input type="text" name="supplier" />
+                  </label>
+                  <label>Supplier contact
+                    <input type="text" name="supplierContact" />
+                  </label>
+                  <label>Last restocked at
+                    <input type="date" name="lastRestockedAt" />
+                  </label>
+                  <label class="span-2">Notes
+                    <input type="text" name="notes" />
+                  </label>
+                </div>
+                <button type="submit" class="btn btn-gold">Add material</button>
+                <p class="form-status" id="material-create-status" aria-live="polite"></p>
+              </form>
+              <div id="materials-list" class="dashboard-list"></div>
+              <div class="dashboard-pagination">
+                <button type="button" class="btn btn-outline" id="materials-prev-btn">Prev</button>
+                <span class="muted" id="materials-pagination">Page 1 / 1</span>
+                <button type="button" class="btn btn-outline" id="materials-next-btn">Next</button>
+              </div>
+            </section>
           </section>
 
-          <section class="card surface-card surface-card--light" id="manager-staff-section" data-dashboard-mobile-open="true">
-            <h2>Staff</h2>
-            <div class="dashboard-filters dashboard-filters--compact">
-              <input type="search" id="staff-filter-q" placeholder="Search staff name or email..." />
-              <button type="button" class="btn btn-outline" id="staff-refresh-btn">Apply</button>
+          <section class="manager-card-panel" data-manager-card-panel="crm" aria-labelledby="manager-clients-title" hidden>
+            <div class="manager-card-context card surface-card surface-card--dark">
+              <div>
+                <p class="section-eyebrow section-eyebrow--compact">Client routes</p>
+                <h2 id="manager-clients-title">Clients / CRM</h2>
+                <p class="section-lead">Surface lifecycle, contact context and linked work when a client route needs a manager response.</p>
+              </div>
+              <div class="manager-card-actions">
+                <button type="button" class="btn btn-outline" data-manager-card-jump="quotes">Open Quotes</button>
+                <button type="button" class="btn btn-outline" data-manager-card-jump="projects">Open Projects</button>
+              </div>
             </div>
-            <form id="staff-create-form" novalidate>
-              <div class="form-grid">
-                <label>Name
-                  <input type="text" name="name" required />
-                </label>
-                <label>Email
-                  <input type="email" name="email" required />
-                </label>
-                <label>Password
-                  <input type="password" name="password" minlength="8" required />
-                </label>
-                <label>Role
-                  <select name="role">
-                    <option value="employee">Employee</option>
-                    <option value="manager">Manager</option>
+            <div class="manager-card-grid manager-card-grid--work">
+              <section class="card surface-card surface-card--light" id="manager-clients-section">
+                <div class="manager-panel-head"><div><p class="workspace-card-label">Search</p><h3>CRM Clients</h3></div><span class="manager-panel-chip">Lifecycle</span></div>
+                <div class="dashboard-filters dashboard-filters--compact">
+                  <input type="search" id="clients-filter-q" placeholder="Search client name or email..." />
+                  <select id="clients-filter-lifecycle">
+                    <option value="">All lifecycle states</option>
+                    <option value="lead">Lead</option>
+                    <option value="quoted">Quoted</option>
+                    <option value="approved">Approved</option>
+                    <option value="active_project">Active project</option>
+                    <option value="completed">Completed</option>
+                    <option value="archived">Archived</option>
                   </select>
-                </label>
-                <label class="span-2">Phone
-                  <input type="tel" name="phone" />
-                </label>
-              </div>
-              <button type="submit" class="btn btn-gold">Create staff member</button>
-              <p class="form-status" id="staff-create-status" aria-live="polite"></p>
-            </form>
-            <div id="staff-list" class="dashboard-list"></div>
-          </section>
-        </div>
-
-        <section class="card surface-card surface-card--light" id="manager-estimates-section" data-dashboard-mobile-open="true">
-          <h2>Estimate Builder</h2>
-          <form id="estimate-create-form" novalidate>
-            <div class="form-grid">
-              <label>Title
-                <input type="text" name="title" required />
-              </label>
-              <label>Project
-                <select name="projectId">
-                  <option value="">Select project</option>
-                </select>
-              </label>
-              <label>Quote ID
-                <input type="text" name="quoteId" placeholder="UUID (optional)" />
-              </label>
-              <label>Status
-                <select name="status">
-                  <option value="draft">Draft</option>
-                  <option value="sent">Sent</option>
-                  <option value="approved">Approved</option>
-                  <option value="archived">Archived</option>
-                </select>
-              </label>
-              <label class="span-2">Notes
-                <textarea name="notes" rows="3"></textarea>
-              </label>
-            </div>
-            <button type="submit" class="btn btn-gold">Create estimate</button>
-            <p class="form-status" id="estimate-create-status" aria-live="polite"></p>
-          </form>
-
-          <div id="estimates-list" class="dashboard-list"></div>
-        </section>
-
-        <section class="card surface-card surface-card--light" id="estimate-editor-card" data-dashboard-mobile-open="true" hidden>
-          <div class="auth-account-head">
-            <div>
-              <p class="workspace-card-label">Estimate Editor</p>
-              <h2 id="estimate-editor-title">Estimate</h2>
-            </div>
-            <p class="muted" id="estimate-editor-total"></p>
-          </div>
-          <form id="estimate-update-form" novalidate>
-            <input type="hidden" name="id" />
-            <div class="form-grid">
-              <label>Title
-                <input type="text" name="title" required />
-              </label>
-              <label>Status
-                <select name="status">
-                  <option value="draft">Draft</option>
-                  <option value="sent">Sent</option>
-                  <option value="approved">Approved</option>
-                  <option value="archived">Archived</option>
-                </select>
-              </label>
-              <label>Project
-                <select name="projectId">
-                  <option value="">Select project</option>
-                </select>
-              </label>
-              <label>Quote ID
-                <input type="text" name="quoteId" placeholder="UUID (optional)" />
-              </label>
-              <label class="span-2">Notes
-                <textarea name="notes" rows="3"></textarea>
-              </label>
-            </div>
-            <div class="dashboard-actions-row">
-              <button type="submit" class="btn btn-gold">Save estimate</button>
-              <button type="button" class="btn btn-outline" id="estimate-delete-btn">Delete estimate</button>
-            </div>
-            <p class="form-status" id="estimate-update-status" aria-live="polite"></p>
-          </form>
-
-          <hr class="dashboard-divider" />
-
-          <h3>Add Estimate Line</h3>
-          <form id="estimate-line-form" novalidate>
-            <div class="form-grid">
-              <label>Line type
-                <select name="lineType">
-                  <option value="service">Service</option>
-                  <option value="material">Material</option>
-                  <option value="custom">Custom</option>
-                </select>
-              </label>
-              <label>Service
-                <select name="serviceId">
-                  <option value="">Select service</option>
-                </select>
-              </label>
-              <label>Material
-                <select name="materialId">
-                  <option value="">Select material</option>
-                </select>
-              </label>
-              <label>Description
-                <input type="text" name="description" />
-              </label>
-              <label>Unit
-                <input type="text" name="unit" value="pcs" />
-              </label>
-              <label>Quantity
-                <input type="number" name="quantity" step="0.01" value="1" required />
-              </label>
-              <label>Unit cost
-                <input type="number" name="unitCost" step="0.01" />
-              </label>
-              <label>Line total override
-                <input type="number" name="lineTotalOverride" step="0.01" />
-              </label>
-              <label class="span-2">Notes
-                <input type="text" name="notes" />
-              </label>
-            </div>
-            <button type="submit" class="btn btn-gold">Add line</button>
-            <p class="form-status" id="estimate-line-status" aria-live="polite"></p>
-          </form>
-
-          <div id="estimate-lines-list" class="dashboard-list"></div>
-        </section>
-
-        <div class="dashboard-grid dashboard-manager-top-grid">
-          <section class="card surface-card surface-card--light" id="manager-private-inbox" data-dashboard-mobile-open="true">
-            <h2>Private Inbox</h2>
-            <div class="workspace-form-panel">
-              <h3>Start private thread</h3>
-              <form id="manager-direct-thread-form" novalidate>
-                <div class="form-grid">
-                  <label>Recipient type
-                    <select name="recipientType">
-                      <option value="client">Client</option>
-                      <option value="staff">Staff</option>
-                    </select>
-                  </label>
-                  <label>Recipient email
-                    <input type="email" name="recipientEmail" list="manager-direct-recipient-suggestions" placeholder="client@email.com" autocomplete="off" required />
-                  </label>
-                  <datalist id="manager-direct-recipient-suggestions"></datalist>
-                  <small class="muted span-2" id="manager-direct-recipient-lookup-status"></small>
-                  <label class="span-2">Subject
-                    <input type="text" name="subject" placeholder="Private studio thread" required />
-                  </label>
-                  <label class="span-2">Opening message
-                    <textarea name="body" rows="3" required></textarea>
-                  </label>
-                  <label class="span-2">Attachments
-                    <input type="file" name="files" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip" />
-                  </label>
+                  <button type="button" class="btn btn-outline" id="clients-refresh-btn">Apply</button>
                 </div>
-                <button type="submit" class="btn btn-gold">Create private thread</button>
-                <p class="form-status" id="manager-direct-thread-status" aria-live="polite"></p>
-              </form>
-            </div>
-            <div class="dashboard-grid dashboard-communication-grid">
-              <div>
-                <h3>Threads</h3>
-                <div id="manager-direct-threads-list" class="dashboard-list"></div>
-              </div>
-              <div>
-                <h3>Messages</h3>
-                <div id="manager-direct-messages-list" class="dashboard-list"></div>
-                <form id="manager-direct-message-form" novalidate>
-                  <div class="form-grid">
-                    <label class="span-2">Message
-                      <textarea name="body" rows="3"></textarea>
-                    </label>
-                    <label class="span-2">Attachments
-                      <input type="file" name="files" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip" />
-                    </label>
-                  </div>
-                  <button type="submit" class="btn btn-gold">Send private message</button>
-                  <p class="form-status" id="manager-direct-message-status" aria-live="polite"></p>
-                </form>
-              </div>
+                <div id="clients-list" class="dashboard-list"></div>
+              </section>
+              <section class="card surface-card surface-card--light manager-aside-card">
+                <div class="manager-panel-head"><div><p class="workspace-card-label">Detail fields</p><h3>CRM detail expectations</h3></div><span class="manager-panel-chip">Guide</span></div>
+                <div class="workspace-operations-list">
+                  <article class="workspace-overview-entry"><h3>Contact context</h3><p>Name, email, phone and company should sit beside lifecycle state and last activity.</p></article>
+                  <article class="workspace-overview-entry"><h3>Linked routes</h3><p>Client cards should bridge quickly into quotes, projects and private inbox threads.</p></article>
+                  <article class="workspace-overview-entry"><h3>Manager ownership</h3><p>Assigned manager and current lifecycle should be editable from this card.</p></article>
+                </div>
+              </section>
             </div>
           </section>
 
-          <section class="card surface-card surface-card--light" id="manager-project-chat" data-dashboard-mobile-open="true">
-            <h2>Project Chat</h2>
-            <div class="workspace-form-panel">
-              <h3>Create project chat</h3>
-              <form id="manager-group-thread-form" novalidate>
+          <section class="manager-card-panel" data-manager-card-panel="staff" aria-labelledby="manager-staff-title" hidden>
+            <div class="manager-card-context card surface-card surface-card--dark">
+              <div>
+                <p class="section-eyebrow section-eyebrow--compact">People</p>
+                <h2 id="manager-staff-title">Staff</h2>
+                <p class="section-lead">Create and maintain studio staff access, roles and availability from one people card.</p>
+              </div>
+              <div class="manager-card-actions">
+                <button type="button" class="btn btn-gold" data-manager-card-focus="staff-create-form">Add staff</button>
+              </div>
+            </div>
+            <section class="card surface-card surface-card--light" id="manager-staff-section">
+              <div class="manager-panel-head"><div><p class="workspace-card-label">Access</p><h3>Staff Directory</h3></div><span class="manager-panel-chip">Role based</span></div>
+              <div class="dashboard-filters dashboard-filters--compact">
+                <input type="search" id="staff-filter-q" placeholder="Search staff name or email..." />
+                <select id="staff-filter-role">
+                  <option value="">All roles</option>
+                  <option value="employee">Employee</option>
+                  <option value="manager">Manager</option>
+                  <option value="admin">Admin</option>
+                </select>
+                <button type="button" class="btn btn-outline" id="staff-refresh-btn">Apply</button>
+              </div>
+              <form id="staff-create-form" novalidate>
                 <div class="form-grid">
-                  <label>Chat name
-                    <input type="text" name="name" placeholder="Kitchen delivery thread" />
+                  <label>Name
+                    <input type="text" name="name" required />
                   </label>
-                  <label>Project
-                    <select name="projectId" required>
-                      <option value="">Select project</option>
+                  <label>Email
+                    <input type="email" name="email" required />
+                  </label>
+                  <label>Password
+                    <input type="password" name="password" minlength="8" required />
+                  </label>
+                  <label>Role
+                    <select name="role">
+                      <option value="employee">Employee</option>
+                      <option value="manager">Manager</option>
                     </select>
                   </label>
-                  <label class="dashboard-inline-check span-2">
-                    <input type="checkbox" name="includeProjectClient" checked />
-                    <span>Invite linked client automatically</span>
+                  <label>Phone
+                    <input type="tel" name="phone" />
                   </label>
-                  <label class="dashboard-inline-check span-2">
-                    <input type="checkbox" name="includeAssignedStaff" checked />
-                    <span>Invite assigned staff automatically</span>
+                  <label>Job title
+                    <input type="text" name="jobTitle" />
                   </label>
-                  <label>Extra participant type
-                    <select name="participantType">
-                      <option value="client">Client</option>
-                      <option value="staff">Staff</option>
+                  <label>Specialism
+                    <input type="text" name="specialism" />
+                  </label>
+                  <label>Availability status
+                    <select name="availabilityStatus">
+                      <option value="available">Available</option>
+                      <option value="busy">Busy</option>
+                      <option value="leave">On leave</option>
                     </select>
                   </label>
-                  <label>Extra participant email
-                    <input type="email" name="participantEmail" list="manager-group-create-participant-suggestions" placeholder="Optional extra invite" autocomplete="off" />
+                  <label class="dashboard-inline-check">
+                    <input type="checkbox" name="isActive" checked />
+                    <span>Active account</span>
                   </label>
-                  <datalist id="manager-group-create-participant-suggestions"></datalist>
-                  <small class="muted span-2" id="manager-group-create-participant-lookup-status"></small>
                 </div>
-                <button type="submit" class="btn btn-gold">Create project chat</button>
-                <p class="form-status" id="manager-group-thread-status" aria-live="polite"></p>
+                <button type="submit" class="btn btn-gold">Create staff member</button>
+                <p class="form-status" id="staff-create-status" aria-live="polite"></p>
               </form>
-            </div>
-            <div class="dashboard-grid dashboard-communication-grid">
-              <div>
-                <h3>Threads</h3>
-                <div id="manager-group-threads-list" class="dashboard-list"></div>
-              </div>
-              <div>
-                <h3>Participants</h3>
-                <div id="manager-group-members-list" class="dashboard-list"></div>
-                <form id="manager-group-member-form" novalidate>
-                  <div class="form-grid">
-                    <label>Participant type
-                      <select name="participantType">
-                        <option value="client">Client</option>
-                        <option value="staff">Staff</option>
-                      </select>
-                    </label>
-                    <label>Participant email
-                      <input type="email" name="participantEmail" list="manager-group-member-suggestions" placeholder="client@email.com" autocomplete="off" required />
-                    </label>
-                    <datalist id="manager-group-member-suggestions"></datalist>
-                    <small class="muted span-2" id="manager-group-member-lookup-status"></small>
-                  </div>
-                  <button type="submit" class="btn btn-outline">Add participant</button>
-                  <p class="form-status" id="manager-group-member-status" aria-live="polite"></p>
-                </form>
-                <h3>Messages</h3>
-                <div id="manager-group-messages-list" class="dashboard-list"></div>
-                <form id="manager-group-message-form" novalidate>
-                  <div class="form-grid">
-                    <label class="span-2">Message
-                      <textarea name="body" rows="3"></textarea>
-                    </label>
-                    <label class="span-2">Attachments
-                      <input type="file" name="files" multiple accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip" />
-                    </label>
-                  </div>
-                  <button type="submit" class="btn btn-gold">Send project message</button>
-                  <p class="form-status" id="manager-group-message-status" aria-live="polite"></p>
-                </form>
-              </div>
-            </div>
+              <div id="staff-list" class="dashboard-list"></div>
+            </section>
           </section>
         </div>
       </div>
@@ -840,7 +1180,7 @@
       <div class="footer-block footer-block--brand">
         <p class="section-eyebrow section-eyebrow--compact">Level Lines Studio</p>
         <h3 data-brand-name>Level Lines Studio</h3>
-        <p class="footer-copy">Back-office operations now sit inside the same brand system as the public site, without changing the underlying management workflows.</p>
+        <p class="footer-copy">The manager workspace now sits inside the same visual system as the public site, but behaves like an operational tool instead of a brochure page.</p>
         <address class="footer-contact-list" aria-label="Level Lines Studio contact details">
           <a class="footer-contact-link" data-brand-phone="0" href="tel:+447942874446">+44 7942 874 446</a>
           <a class="footer-contact-link" data-brand-phone="1" href="tel:+447304506391">+44 7304 506 391</a>
@@ -894,8 +1234,3 @@
   <script src="/manager-dashboard.js" defer></script>
 </body>
 </html>
-
-
-
-
-
