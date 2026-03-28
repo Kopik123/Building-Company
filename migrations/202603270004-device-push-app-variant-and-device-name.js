@@ -74,7 +74,7 @@ module.exports = {
       await queryInterface.sequelize.query(`
         UPDATE "DevicePushTokens" AS token
         SET "appVariant" = CASE
-          WHEN LOWER(COALESCE("Users"."role", 'client')) = 'client' THEN 'client'
+          WHEN LOWER(COALESCE("Users"."role"::text, 'client')) = 'client' THEN 'client'
           ELSE 'company'
         END
         FROM "Users"

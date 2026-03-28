@@ -24,6 +24,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [x] Force-drop the real Postgres `NOT NULL` constraint from `Quotes.clientId` on production, because the earlier Sequelize `changeColumn(...)` hotfix was not enough for the live table.
 - [x] Fix production deploy failure in `202603270002-project-workflow-and-owner-parity.js` by quoting the Postgres enum type for `Projects.projectStage`, so live migrations stop failing on the folded lowercase `enum_projects_projectstage` type name.
 - [x] Fix the production backfill in 202603270002-project-workflow-and-owner-parity.js by comparing enum Projects.status through ::text, so Postgres no longer fails on empty fallback values in the stage backfill.
+- [x] Fix the production backfill in `202603270004-device-push-app-variant-and-device-name.js` by casting enum `Users.role` to text before `LOWER(...)`, so Postgres no longer fails while deriving `DevicePushTokens.appVariant`.
 
 - [x] Make legacy and v2 auth/session flows treat only explicit `isActive === false` as inactive, so older user rows with `null` do not log in successfully and then get auto-logged-out by `/api/auth/me` or `/api/v2/auth/refresh`.
 - [x] Add a legacy auth-shell fallback that rotates a stale `ll_auth_token` through `/api/v2/auth/refresh` before clearing browser storage, so users are not logged out a second after login when only the legacy token has expired.

@@ -11,6 +11,7 @@ const quoteAttachmentsMigration = require('../../migrations/202603240004-quote-a
 const estimateVersioningMigration = require('../../migrations/202603270001-estimate-versioning-and-approval.js');
 const projectWorkflowParityMigration = require('../../migrations/202603270002-project-workflow-and-owner-parity.js');
 const quoteProposalDetailsMigration = require('../../migrations/202603270003-quote-proposal-details.js');
+const devicePushVariantMigration = require('../../migrations/202603270004-device-push-app-variant-and-device-name.js');
 
 const createQueryInterfaceStub = (tables) => {
   const queries = [];
@@ -197,6 +198,71 @@ test('session/device hardening migration creates missing tables when Sequelize s
   );
 });
 
+test('device push variant migration backfills appVariant through enum role text casts on postgres', async () => {
+  const queries = [];
+  const changedColumns = [];
+  const tables = {
+    DevicePushTokens: {
+      id: {},
+      provider: {},
+      userId: {},
+      appVariant: {}
+    },
+    Users: {
+      id: {},
+      role: {}
+    }
+  };
+
+  const queryInterface = {
+    sequelize: {
+      getDialect() {
+        return 'postgres';
+      },
+      async query(sql) {
+        queries.push(sql);
+      }
+    },
+    async describeTable(tableName) {
+      const table = tables[tableName];
+      if (table) {
+        return table;
+      }
+
+      throw new Error(`relation "${tableName}" does not exist`);
+    },
+    async changeColumn(tableName, columnName, definition) {
+      changedColumns.push({ tableName, columnName, definition });
+      tables[tableName][columnName] = definition;
+    },
+    async addColumn(tableName, columnName, definition) {
+      tables[tableName] = tables[tableName] || {};
+      tables[tableName][columnName] = definition;
+    },
+    async removeColumn() {}
+  };
+
+  await assert.doesNotReject(() =>
+    devicePushVariantMigration.up(queryInterface, {
+      DataTypes: {
+        ENUM: (...values) => ({ type: 'ENUM', values }),
+        STRING: 'STRING'
+      },
+      ENUM: (...values) => ({ type: 'ENUM', values }),
+      STRING: 'STRING'
+    })
+  );
+
+  assert.equal(
+    changedColumns.some((item) => item.tableName === 'DevicePushTokens' && item.columnName === 'provider'),
+    true
+  );
+  assert.equal(Object.hasOwn(tables.DevicePushTokens, 'deviceName'), true);
+  assert.equal(
+    queries.some((sql) => sql.includes(`LOWER(COALESCE("Users"."role"::text, 'client')) = 'client'`)),
+    true
+  );
+});
 test('quote workflow migration resumes safely after a partial apply and uses explicit enum casts in backfill SQL', async () => {
   const queries = [];
   const addedIndexes = [];

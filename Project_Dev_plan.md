@@ -2,6 +2,11 @@
 
 ## 2026-03-28
 
+- Saved `Plans/Device Push App Variant Enum Role Text Cast Hotfix.md`, registered it in `Plans/Plan History.md`, and recorded the third production migration failure variant as a closed checklist item in `Project_todos.md`.
+- Diagnosed the next droplet failure in `202603270004-device-push-app-variant-and-device-name.js`: the backfill used `LOWER(COALESCE("Users"."role", 'client'))` against enum `Users.role`, which Postgres rejected because `LOWER()` does not accept the enum type directly.
+- Updated `migrations/202603270004-device-push-app-variant-and-device-name.js` so the `appVariant` backfill now compares `Users.role` through `LOWER(COALESCE("Users"."role"::text, 'client'))`, keeping the same client-vs-company mapping while making the SQL safe for enum roles.
+- Extended `tests/api-v2/migrations-quote-table-compat.test.js` with a dedicated regression that runs the device-push migration against a Postgres-like stub and asserts the generated SQL includes the enum-to-text cast on `Users.role`.
+- Re-ran `node --test tests/api-v2/migrations-quote-table-compat.test.js` to confirm the migration compatibility suite stays green after the `Users.role::text` hotfix.
 - Saved `Plans/Project Workflow Status Enum Text Cast Hotfix.md`, registered it in `Plans/Plan History.md`, and recorded the second production migration failure variant as a closed checklist item in `Project_todos.md`.
 - Diagnosed the next droplet failure in `202603270002-project-workflow-and-owner-parity.js`: the backfill compared enum `Projects.status` through `COALESCE("status", '')`, which made Postgres treat the empty fallback as an enum value candidate and abort the migration.
 - Updated `migrations/202603270002-project-workflow-and-owner-parity.js` so the stage backfill compares `Projects.status` via `COALESCE("status"::text, '')`, preserving the same status-to-stage mapping while making the SQL safe for enum columns and `NULL` rows.
