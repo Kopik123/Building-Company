@@ -2,6 +2,14 @@
 
 ## 2026-03-28
 
+- Saved `Plans/Pełny Pakiet Dokumentacji Systemu Level Lines Dla Strony, Paneli I Androida.md` and registered it in `Plans/Plan History.md`, so the documentation work now has a tracked execution record like the rest of the repo.
+- Added a new `Docs/` package with three repo-grounded system documents: `Level Lines - System Overview.md`, `Level Lines - Mapa Strony I Ekranow.md` and `Level Lines - Architektura Techniczna.md`.
+- Documented the product surfaces end-to-end across brochure pages, generated SEO pages, `auth.html`, legacy client/manager dashboards, `apps/web-v2`, `apps/mobile-client`, `apps/mobile-company`, `api/v2`, legacy API and deploy/runtime.
+- Mapped the main business lifecycles in documentation: visitor -> quote -> claim -> client, manager -> quote -> estimate -> project, and client -> estimate decision -> project conversion.
+- Added screen-level documentation for the public site, quote flow, legacy workspaces, `web-v2` role-aware areas and both Android app shells, including what each screen shows, which actions it owns and which API/domain objects it touches.
+- Added technical architecture documentation for Express runtime, `api/v2`, legacy/v2 route split, Sequelize/Postgres model relations, auth/session storage, refresh/push-token handling, generated-page pipeline, asset pipeline and folder-driven gallery.
+- Updated `README.md` with a direct `Dokumentacja systemu` section so the three new documents are discoverable from the repo entry point instead of being buried under ad hoc notes.
+- Re-ran a lightweight repository integrity check with `git diff --check` after the documentation pass to ensure the new markdown/docs changes are clean.
 - Fixed a live auth/session compatibility bug where older users with `isActive = null` could log in successfully and then get logged out a second later when `/api/auth/me` or `/api/v2/auth/refresh` treated the record as inactive.
 - Updated `middleware/auth.js`, `api/v2/middleware/auth.js`, `routes/auth.js` and `api/v2/routes/auth.js` so only explicit `isActive === false` blocks login/session refresh, while legacy rows with missing boolean data stay valid until a later data cleanup pass.
 - Added regression coverage in `tests/api-v2/legacy-auth-session-bridge.test.js` and `tests/api-v2/auth-flow.test.js` to lock in login + `/me` + refresh behavior for older accounts with `null` active-state values.
@@ -9,7 +17,7 @@
 - Added a Playwright regression in `tests/playwright/mobile-smoke.spec.js` that boots `auth.html` with a stale `ll_auth_token` and valid `ll_v2_refresh_token`, then verifies the page stays logged in after the session is rotated.
 - Re-ran `node --check runtime.js`, `node --check site.js`, `node --check auth.js` and a focused `node scripts/run-playwright.js -c tests/playwright/playwright.config.js --grep "auth page restores the session from v2 refresh"`, confirming the session-recovery regression passes on desktop Chromium, mobile Chromium and mobile WebKit.
 - Re-ran `npm.cmd run test:api:v2` and confirmed the auth/session regressions are green, while also recording that the workstation still shows intermittent local `spawn EPERM` failures in `node:test` / `spawnSync`-based runners outside the auth scope.
-- Saved `Plans/Nowy Wygląd Manager Workspace Z Kartami, Quick Access I Polami Operacyjnymi.md` and registered it in `Plans/Plan History.md` so the manager workspace redesign has a tracked execution record.
+- Saved `Plans/Nowy WyglÄ…d Manager Workspace Z Kartami, Quick Access I Polami Operacyjnymi.md` and registered it in `Plans/Plan History.md` so the manager workspace redesign has a tracked execution record.
 - Rebuilt `manager-dashboard.html` into a real app shell with a compact manager header, left `Quick Access Rail`, one active card panel at a time and a shared `context strip` layout instead of the previous long section stack.
 - Extended `styles/workspace.css` with the new manager workspace visual hierarchy: branded app header, rail navigation, card panels, KPI grids, two-column work areas and responsive mobile collapse without horizontal scroll.
 - Upgraded `manager-dashboard.shell.js` into a card router with `activeManagerCard` / `activeManagerSubcard`, hash parsing, reload-safe card activation, lazy per-card data loading and overview KPI rendering from the aggregated manager summary.

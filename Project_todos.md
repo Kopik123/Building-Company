@@ -4,6 +4,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 
 ## Now
 
+- [x] Create a repo-grounded 3-document documentation package for the public site, legacy dashboards, `web-v2`, backend runtime and Android foundations, so the project has one owner-friendly overview plus one screen map and one technical architecture reference.
 - [x] Decide one target authenticated web surface for the next phase: `apps/web-v2` is now the target authenticated web app, while `client-dashboard.html` / `manager-dashboard.html` stay only as a transitional compatibility layer until controlled cutover.
 - [x] Expose `apps/web-v2` through the real Express runtime under a controlled rollout route (`/app-v2` or `/workspace-v2`) before any default redirect/cutover work.
 - [x] Prepare a feature-parity map from legacy dashboards to `web-v2` covering `projects`, `quotes`, `messages`, `notifications`, `crm`, `inventory`, file upload and role-aware navigation.
