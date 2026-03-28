@@ -2,6 +2,11 @@
 
 ## 2026-03-28
 
+- Saved `Plans/Project Workflow Stage Enum Quoting Production Hotfix.md`, registered it in `Plans/Plan History.md`, and recorded the production migration failure as a closed checklist item in `Project_todos.md`.
+- Diagnosed the droplet deploy failure in `202603270002-project-workflow-and-owner-parity.js`: Sequelize was generating an unquoted `enum_Projects_projectStage` type reference, which Postgres folded to lowercase and rejected because the real enum type had been created as a quoted mixed-case identifier.
+- Updated `migrations/202603270002-project-workflow-and-owner-parity.js` to use a shared quoted enum constant for type creation, `addColumn(...)`, cast-based backfill SQL and `DROP TYPE`, so the migration now survives the real production Postgres naming rules.
+- Extended `tests/api-v2/migrations-quote-table-compat.test.js` with a regression that asserts the stored column definition uses `"enum_Projects_projectStage"` and that the stage backfill SQL also keeps quoted enum casts.
+- Re-ran `node --test tests/api-v2/migrations-quote-table-compat.test.js` to confirm the migration compatibility suite stays green after the enum-quoting hotfix.
 - Saved `Plans/Pełny Pakiet Dokumentacji Systemu Level Lines Dla Strony, Paneli I Androida.md` and registered it in `Plans/Plan History.md`, so the documentation work now has a tracked execution record like the rest of the repo.
 - Added a new `Docs/` package with three repo-grounded system documents: `Level Lines - System Overview.md`, `Level Lines - Mapa Strony I Ekranow.md` and `Level Lines - Architektura Techniczna.md`.
 - Documented the product surfaces end-to-end across brochure pages, generated SEO pages, `auth.html`, legacy client/manager dashboards, `apps/web-v2`, `apps/mobile-client`, `apps/mobile-company`, `api/v2`, legacy API and deploy/runtime.

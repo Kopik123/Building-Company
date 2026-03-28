@@ -505,11 +505,16 @@ test('project workflow parity migration adds workflow columns, backfills stage d
 
   const projectsTable = await queryInterface.describeTable('Projects');
   assert.equal(Object.hasOwn(projectsTable, 'projectStage'), true);
+  assert.equal(projectsTable.projectStage.type, '"enum_Projects_projectStage"');
   assert.equal(Object.hasOwn(projectsTable, 'currentMilestone'), true);
   assert.equal(Object.hasOwn(projectsTable, 'workPackage'), true);
   assert.equal(Object.hasOwn(projectsTable, 'dueDate'), true);
   assert.equal(
     queries.some((sql) => sql.includes('CREATE TYPE "enum_Projects_projectStage"')),
+    true
+  );
+  assert.equal(
+    queries.some((sql) => sql.includes(`'handover'::"enum_Projects_projectStage"`)),
     true
   );
   assert.equal(

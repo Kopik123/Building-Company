@@ -1,6 +1,8 @@
 'use strict';
 
 const tableDoesNotExistPattern = /does not exist|unknown table|relation .* does not exist|no such table|No description found/i;
+const PROJECT_STAGE_ENUM_IDENTIFIER = 'enum_Projects_projectStage';
+const PROJECT_STAGE_ENUM_NAME = '"enum_Projects_projectStage"';
 
 const PROJECT_STAGES = [
   'briefing',
@@ -68,9 +70,9 @@ module.exports = {
           IF NOT EXISTS (
             SELECT 1
             FROM pg_type
-            WHERE typname = 'enum_Projects_projectStage'
+            WHERE typname = '${PROJECT_STAGE_ENUM_IDENTIFIER}'
           ) THEN
-            CREATE TYPE "enum_Projects_projectStage" AS ENUM(${enumValues});
+            CREATE TYPE ${PROJECT_STAGE_ENUM_NAME} AS ENUM(${enumValues});
           END IF;
         END
         $$;
@@ -78,7 +80,7 @@ module.exports = {
     }
 
     await addColumnIfMissing(queryInterface, 'Projects', 'projectStage', {
-      type: 'enum_Projects_projectStage',
+      type: PROJECT_STAGE_ENUM_NAME,
       allowNull: false,
       defaultValue: 'briefing'
     });
@@ -103,10 +105,10 @@ module.exports = {
         UPDATE "Projects"
         SET
           "projectStage" = CASE
-            WHEN COALESCE("status", '') = 'completed' THEN 'handover'::"enum_Projects_projectStage"
-            WHEN COALESCE("status", '') = 'in_progress' THEN 'installation'::"enum_Projects_projectStage"
-            WHEN COALESCE("status", '') = 'on_hold' THEN 'procurement'::"enum_Projects_projectStage"
-            ELSE 'briefing'::"enum_Projects_projectStage"
+            WHEN COALESCE("status", '') = 'completed' THEN 'handover'::${PROJECT_STAGE_ENUM_NAME}
+            WHEN COALESCE("status", '') = 'in_progress' THEN 'installation'::${PROJECT_STAGE_ENUM_NAME}
+            WHEN COALESCE("status", '') = 'on_hold' THEN 'procurement'::${PROJECT_STAGE_ENUM_NAME}
+            ELSE 'briefing'::${PROJECT_STAGE_ENUM_NAME}
           END,
           "dueDate" = COALESCE("dueDate", "endDate")
         WHERE "projectStage" IS NULL
@@ -127,7 +129,7 @@ module.exports = {
     await removeColumnIfPresent(queryInterface, 'Projects', 'projectStage');
 
     if (await tableExists(queryInterface, 'Projects')) {
-      await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_Projects_projectStage";');
+      await queryInterface.sequelize.query(`DROP TYPE IF EXISTS ${PROJECT_STAGE_ENUM_NAME};`);
     }
   }
 };

@@ -22,6 +22,8 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [x] Add a compatibility fallback for legacy `/api/quotes/guest` so public quote intake still returns `201` when the first insert rejects lifecycle columns and the route needs a legacy-safe retry.
 - [x] Ship a production schema hotfix that makes `Quotes.clientId` nullable again, so guest quote intake no longer depends on route-level fallbacks to survive an outdated DB constraint.
 - [x] Force-drop the real Postgres `NOT NULL` constraint from `Quotes.clientId` on production, because the earlier Sequelize `changeColumn(...)` hotfix was not enough for the live table.
+- [x] Fix production deploy failure in `202603270002-project-workflow-and-owner-parity.js` by quoting the Postgres enum type for `Projects.projectStage`, so live migrations stop failing on the folded lowercase `enum_projects_projectstage` type name.
+
 - [x] Make legacy and v2 auth/session flows treat only explicit `isActive === false` as inactive, so older user rows with `null` do not log in successfully and then get auto-logged-out by `/api/auth/me` or `/api/v2/auth/refresh`.
 - [x] Add a legacy auth-shell fallback that rotates a stale `ll_auth_token` through `/api/v2/auth/refresh` before clearing browser storage, so users are not logged out a second after login when only the legacy token has expired.
 - [x] Finish the remaining manager parity gaps in `web-v2`: richer project lifecycle actions, broader delete/archive ownership, and the last legacy-only manager flows.
