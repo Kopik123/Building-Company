@@ -2,6 +2,10 @@
 
 ## 2026-03-28
 
+- Fixed a live auth/session compatibility bug where older users with `isActive = null` could log in successfully and then get logged out a second later when `/api/auth/me` or `/api/v2/auth/refresh` treated the record as inactive.
+- Updated `middleware/auth.js`, `api/v2/middleware/auth.js`, `routes/auth.js` and `api/v2/routes/auth.js` so only explicit `isActive === false` blocks login/session refresh, while legacy rows with missing boolean data stay valid until a later data cleanup pass.
+- Added regression coverage in `tests/api-v2/legacy-auth-session-bridge.test.js` and `tests/api-v2/auth-flow.test.js` to lock in login + `/me` + refresh behavior for older accounts with `null` active-state values.
+- Re-ran `npm.cmd run test:api:v2` and confirmed the auth/session regressions are green, while also recording that the workstation still shows intermittent local `spawn EPERM` failures in `node:test` / `spawnSync`-based runners outside the auth scope.
 - Saved `Plans/Nowy Wygląd Manager Workspace Z Kartami, Quick Access I Polami Operacyjnymi.md` and registered it in `Plans/Plan History.md` so the manager workspace redesign has a tracked execution record.
 - Rebuilt `manager-dashboard.html` into a real app shell with a compact manager header, left `Quick Access Rail`, one active card panel at a time and a shared `context strip` layout instead of the previous long section stack.
 - Extended `styles/workspace.css` with the new manager workspace visual hierarchy: branded app header, rail navigation, card panels, KPI grids, two-column work areas and responsive mobile collapse without horizontal scroll.

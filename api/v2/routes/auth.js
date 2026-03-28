@@ -81,7 +81,7 @@ router.post(
     if (!user) {
       return fail(res, 401, 'invalid_credentials', 'Invalid credentials');
     }
-    if (!user.isActive) {
+    if (user.isActive === false) {
       return fail(res, 403, 'user_inactive', 'User is inactive');
     }
 
@@ -131,7 +131,7 @@ router.post(
       include: [{ model: User, as: 'user' }]
     });
 
-    if (!oldSession || !oldSession.user || !oldSession.user.isActive || new Date(oldSession.expiresAt) <= now) {
+    if (!oldSession || !oldSession.user || oldSession.user.isActive === false || new Date(oldSession.expiresAt) <= now) {
       return fail(res, 401, 'invalid_refresh_token', 'Invalid refresh token');
     }
 

@@ -228,6 +228,34 @@ test('auth v2 flows stay stable for mobile-ready register/login/refresh/password
     }
   });
 
+  await suite.test('login and refresh keep legacy users with null isActive compatible', async () => {
+    try {
+      const stubs = createAuthStubs();
+      stubs.users[0].isActive = null;
+      mockModels(stubs.models);
+
+      const authRoute = loadFreshAuthRoute();
+      const app = buildExpressApp('/api/v2/auth', authRoute);
+
+      const loginResponse = await request(app)
+        .post('/api/v2/auth/login')
+        .send({ email: 'manager@example.com', password: 'Pass1234!' })
+        .expect(200);
+
+      await request(app)
+        .get('/api/v2/auth/me')
+        .set('Authorization', `Bearer ${loginResponse.body.data.accessToken}`)
+        .expect(200);
+
+      await request(app)
+        .post('/api/v2/auth/refresh')
+        .send({ refreshToken: loginResponse.body.data.refreshToken })
+        .expect(200);
+    } finally {
+      mock.stopAll();
+    }
+  });
+
   await suite.test('password change revokes existing refresh sessions', async () => {
     try {
       const stubs = createAuthStubs();

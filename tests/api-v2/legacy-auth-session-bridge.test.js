@@ -118,3 +118,25 @@ test('legacy auth register returns both legacy and v2 session tokens', async () 
   assert.ok(response.body?.v2Session?.refreshToken);
   assert.equal(stubs.sessions.length, 1);
 });
+
+test('legacy auth keeps older users with null isActive signed in across /me', async () => {
+  const stubs = createStubs();
+  stubs.users[0].isActive = null;
+  mockModels(stubs.models);
+  delete require.cache[require.resolve(path.resolve(__dirname, '..', '..', 'utils', 'sessionTokens.js'))];
+
+  const route = loadRoute('routes/auth.js');
+  const app = buildExpressApp('/api/auth', route);
+
+  const loginResponse = await request(app)
+    .post('/api/auth/login')
+    .send({ email: 'client@example.com', password: 'Pass1234!' })
+    .expect(200);
+
+  const meResponse = await request(app)
+    .get('/api/auth/me')
+    .set('Authorization', `Bearer ${loginResponse.body.token}`)
+    .expect(200);
+
+  assert.equal(meResponse.body?.user?.email, 'client@example.com');
+});

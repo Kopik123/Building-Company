@@ -21,6 +21,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [x] Add a compatibility fallback for legacy `/api/quotes/guest` so public quote intake still returns `201` when the first insert rejects lifecycle columns and the route needs a legacy-safe retry.
 - [x] Ship a production schema hotfix that makes `Quotes.clientId` nullable again, so guest quote intake no longer depends on route-level fallbacks to survive an outdated DB constraint.
 - [x] Force-drop the real Postgres `NOT NULL` constraint from `Quotes.clientId` on production, because the earlier Sequelize `changeColumn(...)` hotfix was not enough for the live table.
+- [x] Make legacy and v2 auth/session flows treat only explicit `isActive === false` as inactive, so older user rows with `null` do not log in successfully and then get auto-logged-out by `/api/auth/me` or `/api/v2/auth/refresh`.
 - [x] Finish the remaining manager parity gaps in `web-v2`: richer project lifecycle actions, broader delete/archive ownership, and the last legacy-only manager flows.
 - [x] Add one aggregated `api/v2/overview` contract (or equivalent typed dashboard summary layer) before default cutover so `web-v2` stops composing the top board from many separate requests.
 - [x] Add direct `/app-v2` UI regression coverage for `Private Inbox` and `Project Chat`, including attachment-first direct-thread creation, so rollout-shell messaging is covered outside legacy dashboard smoke tests.
@@ -149,6 +150,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [ ] Continue the Sonar cleanup with the remaining higher-complexity smells in dashboard/gallery controllers (`nesting`, `cognitive complexity`, nested template literals) now that the portability/readability pass is done.
 - [x] Create a new current design source-of-truth markdown to replace the removed `Project_Web_Design_Plan.md`.
 - [ ] Re-run the full `npm.cmd run test:e2e:mobile` suite after the manager workspace card-shell rollout; the focused manager Playwright suite is green, but the full browser/mobile command exceeded the local timeout in this session.
+- [ ] Remove the remaining local `node:child_process` / `node:test` `spawn EPERM` instability that still hits `test:mobile:foundation` and `spawnSync`-based script tests, so `npm.cmd run test:ci` becomes fully reliable on this workstation again.
 
 ## Later
 
