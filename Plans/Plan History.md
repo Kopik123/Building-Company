@@ -35,3 +35,4 @@
 - 2026-03-28 22:15 | Project Workflow Stage Enum Quoting Production Hotfix | Plans/Project Workflow Stage Enum Quoting Production Hotfix.md
 - 2026-03-28 22:25 | Project Workflow Status Enum Text Cast Hotfix | Plans/Project Workflow Status Enum Text Cast Hotfix.md
 - 2026-03-28 22:55 | Device Push App Variant Enum Role Text Cast Hotfix | Plans/Device Push App Variant Enum Role Text Cast Hotfix.md
+- 2026-03-28 23:29 | Manager Sticky Header Height Compression Hotfix | Plans/Manager Sticky Header Height Compression Hotfix.md

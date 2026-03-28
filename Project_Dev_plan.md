@@ -2,6 +2,12 @@
 
 ## 2026-03-28
 
+- Saved `Plans/Manager Sticky Header Height Compression Hotfix.md`, registered it in `Plans/Plan History.md`, and recorded the compact-header regression as a closed checklist item in `Project_todos.md`.
+- Tightened the manager workspace sticky header in `styles/workspace.css` so the shell now uses a slimmer height budget, denser brand/search/nav spacing and a compact desktop navigation row instead of the oversized hero-like top block.
+- Moved the desktop manager account tools behind the existing account toggle by turning the header auth panel into an anchored dropdown, so account actions stop permanently inflating the sticky header height.
+- Updated `site.js` so manager workspace always uses the compact auth-panel interaction model, letting the new dropdown open/close correctly on desktop rather than falling back to the old inline account panel behaviour.
+- Refined the manager header responsive breakpoints for 1280px, 1100px, 820px and 640px so the sticky shell stays narrow on desktop and collapses cleanly on tablet/mobile without horizontal overflow.
+
 - Saved `Plans/Device Push App Variant Enum Role Text Cast Hotfix.md`, registered it in `Plans/Plan History.md`, and recorded the third production migration failure variant as a closed checklist item in `Project_todos.md`.
 - Diagnosed the next droplet failure in `202603270004-device-push-app-variant-and-device-name.js`: the backfill used `LOWER(COALESCE("Users"."role", 'client'))` against enum `Users.role`, which Postgres rejected because `LOWER()` does not accept the enum type directly.
 - Updated `migrations/202603270004-device-push-app-variant-and-device-name.js` so the `appVariant` backfill now compares `Users.role` through `LOWER(COALESCE("Users"."role"::text, 'client'))`, keeping the same client-vs-company mapping while making the SQL safe for enum roles.

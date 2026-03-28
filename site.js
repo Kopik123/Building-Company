@@ -717,7 +717,7 @@
   }
 
   const isMobileMenuMode = () => globalThis.matchMedia('(max-width: 992px)').matches;
-  const isCompactAuthMode = () => globalThis.matchMedia('(max-width: 768px)').matches;
+  const isCompactAuthMode = () => isManagerWorkspace || globalThis.matchMedia('(max-width: 768px)').matches;
 
   const getMenuFocusable = () => {
     if (!navMenu) return [];
