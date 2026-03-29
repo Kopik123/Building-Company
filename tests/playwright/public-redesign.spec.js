@@ -317,6 +317,11 @@ test('core brochure pages render about, services, gallery, contact and quote rou
   await page.goto('/contact.html');
   await expect(page.locator('body.public-site.page-contact')).toBeVisible();
   await expect(page.getByRole('heading', { name: /direct studio contact for premium renovation briefs/i })).toBeVisible();
+  await expect(page.locator('.contact-direct-strip')).toBeVisible();
+  await expect(page.locator('.contact-direct-strip a[href^="tel:"]')).toHaveCount(2);
+  await expect(page.locator('.contact-direct-strip a[href^="mailto:"]')).toHaveCount(1);
+  await expect(page.locator('.contact-coverage-band')).toBeVisible();
+  await expect(page.locator('.contact-guidance-card')).toHaveCount(3);
 
   await page.goto('/quote.html');
   await expect(page.locator('body.public-site.page-quote')).toBeVisible();

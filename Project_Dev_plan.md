@@ -830,3 +830,8 @@
 - Updated `quote.html` and `styles/quote-flow.css` with a signed-in client account summary card in step 1, so the public quote form now surfaces saved account details and hides duplicated contact inputs when that data already exists on the client profile.
 - Updated `quote.js` so the quote form reuses stored client session details for `name`, `email` and `phone`, re-syncs after session changes and form resets, and still submits the same portable guest-quote payload shape for the current backend flow.
 - Added a browser regression to `tests/playwright/public-redesign.spec.js` covering the signed-in client quote path, and re-ran the new quote-account test plus the existing guest quote preview submit test; both passed on desktop Chromium, mobile Chromium and mobile WebKit.
+
+- Saved `Plans/Contact Card Layout Refresh Wave 29.md`, registered it in `Plans/Plan History.md`, and closed the matching contact-layout refresh item in `Project_todos.md`.
+- Rebuilt `contact.html` around a dedicated `contact-shell` with a compact heading band, centered phone/email strip, separate coverage band and three stacked guidance cards so the page matches the requested tighter contact-card composition.
+- Added contact-specific layout and responsive rules to `styles/public.css`, keeping the brochure brand styling while making the contact route much more deliberate on desktop and mobile.
+- Extended `tests/playwright/public-redesign.spec.js` so the brochure smoke now explicitly checks the new contact strip, coverage band and stacked guidance cards before continuing to the quote route.
