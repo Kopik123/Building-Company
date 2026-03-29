@@ -729,3 +729,8 @@
 - Reduced `apps/web-v2/src/workspace/components/quotes-sections.jsx` to a thin composition shell that only wires the five dedicated quote surfaces together.
 - Left `apps/web-v2/src/workspace/pages/quotes.jsx` as the quote orchestration layer for state and async actions, so this wave narrows the render layer without changing quote CRUD, estimate, response or follow-up upload behavior.
 - Re-ran `npm.cmd run build` in `apps/web-v2` and `node scripts/run-playwright.js -c tests/playwright/playwright.config.js --grep "web-v2"`; the authenticated rollout suite stayed green at `15/15` after the quote surface component split.
+- Saved `Plans/Web-v2 CRM Inbox And Inventory Surface Split Wave 9.md`, registered it in `Plans/Plan History.md`, and updated `Project_todos.md` so the remaining CRM/inbox/inventory render split is closed while typed view-model adapter work stays explicit.
+- Added `apps/web-v2/src/workspace/components/crm/` surface files for summary, create-staff, clients and staff, then reduced `crm-sections.jsx` to a thin composition wrapper.
+- Added `apps/web-v2/src/workspace/components/private-inbox/` surface files for sidebar and conversation, then reduced `private-inbox-sections.jsx` to a thin composition wrapper.
+- Added `apps/web-v2/src/workspace/components/inventory/` surface files for services and materials, then reduced `inventory-sections.jsx` to a thin composition wrapper.
+- Re-ran `npm.cmd run build` in `apps/web-v2` and `node scripts/run-playwright.js -c tests/playwright/playwright.config.js --grep "web-v2"`; the authenticated rollout suite stayed green at `15/15` after the CRM/inbox/inventory surface split wave.
