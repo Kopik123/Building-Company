@@ -47,7 +47,7 @@ const createGuestQuotePreviewPayload = () => ({
         siteAccess: 'easy_ground_floor'
       },
       commercial: {
-        budgetRange: '£8,000-£12,000',
+        budgetRange: 'Â£8,000-Â£12,000',
         finishLevel: 'premium'
       },
       logistics: {
@@ -85,7 +85,7 @@ const fillPhasedQuoteForm = async (form, options = {}) => {
     finishLevel: 'premium',
     siteAccess: 'easy_ground_floor',
     roomsInvolved: ['kitchen'],
-    budget: '£8,000-£12,000',
+    budget: 'Â£8,000-Â£12,000',
     postcode: 'M20 2AB',
     priorities: ['finish_quality', 'storage'],
     mustHaves: 'Hidden pantry storage and layered task lighting.',
@@ -406,6 +406,14 @@ test('quote page reuses saved client account details and hides duplicate contact
     phone: '07395448487'
   });
 
+  await page.addInitScript(() => {
+    localStorage.setItem('ll_quote_claim_pending', JSON.stringify({
+      quoteId: 'guest-quote-1',
+      claimToken: 'claim-token-1',
+      expiresAt: '2026-03-30T00:00:00Z'
+    }));
+  });
+
   await page.route('**/api/v2/new-quotes', async (route) => {
     requestBody = route.request().postData() || '';
     await route.fulfill({
@@ -472,6 +480,7 @@ test('quote page reuses saved client account details and hides duplicate contact
   await expect(quoteForm.locator('.form-status').first()).toContainText(/request saved to your account\. reference: ll-m202ab-8487\./i);
   await expect(page.getByRole('link', { name: /open account quotes/i })).toBeVisible();
   await expect(page.locator('[data-quote-claim-panel]')).toHaveCount(0);
+  await expect.poll(async () => page.evaluate(() => localStorage.getItem('ll_quote_claim_pending'))).toBeNull();
   expect(requestBody).toContain('Marta Client');
   expect(requestBody).toContain('client@example.com');
   expect(requestBody).toContain('07395448487');

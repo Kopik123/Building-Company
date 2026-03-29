@@ -22,6 +22,7 @@
   const getSavedUser = runtime.getStoredUser;
   const getPendingQuoteClaim = runtime.getPendingQuoteClaim;
   const savePendingQuoteClaim = runtime.savePendingQuoteClaim;
+  const clearPendingQuoteClaim = runtime.clearPendingQuoteClaim;
   const isPendingQuoteClaimActive = runtime.isPendingQuoteClaimActive;
   const refreshSessionFromV2 = runtime.refreshSessionFromV2;
   let quotePreviewRequest;
@@ -1694,6 +1695,7 @@
             setStatus(status, successMessage, 'success');
           }
 
+          clearPendingQuoteClaim?.();
           renderQuoteFollowup(form, previewPayload, {
             guestEmail: contactEmail,
             guestPhone: contactPhone,

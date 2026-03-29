@@ -201,3 +201,4 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [x] Refresh the public `contact.html` composition so it uses one compact heading band, a centered direct contact strip, a dedicated coverage band and three stacked guidance cards instead of the older split intro/contact grid.
 - [x] Route signed-in client quote submissions into a dedicated `new_quotes` staging flow so those requests appear in client account surfaces without guest claim-email handoff.
 - [x] Store signed-in client `new_quote` photo attachments on the server and surface those images in manager quote review, while keeping `accept -> project` and `reject -> delete staging row + uploaded files` behavior intact.
+- [x] Clear any stale browser-side pending quote claim after a signed-in client submits an account-linked `new_quote`, so logged-in quote flow never falls back into the guest claim-code path.
