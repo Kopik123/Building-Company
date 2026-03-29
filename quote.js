@@ -7,8 +7,10 @@
   const QUOTE_PREVIEW_QUERY_KEY = 'quote';
   const QUOTE_WORKSPACE_PATH = '/client-dashboard.html';
   const PUBLIC_QUOTE_API_BASE = '/api/v2/public/quotes';
+  const NEW_QUOTE_API_BASE = '/api/v2/new-quotes';
   const TOKEN_KEY = runtime.TOKEN_KEY || 'll_auth_token';
   const USER_KEY = runtime.USER_KEY || 'll_auth_user';
+  const V2_ACCESS_KEY = runtime.V2_ACCESS_KEY || 'll_v2_access_token';
   const previewUrlsByRoot = new WeakMap();
   const followupContextByForm = new WeakMap();
   const selectedFilesByInput = new WeakMap();
@@ -21,6 +23,7 @@
   const getPendingQuoteClaim = runtime.getPendingQuoteClaim;
   const savePendingQuoteClaim = runtime.savePendingQuoteClaim;
   const isPendingQuoteClaimActive = runtime.isPendingQuoteClaimActive;
+  const refreshSessionFromV2 = runtime.refreshSessionFromV2;
   let quotePreviewRequest;
 
   const normalizeProjectType = (value) => {
@@ -401,6 +404,50 @@
 
     return profile;
   };
+
+  const readV2AccessToken = () => String(localStorage.getItem(V2_ACCESS_KEY) || '').trim();
+
+  const refreshV2AccessToken = async () => {
+    if (typeof refreshSessionFromV2 !== 'function') return '';
+    try {
+      await refreshSessionFromV2();
+    } catch (_) {
+      return '';
+    }
+    return readV2AccessToken();
+  };
+
+  const fetchWithV2Session = async (url, options = {}) => {
+    const buildHeaders = (accessToken) => {
+      const headers = new Headers(options.headers || {});
+      if (accessToken && !headers.has('Authorization')) {
+        headers.set('Authorization', `Bearer ${accessToken}`);
+      }
+      if (!headers.has('Accept')) {
+        headers.set('Accept', 'application/json');
+      }
+      return headers;
+    };
+
+    let accessToken = readV2AccessToken();
+    if (!accessToken) {
+      accessToken = await refreshV2AccessToken();
+    }
+    if (!accessToken) {
+      throw new Error('Your session expired. Please log in again before sending the quote.');
+    }
+
+    let response = await fetch(url, { ...options, headers: buildHeaders(accessToken) });
+    if (response.status !== 401) {
+      return response;
+    }
+
+    accessToken = await refreshV2AccessToken();
+    if (!accessToken) {
+      return response;
+    }
+    return fetch(url, { ...options, headers: buildHeaders(accessToken) });
+  };
   const humanizeContactFieldList = (items) => {
     const normalized = (Array.isArray(items) ? items : []).filter(Boolean);
     if (!normalized.length) return '';
@@ -498,36 +545,56 @@
     previewRoot.hidden = false;
   };
 
-  const normalizeQuotePreviewPayload = (payload, publicToken) => {
-    const quote = payload?.quote && typeof payload.quote === 'object' ? payload.quote : (payload || {});
+  const normalizeQuotePreviewPayload = (payload, publicToken = '') => {
+    const envelope = payload?.data && typeof payload.data === 'object' ? payload.data : (payload || {});
+    const explicitNewQuote = envelope?.newQuote && typeof envelope.newQuote === 'object'
+      ? envelope.newQuote
+      : (payload?.newQuote && typeof payload.newQuote === 'object' ? payload.newQuote : null);
+    const explicitQuote = envelope?.quote && typeof envelope.quote === 'object'
+      ? envelope.quote
+      : (payload?.quote && typeof payload.quote === 'object' ? payload.quote : null);
+    const quote = explicitNewQuote || explicitQuote || envelope;
     const attachments = Array.isArray(quote.attachments)
       ? quote.attachments
-      : (Array.isArray(payload?.attachments) ? payload.attachments : []);
+      : (Array.isArray(envelope?.attachments) ? envelope.attachments : (Array.isArray(payload?.attachments) ? payload.attachments : []));
+    const quoteRef = quote.quoteRef || quote.referenceCode || envelope?.quoteRef || envelope?.referenceCode || payload?.quoteRef || payload?.referenceCode || '';
+    const recordType = String(
+      quote.recordType
+      || envelope?.recordType
+      || payload?.recordType
+      || (explicitNewQuote ? 'new_quote' : 'quote')
+    ).trim().toLowerCase() || 'quote';
+    const accountLinked = Boolean(quote.accountLinked ?? envelope?.accountLinked ?? payload?.accountLinked ?? recordType === 'new_quote');
 
     return {
-      quoteId: quote.id || payload?.quoteId || '',
-      referenceCode: quote.referenceCode || payload?.referenceCode || '',
-      publicToken: publicToken || payload?.publicToken || '',
-      projectType: quote.projectType || payload?.projectType || '',
-      location: quote.location || payload?.location || '',
-      status: quote.status || payload?.status || '',
-      workflowStatus: quote.workflowStatus || payload?.workflowStatus || '',
-      priority: quote.priority || payload?.priority || '',
-      attachmentCount: Number(quote.attachmentCount ?? payload?.attachmentCount ?? attachments.length) || 0,
-      canClaim: Boolean(quote.canClaim ?? payload?.canClaim ?? true),
+      quoteId: quote.id || envelope?.quoteId || payload?.quoteId || '',
+      quoteRef,
+      referenceCode: quoteRef,
+      publicToken: publicToken || quote.publicToken || envelope?.publicToken || payload?.publicToken || '',
+      projectType: quote.projectType || envelope?.projectType || payload?.projectType || '',
+      location: quote.location || envelope?.location || payload?.location || '',
+      status: quote.status || envelope?.status || payload?.status || '',
+      workflowStatus: quote.workflowStatus || envelope?.workflowStatus || payload?.workflowStatus || '',
+      priority: quote.priority || envelope?.priority || payload?.priority || '',
+      attachmentCount: Number(quote.attachmentCount ?? envelope?.attachmentCount ?? payload?.attachmentCount ?? attachments.length) || 0,
+      canClaim: Boolean(quote.canClaim ?? envelope?.canClaim ?? payload?.canClaim ?? !accountLinked),
       claimChannels: Array.isArray(quote.claimChannels)
         ? quote.claimChannels.filter(Boolean)
-        : (Array.isArray(payload?.claimChannels) ? payload.claimChannels.filter(Boolean) : []),
-      maskedGuestEmail: quote.maskedGuestEmail || payload?.maskedGuestEmail || '',
-      maskedGuestPhone: quote.maskedGuestPhone || payload?.maskedGuestPhone || '',
-      proposalDetails: quote.proposalDetails || payload?.proposalDetails || null,
+        : (Array.isArray(envelope?.claimChannels)
+          ? envelope.claimChannels.filter(Boolean)
+          : (Array.isArray(payload?.claimChannels) ? payload.claimChannels.filter(Boolean) : [])),
+      maskedGuestEmail: quote.maskedGuestEmail || envelope?.maskedGuestEmail || payload?.maskedGuestEmail || '',
+      maskedGuestPhone: quote.maskedGuestPhone || envelope?.maskedGuestPhone || payload?.maskedGuestPhone || '',
+      proposalDetails: quote.proposalDetails || envelope?.proposalDetails || payload?.proposalDetails || null,
       attachments,
-      createdAt: quote.createdAt || payload?.createdAt || '',
-      updatedAt: quote.updatedAt || payload?.updatedAt || '',
-      submittedAt: quote.submittedAt || payload?.submittedAt || '',
-      assignedAt: quote.assignedAt || payload?.assignedAt || '',
-      convertedAt: quote.convertedAt || payload?.convertedAt || '',
-      closedAt: quote.closedAt || payload?.closedAt || ''
+      createdAt: quote.createdAt || envelope?.createdAt || payload?.createdAt || '',
+      updatedAt: quote.updatedAt || envelope?.updatedAt || payload?.updatedAt || '',
+      submittedAt: quote.submittedAt || envelope?.submittedAt || payload?.submittedAt || '',
+      assignedAt: quote.assignedAt || envelope?.assignedAt || payload?.assignedAt || '',
+      convertedAt: quote.convertedAt || envelope?.convertedAt || payload?.convertedAt || '',
+      closedAt: quote.closedAt || envelope?.closedAt || payload?.closedAt || '',
+      accountLinked,
+      recordType
     };
   };
 
@@ -791,12 +858,19 @@
     const previewUrl = preview.publicToken ? buildQuotePreviewUrl(form, preview.publicToken) : '';
     const statusLabel = humanizeToken(preview.workflowStatus || preview.status || 'submitted');
     const projectTypeLabel = preview.projectType ? humanizeToken(preview.projectType) : 'Project';
-    const referenceLabel = preview.referenceCode || preview.quoteId;
-    const summaryBits = [
-      referenceLabel ? `Reference ${referenceLabel}.` : 'Quote saved.',
-      preview.location ? `${projectTypeLabel} in ${preview.location}.` : `${projectTypeLabel} quote.`,
-      preview.publicToken ? 'Keep the private link below to review status later.' : ''
-    ].filter(Boolean);
+    const referenceLabel = preview.referenceCode || preview.quoteRef || preview.quoteId;
+    const isAccountLinked = Boolean(preview.accountLinked);
+    const summaryBits = isAccountLinked
+      ? [
+        referenceLabel ? `Reference ${referenceLabel}.` : 'Quote saved to your account.',
+        preview.location ? `${projectTypeLabel} in ${preview.location}.` : `${projectTypeLabel} request saved.`,
+        'This request is linked to your account and will appear in your quote workspace.'
+      ].filter(Boolean)
+      : [
+        referenceLabel ? `Reference ${referenceLabel}.` : 'Quote saved.',
+        preview.location ? `${projectTypeLabel} in ${preview.location}.` : `${projectTypeLabel} quote.`,
+        preview.publicToken ? 'Keep the private link below to review status later.' : ''
+      ].filter(Boolean);
 
     if (title) {
       title.textContent = `Quote status: ${statusLabel}`;
@@ -817,6 +891,7 @@
         preview.convertedAt ? ['Converted', formatTimestamp(preview.convertedAt)] : null,
         preview.closedAt ? ['Closed', formatTimestamp(preview.closedAt)] : null,
         ['Photos', String(preview.attachmentCount || 0)],
+        ...(isAccountLinked ? [['Account route', 'Client quote workspace']] : []),
         ...getProposalMetaItems(preview.proposalDetails)
       ].filter(Boolean);
 
@@ -831,29 +906,40 @@
       actions.textContent = '';
       const primaryActions = document.createElement('div');
       primaryActions.className = 'quote-followup-actions-row';
-      if (previewUrl) {
-        const previewLink = document.createElement('a');
-        previewLink.className = 'btn-outline-gold';
-        previewLink.href = previewUrl;
-        previewLink.textContent = 'Open private quote link';
-        primaryActions.appendChild(previewLink);
-      }
 
-      const authLink = document.createElement('a');
-      authLink.className = 'btn-outline-gold';
-      authLink.href = buildAuthClaimUrl();
-      authLink.textContent = hasSessionToken() ? 'Open account' : 'Login or register';
-      primaryActions.appendChild(authLink);
+      if (isAccountLinked) {
+        const workspaceLink = document.createElement('a');
+        workspaceLink.className = 'btn-outline-gold';
+        workspaceLink.href = `${QUOTE_WORKSPACE_PATH}#client-quotes-section`;
+        workspaceLink.textContent = 'Open account quotes';
+        primaryActions.appendChild(workspaceLink);
+      } else {
+        if (previewUrl) {
+          const previewLink = document.createElement('a');
+          previewLink.className = 'btn-outline-gold';
+          previewLink.href = previewUrl;
+          previewLink.textContent = 'Open private quote link';
+          primaryActions.appendChild(previewLink);
+        }
+
+        const authLink = document.createElement('a');
+        authLink.className = 'btn-outline-gold';
+        authLink.href = buildAuthClaimUrl();
+        authLink.textContent = hasSessionToken() ? 'Open account' : 'Login or register';
+        primaryActions.appendChild(authLink);
+      }
       actions.appendChild(primaryActions);
 
-      const claimPanel = createQuoteClaimPanel({
-        preview,
-        previewUrl,
-        guestEmail: context.guestEmail,
-        guestPhone: context.guestPhone
-      });
-      if (claimPanel) {
-        actions.appendChild(claimPanel);
+      if (!isAccountLinked) {
+        const claimPanel = createQuoteClaimPanel({
+          preview,
+          previewUrl,
+          guestEmail: context.guestEmail,
+          guestPhone: context.guestPhone
+        });
+        if (claimPanel) {
+          actions.appendChild(claimPanel);
+        }
       }
 
       const uploadPanel = createFollowupUploadPanel({
@@ -1008,8 +1094,53 @@
     renderFilesPreview(previewRoot, files);
   };
 
+  const uploadAccountLinkedQuoteAttachmentBatches = async ({ quoteId, files, onProgress }) => {
+    if (!quoteId || !Array.isArray(files) || !files.length) {
+      return null;
+    }
+
+    const preparedFiles = await prepareQuoteFilesForUpload(files, onProgress);
+    const batchSize = 2;
+    let latestPreview = null;
+    const totalBatches = Math.ceil(preparedFiles.length / batchSize);
+
+    for (let index = 0; index < preparedFiles.length; index += batchSize) {
+      const batchNumber = Math.floor(index / batchSize) + 1;
+      const batch = preparedFiles.slice(index, index + batchSize);
+      onProgress?.(`Uploading photo batch ${batchNumber} of ${totalBatches} to your account quote...`);
+
+      const requestBody = new FormData();
+      appendFilesToRequest(requestBody, batch);
+
+      const response = await fetchWithV2Session(`${NEW_QUOTE_API_BASE}/${encodeURIComponent(quoteId)}/attachments`, {
+        method: 'POST',
+        body: requestBody
+      });
+      const responsePayload = await readResponsePayload(response);
+      if (!response.ok) {
+        const error = new Error(buildResponseErrorMessage(
+          response,
+          responsePayload,
+          'Could not upload the extra quote photos to your account request.',
+          {
+            largePayloadMessage: 'The request was saved to your account, but the selected photos are still too large. Retry smaller images from your account quote workspace.',
+            timeoutMessage: 'The request was saved to your account, but the photo upload timed out. Retry the photos from your account quote workspace.'
+          }
+        ));
+        error.preview = latestPreview;
+        throw error;
+      }
+
+      latestPreview = normalizeQuotePreviewPayload(responsePayload, '');
+    }
+
+    return latestPreview;
+  };
+
   const createFollowupUploadPanel = ({ form, preview, context }) => {
-    if (!preview?.publicToken) {
+    const isAccountLinked = Boolean(preview?.accountLinked && preview?.quoteId);
+    const canUploadToGuestQuote = Boolean(preview?.publicToken);
+    if (!isAccountLinked && !canUploadToGuestQuote) {
       return null;
     }
 
@@ -1027,14 +1158,16 @@
 
     const title = document.createElement('h4');
     title.textContent = remainingSlots > 0
-      ? 'Add more reference photos to this quote.'
+      ? (isAccountLinked ? 'Add more reference photos to this account quote.' : 'Add more reference photos to this quote.')
       : 'Photo limit reached for this quote.';
 
     const intro = document.createElement('p');
     intro.className = 'page-aside-copy';
     intro.textContent = remainingSlots > 0
-      ? `You can add ${remainingSlots} more photo${remainingSlots === 1 ? '' : 's'} to the same private quote link.`
-      : `This quote already has the maximum ${MAX_QUOTE_PHOTOS} photos.`;
+      ? (isAccountLinked
+        ? `You can add ${remainingSlots} more photo${remainingSlots === 1 ? '' : 's'} to the same account-linked quote.`
+        : `You can add ${remainingSlots} more photo${remainingSlots === 1 ? '' : 's'} to the same private quote link.`)
+      : `No more than ${MAX_QUOTE_PHOTOS} photos can be stored on one quote.`;
 
     heading.appendChild(eyebrow);
     heading.appendChild(title);
@@ -1046,7 +1179,7 @@
 
     const fileLabel = document.createElement('label');
     fileLabel.className = 'quote-followup-upload-label';
-    fileLabel.textContent = 'Additional quote photos';
+    fileLabel.textContent = isAccountLinked ? 'Additional account quote photos' : 'Additional quote photos';
 
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
@@ -1074,7 +1207,7 @@
     const submitButton = document.createElement('button');
     submitButton.type = 'submit';
     submitButton.className = 'btn-outline-gold';
-    submitButton.textContent = 'Add photos to quote';
+    submitButton.textContent = isAccountLinked ? 'Add photos to account quote' : 'Add photos to quote';
     submitButton.disabled = remainingSlots <= 0;
 
     actions.appendChild(submitButton);
@@ -1131,22 +1264,32 @@
       }
 
       submitButton.disabled = true;
-      setStatus(status, 'Preparing additional quote photos...', 'loading');
+      setStatus(
+        status,
+        isAccountLinked ? 'Preparing additional account quote photos...' : 'Preparing additional quote photos...',
+        'loading'
+      );
 
       try {
-        const nextPreview = await uploadQuoteAttachmentBatches({
-          publicToken: preview.publicToken,
-          files,
-          onProgress: (message) => setStatus(status, message, 'loading')
-        });
+        const nextPreview = isAccountLinked
+          ? await uploadAccountLinkedQuoteAttachmentBatches({
+            quoteId: preview.quoteId,
+            files,
+            onProgress: (message) => setStatus(status, message, 'loading')
+          })
+          : await uploadQuoteAttachmentBatches({
+            publicToken: preview.publicToken,
+            files,
+            onProgress: (message) => setStatus(status, message, 'loading')
+          });
         renderQuoteFollowup(form, nextPreview || preview, {
           guestEmail: context?.guestEmail,
           guestPhone: context?.guestPhone,
           uploadNotice: {
             type: 'success',
             message: files.length === 1
-              ? 'Added 1 photo to your quote.'
-              : `Added ${files.length} photos to your quote.`
+              ? (isAccountLinked ? 'Added 1 photo to your account quote.' : 'Added 1 photo to your quote.')
+              : (isAccountLinked ? `Added ${files.length} photos to your account quote.` : `Added ${files.length} photos to your quote.`)
           }
         });
       } catch (error) {
@@ -1459,9 +1602,13 @@
       event.preventDefault();
 
       const formData = new FormData(form);
+      const accountProfile = getActiveQuoteAccountProfile();
       const guestName = String(formData.get('name') || '').trim();
       const guestPhone = String(formData.get('phone') || '').trim();
       const guestEmail = String(formData.get('email') || '').trim();
+      const contactName = normalizeAccountName(accountProfile?.name || guestName);
+      const contactPhone = normalizePhone(accountProfile?.phone || guestPhone);
+      const contactEmail = normalizeEmail(accountProfile?.email || guestEmail);
       const projectTypeRaw = formData.get('projectType') || formData.get('project-type');
       const projectType = normalizeProjectType(projectTypeRaw);
       const budgetRange = String(formData.get('budget') || '').trim();
@@ -1490,10 +1637,76 @@
       setStatus(status, 'Sending your request...', 'loading');
 
       try {
+        let previewPayload = null;
+        let uploadNotice = null;
+
+        if (accountProfile) {
+          const response = await fetchWithV2Session(NEW_QUOTE_API_BASE, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              name: contactName || null,
+              phone: contactPhone || null,
+              email: contactEmail || null,
+              projectType,
+              budgetRange: budgetRange || null,
+              description,
+              location,
+              postcode: postcode || null,
+              proposalDetails
+            })
+          });
+          const responsePayload = await readResponsePayload(response);
+          if (!response.ok) {
+            throw new Error(buildResponseErrorMessage(response, responsePayload, 'Could not save your account quote request.'));
+          }
+
+          previewPayload = normalizeQuotePreviewPayload(responsePayload, '');
+          if (files.length && previewPayload.quoteId) {
+            try {
+              previewPayload = await uploadAccountLinkedQuoteAttachmentBatches({
+                quoteId: previewPayload.quoteId,
+                files,
+                onProgress: (message) => setStatus(status, message, 'loading')
+              }) || previewPayload;
+            } catch (error) {
+              previewPayload = error?.preview || previewPayload;
+              uploadNotice = {
+                type: 'error',
+                message: error.message || 'The request was saved to your account, but the photo upload still needs a retry from your account quote workspace.'
+              };
+            }
+          }
+
+          const referenceLabel = previewPayload.referenceCode || previewPayload.quoteRef || previewPayload.quoteId;
+          const uploadedPhotoCount = Number(previewPayload.attachmentCount || 0);
+          const successMessage = referenceLabel
+            ? uploadedPhotoCount
+              ? `Request saved to your account with ${uploadedPhotoCount} photo(s). Reference: ${referenceLabel}.`
+              : `Request saved to your account. Reference: ${referenceLabel}.`
+            : 'Request saved to your account.';
+
+          if (uploadNotice) {
+            setStatus(status, `${successMessage} ${uploadNotice.message}`, 'error');
+          } else {
+            setStatus(status, successMessage, 'success');
+          }
+
+          renderQuoteFollowup(form, previewPayload, {
+            guestEmail: contactEmail,
+            guestPhone: contactPhone,
+            uploadNotice
+          });
+          form.reset();
+          return;
+        }
+
         const requestBody = new FormData();
-        requestBody.set('guestName', guestName);
-        if (guestPhone) requestBody.set('guestPhone', guestPhone);
-        if (guestEmail) requestBody.set('guestEmail', guestEmail);
+        requestBody.set('guestName', contactName);
+        if (contactPhone) requestBody.set('guestPhone', contactPhone);
+        if (contactEmail) requestBody.set('guestEmail', contactEmail);
         requestBody.set('projectType', projectType);
         if (budgetRange) requestBody.set('budgetRange', budgetRange);
         requestBody.set('description', description);
@@ -1516,7 +1729,7 @@
           window.history.replaceState({}, '', nextUrl);
         }
 
-        let previewPayload = normalizeQuotePreviewPayload({
+        previewPayload = normalizeQuotePreviewPayload({
           ...responsePayload,
           quote: {
             id: responsePayload.quoteId || '',
@@ -1532,7 +1745,6 @@
           }
         }, responsePayload.publicToken || '');
 
-        let uploadNotice = null;
         if (files.length && responsePayload.publicToken) {
           try {
             previewPayload = await uploadQuoteAttachmentBatches({
@@ -1568,8 +1780,8 @@
         }
 
         renderQuoteFollowup(form, previewPayload, {
-          guestEmail,
-          guestPhone,
+          guestEmail: contactEmail,
+          guestPhone: contactPhone,
           uploadNotice
         });
         form.reset();

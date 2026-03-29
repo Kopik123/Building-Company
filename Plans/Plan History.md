@@ -65,3 +65,4 @@
 - 2026-03-29 20:52 | Quote Claim Email Delivery Verification Wave 27 | Plans/Quote Claim Email Delivery Verification Wave 27.md
 - 2026-03-29 21:05 | Logged-In Client Quote Contact Reuse Wave 28 | Plans/Logged-In Client Quote Contact Reuse Wave 28.md
 - 2026-03-29 21:12 | Contact Card Layout Refresh Wave 29 | Plans/Contact Card Layout Refresh Wave 29.md
+- 2026-03-29 23:16 | Logged-In Client New Quote Staging And Manager Conversion Wave 30 | Plans/Logged-In Client New Quote Staging And Manager Conversion Wave 30.md

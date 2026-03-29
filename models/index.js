@@ -14,6 +14,7 @@ const GroupMember = require('./GroupMember');
 const GroupMessage = require('./GroupMessage');
 const Project = require('./Project');
 const ProjectMedia = require('./ProjectMedia');
+const NewQuote = require('./NewQuote');
 const ServiceOffering = require('./ServiceOffering');
 const Material = require('./Material');
 const Estimate = require('./Estimate');
@@ -53,6 +54,8 @@ InboxMessage.belongsTo(User, { foreignKey: 'recipientId', as: 'recipient' });
 
 Quote.hasMany(QuoteClaimToken, { foreignKey: 'quoteId', as: 'claimTokens' });
 QuoteClaimToken.belongsTo(Quote, { foreignKey: 'quoteId', as: 'quote' });
+User.hasMany(NewQuote, { foreignKey: 'clientId', as: 'newQuotes' });
+NewQuote.belongsTo(User, { foreignKey: 'clientId', as: 'client' });
 
 Notification.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 User.hasMany(Notification, { foreignKey: 'userId', as: 'notifications' });
@@ -162,6 +165,8 @@ const ensureIndexes = async () => {
     { table: Quote.getTableName(), name: 'quotes_assigned_manager_idx', fields: ['assignedManagerId'] },
     { table: Quote.getTableName(), name: 'quotes_current_estimate_idx', fields: ['currentEstimateId'] },
     { table: Quote.getTableName(), name: 'quotes_converted_project_idx', fields: ['convertedProjectId'] },
+    { table: NewQuote.getTableName(), name: 'new_quotes_client_created_idx', fields: ['clientId', 'createdAt'] },
+    { table: NewQuote.getTableName(), name: 'new_quotes_project_type_created_idx', fields: ['projectType', 'createdAt'] },
     { table: QuoteAttachment.getTableName(), name: 'quote_attachments_quote_created_idx', fields: ['quoteId', 'createdAt'] },
     { table: QuoteAttachment.getTableName(), name: 'quote_attachments_uploader_idx', fields: ['uploadedByUserId'] },
     { table: QuoteEvent.getTableName(), name: 'quote_events_quote_created_idx', fields: ['quoteId', 'createdAt'] },
@@ -233,6 +238,7 @@ module.exports = {
   GroupMessage,
   Project,
   ProjectMedia,
+  NewQuote,
   ServiceOffering,
   Material,
   Estimate,

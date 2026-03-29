@@ -367,9 +367,12 @@ test('quotes v2 supports client submit, manager assignment, estimate approval an
   assert.equal(clientCreateResponse.body?.data?.quote?.workflowStatus, 'submitted');
 
   const assignResponse = await request(app)
-    .post(`/api/v2/quotes/${quoteId}/assign`)
+    .patch(`/api/v2/quotes/${quoteId}`)
     .set('Authorization', `Bearer ${managerToken}`)
-    .send({})
+    .send({
+      assignedManagerId: '11111111-1111-4111-8111-111111111111',
+      workflowStatus: 'assigned'
+    })
     .expect(200);
 
   assert.equal(assignResponse.body?.data?.quote?.workflowStatus, 'assigned');

@@ -12,6 +12,7 @@ const {
   Project,
   ProjectMedia,
   Quote,
+  NewQuote,
   QuoteAttachment,
   ServiceOffering,
   User
@@ -32,6 +33,7 @@ const {
   normalizeWorkflowStatus
 } = require('../../../utils/quoteWorkflow');
 const { sortQuoteAttachments, toQuoteAttachmentSummary } = require('../../../utils/quoteAttachments');
+const { toNewQuoteSummary } = require('../../../utils/newQuoteShape');
 
 const router = express.Router();
 const ACTIVE_PROJECT_STATUSES = ['planning', 'in_progress', 'on_hold'];
@@ -169,6 +171,12 @@ const getDirectThreadCounterparty = (thread, userId) => {
   return payload.participantA || payload.participantB || null;
 };
 
+const sortByRecent = (items) => (Array.isArray(items) ? items.slice().sort((left, right) => {
+  const leftTime = Date.parse(left?.updatedAt || left?.createdAt || 0) || 0;
+  const rightTime = Date.parse(right?.updatedAt || right?.createdAt || 0) || 0;
+  return rightTime - leftTime;
+}) : []);
+
 const serializeDirectThread = (thread, userId) => {
   const payload = toPlain(thread) || {};
   return {
@@ -200,6 +208,8 @@ router.get(
       recentQuotes,
       quoteCount,
       openQuoteCount,
+      recentNewQuotes,
+      newQuoteCount,
       memberships,
       projectThreadCount,
       directThreads,
@@ -237,6 +247,16 @@ router.get(
           status: { [Op.in]: OPEN_QUOTE_STATUSES }
         }
       }),
+      !staffMode && typeof NewQuote?.findAll === 'function'
+        ? NewQuote.findAll({
+          where: { clientId: req.v2User.id },
+          order: [['updatedAt', 'DESC'], ['createdAt', 'DESC']],
+          limit: 3
+        })
+        : Promise.resolve([]),
+      !staffMode && typeof NewQuote?.count === 'function'
+        ? NewQuote.count({ where: { clientId: req.v2User.id } })
+        : Promise.resolve(0),
       GroupMember.findAll({
         where: { userId: req.v2User.id },
         include: [{ model: GroupThread, as: 'thread', include: groupThreadIncludes }],
@@ -295,14 +315,23 @@ router.get(
     const lowStockMaterials = staffMode
       ? materials.filter((material) => Number(material?.stockQty || 0) <= Number(material?.minStockQty || 0))
       : [];
+    const stagedQuotes = !staffMode
+      ? (Array.isArray(recentNewQuotes) ? recentNewQuotes : []).map(toNewQuoteSummary)
+      : [];
+    const mergedClientQuotes = !staffMode
+      ? sortByRecent([
+        ...recentQuotes.map(hydrateQuotePayload),
+        ...stagedQuotes
+      ]).slice(0, 3)
+      : recentQuotes.map(hydrateQuotePayload);
 
     return ok(res, {
       overview: {
         metrics: {
           projectCount,
           activeProjectCount,
-          quoteCount,
-          openQuoteCount,
+          quoteCount: staffMode ? quoteCount : quoteCount + Number(newQuoteCount || 0),
+          openQuoteCount: staffMode ? openQuoteCount : openQuoteCount + Number(newQuoteCount || 0),
           projectThreadCount,
           directThreadCount,
           unreadNotificationCount,
@@ -312,7 +341,7 @@ router.get(
           publicServiceCount: staffMode ? 0 : publicServices.length
         },
         projects: recentProjects.map((project) => projectDto(project, mediaCountByProjectId)),
-        quotes: recentQuotes.map(hydrateQuotePayload),
+        quotes: mergedClientQuotes,
         threads: summarizedProjectThreads,
         directThreads: summarizedDirectThreads,
         notifications,

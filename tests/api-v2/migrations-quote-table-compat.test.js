@@ -12,6 +12,7 @@ const estimateVersioningMigration = require('../../migrations/202603270001-estim
 const projectWorkflowParityMigration = require('../../migrations/202603270002-project-workflow-and-owner-parity.js');
 const quoteProposalDetailsMigration = require('../../migrations/202603270003-quote-proposal-details.js');
 const devicePushVariantMigration = require('../../migrations/202603270004-device-push-app-variant-and-device-name.js');
+const newQuotesStagingMigration = require('../../migrations/202603290001-new-quotes-staging.js');
 
 const createQueryInterfaceStub = (tables) => {
   const queries = [];
@@ -624,4 +625,53 @@ test('quote proposal details migration adds a nullable JSON proposalDetails colu
     type: 'JSON',
     allowNull: true
   });
+});
+
+test('new quotes staging migration creates the staging table and indexes idempotently', async () => {
+  const createdTables = [];
+  const addedIndexes = [];
+  const indexesByTable = {};
+  const tables = {
+    Users: {
+      id: {},
+      email: {}
+    }
+  };
+
+  const queryInterface = {
+    async describeTable(tableName) {
+      const table = tables[tableName];
+      if (table) {
+        return table;
+      }
+      throw new Error(`relation "${tableName}" does not exist`);
+    },
+    async showIndex(tableName) {
+      return indexesByTable[tableName] || [];
+    },
+    async addIndex(tableName, fields, options) {
+      indexesByTable[tableName] = [...(indexesByTable[tableName] || []), { name: options.name }];
+      addedIndexes.push({ tableName, fields, options });
+    },
+    async createTable(tableName, definition) {
+      createdTables.push(tableName);
+      tables[tableName] = definition;
+    },
+    async dropTable() {}
+  };
+
+  await assert.doesNotReject(() => newQuotesStagingMigration.up(queryInterface));
+  await assert.doesNotReject(() => newQuotesStagingMigration.up(queryInterface));
+
+  assert.deepEqual(createdTables, ['new_quotes']);
+  assert.equal(Object.hasOwn(tables.new_quotes, 'quote_ref'), true);
+  assert.equal(Object.hasOwn(tables.new_quotes, 'attachments'), true);
+  assert.equal(
+    addedIndexes.some((item) => item.options.name === 'new_quotes_client_created_idx'),
+    true
+  );
+  assert.equal(
+    addedIndexes.some((item) => item.options.name === 'new_quotes_project_type_created_idx'),
+    true
+  );
 });

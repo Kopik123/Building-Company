@@ -199,3 +199,5 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [x] Harden guest quote email-claim delivery so the API only reports "Claim verification code sent" when SMTP explicitly accepts the target recipient, and add regression coverage for both the legacy guest quote route and the `/api/v2/public/quotes` contract path.
 - [x] Simplify the public quote step-1 contact flow for signed-in clients by reusing saved account name, email and phone, while only showing the fields that are still missing from the profile.
 - [x] Refresh the public `contact.html` composition so it uses one compact heading band, a centered direct contact strip, a dedicated coverage band and three stacked guidance cards instead of the older split intro/contact grid.
+- [x] Route signed-in client quote submissions into a dedicated `new_quotes` staging flow so those requests appear in client account surfaces without guest claim-email handoff.
+- [x] Store signed-in client `new_quote` photo attachments on the server and surface those images in manager quote review, while keeping `accept -> project` and `reject -> delete staging row + uploaded files` behavior intact.

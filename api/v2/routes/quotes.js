@@ -1,4 +1,4 @@
-const crypto = require('crypto');
+﻿const crypto = require('crypto');
 const express = require('express');
 const { Op, fn, col, where: sqlWhere } = require('sequelize');
 const { body, param, query, validationResult } = require('express-validator');
@@ -20,6 +20,7 @@ const {
   Notification,
   Project,
   Quote,
+  NewQuote,
   QuoteAttachment,
   QuoteEvent,
   User
@@ -37,6 +38,7 @@ const {
 const { advanceClientLifecycle } = require('../../../utils/crmLifecycle');
 const { createActivityEvent } = require('../../../utils/activityFeed');
 const { parseQuoteProposalDetails, buildQuoteDescriptionFromProposal } = require('../../../utils/quoteProposal');
+const { appendNewQuoteAttachmentEntries, toNewQuoteSummary } = require('../../../utils/newQuoteShape');
 const { authV2 } = require('../middleware/auth');
 const { roleCheckV2 } = require('../middleware/roles');
 const { ok, fail } = require('../utils/response');
@@ -183,6 +185,44 @@ const canAccessQuote = (quote, user) => {
   if (!quote || !user) return false;
   if (user.role === 'client') return quote.clientId === user.id;
   return ['employee', 'manager', 'admin'].includes(String(user.role || '').toLowerCase());
+};
+
+const canAccessNewQuote = (newQuote, user) => {
+  if (!newQuote || !user) return false;
+  if (String(user.role || '').toLowerCase() === 'client') return newQuote.clientId === user.id;
+  return ['employee', 'manager', 'admin'].includes(String(user.role || '').toLowerCase());
+};
+
+const newQuoteIncludeClient = [{ model: User, as: 'client', attributes: ['id', 'name', 'email', 'phone', 'companyName'], required: false }];
+const hasNewQuoteStore = () => typeof NewQuote?.findAll === 'function';
+const loadStagedNewQuote = async (id) => {
+  if (!hasNewQuoteStore() || typeof NewQuote?.findByPk !== 'function') return null;
+  return NewQuote.findByPk(id, { include: newQuoteIncludeClient });
+};
+
+const matchesStagedQuoteFilters = (quote, filters = {}) => {
+  if (!quote) return false;
+  if (filters.status && String(filters.status).trim().toLowerCase() !== 'pending') return false;
+  if (filters.workflowStatus && String(filters.workflowStatus).trim().toLowerCase() !== 'submitted') return false;
+  if (filters.priority && String(filters.priority).trim().toLowerCase() !== 'medium') return false;
+  if (filters.q) {
+    const needle = String(filters.q || '').trim().toLowerCase();
+    const haystack = [
+      quote.quoteRef,
+      quote.referenceCode,
+      quote.projectType,
+      quote.location,
+      quote.postcode,
+      quote.client?.name,
+      quote.client?.email,
+      quote.guestName,
+      quote.guestEmail,
+      quote.budgetRange,
+      quote.description
+    ].filter(Boolean).join(' ').toLowerCase();
+    if (!haystack.includes(needle)) return false;
+  }
+  return true;
 };
 
 const loadQuote = async (id) => {
@@ -347,7 +387,8 @@ router.get(
     }
 
     const where = {};
-    if (req.v2User.role === 'client') where.clientId = req.v2User.id;
+    const isClientView = String(req.v2User.role || '').toLowerCase() === 'client';
+    if (isClientView) where.clientId = req.v2User.id;
     if (req.query.status) where.status = req.query.status;
     if (req.query.workflowStatus) where.workflowStatus = req.query.workflowStatus;
     if (req.query.priority) where.priority = req.query.priority;
@@ -363,6 +404,42 @@ router.get(
     }
 
     const { page, pageSize, offset } = getPagination(req);
+
+    if (isClientView && hasNewQuoteStore()) {
+      const [legacyQuotes, stagedNewQuotes] = await Promise.all([
+        Quote.findAll({
+          where,
+          include: quoteIncludes,
+          order: [['updatedAt', 'DESC']],
+          distinct: true
+        }),
+        typeof NewQuote?.findAll === 'function'
+          ? NewQuote.findAll({
+            where: { clientId: req.v2User.id },
+            include: newQuoteIncludeClient,
+            order: [['updatedAt', 'DESC'], ['createdAt', 'DESC']]
+          })
+          : Promise.resolve([])
+      ]);
+
+      const mergedQuotes = [...legacyQuotes.map(hydrateQuotePayload)];
+      (Array.isArray(stagedNewQuotes) ? stagedNewQuotes : []).forEach((newQuote) => {
+        const summary = toNewQuoteSummary(newQuote);
+        if (matchesStagedQuoteFilters(summary, req.query)) {
+          mergedQuotes.push(summary);
+        }
+      });
+
+      const sortedQuotes = mergedQuotes.sort((left, right) => {
+        const leftTime = Date.parse(left?.updatedAt || left?.createdAt || 0) || 0;
+        const rightTime = Date.parse(right?.updatedAt || right?.createdAt || 0) || 0;
+        return rightTime - leftTime;
+      });
+      const quotes = sortedQuotes.slice(offset, offset + pageSize);
+      const total = sortedQuotes.length;
+      return ok(res, { quotes }, { page, pageSize, total, totalPages: Math.max(1, Math.ceil(total / pageSize)) });
+    }
+
     const { rows, count } = await Quote.findAndCountAll({
       where,
       include: quoteIncludes,
@@ -388,12 +465,20 @@ router.get(
     }
 
     const quote = await loadQuote(req.params.id);
-    if (!quote) return fail(res, 404, 'quote_not_found', 'Quote not found');
-    if (req.v2User.role === 'client' && quote.clientId !== req.v2User.id) {
+    if (quote) {
+      if (req.v2User.role === 'client' && quote.clientId !== req.v2User.id) {
+        return fail(res, 404, 'quote_not_found', 'Quote not found');
+      }
+
+      return ok(res, { quote });
+    }
+
+    const stagedNewQuote = await loadStagedNewQuote(req.params.id);
+    if (!stagedNewQuote || !canAccessNewQuote(stagedNewQuote, req.v2User)) {
       return fail(res, 404, 'quote_not_found', 'Quote not found');
     }
 
-    return ok(res, { quote });
+    return ok(res, { quote: toNewQuoteSummary(stagedNewQuote) });
   })
 );
 
@@ -413,12 +498,22 @@ router.post(
       return fail(res, 400, 'validation_failed', 'Validation failed', errors.array());
     }
 
-    const quote = await Quote.findByPk(req.params.id, { include: quoteIncludes });
-    if (!quote) {
-      await cleanupUploadedFiles(files);
-      return fail(res, 404, 'quote_not_found', 'Quote not found');
-    }
-    if (!canAccessQuote(quote, req.v2User)) {
+    let quote = await Quote.findByPk(req.params.id, { include: quoteIncludes });
+    let stagedNewQuote = null;
+    const isStagedNewQuote = !quote && hasNewQuoteStore();
+
+    if (quote) {
+      if (!canAccessQuote(quote, req.v2User)) {
+        await cleanupUploadedFiles(files);
+        return fail(res, 404, 'quote_not_found', 'Quote not found');
+      }
+    } else if (isStagedNewQuote) {
+      stagedNewQuote = await loadStagedNewQuote(req.params.id);
+      if (!stagedNewQuote || !canAccessNewQuote(stagedNewQuote, req.v2User)) {
+        await cleanupUploadedFiles(files);
+        return fail(res, 404, 'quote_not_found', 'Quote not found');
+      }
+    } else {
       await cleanupUploadedFiles(files);
       return fail(res, 404, 'quote_not_found', 'Quote not found');
     }
@@ -434,7 +529,8 @@ router.post(
       return fail(res, 400, 'missing_attachments', 'Attach at least one photo');
     }
 
-    const existingCount = Array.isArray(quote.attachments) ? quote.attachments.length : 0;
+    const existingAttachments = Array.isArray((quote || stagedNewQuote)?.attachments) ? (quote || stagedNewQuote).attachments : [];
+    const existingCount = existingAttachments.length;
     const remainingSlots = Math.max(0, MAX_QUOTE_ATTACHMENT_FILES - existingCount);
     if (remainingSlots <= 0) {
       await cleanupUploadedFiles(files);
@@ -443,6 +539,15 @@ router.post(
     if (files.length > remainingSlots) {
       await cleanupUploadedFiles(files);
       return fail(res, 400, 'attachment_limit_reached', `This quote can store up to ${MAX_QUOTE_ATTACHMENT_FILES} photos. You can add ${remainingSlots} more right now.`);
+    }
+
+    if (stagedNewQuote) {
+      await stagedNewQuote.update({
+        attachments: appendNewQuoteAttachmentEntries(existingAttachments, files)
+      });
+      const refreshedNewQuote = await loadStagedNewQuote(stagedNewQuote.id);
+      const stagedSummary = toNewQuoteSummary(refreshedNewQuote || stagedNewQuote);
+      return ok(res, { quote: stagedSummary, attachments: stagedSummary.attachments }, {}, 201);
     }
 
     let attachments = [];
@@ -655,46 +760,54 @@ router.patch(
     }
 
     const quote = await Quote.findByPk(req.params.id);
-    if (!quote) return fail(res, 404, 'quote_not_found', 'Quote not found');
+    if (!quote) {
+      const stagedNewQuote = await loadStagedNewQuote(req.params.id);
+      if (!stagedNewQuote || !canAccessNewQuote(stagedNewQuote, req.v2User)) {
+        return fail(res, 404, 'quote_not_found', 'Quote not found');
+      }
+      return fail(res, 400, 'quote_update_not_supported', 'Staged new quotes cannot be edited. Accept or reject the request instead.');
+    }
 
     const payload = {};
     if (Object.prototype.hasOwnProperty.call(req.body, 'projectType')) payload.projectType = req.body.projectType;
-    if (Object.prototype.hasOwnProperty.call(req.body, 'location')) payload.location = String(req.body.location || '').trim();
-    if (Object.prototype.hasOwnProperty.call(req.body, 'description')) payload.description = String(req.body.description || '').trim();
+    if (Object.prototype.hasOwnProperty.call(req.body, 'location')) payload.location = toNullableString(req.body.location) || '';
     if (Object.prototype.hasOwnProperty.call(req.body, 'priority')) payload.priority = req.body.priority;
+    if (Object.prototype.hasOwnProperty.call(req.body, 'contactMethod')) payload.contactMethod = req.body.contactMethod || null;
     if (Object.prototype.hasOwnProperty.call(req.body, 'clientId')) payload.clientId = req.body.clientId || null;
     if (Object.prototype.hasOwnProperty.call(req.body, 'assignedManagerId')) payload.assignedManagerId = req.body.assignedManagerId || null;
-    if (Object.prototype.hasOwnProperty.call(req.body, 'guestName')) payload.guestName = toNullableString(req.body.guestName);
-    if (Object.prototype.hasOwnProperty.call(req.body, 'guestEmail')) payload.guestEmail = toNullableString(req.body.guestEmail);
-    if (Object.prototype.hasOwnProperty.call(req.body, 'guestPhone')) payload.guestPhone = toNullableString(req.body.guestPhone);
-    if (Object.prototype.hasOwnProperty.call(req.body, 'contactMethod')) payload.contactMethod = req.body.contactMethod || null;
-    if (Object.prototype.hasOwnProperty.call(req.body, 'postcode')) payload.postcode = toNullableString(req.body.postcode);
-    if (Object.prototype.hasOwnProperty.call(req.body, 'budgetRange')) payload.budgetRange = toNullableString(req.body.budgetRange);
-    if (Object.prototype.hasOwnProperty.call(req.body, 'contactEmail')) payload.contactEmail = toNullableString(req.body.contactEmail);
-    if (Object.prototype.hasOwnProperty.call(req.body, 'contactPhone')) payload.contactPhone = toNullableString(req.body.contactPhone);
+    if (Object.prototype.hasOwnProperty.call(req.body, 'nextActionAt')) payload.nextActionAt = req.body.nextActionAt || null;
+    if (Object.prototype.hasOwnProperty.call(req.body, 'responseDeadline')) payload.responseDeadline = req.body.responseDeadline || null;
+    if (Object.prototype.hasOwnProperty.call(req.body, 'lossReason')) payload.lossReason = toNullableString(req.body.lossReason);
+
     if (Object.prototype.hasOwnProperty.call(req.body, 'proposalDetails')) {
       try {
         payload.proposalDetails = parseQuoteProposalDetails(req.body.proposalDetails, {
-          source: 'manager_quote_update_v2'
+          source: quote.sourceChannel || 'manager_updated_quote_v2'
         });
       } catch (error) {
         return fail(res, error.statusCode || 400, error.code || 'invalid_quote_proposal', error.message || 'Invalid quote proposal payload', error.details || null);
       }
     }
 
-    if (
-      Object.prototype.hasOwnProperty.call(req.body, 'description')
-      || Object.prototype.hasOwnProperty.call(payload, 'proposalDetails')
-      || Object.prototype.hasOwnProperty.call(payload, 'location')
-      || Object.prototype.hasOwnProperty.call(payload, 'postcode')
-      || Object.prototype.hasOwnProperty.call(payload, 'budgetRange')
-    ) {
+    if (Object.prototype.hasOwnProperty.call(req.body, 'postcode')) {
+      payload.postcode = toNullableString(req.body.postcode);
+    }
+
+    if (Object.prototype.hasOwnProperty.call(req.body, 'budgetRange')) {
+      payload.budgetRange = toNullableString(req.body.budgetRange);
+    }
+
+    if (Object.prototype.hasOwnProperty.call(req.body, 'description') || Object.prototype.hasOwnProperty.call(req.body, 'proposalDetails')) {
+      const nextLocation = Object.prototype.hasOwnProperty.call(payload, 'location') ? payload.location : quote.location;
+      const nextPostcode = Object.prototype.hasOwnProperty.call(payload, 'postcode') ? payload.postcode : quote.postcode;
+      const nextBudgetRange = Object.prototype.hasOwnProperty.call(payload, 'budgetRange') ? payload.budgetRange : quote.budgetRange;
+      const nextProposalDetails = Object.prototype.hasOwnProperty.call(payload, 'proposalDetails') ? payload.proposalDetails : quote.proposalDetails;
       const nextDescription = buildQuoteDescriptionFromProposal({
-        description: Object.prototype.hasOwnProperty.call(req.body, 'description') ? payload.description : quote.description,
-        proposalDetails: Object.prototype.hasOwnProperty.call(payload, 'proposalDetails') ? payload.proposalDetails : quote.proposalDetails,
-        location: Object.prototype.hasOwnProperty.call(payload, 'location') ? payload.location : quote.location,
-        postcode: Object.prototype.hasOwnProperty.call(payload, 'postcode') ? payload.postcode : quote.postcode,
-        budgetRange: Object.prototype.hasOwnProperty.call(payload, 'budgetRange') ? payload.budgetRange : quote.budgetRange
+        description: Object.prototype.hasOwnProperty.call(req.body, 'description') ? String(req.body.description || '').trim() : quote.description,
+        proposalDetails: nextProposalDetails,
+        location: nextLocation,
+        postcode: nextPostcode,
+        budgetRange: nextBudgetRange
       });
 
       if (!nextDescription) {
@@ -729,62 +842,6 @@ router.patch(
   })
 );
 
-router.post(
-  '/:id/assign',
-  [
-    authV2,
-    roleCheckV2('manager', 'admin'),
-    param('id').isUUID(),
-    body('assignedManagerId').optional({ nullable: true }).isUUID()
-  ],
-  asyncHandler(async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return fail(res, 400, 'validation_failed', 'Validation failed', errors.array());
-    }
-
-    const quote = await Quote.findByPk(req.params.id, { include: quoteIncludes });
-    if (!quote) return fail(res, 404, 'quote_not_found', 'Quote not found');
-
-    const assignedManagerId = req.body.assignedManagerId || req.v2User.id;
-    await quote.update(resolveWorkflowPayload('assigned', {
-      assignedManagerId
-    }));
-
-    const thread = await ensureQuoteThread({ quote, currentUserId: req.v2User.id });
-    await createQuoteEvent({
-      quoteId: quote.id,
-      actorUserId: req.v2User.id,
-      eventType: 'quote_assigned',
-      visibility: 'client',
-      message: 'A manager took ownership of the quote request.',
-      data: {
-        assignedManagerId,
-        groupThreadId: thread?.id || null
-      }
-    });
-
-    await createActivityEvent(ActivityEvent, {
-      actorUserId: req.v2User.id,
-      entityType: 'quote',
-      entityId: quote.id,
-      quoteId: quote.id,
-      clientId: quote.clientId || null,
-      visibility: 'client',
-      eventType: 'quote_assigned',
-      title: 'Quote assigned',
-      message: 'A manager took ownership of the quote request.',
-      data: {
-        assignedManagerId,
-        groupThreadId: thread?.id || null
-      }
-    }, 'quote_assign_activity');
-
-    const hydratedQuote = await attachEstimateMeta(quote);
-    return ok(res, { quote: hydratedQuote, thread });
-  })
-);
-
 router.get(
   '/:id/timeline',
   [
@@ -799,7 +856,13 @@ router.get(
     }
 
     const quote = await Quote.findByPk(req.params.id);
-    if (!quote) return fail(res, 404, 'quote_not_found', 'Quote not found');
+    if (!quote) {
+      const stagedNewQuote = await loadStagedNewQuote(req.params.id);
+      if (!stagedNewQuote || !canAccessNewQuote(stagedNewQuote, req.v2User)) {
+        return fail(res, 404, 'quote_not_found', 'Quote not found');
+      }
+      return ok(res, { events: [] });
+    }
     if (req.v2User.role === 'client' && quote.clientId !== req.v2User.id) {
       return fail(res, 404, 'quote_not_found', 'Quote not found');
     }
@@ -824,7 +887,13 @@ router.get(
     }
 
     const quote = await Quote.findByPk(req.params.id);
-    if (!quote) return fail(res, 404, 'quote_not_found', 'Quote not found');
+    if (!quote) {
+      const stagedNewQuote = await loadStagedNewQuote(req.params.id);
+      if (!stagedNewQuote || !canAccessNewQuote(stagedNewQuote, req.v2User)) {
+        return fail(res, 404, 'quote_not_found', 'Quote not found');
+      }
+      return ok(res, { estimates: [] });
+    }
     if (req.v2User.role === 'client' && quote.clientId !== req.v2User.id) {
       return fail(res, 404, 'quote_not_found', 'Quote not found');
     }

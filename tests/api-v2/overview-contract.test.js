@@ -394,6 +394,42 @@ const createOverviewStubs = () => {
     }
   ];
 
+  const newQuotes = [
+    {
+      id: 'new-quote-1',
+      quoteRef: 'LL-M202AB-8487',
+      clientId: 'client-1',
+      clientName: 'Marta Client',
+      clientEmail: 'client@example.com',
+      clientPhone: '+44 7000 000 002',
+      projectType: 'kitchen',
+      location: 'Manchester and the North West',
+      postcode: 'M20 2AB',
+      budgetRange: '??8,000-??12,000',
+      proposalDetails: {
+        source: 'client_quote_form_v2'
+      },
+      description: 'Fresh staged quote from signed-in client.',
+      attachments: [
+        {
+          name: 'staged-brief-photo.png',
+          filename: 'staged-brief-photo.png',
+          url: '/uploads/staged-brief-photo.png',
+          storagePath: 'uploads/staged-brief-photo.png',
+          mimeType: 'image/png',
+          sizeBytes: 4096,
+          mediaType: 'image',
+          createdAt: '2026-03-29T19:00:00Z',
+          updatedAt: '2026-03-29T19:00:00Z'
+        }
+      ],
+      sourceChannel: 'client_quote_portal',
+      client: users['client-1'],
+      createdAt: '2026-03-29T19:00:00Z',
+      updatedAt: '2026-03-29T19:00:00Z'
+    }
+  ];
+
   const projectMediaCounts = {
     'project-1': { imageCount: 2, documentCount: 1 },
     'project-2': { imageCount: 0, documentCount: 2 }
@@ -483,6 +519,23 @@ const createOverviewStubs = () => {
         },
         async count({ where = {} }) {
           return filterQuotes(where).length;
+        }
+      },
+      NewQuote: {
+        async findAll({ where = {}, limit }) {
+          return newQuotes
+            .filter((quote) => {
+              if (where.clientId && quote.clientId != where.clientId) return false;
+              return true;
+            })
+            .slice(0, limit || newQuotes.length)
+            .map((quote) => toModel(quote));
+        },
+        async count({ where = {} }) {
+          return newQuotes.filter((quote) => {
+            if (where.clientId && quote.clientId != where.clientId) return false;
+            return true;
+          }).length;
         }
       },
       ServiceOffering: {
@@ -637,13 +690,15 @@ test('overview v2 keeps client payloads scoped to the current customer and expos
   const overview = response.body?.data?.overview;
   assert.ok(overview);
   assert.equal(overview.metrics.projectCount, 1);
-  assert.equal(overview.metrics.quoteCount, 1);
+  assert.equal(overview.metrics.quoteCount, 2);
+  assert.equal(overview.metrics.openQuoteCount, 2);
   assert.equal(overview.metrics.clientCount, 0);
   assert.equal(overview.metrics.staffCount, 0);
   assert.equal(overview.metrics.lowStockMaterialCount, 0);
   assert.equal(overview.metrics.publicServiceCount, 2);
   assert.equal(overview.projects.length, 1);
-  assert.equal(overview.quotes.length, 1);
+  assert.equal(overview.quotes.length, 2);
+  assert.ok(overview.quotes.some((quote) => quote.recordType === 'new_quote'));
   assert.equal(overview.lowStockMaterials.length, 0);
   assert.equal(overview.publicServices.length, 2);
   assert.equal(overview.crm.clientCount, 0);

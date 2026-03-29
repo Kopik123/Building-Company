@@ -167,6 +167,7 @@ const mockPublicClientSession = async (page, userOverrides = {}) => {
 
   await page.addInitScript((payload) => {
     localStorage.setItem('ll_auth_token', 'test-token');
+    localStorage.setItem('ll_v2_access_token', 'test-v2-token');
     localStorage.setItem('ll_auth_user', JSON.stringify(payload));
   }, user);
 
@@ -405,18 +406,29 @@ test('quote page reuses saved client account details and hides duplicate contact
     phone: '07395448487'
   });
 
-  await page.route('**/api/v2/public/quotes', async (route) => {
+  await page.route('**/api/v2/new-quotes', async (route) => {
     requestBody = route.request().postData() || '';
     await route.fulfill({
       status: 201,
       json: {
-        quoteId: 'quote-preview-1',
-        referenceCode: GUEST_REFERENCE_CODE,
-        publicToken: 'guest-preview-token',
-        status: 'pending',
-        workflowStatus: 'submitted',
-        attachmentCount: 0,
-        attachments: []
+        data: {
+          newQuote: {
+            id: 'new-quote-1',
+            quoteRef: GUEST_REFERENCE_CODE,
+            referenceCode: GUEST_REFERENCE_CODE,
+            recordType: 'new_quote',
+            accountLinked: true,
+            projectType: 'kitchen',
+            location: 'Manchester and the North West',
+            status: 'pending',
+            workflowStatus: 'submitted',
+            priority: 'medium',
+            attachmentCount: 0,
+            attachments: [],
+            createdAt: '2026-03-29T20:15:00Z'
+          }
+        },
+        meta: {}
       }
     });
   });
@@ -457,7 +469,9 @@ test('quote page reuses saved client account details and hides duplicate contact
   await quoteForm.locator('textarea[name="message"]').fill('Kitchen refresh with new joinery and appliance wall.');
   await page.getByRole('button', { name: /send enquiry/i }).click();
 
-  await expect(quoteForm.locator('.form-status').first()).toContainText(/request sent\. reference: ll-m202ab-8487\./i);
+  await expect(quoteForm.locator('.form-status').first()).toContainText(/request saved to your account\. reference: ll-m202ab-8487\./i);
+  await expect(page.getByRole('link', { name: /open account quotes/i })).toBeVisible();
+  await expect(page.locator('[data-quote-claim-panel]')).toHaveCount(0);
   expect(requestBody).toContain('Marta Client');
   expect(requestBody).toContain('client@example.com');
   expect(requestBody).toContain('07395448487');

@@ -25,6 +25,17 @@
       if (Number.isNaN(date.getTime())) return '';
       return date.toISOString().slice(0, 16);
     };
+    const formatAttachmentSize = (bytes) => {
+      const numericBytes = Number(bytes) || 0;
+      if (numericBytes <= 0) return 'Image';
+      if (numericBytes < 1024 * 1024) return `${Math.max(1, Math.round(numericBytes / 1024))} KB`;
+      return `${(numericBytes / (1024 * 1024)).toFixed(1)} MB`;
+    };
+
+    const humanizeTokenValue = (value) => String(value || 'project')
+      .trim()
+      .replace(/[_-]+/g, ' ')
+      .replace(/\b\w/g, (entry) => entry.toUpperCase());
 
     const createQuoteCard = () => {
       const card = document.createElement('article');
@@ -32,15 +43,72 @@
       const heading = document.createElement('h3');
       heading.className = 'dashboard-item-title';
       const meta = document.createElement('p');
-      meta.className = 'muted';
+      meta.className = 'muted dashboard-quote-meta';
       const description = document.createElement('p');
+      description.className = 'dashboard-quote-description';
+      const preview = document.createElement('div');
+      preview.className = 'dashboard-quote-preview';
+      preview.hidden = true;
       const controls = document.createElement('div');
       controls.className = 'dashboard-edit-grid';
       card.appendChild(heading);
       card.appendChild(meta);
       card.appendChild(description);
+      card.appendChild(preview);
       card.appendChild(controls);
       return card;
+    };
+
+    const renderQuotePreviewGrid = (previewRoot, attachments) => {
+      if (!(previewRoot instanceof HTMLElement)) return;
+      previewRoot.textContent = '';
+      const normalized = Array.isArray(attachments) ? attachments.filter(Boolean) : [];
+      if (!normalized.length) {
+        previewRoot.hidden = true;
+        return;
+      }
+
+      const grid = document.createElement('div');
+      grid.className = 'dashboard-quote-preview-grid';
+      normalized.slice(0, 6).forEach((attachment, index) => {
+        const link = document.createElement('a');
+        link.className = 'dashboard-quote-preview-card';
+        link.href = attachment.url || '#';
+        link.target = '_blank';
+        link.rel = 'noreferrer';
+
+        const thumb = document.createElement('div');
+        thumb.className = 'dashboard-quote-preview-thumb';
+        const isImage = String(attachment.mimeType || attachment.mediaType || '').toLowerCase().startsWith('image');
+        if (isImage && attachment.url) {
+          const image = document.createElement('img');
+          image.src = attachment.url;
+          image.alt = attachment.name || `Quote attachment ${index + 1}`;
+          image.loading = 'lazy';
+          image.decoding = 'async';
+          thumb.appendChild(image);
+        } else {
+          const fallback = document.createElement('span');
+          fallback.textContent = 'FILE';
+          thumb.appendChild(fallback);
+        }
+
+        const caption = document.createElement('p');
+        caption.className = 'dashboard-quote-preview-name';
+        caption.textContent = attachment.name || `Attachment ${index + 1}`;
+
+        const meta = document.createElement('span');
+        meta.className = 'dashboard-quote-preview-size';
+        meta.textContent = formatAttachmentSize(attachment.size || attachment.sizeBytes);
+
+        link.appendChild(thumb);
+        link.appendChild(caption);
+        link.appendChild(meta);
+        grid.appendChild(link);
+      });
+
+      previewRoot.appendChild(grid);
+      previewRoot.hidden = false;
     };
 
     const renderQuotes = () => {
@@ -60,30 +128,79 @@
         getKey: (quote) => quote.id,
         createNode: createQuoteCard,
         updateNode: (card, quote) => {
+          const isNewQuote = String(quote.recordType || '').toLowerCase() === 'new_quote';
           const owner = quote.guestName || quote.client?.name || quote.client?.email || 'Unknown client';
-          card.children[0].textContent = `${escapeHtml(quote.projectType)} | ${escapeHtml(owner)}`;
-          const metaParts = [
-            escapeHtml(quote.status),
-            `workflow ${escapeHtml(quote.workflowStatus || 'submitted')}`,
-            `priority ${escapeHtml(quote.priority)}`,
-            escapeHtml(quote.location || '-'),
-            escapeHtml(quote.postcode || ''),
-            quote.sourceChannel ? `via ${escapeHtml(quote.sourceChannel)}` : '',
-            quote.assignedManager?.email ? `owner ${escapeHtml(quote.assignedManager.email)}` : 'unassigned'
-          ].filter(Boolean);
-          card.children[1].textContent = metaParts.join(' | ');
-          const descriptionParts = [
-            quote.budgetRange ? `Budget ${quote.budgetRange}` : '',
-            quote.currentEstimateId ? `Estimate linked` : '',
-            quote.nextActionAt ? `Next action ${quote.nextActionAt}` : '',
-            quote.responseDeadline ? `Deadline ${quote.responseDeadline}` : '',
-            quote.lossReason ? `Loss reason: ${quote.lossReason}` : '',
-            quote.description || ''
-          ].filter(Boolean);
-          card.children[2].textContent = descriptionParts.join(' | ');
+          const heading = card.querySelector('.dashboard-item-title');
+          const meta = card.querySelector('.dashboard-quote-meta');
+          const description = card.querySelector('.dashboard-quote-description');
+          const previewRoot = card.querySelector('.dashboard-quote-preview');
+          const controls = card.querySelector('.dashboard-edit-grid');
+          heading.textContent = `${humanizeTokenValue(quote.projectType)} | ${owner}`;
 
-          const controls = card.children[3];
+          const metaParts = [
+            isNewQuote ? 'staged request' : String(quote.status || '').trim(),
+            `workflow ${String(quote.workflowStatus || 'submitted').trim()}`,
+            `priority ${String(quote.priority || 'medium').trim()}`,
+            quote.quoteRef ? `ref ${quote.quoteRef}` : '',
+            quote.location || '-',
+            quote.postcode || '',
+            quote.sourceChannel ? `via ${quote.sourceChannel}` : '',
+            quote.assignedManager?.email ? `owner ${quote.assignedManager.email}` : (isNewQuote ? 'awaiting review' : 'unassigned')
+          ].filter(Boolean);
+          meta.textContent = metaParts.join(' | ');
+
+          const descriptionParts = isNewQuote
+            ? [
+              quote.budgetRange ? `Budget ${quote.budgetRange}` : '',
+              quote.attachmentCount ? `${quote.attachmentCount} photo(s)` : '',
+              'Accept to convert this staged request into a project, or reject to remove it from the queue.',
+              quote.description || ''
+            ].filter(Boolean)
+            : [
+              quote.budgetRange ? `Budget ${quote.budgetRange}` : '',
+              quote.currentEstimateId ? 'Estimate linked' : '',
+              quote.nextActionAt ? `Next action ${quote.nextActionAt}` : '',
+              quote.responseDeadline ? `Deadline ${quote.responseDeadline}` : '',
+              quote.lossReason ? `Loss reason: ${quote.lossReason}` : '',
+              quote.description || ''
+            ].filter(Boolean);
+          description.textContent = descriptionParts.join(' | ');
+          renderQuotePreviewGrid(previewRoot, quote.attachments);
+
           controls.replaceChildren();
+
+          if (isNewQuote) {
+            const acceptBtn = document.createElement('button');
+            acceptBtn.type = 'button';
+            acceptBtn.className = 'btn btn-gold';
+            acceptBtn.textContent = 'Accept';
+            acceptBtn.disabled = !canManageQuotes();
+            acceptBtn.addEventListener('click', async () => {
+              try {
+                await api(`/api/manager/quotes/${quote.id}/accept`, { method: 'POST' });
+                await loadQuotes();
+              } catch (error) {
+                globalThis.alert(error.message || 'Failed to accept quote request');
+              }
+            });
+
+            const rejectBtn = document.createElement('button');
+            rejectBtn.type = 'button';
+            rejectBtn.className = 'btn btn-outline';
+            rejectBtn.textContent = 'Reject';
+            rejectBtn.disabled = !canManageQuotes();
+            rejectBtn.addEventListener('click', async () => {
+              try {
+                await api(`/api/manager/quotes/${quote.id}/reject`, { method: 'POST' });
+                await loadQuotes();
+              } catch (error) {
+                globalThis.alert(error.message || 'Failed to reject quote request');
+              }
+            });
+
+            controls.appendChild(createEditActions([acceptBtn, rejectBtn]));
+            return;
+          }
 
           const statusSelect = document.createElement('select');
           ['pending', 'in_progress', 'responded', 'closed'].forEach((value) => {
