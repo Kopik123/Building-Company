@@ -20,9 +20,12 @@ const expectPreviewImagesToLoad = async (locator, scheme = 'blob:') => {
   }), scheme), { timeout: 10000 }).toBeTruthy();
 };
 
+const GUEST_REFERENCE_CODE = 'LL-M202AB-8487';
+
 const createGuestQuotePreviewPayload = () => ({
   quote: {
     id: 'quote-preview-1',
+    referenceCode: GUEST_REFERENCE_CODE,
     projectType: 'kitchen',
     location: 'Manchester and the North West',
     status: 'pending',
@@ -398,6 +401,7 @@ test('quote page shows a private guest quote preview after submit and from the s
       status: 201,
       json: {
         quoteId: 'quote-preview-1',
+        referenceCode: GUEST_REFERENCE_CODE,
         publicToken: 'guest-preview-token',
         status: 'pending',
         workflowStatus: 'submitted',
@@ -429,10 +433,10 @@ test('quote page shows a private guest quote preview after submit and from the s
   await quoteForm.locator('input[type="file"][name="files"]').setInputFiles(quotePhotoFixtures);
   await page.getByRole('button', { name: /send enquiry/i }).click();
 
-  await expect(quoteForm.locator('.form-status').first()).toContainText(/request sent with 2 photo\(s\)\. reference: quote-preview-1\./i);
+  await expect(quoteForm.locator('.form-status').first()).toContainText(/request sent with 2 photo\(s\)\. reference: ll-m202ab-8487\./i);
   await expect(quoteForm.locator('[data-quote-followup]')).toBeVisible();
   await expect(quoteForm.locator('[data-quote-followup-title]')).toContainText(/quote status: submitted/i);
-  await expect(quoteForm.locator('[data-quote-followup-meta]')).toContainText(/quote-preview-1/i);
+  await expect(quoteForm.locator('[data-quote-followup-meta]')).toContainText(/ll-m202ab-8487/i);
   await expect(quoteForm.locator('[data-quote-followup-meta]')).toContainText(/Semi Detached/i);
   await expect(quoteForm.locator('[data-quote-followup-meta]')).toContainText(/Within 3 Months/i);
   await expect(quoteForm.locator('[data-quote-followup-attachments] .quote-file-preview-card')).toHaveCount(2);
@@ -453,6 +457,7 @@ test('quote page keeps the private quote link when photo upload needs retry', as
       status: 201,
       json: {
         quoteId: 'quote-preview-1',
+        referenceCode: GUEST_REFERENCE_CODE,
         publicToken: 'guest-preview-token',
         status: 'pending',
         workflowStatus: 'submitted',
@@ -476,7 +481,7 @@ test('quote page keeps the private quote link when photo upload needs retry', as
   await quoteForm.locator('input[type="file"][name="files"]').setInputFiles(quotePhotoFixtures);
   await page.getByRole('button', { name: /send enquiry/i }).click();
 
-  await expect(quoteForm.locator('.form-status').first()).toContainText(/request sent\. reference: quote-preview-1\./i);
+  await expect(quoteForm.locator('.form-status').first()).toContainText(/request sent\. reference: ll-m202ab-8487\./i);
   await expect(quoteForm.locator('.form-status').first()).toContainText(/selected photos are still too large/i);
   await expect(quoteForm.locator('[data-quote-followup]')).toBeVisible();
   await expect(quoteForm.locator('[data-quote-followup-upload-panel] .form-status')).toContainText(/selected photos are still too large/i);
@@ -503,6 +508,7 @@ test('guest quote claim handoff runs from the private quote panel into auth conf
       json: {
         message: 'Claim verification code sent',
         quoteId: 'quote-preview-1',
+        referenceCode: GUEST_REFERENCE_CODE,
         claimToken: 'claim-token-1',
         channel: 'email',
         maskedTarget: 'gu***@e***.com',
@@ -550,6 +556,7 @@ test('guest quote claim handoff runs from the private quote panel into auth conf
       json: {
         message: 'Quote claimed successfully',
         quoteId: 'quote-preview-1',
+        referenceCode: GUEST_REFERENCE_CODE,
         clientId: 'client-1'
       }
     });
@@ -567,7 +574,7 @@ test('guest quote claim handoff runs from the private quote panel into auth conf
   await claimCard.getByRole('link', { name: /open account to confirm code/i }).click();
   await expect(page).toHaveURL(/\/auth\.html\?next=%2Fclient-dashboard\.html$/);
   await expect(page.locator('#auth-quote-claim-panel')).toBeVisible();
-  await expect(page.locator('#auth-quote-claim-summary')).toContainText(/quote-preview-1/i);
+  await expect(page.locator('#auth-quote-claim-summary')).toContainText(/ll-m202ab-8487/i);
 
   await page.locator('#login-form input[name="email"]').fill('client@example.com');
   await page.locator('#login-form input[name="password"]').fill('secret123');

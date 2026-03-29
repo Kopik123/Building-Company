@@ -521,6 +521,7 @@
 
     return {
       quoteId: quote.id || payload?.quoteId || '',
+      referenceCode: quote.referenceCode || payload?.referenceCode || '',
       publicToken: publicToken || payload?.publicToken || '',
       projectType: quote.projectType || payload?.projectType || '',
       location: quote.location || payload?.location || '',
@@ -766,7 +767,8 @@
           expiresAt: responsePayload.expiresAt || '',
           previewUrl: previewUrl || '',
           workspacePath: QUOTE_WORKSPACE_PATH,
-          publicToken: preview.publicToken || ''
+          publicToken: preview.publicToken || '',
+          referenceCode: responsePayload.referenceCode || preview.referenceCode || ''
         });
 
         setStatus(
@@ -804,8 +806,9 @@
     const previewUrl = preview.publicToken ? buildQuotePreviewUrl(form, preview.publicToken) : '';
     const statusLabel = humanizeToken(preview.workflowStatus || preview.status || 'submitted');
     const projectTypeLabel = preview.projectType ? humanizeToken(preview.projectType) : 'Project';
+    const referenceLabel = preview.referenceCode || preview.quoteId;
     const summaryBits = [
-      preview.quoteId ? `Reference ${preview.quoteId}.` : 'Quote saved.',
+      referenceLabel ? `Reference ${referenceLabel}.` : 'Quote saved.',
       preview.location ? `${projectTypeLabel} in ${preview.location}.` : `${projectTypeLabel} quote.`,
       preview.publicToken ? 'Keep the private link below to review status later.' : ''
     ].filter(Boolean);
@@ -820,7 +823,7 @@
     if (meta) {
       meta.textContent = '';
       const items = [
-        ['Reference', preview.quoteId || 'Pending reference'],
+        ['Reference', referenceLabel || 'Pending reference'],
         ['Workflow', statusLabel],
         preview.status ? ['Legacy status', humanizeToken(preview.status)] : null,
         preview.priority ? ['Priority', humanizeToken(preview.priority)] : null,
@@ -1439,6 +1442,7 @@
           ...responsePayload,
           quote: {
             id: responsePayload.quoteId || '',
+            referenceCode: responsePayload.referenceCode || '',
             projectType,
             location,
             status: responsePayload.status || 'pending',
@@ -1467,7 +1471,7 @@
           }
         }
 
-        const referenceLabel = previewPayload.quoteId || responsePayload.quoteId;
+        const referenceLabel = previewPayload.referenceCode || responsePayload.referenceCode || previewPayload.quoteId || responsePayload.quoteId;
         const uploadedPhotoCount = Number(previewPayload.attachmentCount || 0);
         const successMessage = referenceLabel
           ? uploadedPhotoCount

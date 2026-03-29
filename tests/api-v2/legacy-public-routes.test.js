@@ -480,6 +480,7 @@ test('legacy /api/quotes/guest accepts attached quote photos and returns attachm
     .expect(201);
 
   assert.equal(response.body?.quoteId, 'quote-1');
+  assert.equal(response.body?.referenceCode, 'LL-MANCHE-8487');
   assert.equal(response.body?.attachmentCount, 2);
   assert.equal(Array.isArray(response.body?.attachments), true);
   assert.equal(response.body.attachments.length, 2);
@@ -605,6 +606,7 @@ test('legacy /api/quotes/guest/:publicToken returns private quote preview data w
     .expect(200);
 
   assert.equal(response.body?.quote?.id, 'quote-preview-1');
+  assert.equal(response.body?.quote?.referenceCode, 'LL-M201AA-8487');
   assert.equal(response.body?.quote?.attachmentCount, 2);
   assert.equal(response.body?.quote?.proposalDetails?.projectScope?.propertyType, 'detached');
   assert.deepEqual(response.body?.quote?.attachments, [

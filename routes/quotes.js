@@ -28,6 +28,7 @@ const { deriveLegacyQuoteStatus } = require('../utils/quoteWorkflow');
 const { advanceClientLifecycle } = require('../utils/crmLifecycle');
 const { createActivityEvent } = require('../utils/activityFeed');
 const { parseQuoteProposalDetails, buildQuoteDescriptionFromProposal } = require('../utils/quoteProposal');
+const { resolveQuoteReferenceCode } = require('../utils/quoteReference');
 
 const router = express.Router();
 
@@ -137,10 +138,11 @@ const loadGuestQuotePreviewRecord = async (publicToken) =>
     }]
   });
 
-const buildGuestQuotePreviewPayload = (quoteRecord) => {
+const buildGuestQuotePreviewPayload = async (quoteRecord) => {
   if (!quoteRecord) return null;
 
   const plainQuote = typeof quoteRecord.toJSON === 'function' ? quoteRecord.toJSON() : { ...(quoteRecord || {}) };
+  const referenceCode = await resolveQuoteReferenceCode(Quote, plainQuote);
   const claimChannels = [
     plainQuote.guestEmail ? 'email' : null,
     plainQuote.guestPhone ? 'phone' : null
@@ -156,6 +158,7 @@ const buildGuestQuotePreviewPayload = (quoteRecord) => {
   return {
     quote: {
       ...plainQuote,
+      referenceCode,
       canClaim: Boolean(claimChannels.length),
       claimChannels,
       maskedGuestEmail: maskedGuestEmail || null,
@@ -482,8 +485,11 @@ router.post(
       logNonBlockingQuoteFailure('manager_notification_create', error, { quoteId: quote.id });
     }
 
+    const referenceCode = await resolveQuoteReferenceCode(Quote, quote);
+
     return res.status(201).json({
       quoteId: quote.id,
+      referenceCode,
       publicToken: quote.publicToken,
       status: quote.status,
       workflowStatus: quote.workflowStatus,
@@ -505,7 +511,7 @@ router.get('/guest/:publicToken', [param('publicToken').isLength({ min: 16 })], 
     return res.status(404).json({ error: 'Quote not found' });
   }
 
-  return res.json(buildGuestQuotePreviewPayload(quoteRecord));
+  return res.json(await buildGuestQuotePreviewPayload(quoteRecord));
 }));
 
 router.post(
@@ -536,7 +542,7 @@ router.post(
       return res.status(404).json({ error: 'Quote not found' });
     }
 
-    const previewPayload = buildGuestQuotePreviewPayload(quoteRecord);
+    const previewPayload = await buildGuestQuotePreviewPayload(quoteRecord);
     const existingCount = Number(previewPayload?.quote?.attachmentCount || 0);
     const remainingSlots = Math.max(0, MAX_QUOTE_ATTACHMENT_FILES - existingCount);
     if (remainingSlots <= 0) {
@@ -650,7 +656,7 @@ router.post(
       message: attachments.length === 1
         ? 'Added 1 photo to your quote.'
         : `Added ${attachments.length} photos to your quote.`,
-      ...buildGuestQuotePreviewPayload(refreshedQuoteRecord)
+      ...(await buildGuestQuotePreviewPayload(refreshedQuoteRecord))
     });
   })
 );
@@ -729,9 +735,12 @@ router.post(
       await sendClaimCodeByPhone(target, code);
     }
 
+    const referenceCode = await resolveQuoteReferenceCode(Quote, quote);
+
     return res.json({
       message: 'Claim verification code sent',
       quoteId: quote.id,
+      referenceCode,
       claimToken: token,
       channel,
       maskedTarget: channel === 'email' ? maskEmailForPreview(target) : maskPhoneForPreview(target),
@@ -825,7 +834,8 @@ router.post(
       }
     }, 'legacy_guest_quote_claim_activity');
 
-    return res.json({ message: 'Quote claimed successfully', quoteId: quote.id, clientId: req.user.id });
+    const referenceCode = await resolveQuoteReferenceCode(Quote, quote);
+    return res.json({ message: 'Quote claimed successfully', quoteId: quote.id, referenceCode, clientId: req.user.id });
   })
 );
 

@@ -685,6 +685,11 @@
 - Added backend/mobile-foundation regression coverage in `tests/api-v2/auth-flow.test.js`, `tests/api-v2/devices-push-registration.test.js` and `tests/mobile/mobile-foundation.test.js`, then used those suites as the first automated safety net for the new mobile foundation layer.
 ## 2026-03-29
 
+- Saved `Plans/Quote Friendly Reference Code Wave 19.md`, registered it in `Plans/Plan History.md`, and recorded the friendly guest quote reference rollout as a closed checklist item in `Project_todos.md`.
+- Added `utils/quoteReference.js` so guest-facing quote references can be derived from postcode/contact data (`LL-POSTCODE-LAST4`) with a numeric suffix for duplicate contact/location combinations.
+- Updated `routes/quotes.js` to return `referenceCode` from public guest quote submit, preview, attachment follow-up and claim endpoints while keeping the UUID `quoteId` untouched for API routing and relation integrity.
+- Updated `quote.js` and `auth.js` so public submit success, private quote preview metadata and auth claim handoff all show the new friendly reference code instead of the raw UUID when available.
+- Added focused regression coverage in `tests/api-v2/quote-reference-code.test.js`, `tests/api-v2/legacy-public-routes.test.js`, `tests/api-v2/public-quotes-v2-contract.test.js` and `tests/playwright/public-redesign.spec.js`, then re-ran the public quote API and browser flows successfully.
 - Saved `Plans/Quote Budget Range Expansion Wave 18.md`, registered it in `Plans/Plan History.md`, and recorded the lower-budget quote-range expansion as a closed checklist item in `Project_todos.md`.
 - Updated `brand.js` so the shared `budgetRanges` source of truth now includes `GBP 3,000-GBP 6,000` and `GBP 6,000-GBP 8,000` ahead of the existing renovation brackets.
 - Kept the change portable for future mobile/native surfaces by extending the shared brand config instead of hardcoding page-specific options in `quote.html` or generated brochure pages.

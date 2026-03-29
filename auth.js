@@ -382,6 +382,7 @@
     }
 
     const isActive = isPendingQuoteClaimActive(pendingClaim);
+    const referenceLabel = pendingClaim.referenceCode || pendingClaim.quoteId;
     const channel = humanChannel(pendingClaim.channel);
     const targetSuffix = pendingClaim.maskedTarget ? ` to ${pendingClaim.maskedTarget}` : '';
     const expiryLabel = formatTimestamp(pendingClaim.expiresAt);
@@ -390,8 +391,8 @@
     quoteClaimReturn.href = getQuoteClaimPreviewPath(pendingClaim);
     quoteClaimReturn.hidden = !quoteClaimReturn.href;
     quoteClaimSummary.textContent = isActive
-      ? `Quote ${pendingClaim.quoteId} is waiting to be claimed. A 6-digit code was sent via ${channel}${targetSuffix}${expiryLabel ? ` and expires at ${expiryLabel}.` : '.'}`
-      : `The saved claim code for quote ${pendingClaim.quoteId} has expired. Return to the private quote link and request a new code.`;
+      ? `Quote ${referenceLabel} is waiting to be claimed. A 6-digit code was sent via ${channel}${targetSuffix}${expiryLabel ? ` and expires at ${expiryLabel}.` : '.'}`
+      : `The saved claim code for quote ${referenceLabel} has expired. Return to the private quote link and request a new code.`;
 
     if (user?.email && isActive) {
       quoteClaimGuestCopy.hidden = true;
@@ -712,7 +713,8 @@
       quoteClaimForm.hidden = true;
       quoteClaimGuestCopy.hidden = true;
       quoteClaimReturn.hidden = true;
-      quoteClaimSummary.textContent = `Quote ${response.quoteId || pendingClaim.quoteId} is now linked to your account. Opening the quotes workspace...`;
+      const referenceLabel = response.referenceCode || pendingClaim.referenceCode || response.quoteId || pendingClaim.quoteId;
+      quoteClaimSummary.textContent = `Quote ${referenceLabel} is now linked to your account. Opening the quotes workspace...`;
       setStatus(quoteClaimStatus, 'Quote claimed successfully. Redirecting to your quotes workspace...', 'success');
 
       globalThis.setTimeout(() => {

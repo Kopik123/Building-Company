@@ -151,6 +151,7 @@ test('v2 public quotes creates a guest quote through the live public contract pa
     .expect(201);
 
   assert.equal(response.body?.quoteId, 'quote-1');
+  assert.equal(response.body?.referenceCode, 'LL-M202AB-8487');
   assert.match(String(response.body?.publicToken || ''), /^[a-f0-9]{32}$/);
   assert.equal(state.createdQuotes.length, 1);
   assert.equal(
@@ -273,6 +274,7 @@ test('v2 public quotes returns guest preview data from the private public token 
     .expect(200);
 
   assert.equal(response.body?.quote?.id, 'quote-preview-1');
+  assert.equal(response.body?.quote?.referenceCode, 'LL-M202AB-8487');
   assert.equal(response.body?.quote?.attachmentCount, 1);
   assert.equal(response.body?.quote?.canClaim, true);
   assert.deepEqual(response.body?.quote?.claimChannels, ['email', 'phone']);
