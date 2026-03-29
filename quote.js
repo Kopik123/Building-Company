@@ -134,6 +134,198 @@
     return `Only the first ${maxFiles} photo${maxFiles === 1 ? '' : 's'} can be kept here.`;
   };
 
+  const isImageFile = (file) => String(file?.type || '').toLowerCase().startsWith('image/');
+
+  const readResponsePayload = async (response) => {
+    const contentType = String(response?.headers?.get?.('content-type') || '').toLowerCase();
+    if (contentType.includes('application/json')) {
+      return response.json().catch(() => ({}));
+    }
+
+    const textPayload = await response.text().catch(() => '');
+    return {
+      text: textPayload
+    };
+  };
+
+  const buildResponseErrorMessage = (response, payload, fallback, options = {}) => {
+    const payloadMessage = String(payload?.error || payload?.message || '').trim();
+    if (payloadMessage) {
+      return payloadMessage;
+    }
+
+    if (response?.status === 413) {
+      return options.largePayloadMessage || 'The selected photos are too large to upload in one request.';
+    }
+
+    if ([408, 502, 504].includes(Number(response?.status || 0))) {
+      return options.timeoutMessage || 'The upload took too long to finish.';
+    }
+
+    const textPayload = String(payload?.text || '').trim();
+    if (textPayload) {
+      return textPayload.length > 220 ? `${textPayload.slice(0, 217)}...` : textPayload;
+    }
+
+    return fallback;
+  };
+
+  const appendFilesToRequest = (requestBody, files) => {
+    files.forEach((file, index) => {
+      requestBody.append('files', file, file?.name || `quote-photo-${index + 1}.jpg`);
+    });
+  };
+
+  const canvasToBlob = (canvas, mimeType, quality) => new Promise((resolve) => {
+    if (typeof canvas?.toBlob !== 'function') {
+      resolve(null);
+      return;
+    }
+
+    canvas.toBlob((blob) => resolve(blob), mimeType, quality);
+  });
+
+  const loadImageForUpload = (file) => new Promise((resolve, reject) => {
+    const previewUrl = URL.createObjectURL(file);
+    const image = new Image();
+    image.onload = () => {
+      URL.revokeObjectURL(previewUrl);
+      resolve(image);
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(previewUrl);
+      reject(new Error('Could not prepare this image for upload.'));
+    };
+    image.src = previewUrl;
+  });
+
+  const renameFileExtension = (name, nextExtension) => {
+    const baseName = String(name || 'quote-photo').replace(/\.[^.]+$/, '');
+    return `${baseName}${nextExtension}`;
+  };
+
+  const optimizeQuoteImageFile = async (file) => {
+    if (!isImageFile(file) || Number(file?.size || 0) <= 1024 * 1024) {
+      return file;
+    }
+
+    const mimeType = String(file.type || '').toLowerCase();
+    if (mimeType === 'image/gif' || mimeType === 'image/svg+xml') {
+      return file;
+    }
+
+    const image = await loadImageForUpload(file).catch(() => null);
+    if (!image || typeof document === 'undefined') {
+      return file;
+    }
+
+    const sourceWidth = Number(image.naturalWidth || image.width || 0);
+    const sourceHeight = Number(image.naturalHeight || image.height || 0);
+    const largestSide = Math.max(sourceWidth, sourceHeight);
+    if (!largestSide) {
+      return file;
+    }
+
+    const scale = Math.min(1, 1800 / largestSide);
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(sourceWidth * scale));
+    canvas.height = Math.max(1, Math.round(sourceHeight * scale));
+
+    const context = canvas.getContext('2d');
+    if (!context) {
+      return file;
+    }
+
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+    let bestBlob = null;
+    for (const quality of [0.82, 0.74, 0.66, 0.58]) {
+      const candidate = await canvasToBlob(canvas, 'image/jpeg', quality);
+      if (!candidate) {
+        break;
+      }
+      bestBlob = candidate;
+      if (candidate.size <= 900 * 1024) {
+        break;
+      }
+    }
+
+    if (!bestBlob) {
+      return file;
+    }
+
+    const resized = scale < 0.995;
+    const sizeReduced = bestBlob.size < Number(file.size || 0) * 0.94;
+    if (!resized && !sizeReduced) {
+      return file;
+    }
+
+    const optimizedName = renameFileExtension(file.name, '.jpg');
+    if (typeof File === 'function') {
+      return new File([bestBlob], optimizedName, {
+        type: 'image/jpeg',
+        lastModified: Number(file.lastModified || Date.now())
+      });
+    }
+
+    return Object.assign(bestBlob, {
+      name: optimizedName,
+      lastModified: Number(file.lastModified || Date.now())
+    });
+  };
+
+  const prepareQuoteFilesForUpload = async (files, onProgress) => {
+    const prepared = [];
+    for (let index = 0; index < files.length; index += 1) {
+      onProgress?.(`Preparing photo ${index + 1} of ${files.length}...`);
+      prepared.push(await optimizeQuoteImageFile(files[index]));
+    }
+    return prepared;
+  };
+
+  const uploadQuoteAttachmentBatches = async ({ publicToken, files, onProgress }) => {
+    if (!publicToken || !Array.isArray(files) || !files.length) {
+      return null;
+    }
+
+    const preparedFiles = await prepareQuoteFilesForUpload(files, onProgress);
+    const batchSize = 2;
+    let latestPreview = null;
+    const totalBatches = Math.ceil(preparedFiles.length / batchSize);
+
+    for (let index = 0; index < preparedFiles.length; index += batchSize) {
+      const batchNumber = Math.floor(index / batchSize) + 1;
+      const batch = preparedFiles.slice(index, index + batchSize);
+      onProgress?.(`Uploading photo batch ${batchNumber} of ${totalBatches}...`);
+
+      const requestBody = new FormData();
+      appendFilesToRequest(requestBody, batch);
+
+      const response = await fetch(`${PUBLIC_QUOTE_API_BASE}/${encodeURIComponent(publicToken)}/attachments`, {
+        method: 'POST',
+        body: requestBody
+      });
+      const responsePayload = await readResponsePayload(response);
+      if (!response.ok) {
+        const error = new Error(buildResponseErrorMessage(
+          response,
+          responsePayload,
+          'Could not upload the extra quote photos.',
+          {
+            largePayloadMessage: 'The quote was saved, but the selected photos are still too large. Please retry smaller images from the private quote link.',
+            timeoutMessage: 'The quote was saved, but the photo upload timed out. Please retry the photos from the private quote link.'
+          }
+        ));
+        error.preview = latestPreview;
+        throw error;
+      }
+
+      latestPreview = normalizeQuotePreviewPayload(responsePayload, publicToken);
+    }
+
+    return latestPreview;
+  };
+
   const formatFileSize = (bytes) => {
     const numericBytes = Number(bytes) || 0;
     if (numericBytes <= 0) return 'Image file';
@@ -945,40 +1137,42 @@
         return;
       }
 
-      if (files.some((file) => !String(file.type || '').toLowerCase().startsWith('image/'))) {
+      if (files.some((file) => !isImageFile(file))) {
         setStatus(status, 'Only image files are allowed for quote photo attachments.', 'error');
         return;
       }
 
       submitButton.disabled = true;
-      setStatus(status, 'Uploading additional quote photos...', 'loading');
+      setStatus(status, 'Preparing additional quote photos...', 'loading');
 
       try {
-        const requestBody = new FormData();
-        files.forEach((file) => requestBody.append('files', file));
-
-        const response = await fetch(`${PUBLIC_QUOTE_API_BASE}/${encodeURIComponent(preview.publicToken)}/attachments`, {
-          method: 'POST',
-          body: requestBody
+        const nextPreview = await uploadQuoteAttachmentBatches({
+          publicToken: preview.publicToken,
+          files,
+          onProgress: (message) => setStatus(status, message, 'loading')
         });
-        const responsePayload = await response.json().catch(() => ({}));
-        if (!response.ok) {
-          throw new Error(responsePayload.error || 'Could not upload the extra quote photos.');
-        }
-
-        const nextPreview = normalizeQuotePreviewPayload(responsePayload, preview.publicToken);
-        renderQuoteFollowup(form, nextPreview, {
+        renderQuoteFollowup(form, nextPreview || preview, {
           guestEmail: context?.guestEmail,
           guestPhone: context?.guestPhone,
           uploadNotice: {
             type: 'success',
-            message: responsePayload.message || (files.length === 1
+            message: files.length === 1
               ? 'Added 1 photo to your quote.'
-              : `Added ${files.length} photos to your quote.`)
+              : `Added ${files.length} photos to your quote.`
           }
         });
       } catch (error) {
         setStatus(status, error.message || 'Could not upload the extra quote photos.', 'error');
+        if (error?.preview) {
+          renderQuoteFollowup(form, error.preview, {
+            guestEmail: context?.guestEmail,
+            guestPhone: context?.guestPhone,
+            uploadNotice: {
+              type: 'error',
+              message: error.message || 'Could not upload the extra quote photos.'
+            }
+          });
+        }
       } finally {
         submitButton.disabled = false;
       }
@@ -1225,28 +1419,23 @@
         requestBody.set('location', location);
         if (postcode) requestBody.set('postcode', postcode);
         requestBody.set('proposalDetails', JSON.stringify(proposalDetails));
-        files.forEach((file) => requestBody.append('files', file));
 
         const response = await fetch(PUBLIC_QUOTE_API_BASE, {
           method: 'POST',
           body: requestBody
         });
 
-        const responsePayload = await response.json().catch(() => ({}));
+        const responsePayload = await readResponsePayload(response);
         if (!response.ok) {
-          throw new Error(responsePayload.error || 'Could not submit your consultation request.');
+          throw new Error(buildResponseErrorMessage(response, responsePayload, 'Could not submit your consultation request.'));
         }
 
-        setStatus(
-          status,
-          responsePayload.quoteId
-          ? responsePayload.attachmentCount
-            ? `Request sent with ${responsePayload.attachmentCount} photo(s). Reference: ${responsePayload.quoteId}.`
-            : `Request sent. Reference: ${responsePayload.quoteId}.`
-          : 'Request sent.',
-          'success'
-        );
-        const previewPayload = normalizeQuotePreviewPayload({
+        if (responsePayload.publicToken) {
+          const nextUrl = buildQuotePreviewUrl(form, responsePayload.publicToken);
+          window.history.replaceState({}, '', nextUrl);
+        }
+
+        let previewPayload = normalizeQuotePreviewPayload({
           ...responsePayload,
           quote: {
             id: responsePayload.quoteId || '',
@@ -1254,20 +1443,53 @@
             location,
             status: responsePayload.status || 'pending',
             workflowStatus: responsePayload.workflowStatus || 'submitted',
-            attachmentCount: responsePayload.attachmentCount || files.length,
+            attachmentCount: responsePayload.attachmentCount || 0,
             attachments: responsePayload.attachments || [],
             submittedAt: new Date().toISOString(),
             proposalDetails: responsePayload.proposalDetails || proposalDetails
           }
         }, responsePayload.publicToken || '');
+
+        let uploadNotice = null;
+        if (files.length && responsePayload.publicToken) {
+          try {
+            previewPayload = await uploadQuoteAttachmentBatches({
+              publicToken: responsePayload.publicToken,
+              files,
+              onProgress: (message) => setStatus(status, message, 'loading')
+            }) || previewPayload;
+          } catch (error) {
+            previewPayload = error?.preview || previewPayload;
+            uploadNotice = {
+              type: 'error',
+              message: error.message || 'The quote was saved, but the photo upload still needs a retry from the private link below.'
+            };
+          }
+        }
+
+        const referenceLabel = previewPayload.quoteId || responsePayload.quoteId;
+        const uploadedPhotoCount = Number(previewPayload.attachmentCount || 0);
+        const successMessage = referenceLabel
+          ? uploadedPhotoCount
+            ? `Request sent with ${uploadedPhotoCount} photo(s). Reference: ${referenceLabel}.`
+            : `Request sent. Reference: ${referenceLabel}.`
+          : 'Request sent.';
+
+        if (uploadNotice) {
+          setStatus(
+            status,
+            `${successMessage} ${uploadNotice.message}`,
+            'error'
+          );
+        } else {
+          setStatus(status, successMessage, 'success');
+        }
+
         renderQuoteFollowup(form, previewPayload, {
           guestEmail,
-          guestPhone
+          guestPhone,
+          uploadNotice
         });
-        if (responsePayload.publicToken) {
-          const nextUrl = buildQuotePreviewUrl(form, responsePayload.publicToken);
-          window.history.replaceState({}, '', nextUrl);
-        }
         form.reset();
       } catch (error) {
         setStatus(status, error.message || 'Could not submit your consultation request.', 'error');

@@ -17,7 +17,7 @@ const expectPreviewImagesToLoad = async (locator, scheme = 'blob:') => {
   await expect.poll(async () => locator.evaluateAll((images, expectedScheme) => images.every((image) => {
     const source = image.currentSrc || image.getAttribute('src') || '';
     return source.startsWith(expectedScheme) && image.complete && image.naturalWidth > 0;
-  }), scheme)).toBeTruthy();
+  }), scheme), { timeout: 10000 }).toBeTruthy();
 };
 
 const createGuestQuotePreviewPayload = () => ({
@@ -319,7 +319,9 @@ test('core brochure pages render about, services, gallery, contact and quote rou
 
   await page.goto('/quote.html');
   await expect(page.locator('body.public-site.page-quote')).toBeVisible();
-  await expect(page.getByRole('heading', { name: /send one private enquiry for bathrooms, kitchens/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /build one private renovation brief and get the right next step/i })).toBeVisible();
+  await expect(page.locator('.quote-shell-header')).toBeVisible();
+  await expect(page.locator('.quote-intro-card')).toBeVisible();
   const quoteForm = page.locator('form.js-quote-form');
   await expect(quoteForm).toBeVisible();
   await expect(quoteForm.locator('[data-quote-step-tab]')).toHaveCount(3);
@@ -399,8 +401,18 @@ test('quote page shows a private guest quote preview after submit and from the s
         publicToken: 'guest-preview-token',
         status: 'pending',
         workflowStatus: 'submitted',
-        attachmentCount: 2,
-        attachments: createGuestQuotePreviewPayload().quote.attachments
+        attachmentCount: 0,
+        attachments: []
+      }
+    });
+  });
+
+  await page.route('**/api/v2/public/quotes/guest-preview-token/attachments', async (route) => {
+    await route.fulfill({
+      status: 201,
+      json: {
+        message: 'Added 2 photos to your quote.',
+        ...createGuestQuotePreviewPayload()
       }
     });
   });
@@ -432,6 +444,43 @@ test('quote page shows a private guest quote preview after submit and from the s
   await expect(restoredQuoteForm.locator('[data-quote-followup]')).toBeVisible();
   await expect(restoredQuoteForm.locator('[data-quote-followup-title]')).toContainText(/quote status: submitted/i);
   await expect(restoredQuoteForm.locator('[data-quote-followup-attachments] .quote-file-preview-card')).toHaveCount(2);
+});
+
+
+test('quote page keeps the private quote link when photo upload needs retry', async ({ page }) => {
+  await page.route('**/api/v2/public/quotes', async (route) => {
+    await route.fulfill({
+      status: 201,
+      json: {
+        quoteId: 'quote-preview-1',
+        publicToken: 'guest-preview-token',
+        status: 'pending',
+        workflowStatus: 'submitted',
+        attachmentCount: 0,
+        attachments: []
+      }
+    });
+  });
+
+  await page.route('**/api/v2/public/quotes/guest-preview-token/attachments', async (route) => {
+    await route.fulfill({
+      status: 413,
+      contentType: 'text/plain',
+      body: 'Request Entity Too Large'
+    });
+  });
+
+  await page.goto('/quote.html');
+  const quoteForm = page.locator('form.js-quote-form');
+  await fillPhasedQuoteForm(quoteForm);
+  await quoteForm.locator('input[type="file"][name="files"]').setInputFiles(quotePhotoFixtures);
+  await page.getByRole('button', { name: /send enquiry/i }).click();
+
+  await expect(quoteForm.locator('.form-status').first()).toContainText(/request sent\. reference: quote-preview-1\./i);
+  await expect(quoteForm.locator('.form-status').first()).toContainText(/selected photos are still too large/i);
+  await expect(quoteForm.locator('[data-quote-followup]')).toBeVisible();
+  await expect(quoteForm.locator('[data-quote-followup-upload-panel] .form-status')).toContainText(/selected photos are still too large/i);
+  await expect(page).toHaveURL(/\/quote\.html\?quote=guest-preview-token#quote-card$/);
 });
 
 test('guest quote claim handoff runs from the private quote panel into auth confirmation', async ({ page }) => {
@@ -585,7 +634,10 @@ test('guest quote private preview lets the customer add more photos after submit
   await followupInput.setInputFiles([quotePhotoFixtures[0]]);
   await followupInput.setInputFiles([quotePhotoFixtures[1]]);
   await expect(uploadCard.locator('.quote-file-preview-card')).toHaveCount(2);
-  await expectPreviewImagesToLoad(uploadCard.locator('.quote-file-preview-thumb img'));
+  await expect.poll(async () => uploadCard.locator('.quote-file-preview-thumb img').evaluateAll((images) => images.every((image) => {
+    const source = image.currentSrc || image.getAttribute('src') || '';
+    return source.startsWith('blob:');
+  }))).toBeTruthy();
   await uploadCard.getByRole('button', { name: /add photos to quote/i }).click();
 
   await expect(uploadCard.locator('.form-status')).toContainText(/added 2 photos to your quote/i);

@@ -52,3 +52,4 @@
 - 2026-03-29 16:12 | Generated Contracts Package Wave 14 | Plans/Generated Contracts Package Wave 14.md
 - 2026-03-29 16:28 | Workspace Surface Submodules And Panel Contracts Wave 15 | Plans/Workspace Surface Submodules And Panel Contracts Wave 15.md
 - 2026-03-29 16:51 | Operational Decisions For Cache, Group Chat Unread And PowerShell Flows Wave 16 | Plans/Operational Decisions For Cache, Group Chat Unread And PowerShell Flows Wave 16.md
+- 2026-03-29 17:22 | Quote Stage 3 Upload Recovery And Layout Refresh Wave 17 | Plans/Quote Stage 3 Upload Recovery And Layout Refresh Wave 17.md

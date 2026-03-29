@@ -122,6 +122,9 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [x] Fix public quote file pickers so selecting more photos again appends to the current selection instead of replacing it before submit or follow-up upload.
 - [x] Allow local quote thumbnail previews to render correctly by supporting `blob:` image previews in the public CSP.
 - [x] Extend the claimed/logged-in quote portal so customers can add follow-up quote photos after claim/login as well, not only from the guest private link.
+- [x] Fix stage-3 public quote submit so large reference photos do not block saving the brief: submit the quote first, then upload/compress photos through the private-token attachment route with a retry-safe fallback message.
+- [x] Refresh `quote.html` so the quote route uses a compact full-width title band and a wider working form shell instead of the old oversized left hero block.
+- [x] Collapse the compact/mobile public auth panel behind the existing auth toggle so the sticky header no longer intercepts taps on the quote workflow.
 - [x] Refactor the logged-in `auth.html` account management panel into quick-access card navigation so `Overview`, `Profile`, `Security` and `Workspace` switch as separate cards instead of rendering as one long combined panel.
 - [ ] Consolidate manual public pages and generated SEO pages onto one content model/source so brochure copy, metadata, FAQ and CTA logic stop drifting.
 - [x] Create a shared web/mobile contract layer for auth/session, project summaries, thread summaries, notifications and estimate state before expanding `mobile-v1` further.

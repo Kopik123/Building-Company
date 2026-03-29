@@ -1,5 +1,76 @@
 /* Surface-specific quote intake and follow-up styles. */
 
+.page-quote #quote-card > .container {
+  width: min(100% - 2rem, 1460px);
+}
+
+.quote-shell {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.quote-shell-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(260px, 0.95fr);
+  gap: var(--space-5);
+  align-items: end;
+}
+
+.quote-shell-header-copy {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.quote-shell-header h1 {
+  margin-bottom: 0;
+  max-width: 15ch;
+  font-size: clamp(2.35rem, 3vw, 3.85rem);
+  line-height: 0.96;
+}
+
+.quote-shell-header .section-lead {
+  max-width: 64ch;
+}
+
+.quote-shell-header-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: flex-end;
+  justify-content: flex-end;
+}
+
+.quote-layout {
+  align-items: start;
+  grid-template-columns: minmax(300px, 0.78fr) minmax(0, 1.22fr);
+}
+
+.quote-intro-card {
+  display: grid;
+  align-content: start;
+  gap: 0.95rem;
+  min-height: 100%;
+}
+
+.quote-intro-card h2 {
+  margin: 0;
+  max-width: 12ch;
+  font-size: clamp(1.95rem, 2.35vw, 2.95rem);
+  line-height: 1.02;
+}
+
+.quote-intro-card .page-bullet-list {
+  gap: 0.7rem;
+}
+
+.quote-intro-card .page-bullet-list li {
+  color: var(--color-text-muted);
+}
+
+.quote-form {
+  min-width: 0;
+}
+
 .quote-stepper {
   display: grid;
   gap: var(--space-4);
@@ -380,4 +451,40 @@
 .quote-followup-upload-label {
   display: grid;
   gap: 0.42rem;
+}
+
+@media (max-width: 1100px) {
+  .page-quote #quote-card > .container {
+    width: min(100% - 1.5rem, 1320px);
+  }
+
+  .quote-shell-header,
+  .quote-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .quote-shell-header-meta {
+    justify-content: flex-start;
+  }
+
+  .quote-intro-card h2,
+  .quote-shell-header h1 {
+    max-width: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .page-quote #quote-card > .container {
+    width: min(100% - 1rem, 100%);
+  }
+
+  .quote-shell {
+    gap: var(--space-4);
+  }
+
+  .quote-shell-header,
+  .quote-intro-card,
+  .quote-form {
+    padding: 1rem;
+  }
 }

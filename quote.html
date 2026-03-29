@@ -81,18 +81,31 @@
 
   <main class="public-page-main">
     <section class="public-section public-section--dark" id="quote-card">
-      <div class="container quote-layout">
-        <article class="content-card content-card--dark">
-          <p class="section-eyebrow">Private Quote</p>
-          <h1>Send one private enquiry for bathrooms, kitchens, interior renovations and connected specialist trades.</h1>
-          <p class="section-lead">Use one route to describe the rooms involved, finish level, timing and budget direction. The studio replies with the right next step instead of a generic response.</p>
-          <div class="hero-chip-row">
+      <div class="container quote-shell">
+        <article class="content-card content-card--dark quote-shell-header">
+          <div class="quote-shell-header-copy">
+            <p class="section-eyebrow">Private Quote</p>
+            <h1>Build one private renovation brief and get the right next step.</h1>
+            <p class="section-lead">Share rooms, site context, budget direction and reference photos in one route. The studio replies with the right fit, scope and next move instead of a generic response.</p>
+          </div>
+          <div class="quote-shell-header-meta">
             <span class="stat-chip">Bathrooms and kitchens</span>
             <span class="stat-chip">Interiors and finish trades</span>
             <span class="stat-chip" data-brand-region>Manchester and the North West</span>
           </div>
         </article>
-        <form class="quote-form content-card content-card--light js-quote-form" data-form-context="Quote Page" novalidate>
+        <div class="quote-layout">
+          <article class="content-card content-card--dark quote-intro-card">
+            <p class="section-eyebrow section-eyebrow--compact">How it works</p>
+            <h2>Finish the brief once, keep the private link, and add photos later if needed.</h2>
+            <p class="page-aside-copy">Step 1 covers contact and project type. Step 2 frames the property, access and timing. Step 3 finishes the working brief with budget direction, must-haves, known constraints and any reference photos that help the studio reply properly.</p>
+            <ul class="page-bullet-list">
+              <li>Use one route for bathrooms, kitchens, interiors and connected specialist trades.</li>
+              <li>Save the private link after submit to check status, add more photos or claim the quote into your account.</li>
+              <li>Reference photos are optional, but they help the studio answer with the right next step faster.</li>
+            </ul>
+          </article>
+          <form class="quote-form content-card content-card--light js-quote-form" data-form-context="Quote Page" novalidate>
           <input type="hidden" name="location" value="Manchester and the North West" />
           <div class="quote-stepper" data-quote-stepper>
             <div class="quote-stepper-nav" aria-label="Quote brief steps">
@@ -271,6 +284,7 @@
             <div class="page-actions quote-followup-actions" data-quote-followup-actions></div>
           </div>
         </form>
+        </div>
       </div>
     </section>
 
