@@ -111,7 +111,7 @@ globalThis.LEVEL_LINES_BRAND = {
       href: 'tel:+447304506391'
     }
   ],
-  budgetRanges: ['\u00A38,000-\u00A312,000', '\u00A312,000-\u00A320,000', '\u00A320,000-\u00A330,000', '\u00A330,000+'],
+  budgetRanges: ['\u00A33,000-\u00A36,000', '\u00A36,000-\u00A38,000', '\u00A38,000-\u00A312,000', '\u00A312,000-\u00A320,000', '\u00A320,000-\u00A330,000', '\u00A330,000+'],
   copy: {
     home: {
       heroLead: 'Level Lines Studio shapes premium bathroom, kitchen and interior renovation briefs for homeowners who want cleaner scope, quieter planning and stronger finish control.',

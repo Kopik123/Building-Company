@@ -685,6 +685,10 @@
 - Added backend/mobile-foundation regression coverage in `tests/api-v2/auth-flow.test.js`, `tests/api-v2/devices-push-registration.test.js` and `tests/mobile/mobile-foundation.test.js`, then used those suites as the first automated safety net for the new mobile foundation layer.
 ## 2026-03-29
 
+- Saved `Plans/Quote Budget Range Expansion Wave 18.md`, registered it in `Plans/Plan History.md`, and recorded the lower-budget quote-range expansion as a closed checklist item in `Project_todos.md`.
+- Updated `brand.js` so the shared `budgetRanges` source of truth now includes `GBP 3,000-GBP 6,000` and `GBP 6,000-GBP 8,000` ahead of the existing renovation brackets.
+- Kept the change portable for future mobile/native surfaces by extending the shared brand config instead of hardcoding page-specific options in `quote.html` or generated brochure pages.
+- Re-checked the public quote-option wiring (`data-brand-budget-select` hydration through `site.js`) so manual and generated quote forms continue to read the same budget list without duplicated markup.
 - Saved `Plans/Frontend Architecture And Public Shell Optimization Wave 1.md`, registered it in `Plans/Plan History.md`, and recorded the remaining frontend architecture follow-ups in `Project_todos.md`.
 - Split the public brochure styling by surface by extracting `styles/gallery.css` and `styles/quote-flow.css`, then removed the main gallery/quote blocks from `styles/public.css` so brochure pages stop carrying the heaviest route-specific styling.
 - Removed `styles/workspace.css` from brochure pages (`about`, `services`, `contact`, `privacy`, `terms`, `cookie-policy`) and rewired `index.html`, `quote.html`, `gallery.html` plus the generated service/location pages so they only load the CSS bundles their surfaces actually need.
