@@ -172,6 +172,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [x] Extract smaller quote-domain render modules from the `web-v2` quote workspace so the old `quotes-sections.jsx` no longer owns board, detail, attachments, estimates and timeline in one file.
 - [x] Extract smaller CRM, private-inbox and inventory render modules so those `web-v2` surfaces match the new quote-domain folder split instead of keeping multiple surfaces in one file.
 - [x] Continue the `web-v2` refactor with page-level view-model adapters across `quotes`, `crm`, `private-inbox` and `inventory` now that all four domains use smaller render subcomponents.
+- [x] Continue the `web-v2` refactor by extracting domain action hooks from `quotes`, `crm`, `private-inbox` and `inventory`, so those pages no longer keep their async submit/save flows inline.
 - [ ] Continue the `web-v2` refactor with stronger typed/JSDoc view-model contracts and any remaining finer list/detail/editor modules across `quotes`, `crm`, `private-inbox` and `inventory` now that page-level panel adapters are extracted.
 - [ ] Convert `auth.html`, `client-dashboard.html` and `manager-dashboard.html` into thinner compatibility shells once `/app-v2` reaches the remaining operational parity, instead of continuing to grow legacy HTML dashboards.
 - [ ] Revisit immutable caching for brochure/background images once non-gallery media is fully content-addressed; this wave intentionally keeps `/Gallery` and `/uploads` on `no-store` and other images on conservative cache.

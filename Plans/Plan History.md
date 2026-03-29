@@ -46,3 +46,4 @@
 - 2026-03-29 09:05 | Web-v2 Quote Surface Component Split Wave 8 | Plans/Web-v2 Quote Surface Component Split Wave 8.md
 - 2026-03-29 09:11 | Web-v2 CRM Inbox And Inventory Surface Split Wave 9 | Plans/Web-v2 CRM Inbox And Inventory Surface Split Wave 9.md
 - 2026-03-29 09:16 | Web-v2 Workspace View-Model Adapter Wave 10 | Plans/Web-v2 Workspace View-Model Adapter Wave 10.md
+- 2026-03-29 09:24 | Web-v2 Domain Action Hook Extraction Wave 11 | Plans/Web-v2 Domain Action Hook Extraction Wave 11.md
