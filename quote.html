@@ -139,10 +139,29 @@
                   <h3>Start with the core enquiry.</h3>
                   <p class="page-aside-copy">Share who should hear back, how to reach you and what kind of project this is.</p>
                 </div>
+                <div class="quote-account-summary" data-quote-account-summary hidden>
+                  <p class="section-eyebrow section-eyebrow--compact">Signed-in client</p>
+                  <h4>Use the details already saved on your account.</h4>
+                  <p class="page-aside-copy" data-quote-account-summary-copy>We found your saved account details. Only choose the project type below and continue.</p>
+                  <dl class="quote-account-summary-list">
+                    <div class="quote-account-summary-item" data-quote-account-item="name">
+                      <dt>Name</dt>
+                      <dd data-quote-account-name></dd>
+                    </div>
+                    <div class="quote-account-summary-item" data-quote-account-item="email">
+                      <dt>Email</dt>
+                      <dd data-quote-account-email></dd>
+                    </div>
+                    <div class="quote-account-summary-item" data-quote-account-item="phone">
+                      <dt>Phone</dt>
+                      <dd data-quote-account-phone></dd>
+                    </div>
+                  </dl>
+                </div>
                 <div class="form-grid quote-form-grid">
-                  <label>Name<input type="text" name="name" autocomplete="name" required /></label>
-                  <label>Phone<input type="tel" name="phone" autocomplete="tel" /></label>
-                  <label>Email<input type="email" name="email" autocomplete="email" /></label>
+                  <label data-quote-contact-field="name">Name<input type="text" name="name" autocomplete="name" required /></label>
+                  <label data-quote-contact-field="phone">Phone<input type="tel" name="phone" autocomplete="tel" /></label>
+                  <label data-quote-contact-field="email">Email<input type="email" name="email" autocomplete="email" /></label>
                   <label>Project type
                     <select name="projectType" required data-brand-project-type-select data-default-label="Select"></select>
                   </label>

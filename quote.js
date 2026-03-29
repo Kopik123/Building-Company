@@ -380,7 +380,34 @@
   };
   const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
   const normalizePhone = (value) => String(value || '').trim();
+  const normalizeAccountName = (value) => String(value || '').trim();
   const hasSessionToken = () => Boolean(localStorage.getItem(TOKEN_KEY));
+  const getActiveQuoteAccountProfile = () => {
+    if (!hasSessionToken()) return null;
+    const user = getSavedUser();
+    if (!user || String(user.role || '').trim().toLowerCase() !== 'client') {
+      return null;
+    }
+
+    const profile = {
+      name: normalizeAccountName(user.name),
+      email: normalizeEmail(user.email),
+      phone: normalizePhone(user.phone)
+    };
+
+    if (!profile.name && !profile.email && !profile.phone) {
+      return null;
+    }
+
+    return profile;
+  };
+  const humanizeContactFieldList = (items) => {
+    const normalized = (Array.isArray(items) ? items : []).filter(Boolean);
+    if (!normalized.length) return '';
+    if (normalized.length === 1) return normalized[0];
+    if (normalized.length === 2) return `${normalized[0]} and ${normalized[1]}`;
+    return `${normalized.slice(0, -1).join(', ')}, and ${normalized[normalized.length - 1]}`;
+  };
   const buildAuthClaimUrl = () => {
     const authUrl = new URL('/auth.html', window.location.origin);
     authUrl.searchParams.set('next', QUOTE_WORKSPACE_PATH);
@@ -1149,6 +1176,97 @@
     return wrapper;
   };
 
+  const syncQuoteAccountContext = (form) => {
+    if (!form) return;
+
+    const accountSummary = form.querySelector('[data-quote-account-summary]');
+    const accountSummaryCopy = form.querySelector('[data-quote-account-summary-copy]');
+    const accountName = form.querySelector('[data-quote-account-name]');
+    const accountEmail = form.querySelector('[data-quote-account-email]');
+    const accountPhone = form.querySelector('[data-quote-account-phone]');
+    const profile = getActiveQuoteAccountProfile();
+    const fieldConfig = {
+      name: {
+        wrapper: form.querySelector('[data-quote-contact-field="name"]'),
+        input: form.querySelector('input[name="name"]'),
+        value: profile?.name || '',
+        label: 'name',
+        fallback: 'Missing on account'
+      },
+      email: {
+        wrapper: form.querySelector('[data-quote-contact-field="email"]'),
+        input: form.querySelector('input[name="email"]'),
+        value: profile?.email || '',
+        label: 'email address',
+        fallback: 'Missing on account'
+      },
+      phone: {
+        wrapper: form.querySelector('[data-quote-contact-field="phone"]'),
+        input: form.querySelector('input[name="phone"]'),
+        value: profile?.phone || '',
+        label: 'phone number',
+        fallback: 'Missing on account'
+      }
+    };
+
+    if (!profile) {
+      if (accountSummary) accountSummary.hidden = true;
+      Object.values(fieldConfig).forEach(({ wrapper }) => {
+        if (wrapper) wrapper.hidden = false;
+      });
+      return;
+    }
+
+    const summaryNodes = {
+      name: accountName,
+      email: accountEmail,
+      phone: accountPhone
+    };
+    const missingFields = [];
+    const providedFields = [];
+
+    Object.entries(fieldConfig).forEach(([key, config]) => {
+      const value = String(config.value || '').trim();
+      const summaryItem = form.querySelector(`[data-quote-account-item="${key}"]`);
+      const summaryNode = summaryNodes[key];
+
+      if (summaryNode) {
+        summaryNode.textContent = value || config.fallback;
+      }
+      if (summaryItem) {
+        summaryItem.classList.toggle('is-missing', !value);
+      }
+      if (config.input && value) {
+        config.input.value = value;
+      }
+      if (config.wrapper) {
+        config.wrapper.hidden = Boolean(value);
+      }
+
+      if (value) {
+        providedFields.push(config.label);
+      } else {
+        missingFields.push(config.label);
+      }
+    });
+
+    if (accountSummaryCopy) {
+      if (missingFields.length) {
+        const providedLabel = humanizeContactFieldList(providedFields);
+        const missingLabel = humanizeContactFieldList(missingFields);
+        accountSummaryCopy.textContent = providedLabel
+          ? `We found your saved ${providedLabel}. Add your missing ${missingLabel} below, then choose the project type.`
+          : `Add your ${missingLabel} below, then choose the project type.`;
+      } else {
+        accountSummaryCopy.textContent = 'We found your saved account details. Only choose the project type below and continue.';
+      }
+    }
+
+    if (accountSummary) {
+      accountSummary.hidden = false;
+    }
+  };
+
   const applyProjectTypeContext = (form) => {
     if (!form) return;
 
@@ -1277,6 +1395,7 @@
     };
 
     applyProjectTypeContext(form);
+    syncQuoteAccountContext(form);
     hideQuoteFollowup(form);
     if (stepPanels.length) {
       setCurrentStep(0);
@@ -1323,6 +1442,7 @@
     form.addEventListener('reset', () => {
       setTimeout(() => {
         applyProjectTypeContext(form);
+        syncQuoteAccountContext(form);
         if (stepPanels.length) {
           setCurrentStep(0);
         }
@@ -1459,6 +1579,16 @@
         submitButton.disabled = false;
       }
     });
+
+    const refreshQuoteAccountContext = () => {
+      syncQuoteAccountContext(form);
+    };
+
+    window.addEventListener('ll:session-changed', refreshQuoteAccountContext);
+    if (hasSessionToken()) {
+      window.setTimeout(refreshQuoteAccountContext, 300);
+      window.setTimeout(refreshQuoteAccountContext, 900);
+    }
 
     if (quotePreviewToken) {
       quotePreviewRequest ||= fetchQuotePreview(quotePreviewToken);

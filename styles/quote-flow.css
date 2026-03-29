@@ -165,6 +165,61 @@
   margin: 0;
 }
 
+.quote-account-summary[hidden],
+.quote-form-grid [data-quote-contact-field][hidden] {
+  display: none !important;
+}
+
+.quote-account-summary {
+  display: grid;
+  gap: 0.7rem;
+  padding: 0.95rem 1rem;
+  border: 1px solid rgba(209, 164, 74, 0.34);
+  border-radius: var(--radius-sm);
+  background:
+    linear-gradient(165deg, rgba(10, 10, 10, 0.76), rgba(4, 4, 4, 0.9)),
+    url('/boxbackground.png') center center / 100% 100% no-repeat;
+}
+
+.quote-account-summary h4,
+.quote-account-summary-list dt,
+.quote-account-summary-list dd {
+  margin: 0;
+}
+
+.quote-account-summary h4 {
+  font-size: 1.02rem;
+}
+
+.quote-account-summary-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+}
+
+.quote-account-summary-item {
+  display: grid;
+  gap: 0.16rem;
+  min-width: 0;
+}
+
+.quote-account-summary-item dt {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.quote-account-summary-item dd {
+  font-size: 0.88rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.quote-account-summary-item.is-missing dd {
+  color: var(--color-text-muted);
+}
+
 .quote-step-actions {
   display: flex;
   flex-wrap: wrap;

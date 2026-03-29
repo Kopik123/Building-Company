@@ -156,26 +156,24 @@ const expectShellNavigationDefaultState = async (page) => {
   await expect(navMenu).toBeVisible();
 };
 
-const mockPublicClientSession = async (page) => {
-  await page.addInitScript(() => {
+const mockPublicClientSession = async (page, userOverrides = {}) => {
+  const user = {
+    id: 'client-1',
+    name: 'Marta Client',
+    email: 'client@example.com',
+    role: 'client',
+    ...userOverrides
+  };
+
+  await page.addInitScript((payload) => {
     localStorage.setItem('ll_auth_token', 'test-token');
-    localStorage.setItem('ll_auth_user', JSON.stringify({
-      id: 'client-1',
-      name: 'Marta Client',
-      email: 'client@example.com',
-      role: 'client'
-    }));
-  });
+    localStorage.setItem('ll_auth_user', JSON.stringify(payload));
+  }, user);
 
   await page.route('**/api/auth/me', async (route) => {
     await route.fulfill({
       json: {
-        user: {
-          id: 'client-1',
-          name: 'Marta Client',
-          email: 'client@example.com',
-          role: 'client'
-        }
+        user
       }
     });
   });
@@ -393,6 +391,71 @@ test('wall systems service CTA opens quote with wall-systems context preselected
   await expect(page).toHaveURL(/\/quote\.html\?projectType=interior#quote-card$/);
   await expect(page.locator('#quote-card form.js-quote-form')).toBeVisible();
   await expect(page.locator('#quote-card select[name="projectType"]')).toHaveValue('interior');
+});
+
+test('quote page reuses saved client account details and hides duplicate contact fields', async ({ page }) => {
+  let requestBody = '';
+
+  await mockPublicClientSession(page, {
+    phone: '07395448487'
+  });
+
+  await page.route('**/api/v2/public/quotes', async (route) => {
+    requestBody = route.request().postData() || '';
+    await route.fulfill({
+      status: 201,
+      json: {
+        quoteId: 'quote-preview-1',
+        referenceCode: GUEST_REFERENCE_CODE,
+        publicToken: 'guest-preview-token',
+        status: 'pending',
+        workflowStatus: 'submitted',
+        attachmentCount: 0,
+        attachments: []
+      }
+    });
+  });
+
+  await page.goto('/quote.html');
+  const quoteForm = page.locator('form.js-quote-form');
+
+  await expect(quoteForm.locator('[data-quote-account-summary]')).toBeVisible();
+  await expect(quoteForm.locator('[data-quote-account-name]')).toContainText('Marta Client');
+  await expect(quoteForm.locator('[data-quote-account-email]')).toContainText('client@example.com');
+  await expect(quoteForm.locator('[data-quote-account-phone]')).toContainText('07395448487');
+  await expect(quoteForm.locator('[data-quote-contact-field="name"]')).toBeHidden();
+  await expect(quoteForm.locator('[data-quote-contact-field="email"]')).toBeHidden();
+  await expect(quoteForm.locator('[data-quote-contact-field="phone"]')).toBeHidden();
+
+  await quoteForm.locator('select[name="projectType"]').selectOption('kitchen');
+  await quoteForm.locator('[data-quote-step-next]').click();
+  await expect(quoteForm.locator('[data-quote-step-panel][data-step-index="1"]')).toBeVisible();
+  await quoteForm.locator('select[name="propertyType"]').selectOption('semi_detached');
+  await quoteForm.locator('select[name="occupancyStatus"]').selectOption('living_in_home');
+  await quoteForm.locator('select[name="planningStage"]').selectOption('getting_prices');
+  await quoteForm.locator('select[name="targetStartWindow"]').selectOption('within_3_months');
+  await quoteForm.locator('select[name="finishLevel"]').selectOption('premium');
+  await quoteForm.locator('select[name="siteAccess"]').selectOption('easy_ground_floor');
+  await quoteForm.locator('input[name="roomsInvolved"][value="kitchen"]').check();
+  await quoteForm.locator('[data-quote-step-next]').click();
+
+  await expect(quoteForm.locator('[data-quote-step-panel][data-step-index="2"]')).toBeVisible();
+  await quoteForm.locator('select[name="budget"]').evaluate((select) => {
+    const match = Array.from(select.options).find((option) => String(option.value || '').includes('8,000') && String(option.value || '').includes('12,000'));
+    select.value = match ? match.value : '';
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+  await quoteForm.locator('input[name="postcode"]').fill('M20 2AB');
+  await quoteForm.locator('input[name="priorities"][value="finish_quality"]').check();
+  await quoteForm.locator('textarea[name="mustHaves"]').fill('Hidden pantry storage.');
+  await quoteForm.locator('textarea[name="constraints"]').fill('Kitchen stays live at weekends.');
+  await quoteForm.locator('textarea[name="message"]').fill('Kitchen refresh with new joinery and appliance wall.');
+  await page.getByRole('button', { name: /send enquiry/i }).click();
+
+  await expect(quoteForm.locator('.form-status').first()).toContainText(/request sent\. reference: ll-m202ab-8487\./i);
+  expect(requestBody).toContain('Marta Client');
+  expect(requestBody).toContain('client@example.com');
+  expect(requestBody).toContain('07395448487');
 });
 
 test('quote page shows a private guest quote preview after submit and from the saved quote link', async ({ page }) => {
