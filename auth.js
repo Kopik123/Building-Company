@@ -5,7 +5,6 @@
   const USER_KEY = runtime.USER_KEY || 'll_auth_user';
   const V2_ACCESS_KEY = runtime.V2_ACCESS_KEY || 'll_v2_access_token';
   const V2_REFRESH_KEY = runtime.V2_REFRESH_KEY || 'll_v2_refresh_token';
-  const QUOTE_CLAIM_STORAGE_KEY = 'll_quote_claim_pending';
   const DEFAULT_QUOTE_WORKSPACE_PATH = '/client-dashboard.html';
   const PUBLIC_QUOTE_API_BASE = '/api/v2/public/quotes';
 
@@ -78,13 +77,8 @@
     return;
   }
 
-  const parseError = runtime.parseError || ((payload) => payload?.error || 'Request failed.');
-  const setStatus = runtime.setStatus || ((node, message = '', type = '') => {
-    node.className = 'form-status';
-    if (type === 'success') node.classList.add('is-success');
-    if (type === 'error') node.classList.add('is-error');
-    node.textContent = message;
-  });
+  const parseError = runtime.parseError;
+  const setStatus = runtime.setStatus;
 
   const getRoleProfile = (roleRaw) => {
     const role = String(roleRaw || '').toLowerCase();
@@ -111,19 +105,8 @@
   const humanRole = (roleRaw) => {
     return getRoleProfile(roleRaw)?.label || 'User';
   };
-  const humanChannel = (value) => (String(value || '').toLowerCase() === 'phone' ? 'phone' : 'email');
-  const formatTimestamp = (value) => {
-    const timestamp = Date.parse(String(value || ''));
-    if (!Number.isFinite(timestamp)) return '';
-    try {
-      return new Intl.DateTimeFormat('en-GB', {
-        dateStyle: 'medium',
-        timeStyle: 'short'
-      }).format(new Date(timestamp));
-    } catch (_error) {
-      return new Date(timestamp).toLocaleString();
-    }
-  };
+  const humanChannel = runtime.humanChannel;
+  const formatTimestamp = runtime.formatTimestamp;
 
   const getManagerQuickAccessOptions = () => Array.isArray(brand?.managerQuickAccess) ? brand.managerQuickAccess : [];
   const ACCOUNT_CARD_DEFINITIONS = [
@@ -298,53 +281,14 @@
     setActiveAccountCard(activeAccountCardKey);
   };
 
-  const saveSession = runtime.saveSession || ((token, user, v2Session = null) => {
-    localStorage.setItem(TOKEN_KEY, token);
-    localStorage.setItem(USER_KEY, JSON.stringify(user || {}));
-    const accessToken = typeof v2Session?.accessToken === 'string' ? v2Session.accessToken.trim() : '';
-    const refreshToken = typeof v2Session?.refreshToken === 'string' ? v2Session.refreshToken.trim() : '';
-    if (accessToken) {
-      localStorage.setItem(V2_ACCESS_KEY, accessToken);
-    }
-    if (refreshToken) {
-      localStorage.setItem(V2_REFRESH_KEY, refreshToken);
-    }
-    globalThis.dispatchEvent(new Event('ll:session-changed'));
-  });
-
-  const clearSession = runtime.clearSession || (() => {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
-    localStorage.removeItem(V2_ACCESS_KEY);
-    localStorage.removeItem(V2_REFRESH_KEY);
-    globalThis.dispatchEvent(new Event('ll:session-changed'));
-  });
-
-  const getSavedUser = runtime.getStoredUser || (() => {
-    try {
-      return JSON.parse(localStorage.getItem(USER_KEY) || 'null');
-    } catch {
-      return null;
-    }
-  });
+  const saveSession = runtime.saveSession;
+  const clearSession = runtime.clearSession;
+  const getSavedUser = runtime.getStoredUser;
 
   const getToken = () => localStorage.getItem(TOKEN_KEY) || '';
-  const getPendingQuoteClaim = () => {
-    try {
-      const parsed = JSON.parse(localStorage.getItem(QUOTE_CLAIM_STORAGE_KEY) || 'null');
-      return parsed && typeof parsed === 'object' ? parsed : null;
-    } catch {
-      return null;
-    }
-  };
-  const clearPendingQuoteClaim = () => {
-    localStorage.removeItem(QUOTE_CLAIM_STORAGE_KEY);
-    globalThis.dispatchEvent(new Event('ll:quote-claim-changed'));
-  };
-  const isPendingQuoteClaimActive = (pendingClaim) => {
-    const expiresAt = Date.parse(String(pendingClaim?.expiresAt || ''));
-    return Boolean(pendingClaim?.quoteId && pendingClaim?.claimToken && Number.isFinite(expiresAt) && expiresAt > Date.now());
-  };
+  const getPendingQuoteClaim = runtime.getPendingQuoteClaim;
+  const clearPendingQuoteClaim = runtime.clearPendingQuoteClaim;
+  const isPendingQuoteClaimActive = runtime.isPendingQuoteClaimActive;
   const getQuoteClaimPreviewPath = (pendingClaim) => sanitizeInternalPath(pendingClaim?.previewUrl) || '/quote.html';
   const getQuoteClaimWorkspacePath = (pendingClaim) =>
     sanitizeInternalPath(pendingClaim?.workspacePath) || DEFAULT_QUOTE_WORKSPACE_PATH;

@@ -685,6 +685,11 @@
 - Added backend/mobile-foundation regression coverage in `tests/api-v2/auth-flow.test.js`, `tests/api-v2/devices-push-registration.test.js` and `tests/mobile/mobile-foundation.test.js`, then used those suites as the first automated safety net for the new mobile foundation layer.
 ## 2026-03-29
 
+- Saved `Plans/Public Runtime Helper Deduplication Wave 20.md`, registered it in `Plans/Plan History.md`, and recorded the public-shell helper deduplication as a closed checklist item in `Project_todos.md`.
+- Extended `runtime.js` with the shared quote-claim helper surface (`QUOTE_CLAIM_STORAGE_KEY`, pending-claim read/save/clear helpers, active-claim check, `humanizeToken`, `humanChannel`, `formatTimestamp`) so `auth.html` and `quote.html` read one browser runtime implementation instead of keeping their own copies.
+- Removed duplicated quote-claim storage, timestamp-formatting and token-humanization logic from `auth.js` and `quote.js`, rewiring both entry scripts to consume the shared runtime helpers while keeping the guest quote, private preview and auth claim contracts unchanged.
+- Re-ran `node --check runtime.js`, `node --check auth.js`, `node --check quote.js`, plus focused Playwright coverage for quote preview, photo-retry fallback, claim handoff and stale-token auth refresh; all passed after the runtime-helper cleanup.
+
 - Saved `Plans/Quote Friendly Reference Code Wave 19.md`, registered it in `Plans/Plan History.md`, and recorded the friendly guest quote reference rollout as a closed checklist item in `Project_todos.md`.
 - Added `utils/quoteReference.js` so guest-facing quote references can be derived from postcode/contact data (`LL-POSTCODE-LAST4`) with a numeric suffix for duplicate contact/location combinations.
 - Updated `routes/quotes.js` to return `referenceCode` from public guest quote submit, preview, attachment follow-up and claim endpoints while keeping the UUID `quoteId` untouched for API routing and relation integrity.

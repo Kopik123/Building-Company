@@ -3,6 +3,7 @@
   const USER_KEY = 'll_auth_user';
   const V2_ACCESS_KEY = 'll_v2_access_token';
   const V2_REFRESH_KEY = 'll_v2_refresh_token';
+  const QUOTE_CLAIM_STORAGE_KEY = 'll_quote_claim_pending';
   const assetManifest = window.LEVEL_LINES_ASSETS || { brand: {}, gallery: {} };
 
   const parseError = (payload) => {
@@ -64,6 +65,39 @@
     localStorage.removeItem(V2_ACCESS_KEY);
     localStorage.removeItem(V2_REFRESH_KEY);
     window.dispatchEvent(new Event('ll:session-changed'));
+  };
+
+  const dispatchQuoteClaimChange = () => {
+    window.dispatchEvent(new Event('ll:quote-claim-changed'));
+  };
+
+  const getPendingQuoteClaim = () => {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(QUOTE_CLAIM_STORAGE_KEY) || 'null');
+      return parsed && typeof parsed === 'object' ? parsed : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const savePendingQuoteClaim = (payload) => {
+    localStorage.setItem(QUOTE_CLAIM_STORAGE_KEY, JSON.stringify(payload || {}));
+    dispatchQuoteClaimChange();
+  };
+
+  const clearPendingQuoteClaim = () => {
+    localStorage.removeItem(QUOTE_CLAIM_STORAGE_KEY);
+    dispatchQuoteClaimChange();
+  };
+
+  const isPendingQuoteClaimActive = (pendingClaim) => {
+    const expiresAt = Date.parse(String(pendingClaim?.expiresAt || ''));
+    return Boolean(
+      pendingClaim?.quoteId
+      && pendingClaim?.claimToken
+      && Number.isFinite(expiresAt)
+      && expiresAt > Date.now()
+    );
   };
 
   const waitForStoredUser = (timeoutMs = 900) =>
@@ -151,11 +185,28 @@
       .trim()
       .replace(/\b\w/g, (char) => char.toUpperCase());
 
+  const humanizeToken = (value) => titleCase(value);
+
+  const humanChannel = (value) => (String(value || '').toLowerCase() === 'phone' ? 'phone' : 'email');
+
   const formatDateTime = (value) => {
     if (!value) return '';
     const parsed = new Date(value);
     if (Number.isNaN(parsed.getTime())) return '';
     return parsed.toLocaleString('en-GB');
+  };
+
+  const formatTimestamp = (value) => {
+    const timestamp = Date.parse(String(value || ''));
+    if (!Number.isFinite(timestamp)) return '';
+    try {
+      return new Intl.DateTimeFormat('en-GB', {
+        dateStyle: 'medium',
+        timeStyle: 'short'
+      }).format(new Date(timestamp));
+    } catch (_error) {
+      return new Date(timestamp).toLocaleString();
+    }
   };
 
   const createOverviewEntry = ({ title, detail, meta }) => {
@@ -371,6 +422,7 @@
     USER_KEY,
     V2_ACCESS_KEY,
     V2_REFRESH_KEY,
+    QUOTE_CLAIM_STORAGE_KEY,
     assetManifest,
     parseError,
     escapeHtml,
@@ -379,13 +431,20 @@
     getStoredUser,
     saveSession,
     clearSession,
+    getPendingQuoteClaim,
+    savePendingQuoteClaim,
+    clearPendingQuoteClaim,
+    isPendingQuoteClaimActive,
     waitForStoredUser,
     refreshSessionFromV2,
     buildQuery,
     debounce,
     createApiClient,
     titleCase,
+    humanizeToken,
+    humanChannel,
     formatDateTime,
+    formatTimestamp,
     createOverviewEntry,
     renderMailboxPreviewList,
     syncKeyedList,

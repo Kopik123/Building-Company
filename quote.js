@@ -5,7 +5,6 @@
   const MAX_QUOTE_PHOTOS = 8;
   const EMPTY_FILES_STATUS_TEXT = 'Optional: attach up to 8 reference photos.';
   const QUOTE_PREVIEW_QUERY_KEY = 'quote';
-  const QUOTE_CLAIM_STORAGE_KEY = 'll_quote_claim_pending';
   const QUOTE_WORKSPACE_PATH = '/client-dashboard.html';
   const PUBLIC_QUOTE_API_BASE = '/api/v2/public/quotes';
   const TOKEN_KEY = runtime.TOKEN_KEY || 'll_auth_token';
@@ -15,6 +14,13 @@
   const selectedFilesByInput = new WeakMap();
   const quoteStepStateByForm = new WeakMap();
   const quotePreviewToken = new URLSearchParams(window.location.search).get(QUOTE_PREVIEW_QUERY_KEY);
+  const formatTimestamp = runtime.formatTimestamp;
+  const humanizeToken = runtime.humanizeToken || runtime.titleCase;
+  const setStatus = runtime.setStatus;
+  const getSavedUser = runtime.getStoredUser;
+  const getPendingQuoteClaim = runtime.getPendingQuoteClaim;
+  const savePendingQuoteClaim = runtime.savePendingQuoteClaim;
+  const isPendingQuoteClaimActive = runtime.isPendingQuoteClaimActive;
   let quotePreviewRequest;
 
   const normalizeProjectType = (value) => {
@@ -333,23 +339,6 @@
     return `${(numericBytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  const formatTimestamp = (value) => {
-    const timestamp = Date.parse(String(value || ''));
-    if (!Number.isFinite(timestamp)) return '';
-    try {
-      return new Intl.DateTimeFormat('en-GB', {
-        dateStyle: 'medium',
-        timeStyle: 'short'
-      }).format(new Date(timestamp));
-    } catch (_error) {
-      return new Date(timestamp).toLocaleString();
-    }
-  };
-
-  const humanizeToken = (value) =>
-    String(value || '')
-      .replace(/[_-]+/g, ' ')
-      .replace(/\b\w/g, (character) => character.toUpperCase());
   const isValidEmail = (value) => !value || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value).trim());
   const buildQuoteProposalDetails = ({ formData, location, postcode, budgetRange }) => ({
     version: 1,
@@ -391,38 +380,7 @@
   };
   const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
   const normalizePhone = (value) => String(value || '').trim();
-  const setStatus = (node, message = '', type = '') => {
-    if (!node) return;
-    node.className = 'form-status';
-    if (type === 'success') node.classList.add('is-success');
-    if (type === 'error') node.classList.add('is-error');
-    if (type === 'loading') node.classList.add('is-loading');
-    node.textContent = message;
-  };
-  const getSavedUser = () => {
-    try {
-      return JSON.parse(localStorage.getItem(USER_KEY) || 'null');
-    } catch {
-      return null;
-    }
-  };
   const hasSessionToken = () => Boolean(localStorage.getItem(TOKEN_KEY));
-  const getPendingQuoteClaim = () => {
-    try {
-      const parsed = JSON.parse(localStorage.getItem(QUOTE_CLAIM_STORAGE_KEY) || 'null');
-      return parsed && typeof parsed === 'object' ? parsed : null;
-    } catch {
-      return null;
-    }
-  };
-  const savePendingQuoteClaim = (payload) => {
-    localStorage.setItem(QUOTE_CLAIM_STORAGE_KEY, JSON.stringify(payload || {}));
-    globalThis.dispatchEvent(new Event('ll:quote-claim-changed'));
-  };
-  const isPendingQuoteClaimActive = (pendingClaim) => {
-    const expiresAt = Date.parse(String(pendingClaim?.expiresAt || ''));
-    return Boolean(pendingClaim?.quoteId && pendingClaim?.claimToken && Number.isFinite(expiresAt) && expiresAt > Date.now());
-  };
   const buildAuthClaimUrl = () => {
     const authUrl = new URL('/auth.html', window.location.origin);
     authUrl.searchParams.set('next', QUOTE_WORKSPACE_PATH);
