@@ -27,23 +27,37 @@ const createRateLimiter = (windowMs, max) =>
     legacyHeaders: false
   });
 
+const isMutableMediaPath = (filePath) => {
+  const normalized = String(filePath || '').replaceAll('\\', '/').toLowerCase();
+  return normalized.includes('/uploads/') || normalized.includes('/gallery/');
+};
+
 const setStaticCacheHeaders = (res, filePath) => {
   const ext = String(path.extname(filePath) || '').toLowerCase();
+  const mutableMedia = isMutableMediaPath(filePath);
 
   if (ext === '.html') {
     res.setHeader('Cache-Control', 'no-store');
     return;
   }
 
-  // During active site iteration we want browsers to fetch fresh frontend assets
-  // so deploys show up without manual history/cache clearing.
-  if (['.css', '.js', '.png', '.jpg', '.jpeg', '.webp', '.avif', '.svg'].includes(ext)) {
-    res.setHeader('Cache-Control', 'no-store');
+  if (['.css', '.js', '.mjs'].includes(ext)) {
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     return;
   }
 
-  if (['.woff', '.woff2'].includes(ext)) {
-    res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
+  if (['.png', '.jpg', '.jpeg', '.webp', '.avif', '.svg', '.gif', '.ico'].includes(ext)) {
+    if (mutableMedia) {
+      res.setHeader('Cache-Control', 'no-store');
+      return;
+    }
+
+    res.setHeader('Cache-Control', 'public, max-age=604800, stale-while-revalidate=86400');
+    return;
+  }
+
+  if (['.woff', '.woff2', '.ttf', '.otf'].includes(ext)) {
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     return;
   }
 
@@ -215,5 +229,6 @@ const createApp = () => {
 };
 
 module.exports = {
-  createApp
+  createApp,
+  setStaticCacheHeaders
 };

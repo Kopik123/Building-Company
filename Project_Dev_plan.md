@@ -683,3 +683,14 @@
 - Added `apps/mobile-company` as a dedicated company-only Expo shell for `employee / manager / admin`, with overview, projects, quotes, estimates, inbox, notifications, CRM, inventory and account tabs plus basic quote operational actions through `api/v2`.
 - Extended `api/v2/routes/auth.js` with a native-friendly client `register` endpoint and added `migrations/202603270004-device-push-app-variant-and-device-name.js`, `models/DevicePushToken.js` and `api/v2/routes/devices.js` support for `appVariant`, `deviceName` and Expo-friendly push providers.
 - Added backend/mobile-foundation regression coverage in `tests/api-v2/auth-flow.test.js`, `tests/api-v2/devices-push-registration.test.js` and `tests/mobile/mobile-foundation.test.js`, then used those suites as the first automated safety net for the new mobile foundation layer.
+## 2026-03-29
+
+- Saved `Plans/Frontend Architecture And Public Shell Optimization Wave 1.md`, registered it in `Plans/Plan History.md`, and recorded the remaining frontend architecture follow-ups in `Project_todos.md`.
+- Split the public brochure styling by surface by extracting `styles/gallery.css` and `styles/quote-flow.css`, then removed the main gallery/quote blocks from `styles/public.css` so brochure pages stop carrying the heaviest route-specific styling.
+- Removed `styles/workspace.css` from brochure pages (`about`, `services`, `contact`, `privacy`, `terms`, `cookie-policy`) and rewired `index.html`, `quote.html`, `gallery.html` plus the generated service/location pages so they only load the CSS bundles their surfaces actually need.
+- Reworked `scripts/publicPageRenderer.js` so generated public pages now render stylesheet links through a surface-aware helper and no longer pull `workspace.css` into quote/gallery brochure outputs by default.
+- Extracted dashboard accordion bootstrap out of `site.js` into the new `dashboard-accordions.js`, then wired that script only into `client-dashboard.html` and `manager-dashboard.html` instead of carrying dashboard-only code in every public page shell.
+- Trimmed `site.js` by removing the unused home-motion, next-available-date and before/after slider code paths that no longer correspond to current HTML surfaces.
+- Updated `app.js` static cache behavior so HTML stays `no-store`, versioned CSS/JS/fonts get immutable cache, and mutable gallery/upload media stays uncached while the rest of the brochure image layer gets a lighter cache policy.
+- Regenerated the public service/location pages with `npm.cmd run generate:public-pages:content`, re-verified them with `npm.cmd run verify:generated`, and added `tests/api-v2/frontend-shell-optimization.test.js` plus updated `tests/api-v2/app-legacy-routes.test.js` to lock the new asset-loading and cache-header contracts in place.
+- Re-ran `node --test tests/api-v2/frontend-shell-optimization.test.js` and `npm.cmd run test:ci`; both passed after the public shell optimization wave.

@@ -166,3 +166,8 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [ ] Revisit whether a CDN/media platform is worth introducing later if the runtime gallery/media set grows beyond the current `sharp` pipeline.
 - [ ] If exact chronology becomes important, replace the derived `Company Events` overview in `manager-dashboard` with a persisted audit/event timeline.
 - [ ] Decide later whether `header.png` should remain only as a historical/supporting asset now that `title.png` is the shared public shell lockup.
+- [ ] Finish the public shell asset split by moving the remaining quote/gallery responsive selectors and other surface-specific leftovers out of `styles/public.css` once the new bundles settle in browser QA.
+- [ ] Split `apps/web-v2/src/App.jsx` into route modules, shared workspace route config and domain hooks; the authenticated app is still too monolithic after the public-shell optimization wave.
+- [ ] Convert `auth.html`, `client-dashboard.html` and `manager-dashboard.html` into thinner compatibility shells once `/app-v2` reaches the remaining operational parity, instead of continuing to grow legacy HTML dashboards.
+- [ ] Revisit immutable caching for brochure/background images once non-gallery media is fully content-addressed; this wave intentionally keeps `/Gallery` and `/uploads` on `no-store` and other images on conservative cache.
+- [ ] Keep using `npm.cmd` for local Windows PowerShell 5.1 flows, because plain `npm` is still blocked by local execution policy during repo automation.
