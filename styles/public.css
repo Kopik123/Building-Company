@@ -807,9 +807,8 @@
 .public-site .surface-card--light input,
 .public-site .surface-card--light select,
 .public-site .surface-card--light textarea {
-  background:
-    linear-gradient(165deg, rgba(10, 10, 10, 0.86), rgba(4, 4, 4, 0.92)),
-    url('/boxbackground.png') center center / 100% 100% no-repeat;
+  --field-surface: linear-gradient(165deg, rgba(10, 10, 10, 0.86), rgba(4, 4, 4, 0.92));
+  --field-texture-image: url('/boxbackground.png');
   border-color: rgba(209, 164, 74, 0.6);
 }
 

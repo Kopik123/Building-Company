@@ -559,7 +559,8 @@
 .workspace-shell .auth-card input,
 .workspace-shell .auth-card select,
 .workspace-shell .auth-card textarea {
-  background: rgba(10, 10, 10, 0.9);
+  --field-surface: linear-gradient(180deg, rgba(10, 10, 10, 0.9), rgba(10, 10, 10, 0.9));
+  --field-texture-image: none;
   border-color: rgba(209, 164, 74, 0.65);
 }
 

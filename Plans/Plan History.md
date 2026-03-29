@@ -58,3 +58,4 @@
 - 2026-03-29 18:59 | Public Runtime Helper Deduplication Wave 20 | Plans/Public Runtime Helper Deduplication Wave 20.md
 - 2026-03-29 19:05 | Public Quote Rate Limit Scope Fix Wave 21 | Plans/Public Quote Rate Limit Scope Fix Wave 21.md
 - 2026-03-29 19:08 | Dropdown Selection Background Readability Wave 22 | Plans/Dropdown Selection Background Readability Wave 22.md
+- 2026-03-29 19:31 | Select Chevron And Field Surface Unification Wave 23 | Plans/Select Chevron And Field Surface Unification Wave 23.md

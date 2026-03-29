@@ -685,6 +685,11 @@
 - Added backend/mobile-foundation regression coverage in `tests/api-v2/auth-flow.test.js`, `tests/api-v2/devices-push-registration.test.js` and `tests/mobile/mobile-foundation.test.js`, then used those suites as the first automated safety net for the new mobile foundation layer.
 ## 2026-03-29
 
+- Saved `Plans/Select Chevron And Field Surface Unification Wave 23.md`, registered it in `Plans/Plan History.md`, and recorded the shared select-chevron polish as a closed checklist item in `Project_todos.md`.
+- Refactored `styles/base.css` so form controls now use shared `--field-surface` and `--field-texture-image` variables, then layered a custom gold chevron onto single-value selects with `appearance: none` and right-side padding.
+- Updated `styles/public.css` and `styles/workspace.css` to override field visuals through those shared variables instead of clobbering the entire background shorthand, which keeps the new chevron visible across brochure, auth and dashboard forms.
+- Re-ran `git diff --check` and focused Playwright coverage for brochure routes plus the auth session surface after the select-chevron refactor; all stayed green.
+
 - Saved `Plans/Dropdown Selection Background Readability Wave 22.md`, registered it in `Plans/Plan History.md`, and recorded the shared dropdown-background readability fix as a closed checklist item in `Project_todos.md`.
 - Updated `styles/base.css` so shared `select` controls now opt into `color-scheme: dark` and expanded `option` / `optgroup` rows use an explicit dark background with readable text instead of inheriting unstable browser defaults.
 - Cleared `text-shadow` on popup options so dropdown rows stay readable even when brochure cards or workspace shells apply decorative text-shadow to parent copy.

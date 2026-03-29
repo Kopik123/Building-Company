@@ -52,6 +52,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [x] Deduplicate public quote-claim helpers across `runtime.js`, `auth.js` and `quote.js` so pending-claim storage, token humanization and timestamp formatting stop drifting between the two public entry shells.
 - [x] Exclude public guest quote endpoints from the shared global API rate limiter and give them a dedicated quote limiter, so stage-3 submit plus photo follow-up requests no longer hit the generic `Too many requests` response.
 - [x] Fix unreadable dropdown popup backgrounds in shared form controls so `quote`, `auth` and workspace select lists keep dark, readable option panels instead of browser-default contrast glitches.
+- [x] Add a branded chevron and unified field-surface variables for shared single-value selects, so dropdowns across brochure/auth/workspace look intentional instead of mixing system arrows with custom field skins.
 - [x] Fix the public-header regression where authenticated brochure pages could still show autofilled inline login inputs alongside session controls.
 - [x] Verify the live cache policy on `HTML`, `CSS`, `JS` and image assets; current production behavior is `HTML`/`healthz` = `Cache-Control: no-store`, while versioned `CSS`/`JS`/image assets return `Cache-Control: max-age=604800, public`.
 - [ ] Run one consolidated live QA pass on `/`, `/about.html`, `/services.html`, `/gallery.html`, `/quote.html`, `/contact.html`, `/auth.html`, both dashboards, two service pages and two location pages.
