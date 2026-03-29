@@ -49,6 +49,14 @@
 - Re-ran focused manager Playwright coverage and `npm.cmd run test:ci` after the shell refactor to confirm the new manager workspace card model stays green.
 - Attempted a full `npm.cmd run test:e2e:mobile` pass after the manager workspace rollout; the command exceeded the local timeout, so only the focused manager Playwright pass is recorded as green in this session.
 
+- Saved `Plans/Manager Header Duplicate Panel Removal Wave 24.md`, registered it in `Plans/Plan History.md`, and recorded the duplicate manager-header panel regression as a closed checklist item in `Project_todos.md`.
+- Removed the duplicated manager utility/account controls from `manager-dashboard.html`, leaving the sticky header focused on brand, quick search and brochure navigation while the left workspace rail remains the single management navigation surface.
+- Updated `site.js` so the shared public-header quick-access panel is now created only on brochure surfaces, instead of being injected into `manager-dashboard.html` alongside the in-page quick-access rail.
+- Tightened `styles/workspace.css` to match the slimmer manager header layout after the duplicate controls were removed, including cleaner responsive grid behavior at the existing manager header breakpoints.
+- Updated `tests/playwright/mobile-smoke.spec.js` so manager workspace smoke coverage now asserts the header duplicate is gone and the left quick-access rail still opens the `quotes` card on desktop and mobile.
+- Re-ran `node --check site.js`, `git diff --check`, and focused manager Playwright coverage to confirm the workspace keeps one quick-access rail without losing routing or mobile shell behavior.
+
+
 ## 2026-03-10
 
 - Added `scripts/setup-vscode.ps1` to install the recommended VS Code extensions and merge workspace settings.

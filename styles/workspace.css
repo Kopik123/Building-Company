@@ -717,7 +717,7 @@
 .manager-app-header-controls {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(180px, 240px) auto auto minmax(0, 1fr);
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
   gap: 0.65rem;
   align-items: center;
 }
@@ -1126,7 +1126,7 @@
   }
 
   .manager-app-header-controls {
-    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .manager-app-menu {
@@ -1140,7 +1140,7 @@
 
 @media (max-width: 1100px) {
   .manager-app-header-controls {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .manager-app-search,
@@ -1175,17 +1175,6 @@
 
   .manager-app-header-controls {
     grid-template-columns: 1fr;
-  }
-
-  .manager-app-utility-links {
-    width: 100%;
-    flex-wrap: wrap;
-  }
-
-  .manager-app-header .public-auth-panel {
-    left: 0;
-    right: auto;
-    width: min(440px, calc(100vw - 1.5rem));
   }
 
   .manager-quick-rail {
@@ -1234,14 +1223,12 @@
     font-size: 0.8rem;
   }
 
-  .manager-app-utility-links,
   .manager-card-actions,
   .manager-subcard-switch {
     width: 100%;
     flex-direction: column;
   }
 
-  .manager-app-utility-links .btn,
   .manager-card-actions .btn,
   .manager-subcard-switch .btn {
     width: 100%;

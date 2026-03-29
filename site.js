@@ -41,7 +41,7 @@
   const isManagerWorkspace = body.classList.contains('page-manager-dashboard');
   const isWorkspacePage = isClientWorkspace || isManagerWorkspace;
   const isPublicPage = !isAuthPage && !isWorkspacePage;
-  const isManagerQuickAccessSurface = isPublicPage || isManagerWorkspace;
+  const isManagerQuickAccessSurface = isPublicPage;
 
   const readAuthMeCache = (token) => {
     if (!token || !globalThis.sessionStorage) return null;
@@ -392,7 +392,7 @@
   };
 
   const ensureHeaderQuickAccessPanel = () => {
-    if (!publicShellControls) return null;
+    if (!publicShellControls || !isManagerQuickAccessSurface) return null;
 
     let panel = publicShellControls.querySelector('[data-header-account-panel]');
     if (!panel) {

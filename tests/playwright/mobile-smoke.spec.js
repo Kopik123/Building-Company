@@ -898,8 +898,9 @@ test('manager dashboard mobile menu opens', async ({ page }) => {
   await page.goto('/manager-dashboard.html');
   await expect(page.locator('body.public-site.workspace-site.page-manager-dashboard')).toBeVisible();
   await expectCanonicalFooterServices(page);
-  await expect(page.locator('[data-header-account-panel]')).toBeVisible();
-  await expect(page.locator('[data-header-account-links]').getByRole('link', { name: 'ProjectManager', exact: true })).toHaveCount(1);
+  await expect(page.locator('[data-header-account-panel]')).toHaveCount(0);
+  await expect(page.locator('.manager-app-utility-links')).toHaveCount(0);
+  await expect(page.locator('#manager-quick-access-nav')).toBeVisible();
   await openNavIfNeeded(page);
   await expect(page.locator('[data-nav-menu] [data-auth-link]')).toBeHidden();
   await expect(page.locator('[data-account-settings-link]').first()).toBeVisible();
@@ -907,15 +908,15 @@ test('manager dashboard mobile menu opens', async ({ page }) => {
   await expectNoHorizontalScroll(page);
 });
 
-test('manager dashboard keeps the header quick access panel visible after choosing a management card', async ({ page }) => {
+test('manager dashboard keeps one quick-access rail without duplicating it in the header', async ({ page }) => {
   await mockManagerSession(page);
   await page.goto('/manager-dashboard.html');
 
-  const headerPanel = page.locator('[data-header-account-panel]');
-  await expect(headerPanel).toBeVisible();
-  await page.locator('[data-header-account-links]').getByRole('link', { name: 'QuotesReview', exact: true }).click();
+  await expect(page.locator('[data-header-account-panel]')).toHaveCount(0);
+  await expect(page.locator('#manager-quick-access-nav [data-manager-card-link="quotes"]')).toHaveCount(1);
+  await page.locator('#manager-quick-access-nav [data-manager-card-link="quotes"]').click();
   await expect(page).toHaveURL(/\/manager-dashboard\.html#quotes$/);
-  await expect(headerPanel).toBeVisible();
+  await expect(page.locator('[data-header-account-panel]')).toHaveCount(0);
   await expect(page.locator('[data-manager-card-panel="quotes"]')).toBeVisible();
   await expect(page.locator('#manager-quotes-section')).toBeVisible();
 });

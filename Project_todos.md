@@ -83,6 +83,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [x] Centralise role labels and account destinations so `brand.js`, `auth.js`, `site.js`, `client-dashboard.shell.js` and `manager-dashboard.shell.js` all agree on role naming, redirect paths and manager-workspace permissions.
 - [x] Rebuild `manager-dashboard.html` into a card-based workspace shell with compact app header, left quick-access rail, hash-routed manager cards and richer operational fields for quotes, services, stock and staff.
 - [x] Compress the sticky manager top bar into a truly slim app header, with desktop account tools behind a dropdown toggle so the header no longer expands into a hero-sized block while scrolling.
+- [x] Remove the duplicated manager header quick-access/account panel from `manager-dashboard.html` so the sticky top bar stays slim and the left workspace rail is the only management navigation surface.
 - [x] Confirm on live `/services.html` that `Discuss wall systems` opens `/quote.html` with the wall-systems context already selected in the quote form.
 - [ ] Capture fresh screenshot evidence for homepage, gallery, quote/contact forms, auth state and both dashboards after the consolidated live QA pass.
 - [ ] Run manual rich-results / SERP preview QA for homepage, services, gallery, one generated service page and one generated location page after the launch-ready SEO/content pass.
