@@ -60,3 +60,4 @@
 - 2026-03-29 19:08 | Dropdown Selection Background Readability Wave 22 | Plans/Dropdown Selection Background Readability Wave 22.md
 - 2026-03-29 19:31 | Select Chevron And Field Surface Unification Wave 23 | Plans/Select Chevron And Field Surface Unification Wave 23.md
 - 2026-03-29 19:43 | Manager Header Duplicate Panel Removal Wave 24 | Plans/Manager Header Duplicate Panel Removal Wave 24.md
+- 2026-03-29 20:21 | Manager Menu Simplification And Label Cleanup Wave 25 | Plans/Manager Menu Simplification And Label Cleanup Wave 25.md

@@ -49,15 +49,15 @@ const staleFooterServices = [
 
 const managerQuickAccessLabels = [
   'Create Project',
-  'ProjectManager',
-  'QuotesReview',
-  'ServicesManage',
-  'MaterialsTrack',
+  'Project Board',
+  'Quote Review',
+  'Service Catalogue',
+  'Materials / Stock',
   'Clients',
   'Staff',
-  'Estimate',
-  'PrivateChat',
-  'ProjectChat'
+  'Estimates',
+  'Private Inbox',
+  'Project Chat'
 ];
 
 const expectCanonicalFooterServices = async (page) => {
@@ -934,12 +934,9 @@ test('manager dashboard exposes project controls for logged session on mobile', 
   await expect(page.getByRole('heading', { name: /quick access/i })).toBeVisible();
   await expect(page.locator('#manager-mailbox-private-count')).toContainText('1');
   await expect(page.locator('#manager-mailbox-project-count')).toContainText('1');
-  await expect(page.locator('#manager-available-options a[href="#projects"]').first()).toBeVisible();
-  for (const label of managerQuickAccessLabels) {
-    await expect(
-      page.locator('#manager-available-options .workspace-option-link strong').filter({ hasText: label })
-    ).toHaveCount(1);
-  }
+  await expect(page.locator('#manager-quick-access-nav [data-manager-card-link="projects"]').first()).toBeVisible();
+  await expect(page.locator('#manager-quick-access-nav [data-manager-card-link="quotes"]').first()).toBeVisible();
+  await expect(page.locator('#manager-quick-access-nav [data-manager-card-link="inbox"]').first()).toBeVisible();
   await page.goto('/manager-dashboard.html#projects');
   await expect(page.locator('#project-create-form input[name="title"]')).toBeVisible();
   await expect(page.locator('#projects-list button').first()).toBeVisible();

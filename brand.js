@@ -32,25 +32,25 @@ const managerQuickAccess = [
   },
   {
     key: 'projectManager',
-    label: 'ProjectManager',
+    label: 'Project Board',
     href: '/manager-dashboard.html#projects',
     roles: ['employee', 'manager', 'admin']
   },
   {
     key: 'quotesReview',
-    label: 'QuotesReview',
+    label: 'Quote Review',
     href: '/manager-dashboard.html#quotes',
     roles: ['manager', 'admin']
   },
   {
     key: 'servicesManage',
-    label: 'ServicesManage',
+    label: 'Service Catalogue',
     href: '/manager-dashboard.html#services',
     roles: ['manager', 'admin']
   },
   {
     key: 'materialsTrack',
-    label: 'MaterialsTrack',
+    label: 'Materials / Stock',
     href: '/manager-dashboard.html#stock',
     roles: ['manager', 'admin']
   },
@@ -68,19 +68,19 @@ const managerQuickAccess = [
   },
   {
     key: 'estimate',
-    label: 'Estimate',
+    label: 'Estimates',
     href: '/manager-dashboard.html#estimates',
     roles: ['manager', 'admin']
   },
   {
     key: 'privateChat',
-    label: 'PrivateChat',
+    label: 'Private Inbox',
     href: '/manager-dashboard.html#inbox:private',
     roles: ['employee', 'manager', 'admin']
   },
   {
     key: 'projectChat',
-    label: 'ProjectChat',
+    label: 'Project Chat',
     href: '/manager-dashboard.html#inbox:project',
     roles: ['employee', 'manager', 'admin']
   }

@@ -47,43 +47,43 @@
     const CARD_CONFIG = {
       overview: {
         label: 'Overview',
-        description: 'Active projects, alerts, inbox and current workload in one shell.'
+        description: 'Projects, alerts, inbox and workload in one place.'
       },
       projects: {
         label: 'Projects',
-        description: 'Create briefs, assign owners, tune stage and delivery timing.'
+        description: 'Briefs, owners, stages and delivery timing.'
       },
       quotes: {
         label: 'Quotes',
-        description: 'Review enquiries, workflow status, priorities and conversion readiness.'
+        description: 'Enquiries, priorities and conversion readiness.'
       },
       estimates: {
         label: 'Estimates',
-        description: 'Draft, revise and approve pricing with quote and project context.'
+        description: 'Pricing drafts, revisions and approvals.'
       },
       inbox: {
         label: 'Inbox',
-        description: 'Switch between private inbox and project chat without losing context.'
+        description: 'Private inbox and project chat.'
       },
       website: {
         label: 'Website',
-        description: 'Control brochure copy, metadata, CTAs and public SEO structure.'
+        description: 'Brochure content, CTAs and SEO.'
       },
       services: {
         label: 'Services',
-        description: 'Manage brochure-facing service rows, ordering and visibility.'
+        description: 'Services, ordering and visibility.'
       },
       stock: {
         label: 'Stock',
-        description: 'Track materials, supplier details and low-stock routes.'
+        description: 'Materials, suppliers and low-stock routes.'
       },
       crm: {
         label: 'Clients / CRM',
-        description: 'See lifecycle, contact context and linked work for active clients.'
+        description: 'Client lifecycle, contacts and linked work.'
       },
       staff: {
         label: 'Staff',
-        description: 'Control roles, access, availability and team visibility.'
+        description: 'Roles, access and availability.'
       }
     };
 
@@ -260,25 +260,25 @@
       const metrics = getOverviewMetrics();
       switch (normalizeCardId(cardId)) {
         case 'overview':
-          return 'Home';
+          return 'Start';
         case 'projects':
           return `${state.projectsPagination.total || metrics.projectCount || state.projects.length || 0} live`;
         case 'quotes':
-          return `${state.quotesPagination.total || metrics.quoteCount || state.quotes.length || 0} in queue`;
+          return `${state.quotesPagination.total || metrics.quoteCount || state.quotes.length || 0} quotes`;
         case 'estimates':
-          return `${state.estimates.length || 0} loaded`;
+          return `${state.estimates.length || 0} drafts`;
         case 'inbox':
-          return `${(state.directThreads.length || 0) + (state.groupThreads.length || 0)} threads`;
+          return `${(state.directThreads.length || 0) + (state.groupThreads.length || 0)} chats`;
         case 'website':
           return 'SEO / content';
         case 'services':
-          return `${state.servicesPagination.total || state.services.length || metrics.publicServiceCount || 0} live`;
+          return `${state.servicesPagination.total || state.services.length || metrics.publicServiceCount || 0} visible`;
         case 'stock':
-          return `${state.materialsPagination.total || state.materials.length || metrics.lowStockMaterialCount || 0} lines`;
+          return `${metrics.lowStockMaterialCount || 0} low stock`;
         case 'crm':
-          return `${metrics.clientCount || state.clients.length || 0} clients`;
+          return `${metrics.clientCount || state.clients.length || 0} active`;
         case 'staff':
-          return `${metrics.staffCount || state.staff.length || 0} staff`;
+          return `${metrics.staffCount || state.staff.length || 0} team`;
         default:
           return '';
       }
@@ -646,152 +646,19 @@
       setSmallStatus(el.managerGlobalSearchStatus, `Showing results for "${value}".`, 'success');
     };
 
-    const getAvailableOptionDetail = (key) => {
-      switch (key) {
-        case 'createProject':
-          return 'Start a new project brief with client and staff assignment.';
-        case 'projectManager':
-          return 'Manage status, media, gallery visibility and project documents.';
-        case 'quotesReview':
-          return 'Review new enquiries, priorities and acceptance routes.';
-        case 'servicesManage':
-          return 'Manage the website offer, ordering and visibility.';
-        case 'materialsTrack':
-          return 'Track storage, supplier notes and low-storage lines.';
-        case 'clients':
-          return 'Search client records and contact context for active jobs.';
-        case 'staff':
-          return 'Review staff access and create new operational users.';
-        case 'estimate':
-          return 'Build project pricing from service and material lines.';
-        case 'privateChat':
-          return 'Keep one-to-one client conversation separate from project chat.';
-        case 'projectChat':
-          return 'Open project-specific thread history and team conversation.';
-        default:
-          return 'Open this management route.';
-      }
-    };
-
-    const getAvailableOptionMeta = (key) => {
-      switch (key) {
-        case 'createProject':
-          return 'Create';
-        case 'projectManager':
-          return `${state.projectsPagination.total || state.projects.length || 0} loaded`;
-        case 'quotesReview':
-          return state.lazyLoaded.quotes || state.quotes.length
-            ? `${state.quotesPagination.total || state.quotes.length || 0} loaded`
-            : 'Open section';
-        case 'servicesManage':
-          return state.lazyLoaded.services || state.services.length
-            ? `${state.servicesPagination.total || state.services.length || 0} loaded`
-            : 'Open section';
-        case 'materialsTrack':
-          return state.lazyLoaded.materials || state.materials.length
-            ? `${state.materialsPagination.total || state.materials.length || 0} loaded`
-            : 'Open section';
-        case 'clients':
-          return state.lazyLoaded.clients || state.clients.length
-            ? `${state.clients.length} loaded`
-            : 'Open section';
-        case 'staff':
-          return state.lazyLoaded.staff || state.staff.length
-            ? `${state.staff.length} loaded`
-            : 'Open section';
-        case 'estimate':
-          return state.lazyLoaded.estimates || state.estimates.length
-            ? `${state.estimates.length} loaded`
-            : 'Open section';
-        case 'privateChat':
-          return state.overviewLoaded.directThreads
-            ? `${state.directThreads.length} threads`
-            : 'Loading summary';
-        case 'projectChat':
-          return state.overviewLoaded.groupThreads
-            ? `${state.groupThreads.length} threads`
-            : 'Loading summary';
-        default:
-          return '';
-      }
-    };
-
-    const toWorkspaceQuickAccessHref = (href) => {
-      const value = String(href || '').trim();
-      if (value.startsWith('/manager-dashboard.html#')) {
-        return value.replace('/manager-dashboard.html', '');
-      }
-      return value;
-    };
-
-    const buildBaseAvailableOptions = () => (
-      getManagerQuickAccessOptions().map((option) => ({
-        ...option,
-        href: toWorkspaceQuickAccessHref(option.href),
-        detail: getAvailableOptionDetail(option.key),
-        meta: getAvailableOptionMeta(option.key)
-      }))
-    );
-
-    const getAvailableOptions = (role) => {
-      return buildBaseAvailableOptions().filter((option) => option.roles.includes(role));
-    };
-
-    const createWorkspaceOptionLink = (option) => {
-      const link = document.createElement('a');
-      link.className = 'workspace-option-link';
-      link.href = option.href;
-
-      const heading = document.createElement('strong');
-      heading.textContent = option.label;
-      link.appendChild(heading);
-
-      const detail = document.createElement('span');
-      detail.textContent = option.detail;
-      link.appendChild(detail);
-
-      const meta = document.createElement('small');
-      meta.className = 'workspace-option-meta';
-      meta.textContent = option.meta;
-      link.appendChild(meta);
-
-      return link;
-    };
-
-    const renderAvailableOptions = () => {
-      el.managerAvailableOptions.innerHTML = '';
-
-      if (!state.user) {
-        const text = document.createElement('p');
-        text.className = 'muted';
-        text.textContent = 'Management routes will appear after the session is confirmed.';
-        el.managerAvailableOptions.appendChild(text);
-        return;
-      }
-
-      const role = String(state.user.role || '').toLowerCase();
-      const options = getAvailableOptions(role);
-      const frag = document.createDocumentFragment();
-      options.forEach((option) => frag.appendChild(createWorkspaceOptionLink(option)));
-      el.managerAvailableOptions.appendChild(frag);
-    };
-
     const renderOperationsShell = () => {
       renderCompanyEvents();
       renderMailboxOverview();
       renderOverviewMetrics();
-      renderAvailableOptions();
       renderManagerWorkflow();
     };
 
     const renderSession = () => {
       if (!state.user) {
         el.session.textContent = 'No active session. Log in as employee/manager/admin.';
-        renderAvailableOptions();
         return;
       }
       el.session.textContent = `Logged as ${state.user.name || state.user.email} (${state.user.role})`;
-      renderAvailableOptions();
     };
 
     const searchUsersByEmail = async (type, queryText) => {
@@ -1170,7 +1037,6 @@
       });
       el.managerRailToggle?.addEventListener('click', () => {
         const isCollapsed = el.managerQuickAccessNav.classList.toggle('is-collapsed');
-        el.managerAvailableOptions.classList.toggle('is-collapsed', isCollapsed);
         el.managerRailToggle.setAttribute('aria-expanded', String(!isCollapsed));
       });
       el.seedBtn.addEventListener('click', handleSeedClick);

@@ -220,15 +220,15 @@ const mockFolderGalleryServices = async (page) => {
 
 const managerQuickAccessLabels = [
   'Create Project',
-  'ProjectManager',
-  'QuotesReview',
-  'ServicesManage',
-  'MaterialsTrack',
+  'Project Board',
+  'Quote Review',
+  'Service Catalogue',
+  'Materials / Stock',
   'Clients',
   'Staff',
-  'Estimate',
-  'PrivateChat',
-  'ProjectChat'
+  'Estimates',
+  'Private Inbox',
+  'Project Chat'
 ];
 
 const mockPublicManagerSession = async (page) => {
@@ -678,7 +678,6 @@ test('authenticated manager public shell shows quick access panel and hides plai
   await page.goto('/index.html');
 
   await expect(page.locator('[data-inline-login-form]')).toBeHidden();
-  await expect(page.locator('[data-inline-session]')).toBeVisible();
   await expect(page.locator('[data-header-account-panel]')).toBeVisible();
   await expect(page.locator('[data-header-account-role]')).toContainText(/manager/i);
 

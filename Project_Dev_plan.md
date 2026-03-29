@@ -57,6 +57,13 @@
 - Re-ran `node --check site.js`, `git diff --check`, and focused manager Playwright coverage to confirm the workspace keeps one quick-access rail without losing routing or mobile shell behavior.
 
 
+- Saved `Plans/Manager Menu Simplification And Label Cleanup Wave 25.md`, registered it in `Plans/Plan History.md`, and recorded the manager-menu cleanup as a closed checklist item in `Project_todos.md`.
+- Renamed the shared manager quick-access labels in `brand.js` from technical shortcut names (`ProjectManager`, `QuotesReview`, `ServicesManage`, `MaterialsTrack`, `PrivateChat`, `ProjectChat`) to clearer operator-facing labels (`Project Board`, `Quote Review`, `Service Catalogue`, `Materials / Stock`, `Private Inbox`, `Project Chat`).
+- Removed the duplicated `manager-available-options` block from `manager-dashboard.html` and trimmed `manager-dashboard.js` / `manager-dashboard.shell.js` so the manager workspace now shows one primary left rail instead of a full card list plus a second legacy shortcut list.
+- Shortened the manager rail card copy and status badges in `manager-dashboard.shell.js` so the menu reads faster and looks less cluttered while keeping the same card routing behaviour.
+- Updated Playwright manager/auth/public quick-access expectations to the new labels and to the single-rail dashboard model, so future menu regressions fail against the shared config rather than stale hardcoded names.
+
+
 ## 2026-03-10
 
 - Added `scripts/setup-vscode.ps1` to install the recommended VS Code extensions and merge workspace settings.
