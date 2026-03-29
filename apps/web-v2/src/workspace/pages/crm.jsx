@@ -3,6 +3,7 @@ import { useAuth } from '../../lib/auth.jsx';
 import { v2Api } from '../../lib/api';
 import { CrmWorkspacePanels } from '../components/crm-sections.jsx';
 import { useCrmWorkspaceState } from '../hooks/use-crm-workspace-state.js';
+import { buildCrmWorkspacePanels } from '../view-models/crm-panels.js';
 import {
   normalizeText,
   sortByRecent,
@@ -151,14 +152,11 @@ function CrmPage() {
     }
   };
 
-  const summaryPanel = {
+  const { summaryPanel, createStaffPanel, clientsPanel, staffPanel } = buildCrmWorkspacePanels({
     search,
     setSearch,
     clients,
-    staff
-  };
-
-  const createStaffPanel = {
+    staff,
     canCreateStaff,
     onCreateStaff,
     staffForm,
@@ -166,11 +164,7 @@ function CrmPage() {
     role,
     saving,
     actionMessage,
-    actionError
-  };
-
-  const clientsPanel = {
-    clients,
+    actionError,
     filteredClients,
     selectedClientId,
     setSelectedClientId,
@@ -182,24 +176,18 @@ function CrmPage() {
     clientSaving,
     clientMessage,
     clientError,
-    clientActivity
-  };
-
-  const staffPanel = {
-    staff,
+    clientActivity,
     filteredStaff,
     selectedStaffId,
     setSelectedStaffId,
-    canEditPeople,
     selectedStaff,
     onSaveStaff,
     staffEditorForm,
     onStaffEditorFieldChange,
-    role,
     staffSaving,
     staffMessage,
     staffError
-  };
+  });
 
   return (
     <CrmWorkspacePanels

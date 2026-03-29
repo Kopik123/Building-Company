@@ -3,6 +3,7 @@ import { useAuth } from '../../lib/auth.jsx';
 import { v2Api } from '../../lib/api';
 import { InventoryWorkspacePanels } from '../components/inventory-sections.jsx';
 import { useInventoryWorkspaceState } from '../hooks/use-inventory-workspace-state.js';
+import { buildInventoryWorkspacePanels } from '../view-models/inventory-panels.js';
 import {
   normalizeText,
   createServiceFormState,
@@ -181,7 +182,7 @@ function InventoryPage() {
     }
   };
 
-  const servicePanel = {
+  const { servicePanel, materialPanel } = buildInventoryWorkspacePanels({
     services,
     serviceSearch,
     setServiceSearch,
@@ -197,10 +198,7 @@ function InventoryPage() {
     canDelete,
     deleteService,
     serviceStatus,
-    serviceError
-  };
-
-  const materialPanel = {
+    serviceError,
     materials,
     materialSearch,
     setMaterialSearch,
@@ -213,11 +211,10 @@ function InventoryPage() {
     onMaterialFieldChange,
     saveMaterial,
     materialSaving,
-    canDelete,
     deleteMaterial,
     materialStatus,
     materialError
-  };
+  });
 
   return <InventoryWorkspacePanels servicePanel={servicePanel} materialPanel={materialPanel} />;
 }

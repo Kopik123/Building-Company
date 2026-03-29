@@ -3,6 +3,7 @@ import { useAuth } from '../../lib/auth.jsx';
 import { v2Api } from '../../lib/api';
 import { QuoteWorkspacePanels } from '../components/quotes-sections.jsx';
 import { useQuoteWorkspaceState } from '../hooks/use-quote-workspace-state.js';
+import { buildQuoteWorkspacePanels } from '../view-models/quote-panels.js';
 import {
   normalizeText,
   QUOTE_WORKFLOW_STATUSES,
@@ -279,7 +280,13 @@ function QuotesPage() {
     }
   };
 
-  const quoteBoardPanel = {
+  const {
+    quoteBoardPanel,
+    quoteDetailPanel,
+    quoteAttachmentsPanel,
+    quoteEstimatesPanel,
+    quoteTimelinePanel
+  } = buildQuoteWorkspacePanels({
     canCreateQuotes,
     search,
     setSearch,
@@ -288,12 +295,8 @@ function QuotesPage() {
     filteredQuotes,
     isCreatingQuote,
     selectedQuoteId,
-    selectQuote
-  };
-
-  const quoteDetailPanel = {
+    selectQuote,
     canManageQuotes,
-    isCreatingQuote,
     selectedQuote,
     detailState,
     form,
@@ -310,49 +313,23 @@ function QuotesPage() {
     onTakeOwnership,
     onConvertToProject,
     isBusyAction,
-    selectedQuoteId,
-    currentEstimate
-  };
-
-  const quoteAttachmentsPanel = {
-    canManageQuotes,
-    selectedQuote,
-    isCreatingQuote,
+    currentEstimate,
     followUpUploadInputKey,
     onFollowUpQuoteFilesChange,
     remainingQuotePhotoSlots,
     followUpQuoteFiles,
     onUploadFollowUpPhotos,
-    isSecondaryBusy,
-    isBusyAction
-  };
-
-  const quoteEstimatesPanel = {
-    selectedQuote,
-    isCreatingQuote,
-    canManageQuotes,
-    detailState,
-    currentEstimate,
     estimateForm,
     setEstimateForm,
     onCreateEstimate,
     onSendEstimate,
-    onConvertToProject,
-    isSecondaryBusy,
-    isBusyAction,
     canRespondToEstimates,
     responseNote,
     setResponseNote,
     clientEstimateNeedsDecision,
     onRespondToEstimate,
     quoteWorkflowStatuses: QUOTE_WORKFLOW_STATUSES
-  };
-
-  const quoteTimelinePanel = {
-    selectedQuote,
-    isCreatingQuote,
-    detailState
-  };
+  });
 
   return (
     <QuoteWorkspacePanels

@@ -3,6 +3,7 @@ import { useAuth } from '../../lib/auth.jsx';
 import { v2Api } from '../../lib/api';
 import { PrivateInboxPanels } from '../components/private-inbox-sections.jsx';
 import { usePrivateInboxWorkspaceState } from '../hooks/use-private-inbox-workspace-state.js';
+import { buildPrivateInboxPanels } from '../view-models/private-inbox-panels.js';
 import { sortByRecent, updateDirectThreadAfterSend } from '../kit.jsx';
 
 function PrivateInboxPage() {
@@ -119,7 +120,7 @@ function PrivateInboxPage() {
     }
   };
 
-  const sidebarPanel = {
+  const { sidebarPanel, conversationPanel } = buildPrivateInboxPanels({
     search,
     setSearch,
     staffMode,
@@ -128,13 +129,8 @@ function PrivateInboxPage() {
     filteredThreads,
     user,
     selectedThreadId,
-    onSelectThread
-  };
-
-  const conversationPanel = {
+    onSelectThread,
     selectedThread,
-    user,
-    staffMode,
     canStartThread,
     recipientLabel,
     messageState,
@@ -150,7 +146,7 @@ function PrivateInboxPage() {
     setSelectedFiles,
     composerError,
     sending
-  };
+  });
 
   return <PrivateInboxPanels sidebarPanel={sidebarPanel} conversationPanel={conversationPanel} />;
 }

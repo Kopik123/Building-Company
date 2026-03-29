@@ -734,3 +734,6 @@
 - Added `apps/web-v2/src/workspace/components/private-inbox/` surface files for sidebar and conversation, then reduced `private-inbox-sections.jsx` to a thin composition wrapper.
 - Added `apps/web-v2/src/workspace/components/inventory/` surface files for services and materials, then reduced `inventory-sections.jsx` to a thin composition wrapper.
 - Re-ran `npm.cmd run build` in `apps/web-v2` and `node scripts/run-playwright.js -c tests/playwright/playwright.config.js --grep "web-v2"`; the authenticated rollout suite stayed green at `15/15` after the CRM/inbox/inventory surface split wave.
+- Saved `Plans/Web-v2 Workspace View-Model Adapter Wave 10.md`, registered it in `Plans/Plan History.md`, and updated `Project_todos.md` so the first page-level adapter wave is closed while stronger typed contracts and finer submodules stay explicit follow-up work.
+- Added `apps/web-v2/src/workspace/view-models/quote-panels.js`, `crm-panels.js`, `private-inbox-panels.js` and `inventory-panels.js`, giving the workspace its first dedicated page-level panel/view-model adapter layer instead of building those panel objects inline in each page.
+- Rewired `apps/web-v2/src/workspace/pages/quotes.jsx`, `crm.jsx`, `private-inbox.jsx` and `inventory.jsx` so those files keep action orchestration and hook state, but delegate panel assembly to the new adapter modules.

@@ -45,3 +45,4 @@
 - 2026-03-29 09:00 | Web-v2 Prop Surface Narrowing Wave 7 | Plans/Web-v2 Prop Surface Narrowing Wave 7.md
 - 2026-03-29 09:05 | Web-v2 Quote Surface Component Split Wave 8 | Plans/Web-v2 Quote Surface Component Split Wave 8.md
 - 2026-03-29 09:11 | Web-v2 CRM Inbox And Inventory Surface Split Wave 9 | Plans/Web-v2 CRM Inbox And Inventory Surface Split Wave 9.md
+- 2026-03-29 09:16 | Web-v2 Workspace View-Model Adapter Wave 10 | Plans/Web-v2 Workspace View-Model Adapter Wave 10.md
