@@ -861,6 +861,7 @@ export {
   getNextProjectStage,
   getEstimateHistoryLabel,
   getEstimateCardSummary,
+  getSelectedFileKey,
   mergeSelectedFiles,
   getRemainingQuotePhotoSlots,
   validateQuotePhotoSelection,

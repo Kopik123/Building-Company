@@ -65,6 +65,7 @@ import {
   getNextProjectStage,
   getEstimateHistoryLabel,
   getEstimateCardSummary,
+  getSelectedFileKey,
   mergeSelectedFiles,
   getRemainingQuotePhotoSlots,
   validateQuotePhotoSelection,
@@ -550,7 +551,9 @@ function QuotesPage() {
   const [selectedQuoteId, setSelectedQuoteId] = React.useState('');
   const [isCreatingQuote, setIsCreatingQuote] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
-  const [secondarySaving, setSecondarySaving] = React.useState(false);
+  const [secondaryAction, setSecondaryAction] = React.useState('');
+  const isSecondaryBusy = Boolean(secondaryAction);
+  const isBusyAction = (action) => secondaryAction === action;
   const [actionError, setActionError] = React.useState('');
   const [actionMessage, setActionMessage] = React.useState('');
   const [form, setForm] = React.useState(() => createQuoteFormState());
@@ -821,8 +824,8 @@ function QuotesPage() {
   };
 
   const onTakeOwnership = async () => {
-    if (!selectedQuote?.id || secondarySaving) return;
-    setSecondarySaving(true);
+    if (!selectedQuote?.id || isSecondaryBusy) return;
+    setSecondaryAction('take-ownership');
     setActionError('');
     setActionMessage('');
     try {
@@ -833,15 +836,15 @@ function QuotesPage() {
     } catch (error) {
       setActionError(error.message || 'Could not take ownership of this quote');
     } finally {
-      setSecondarySaving(false);
+      setSecondaryAction('');
     }
   };
 
   const onCreateEstimate = async (event) => {
     event.preventDefault();
-    if (!selectedQuote?.id || secondarySaving) return;
+    if (!selectedQuote?.id || isSecondaryBusy) return;
 
-    setSecondarySaving(true);
+    setSecondaryAction('estimate-draft');
     setActionError('');
     setActionMessage('');
     try {
@@ -860,14 +863,14 @@ function QuotesPage() {
     } catch (error) {
       setActionError(error.message || 'Could not draft estimate');
     } finally {
-      setSecondarySaving(false);
+      setSecondaryAction('');
     }
   };
 
   const onSendEstimate = async (estimateId) => {
-    if (!selectedQuote?.id || !estimateId || secondarySaving) return;
+    if (!selectedQuote?.id || !estimateId || isSecondaryBusy) return;
 
-    setSecondarySaving(true);
+    setSecondaryAction('estimate-send');
     setActionError('');
     setActionMessage('');
     try {
@@ -880,14 +883,14 @@ function QuotesPage() {
     } catch (error) {
       setActionError(error.message || 'Could not send estimate');
     } finally {
-      setSecondarySaving(false);
+      setSecondaryAction('');
     }
   };
 
   const onRespondToEstimate = async (decision) => {
-    if (!currentEstimate?.id || secondarySaving) return;
+    if (!currentEstimate?.id || isSecondaryBusy) return;
 
-    setSecondarySaving(true);
+    setSecondaryAction('estimate-response');
     setActionError('');
     setActionMessage('');
     try {
@@ -902,14 +905,14 @@ function QuotesPage() {
     } catch (error) {
       setActionError(error.message || 'Could not send estimate response');
     } finally {
-      setSecondarySaving(false);
+      setSecondaryAction('');
     }
   };
 
   const onConvertToProject = async () => {
-    if (!selectedQuote?.id || secondarySaving) return;
+    if (!selectedQuote?.id || isSecondaryBusy) return;
 
-    setSecondarySaving(true);
+    setSecondaryAction('quote-convert');
     setActionError('');
     setActionMessage('');
     try {
@@ -920,12 +923,12 @@ function QuotesPage() {
     } catch (error) {
       setActionError(error.message || 'Could not convert quote into project');
     } finally {
-      setSecondarySaving(false);
+      setSecondaryAction('');
     }
   };
 
   const onUploadFollowUpPhotos = async () => {
-    if (!selectedQuote?.id || !followUpQuoteFiles.length || secondarySaving) return;
+    if (!selectedQuote?.id || !followUpQuoteFiles.length || isSecondaryBusy) return;
     if (remainingQuotePhotoSlots <= 0) {
       setActionError(`This quote already has the maximum ${MAX_QUOTE_PHOTO_FILES} photos.`);
       return;
@@ -935,7 +938,7 @@ function QuotesPage() {
       return;
     }
 
-    setSecondarySaving(true);
+    setSecondaryAction('follow-up-upload');
     setActionError('');
     setActionMessage('');
     try {
@@ -954,7 +957,7 @@ function QuotesPage() {
     } catch (error) {
       setActionError(error.message || 'Could not upload additional quote photos');
     } finally {
-      setSecondarySaving(false);
+      setSecondaryAction('');
     }
   };
 
@@ -1158,13 +1161,13 @@ function QuotesPage() {
                   {saving ? 'Saving...' : selectedQuoteId ? 'Save quote' : 'Create quote'}
                 </button>
                 {canManageQuotes && selectedQuote && !isCreatingQuote ? (
-                  <button type="button" className="button-secondary" onClick={onTakeOwnership} disabled={secondarySaving}>
-                    {secondarySaving ? 'Updating...' : 'Take ownership'}
+                  <button type="button" className="button-secondary" onClick={onTakeOwnership} disabled={isSecondaryBusy}>
+                    {isBusyAction('take-ownership') ? 'Updating...' : 'Take ownership'}
                   </button>
                 ) : null}
                 {canManageQuotes && selectedQuote?.canConvertToProject ? (
-                  <button type="button" className="button-secondary" onClick={onConvertToProject} disabled={secondarySaving}>
-                    {secondarySaving ? 'Converting...' : 'Convert to project'}
+                  <button type="button" className="button-secondary" onClick={onConvertToProject} disabled={isSecondaryBusy}>
+                    {isBusyAction('quote-convert') ? 'Converting...' : 'Convert to project'}
                   </button>
                 ) : null}
               </div>
@@ -1218,8 +1221,8 @@ function QuotesPage() {
                   </div>
                 ) : null}
                 <div className="action-row">
-                  <button type="button" onClick={onUploadFollowUpPhotos} disabled={!followUpQuoteFiles.length || secondarySaving || remainingQuotePhotoSlots <= 0}>
-                    {secondarySaving ? 'Uploading...' : 'Upload more photos'}
+                  <button type="button" onClick={onUploadFollowUpPhotos} disabled={!followUpQuoteFiles.length || isSecondaryBusy || remainingQuotePhotoSlots <= 0}>
+                    {isBusyAction('follow-up-upload') ? 'Uploading...' : 'Upload more photos'}
                   </button>
                 </div>
               </div>
@@ -1245,7 +1248,7 @@ function QuotesPage() {
                   estimate={estimate}
                   actions={
                     canManageQuotes && normalizeText(estimate.status) === 'draft' && estimate.isCurrentVersion ? (
-                      <button type="button" className="button-secondary" onClick={() => onSendEstimate(estimate.id)} disabled={secondarySaving}>
+                      <button type="button" className="button-secondary" onClick={() => onSendEstimate(estimate.id)} disabled={isSecondaryBusy}>
                         Send to client
                       </button>
                     ) : null
@@ -1304,11 +1307,11 @@ function QuotesPage() {
                   />
                 </label>
                 <div className="action-row">
-                  <button type="submit" disabled={secondarySaving}>
-                    {secondarySaving ? 'Saving...' : currentEstimate ? 'Draft new version' : 'Draft estimate'}
+                  <button type="submit" disabled={isSecondaryBusy}>
+                    {isBusyAction('estimate-draft') ? 'Saving...' : currentEstimate ? 'Draft new version' : 'Draft estimate'}
                   </button>
                   {selectedQuote.canConvertToProject ? (
-                    <button type="button" className="button-secondary" onClick={onConvertToProject} disabled={secondarySaving}>
+                    <button type="button" className="button-secondary" onClick={onConvertToProject} disabled={isSecondaryBusy}>
                       Convert to project
                     </button>
                   ) : null}
@@ -1337,13 +1340,13 @@ function QuotesPage() {
                   />
                 </label>
                 <div className="action-row">
-                  <button type="button" onClick={() => onRespondToEstimate('accepted')} disabled={!clientEstimateNeedsDecision || secondarySaving}>
+                  <button type="button" onClick={() => onRespondToEstimate('accepted')} disabled={!clientEstimateNeedsDecision || isSecondaryBusy}>
                     Accept estimate
                   </button>
-                  <button type="button" className="button-secondary" onClick={() => onRespondToEstimate('revision_requested')} disabled={!clientEstimateNeedsDecision || secondarySaving}>
+                  <button type="button" className="button-secondary" onClick={() => onRespondToEstimate('revision_requested')} disabled={!clientEstimateNeedsDecision || isSecondaryBusy}>
                     Request revision
                   </button>
-                  <button type="button" className="button-secondary" onClick={() => onRespondToEstimate('declined')} disabled={!clientEstimateNeedsDecision || secondarySaving}>
+                  <button type="button" className="button-secondary" onClick={() => onRespondToEstimate('declined')} disabled={!clientEstimateNeedsDecision || isSecondaryBusy}>
                     Decline estimate
                   </button>
                 </div>
