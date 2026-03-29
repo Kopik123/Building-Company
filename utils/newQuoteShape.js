@@ -117,13 +117,17 @@ const toNewQuoteProjectMediaRows = (newQuote, projectId) => {
   }));
 };
 
-const cleanupNewQuoteStoredAttachments = async (newQuote) => {
+const getNewQuoteStoredAttachmentFiles = (newQuote) => {
   const plain = toPlain(newQuote);
-  const files = normalizeStoredAttachments(plain.attachments).map((attachment) => ({
+  return normalizeStoredAttachments(plain.attachments).map((attachment) => ({
     path: attachment.storagePath,
     filename: attachment.filename || attachment.name || ''
   }));
-  await cleanupUploadedFiles(files);
+};
+
+const cleanupNewQuoteStoredAttachments = async (newQuote, options = null) => {
+  const files = getNewQuoteStoredAttachmentFiles(newQuote);
+  return cleanupUploadedFiles(files, options || undefined);
 };
 
 const buildNewQuoteProjectTitle = (newQuote) => buildQuoteProjectTitle(toPlain(newQuote), null);
@@ -134,6 +138,7 @@ module.exports = {
   appendNewQuoteAttachmentEntries,
   toNewQuoteSummary,
   toNewQuoteProjectMediaRows,
+  getNewQuoteStoredAttachmentFiles,
   cleanupNewQuoteStoredAttachments,
   buildNewQuoteProjectTitle
 };

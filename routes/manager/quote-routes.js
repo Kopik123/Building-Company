@@ -63,6 +63,7 @@ module.exports = function createQuoteRoutes({
   Notification,
   Project,
   ProjectMedia,
+  DeferredFileCleanupJob,
   sequelize,
   Op,
   fn,
@@ -86,6 +87,7 @@ module.exports = function createQuoteRoutes({
     Notification,
     User,
     ActivityEvent,
+    DeferredFileCleanupJob,
     advanceClientLifecycle,
     createActivityEvent
   });

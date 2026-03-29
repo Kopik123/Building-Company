@@ -6,6 +6,7 @@ const { body, param, query, validationResult } = require('express-validator');
 const {
   Quote,
   QuoteAttachment,
+  DeferredFileCleanupJob,
   NewQuote,
   User,
   GroupThread,
@@ -418,6 +419,7 @@ router.use(createStaffSearchSeedRoutes({
   Material,
   Project,
   ProjectMedia,
+  DeferredFileCleanupJob,
   sequelize,
   fn,
   col,
@@ -514,6 +516,7 @@ router.use(createQuoteRoutes({
   Notification,
   Project,
   ProjectMedia,
+  DeferredFileCleanupJob,
   sequelize,
   Op,
   fn,

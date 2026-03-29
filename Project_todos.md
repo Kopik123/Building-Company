@@ -172,7 +172,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [ ] Remove the remaining local `node:child_process` / `node:test` `spawn EPERM` instability that still hits `test:mobile:foundation` and `spawnSync`-based script tests, so `npm.cmd run test:ci` becomes fully reliable on this workstation again.
 
 ## Later
-- [ ] Consider a deferred cleanup/retry path for rejected staged quote file deletion, because attachment storage cleanup now intentionally runs after the DB commit to avoid partial transactional state.
+- [x] Add a deferred cleanup/retry path for rejected staged quote file deletion, because attachment storage cleanup now intentionally runs after the DB commit to avoid partial transactional state.
 
 - [ ] Replace the current runtime query-param cache-busting plus `no-store` iteration mode with hashed asset filenames or manifest-driven immutable caching once the public shell/design iteration stabilises and performance caching matters more than instant refresh behavior.
 - [x] Fold the folder-based `Gallery/<service>/` image sets into the `sharp` asset pipeline so fullscreen and service-gallery views can use responsive AVIF/WebP variants instead of copied JPG-only source files.
@@ -206,3 +206,4 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [x] Surface quote photo thumbnails directly inside the manager quote review panel for both staged `new_quotes` and legacy quotes, instead of only showing photo counts or requiring blind open-in-new-tab review.
 - [x] Deduplicate staged `new_quotes` accept/reject workflow between `/api/v2/new-quotes` and legacy manager quote review so project conversion, attachment carry-over, lifecycle updates, notifications and cleanup run through one shared service path.
 - [x] Wrap staged `new_quotes` create/accept/reject database writes in transactions so project conversion, lifecycle updates, notifications and activity rows no longer leave partial state on failure.
+- [ ] Consider surfacing deferred file cleanup queue health in ops/admin tooling once enough live data exists to judge whether retries are accumulating or staying near zero.

@@ -21,17 +21,40 @@ const validateQuoteAttachmentFiles = (files) => {
   return '';
 };
 
-const cleanupUploadedFiles = async (files) => {
+const cleanupUploadedFiles = async (files, options = {}) => {
   const normalized = normalizeFiles(files);
+  const throwOnError = options?.throwOnError === true;
+  const failures = [];
+
   await Promise.all(normalized.map(async (file) => {
     const target = file?.path || path.join(UPLOADS_DIR, String(file?.filename || ''));
     if (!target || String(target).endsWith(path.sep)) return;
     try {
       await fs.unlink(target);
-    } catch (_error) {
-      // Cleanup is best-effort so failed unlinks do not mask the main request error.
+    } catch (error) {
+      if (error?.code === 'ENOENT') {
+        return;
+      }
+
+      failures.push({
+        target,
+        code: error?.code || null,
+        message: error?.message || String(error)
+      });
     }
   }));
+
+  if (throwOnError && failures.length) {
+    const cleanupError = new Error(`Failed to delete ${failures.length} uploaded file(s).`);
+    cleanupError.failures = failures;
+    throw cleanupError;
+  }
+
+  return {
+    deletedCount: Math.max(0, normalized.length - failures.length),
+    failureCount: failures.length,
+    failures
+  };
 };
 
 const createQuoteAttachmentRows = ({ quoteId, files, uploadedByUserId = null, source = null }) =>

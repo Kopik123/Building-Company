@@ -1,8 +1,14 @@
 const {
   buildNewQuoteProjectTitle,
-  cleanupNewQuoteStoredAttachments,
+  cleanupNewQuoteStoredAttachments: defaultCleanupNewQuoteStoredAttachments,
+  getNewQuoteStoredAttachmentFiles,
   toNewQuoteProjectMediaRows
 } = require('./newQuoteShape');
+const {
+  DEFAULT_DEFERRED_FILE_CLEANUP_SCOPE,
+  queueDeferredFileCleanup,
+  summarizeCleanupError
+} = require('./deferredFileCleanup');
 
 const defaultAcceptClientNotification = ({ newQuote, project, groupThread }) => ({
   type: 'project_created',
@@ -93,8 +99,10 @@ const createStagedNewQuoteWorkflow = ({
   Notification,
   User,
   ActivityEvent,
+  DeferredFileCleanupJob,
   advanceClientLifecycle,
-  createActivityEvent
+  createActivityEvent,
+  cleanupNewQuoteStoredAttachments = defaultCleanupNewQuoteStoredAttachments
 }) => {
   const withTransaction = async (handler) => {
     if (typeof sequelize?.transaction !== 'function') {
@@ -223,11 +231,32 @@ const createStagedNewQuoteWorkflow = ({
       });
 
       try {
-        await cleanupNewQuoteStoredAttachments(newQuote);
+        await cleanupNewQuoteStoredAttachments(newQuote, { throwOnError: true });
       } catch (error) {
+        let cleanupJob = null;
+        const files = getNewQuoteStoredAttachmentFiles(newQuote);
+
+        try {
+          cleanupJob = await queueDeferredFileCleanup(DeferredFileCleanupJob, {
+            scope: DEFAULT_DEFERRED_FILE_CLEANUP_SCOPE,
+            entityType: 'new_quote',
+            entityId: newQuote?.id || null,
+            quoteRef: newQuote?.quoteRef || null,
+            files,
+            lastError: summarizeCleanupError(error)
+          });
+        } catch (queueError) {
+          logCleanupFailure('staged_new_quote_reject_cleanup_queue', queueError, {
+            newQuoteId: newQuote?.id || null,
+            quoteRef: newQuote?.quoteRef || null
+          });
+        }
+
         logCleanupFailure('staged_new_quote_reject_cleanup', error, {
           newQuoteId: newQuote?.id || null,
-          quoteRef: newQuote?.quoteRef || null
+          quoteRef: newQuote?.quoteRef || null,
+          deferredCleanupJobId: cleanupJob?.id || null,
+          queuedRetry: Boolean(cleanupJob)
         });
       }
 

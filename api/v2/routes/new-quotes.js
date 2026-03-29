@@ -9,6 +9,7 @@ const {
 } = require('../../../utils/quoteAttachments');
 const {
   ActivityEvent,
+  DeferredFileCleanupJob,
   GroupMember,
   GroupThread,
   NewQuote,
@@ -94,6 +95,7 @@ const stagedNewQuoteWorkflow = createStagedNewQuoteWorkflow({
   Notification,
   User,
   ActivityEvent,
+  DeferredFileCleanupJob,
   advanceClientLifecycle,
   createActivityEvent
 });

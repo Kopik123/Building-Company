@@ -21,6 +21,7 @@ const Estimate = require('./Estimate');
 const EstimateLine = require('./EstimateLine');
 const SessionRefreshToken = require('./SessionRefreshToken');
 const DevicePushToken = require('./DevicePushToken');
+const DeferredFileCleanupJob = require('./DeferredFileCleanupJob');
 
 User.hasMany(Quote, { foreignKey: 'clientId', as: 'quotes' });
 Quote.belongsTo(User, { foreignKey: 'clientId', as: 'client' });
@@ -213,7 +214,9 @@ const ensureIndexes = async () => {
     { table: SessionRefreshToken.getTableName(), name: 'session_refresh_tokens_user_expires_idx', fields: ['userId', 'expiresAt'] },
     { table: SessionRefreshToken.getTableName(), name: 'session_refresh_tokens_revoked_idx', fields: ['revokedAt'] },
     { table: DevicePushToken.getTableName(), name: 'device_push_tokens_user_platform_idx', fields: ['userId', 'platform'] },
-    { table: DevicePushToken.getTableName(), name: 'device_push_tokens_user_variant_platform_idx', fields: ['userId', 'appVariant', 'platform'] }
+    { table: DevicePushToken.getTableName(), name: 'device_push_tokens_user_variant_platform_idx', fields: ['userId', 'appVariant', 'platform'] },
+    { table: DeferredFileCleanupJob.getTableName(), name: 'deferred_file_cleanup_jobs_next_attempt_idx', fields: ['next_attempt_at'] },
+    { table: DeferredFileCleanupJob.getTableName(), name: 'deferred_file_cleanup_jobs_scope_attempt_idx', fields: ['scope', 'next_attempt_at'] }
   ];
 
   for (const spec of indexSpecs) {
@@ -245,5 +248,6 @@ module.exports = {
   EstimateLine,
   SessionRefreshToken,
   DevicePushToken,
+  DeferredFileCleanupJob,
   ensureIndexes
 };
