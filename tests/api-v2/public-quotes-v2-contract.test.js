@@ -358,3 +358,97 @@ test('v2 public quotes sends a guest claim code through the v2 contract path', a
   assert.ok(smsRequest);
   assert.equal(smsRequest.url, 'https://sms.example.test/send');
 });
+
+
+test('v2 public quotes claim request sends an email code only after smtp accepts the recipient', async () => {
+  const quoteId = '44444444-4444-4444-8444-444444444444';
+  let sentMail = null;
+
+  process.env.SMTP_HOST = 'smtp.example.test';
+  process.env.SMTP_PORT = '587';
+  process.env.SMTP_SECURE = 'false';
+  process.env.CONTACT_FROM = 'no-reply@example.test';
+  delete process.env.SMTP_USER;
+  delete process.env.SMTP_PASS;
+
+  mockModels({
+    sequelize: {
+      async transaction(handler) {
+        return handler({ id: 'test-transaction' });
+      }
+    },
+    Quote: {
+      async findOne({ where }) {
+        assert.equal(where?.id, quoteId);
+        assert.equal(where?.isGuest, true);
+        return {
+          id: quoteId,
+          isGuest: true,
+          guestEmail: 'guest@example.com',
+          guestPhone: '07395448487'
+        };
+      }
+    },
+    QuoteAttachment: {},
+    QuoteClaimToken: {
+      async destroy() {},
+      async create(payload) {
+        return payload;
+      },
+      async findOne() {
+        return null;
+      }
+    },
+    User: {
+      async findAll() {
+        return [];
+      },
+      async findByPk() {
+        return null;
+      }
+    },
+    Notification: {
+      async bulkCreate() {
+        return [];
+      }
+    },
+    QuoteEvent: {
+      async create() {
+        return null;
+      }
+    }
+  });
+
+  mock('nodemailer', {
+    createTransport() {
+      return {
+        async sendMail(payload) {
+          sentMail = payload;
+          return {
+            accepted: ['guest@example.com'],
+            rejected: [],
+            response: '250 queued'
+          };
+        }
+      };
+    }
+  });
+
+  loadRoute('routes/quotes.js');
+  const route = loadRoute('api/v2/routes/public-quotes.js');
+  const app = buildExpressApp('/api/v2/public/quotes', route);
+
+  const response = await request(app)
+    .post(`/api/v2/public/quotes/${quoteId}/claim/request`)
+    .send({
+      channel: 'email',
+      guestEmail: 'guest@example.com'
+    })
+    .expect(200);
+
+  assert.equal(response.body?.message, 'Claim verification code sent');
+  assert.equal(response.body?.quoteId, quoteId);
+  assert.equal(response.body?.channel, 'email');
+  assert.equal(response.body?.maskedTarget, 'gu***@e***.com');
+  assert.equal(sentMail?.to, 'guest@example.com');
+});

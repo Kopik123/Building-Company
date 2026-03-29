@@ -854,6 +854,202 @@ test('legacy /api/quotes/guest/:id/claim/request sends a claim code and returns 
   assert.match(String(smsRequest.options?.body || ''), /claim code/i);
 });
 
+test('legacy /api/quotes/guest/:id/claim/request sends an email claim code only after smtp accepts the recipient', async () => {
+  const quoteId = '22222222-2222-4222-8222-222222222222';
+  let transporterConfig = null;
+  let sentMail = null;
+  const destroyedClaims = [];
+  const createdClaims = [];
+
+  process.env.SMTP_HOST = 'smtp.example.test';
+  process.env.SMTP_PORT = '587';
+  process.env.SMTP_SECURE = 'false';
+  process.env.CONTACT_FROM = 'no-reply@example.test';
+  delete process.env.SMTP_USER;
+  delete process.env.SMTP_PASS;
+
+  mockModels({
+    sequelize: {
+      async transaction(handler) {
+        return handler({ id: 'test-transaction' });
+      }
+    },
+    Quote: {
+      async findOne({ where }) {
+        assert.equal(where?.id, quoteId);
+        assert.equal(where?.isGuest, true);
+        return {
+          id: quoteId,
+          isGuest: true,
+          guestEmail: 'guest@example.com',
+          guestPhone: '07395448487'
+        };
+      }
+    },
+    QuoteAttachment: {},
+    QuoteClaimToken: {
+      async destroy(payload) {
+        destroyedClaims.push(payload);
+      },
+      async create(payload) {
+        createdClaims.push(payload);
+        return payload;
+      },
+      async findOne() {
+        return null;
+      }
+    },
+    User: {
+      async findAll() {
+        return [];
+      },
+      async findByPk() {
+        return null;
+      }
+    },
+    Notification: {
+      async bulkCreate() {
+        return [];
+      }
+    },
+    QuoteEvent: {
+      async create() {
+        return null;
+      }
+    }
+  });
+
+  mock('nodemailer', {
+    createTransport(config) {
+      transporterConfig = config;
+      return {
+        async sendMail(payload) {
+          sentMail = payload;
+          return {
+            accepted: ['guest@example.com'],
+            rejected: [],
+            response: '250 queued'
+          };
+        }
+      };
+    }
+  });
+
+  const quotesRouter = loadRoute('routes/quotes.js');
+  const app = buildExpressApp('/api/quotes', quotesRouter);
+
+  const response = await request(app)
+    .post(`/api/quotes/guest/${quoteId}/claim/request`)
+    .send({
+      channel: 'email',
+      guestEmail: 'guest@example.com'
+    })
+    .expect(200);
+
+  assert.equal(response.body?.message, 'Claim verification code sent');
+  assert.equal(response.body?.quoteId, quoteId);
+  assert.equal(response.body?.channel, 'email');
+  assert.equal(response.body?.maskedTarget, 'gu***@e***.com');
+  assert.equal(transporterConfig?.host, 'smtp.example.test');
+  assert.equal(sentMail?.to, 'guest@example.com');
+  assert.match(String(sentMail?.text || ''), /claim code is \d{6}/i);
+  assert.equal(destroyedClaims.length, 1);
+  assert.equal(createdClaims.length, 1);
+  assert.equal(createdClaims[0]?.channel, 'email');
+  assert.equal(createdClaims[0]?.target, 'guest@example.com');
+});
+
+test('legacy /api/quotes/guest/:id/claim/request returns 502 when smtp does not accept the recipient', async () => {
+  const quoteId = '33333333-3333-4333-8333-333333333333';
+
+  process.env.SMTP_HOST = 'smtp.example.test';
+  process.env.SMTP_PORT = '587';
+  process.env.SMTP_SECURE = 'false';
+  process.env.CONTACT_FROM = 'no-reply@example.test';
+  delete process.env.SMTP_USER;
+  delete process.env.SMTP_PASS;
+
+  mockModels({
+    sequelize: {
+      async transaction(handler) {
+        return handler({ id: 'test-transaction' });
+      }
+    },
+    Quote: {
+      async findOne({ where }) {
+        assert.equal(where?.id, quoteId);
+        assert.equal(where?.isGuest, true);
+        return {
+          id: quoteId,
+          isGuest: true,
+          guestEmail: 'guest@example.com',
+          guestPhone: '07395448487'
+        };
+      }
+    },
+    QuoteAttachment: {},
+    QuoteClaimToken: {
+      async destroy() {},
+      async create(payload) {
+        return payload;
+      },
+      async findOne() {
+        return null;
+      }
+    },
+    User: {
+      async findAll() {
+        return [];
+      },
+      async findByPk() {
+        return null;
+      }
+    },
+    Notification: {
+      async bulkCreate() {
+        return [];
+      }
+    },
+    QuoteEvent: {
+      async create() {
+        return null;
+      }
+    }
+  });
+
+  mock('nodemailer', {
+    createTransport() {
+      return {
+        async sendMail() {
+          return {
+            accepted: [],
+            rejected: ['guest@example.com'],
+            response: '550 rejected'
+          };
+        }
+      };
+    }
+  });
+
+  const quotesRouter = loadRoute('routes/quotes.js');
+  const app = buildExpressApp('/api/quotes', quotesRouter);
+  app.use((error, req, res, next) => {
+    res.status(Number(error?.statusCode) || 500).json({
+      error: error?.message || 'Request failed'
+    });
+  });
+
+  const response = await request(app)
+    .post(`/api/quotes/guest/${quoteId}/claim/request`)
+    .send({
+      channel: 'email',
+      guestEmail: 'guest@example.com'
+    })
+    .expect(502);
+
+  assert.equal(response.body?.error, 'The claim email could not be delivered to this address. Please check the email and try again.');
+});
+
 test('legacy /api/quotes/guest still succeeds when quote side effects fail', async () => {
   const warnings = [];
   const originalWarn = console.warn;

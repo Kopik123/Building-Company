@@ -820,3 +820,8 @@
 - Added a real auth submit regression to `tests/playwright/public-redesign.spec.js`, covering `auth.html` login submit plus redirect-through-`next` before asserting the account panel returns.
 - Tightened `tests/api-v2/legacy-auth-session-bridge.test.js` with `findByPk` support in the mocked `User` model, so the legacy `/api/auth/me` bridge test follows the same middleware lookup path as the real runtime.
 - Re-ran `node --test tests/api-v2/legacy-auth-session-bridge.test.js`, `node --test tests/api-v2/auth-flow.test.js`, and the focused Playwright auth/public-shell regression pack; all passed green after the login recovery wave.
+
+- Saved `Plans/Quote Claim Email Delivery Verification Wave 27.md`, registered it in `Plans/Plan History.md`, and closed the matching guest-claim email delivery todo in `Project_todos.md`.
+- Hardened `routes/quotes.js` so email claim requests only succeed after Nodemailer confirms the recipient in the SMTP `accepted` list, while rejected or unconfirmed recipients now return a delivery error instead of a false success message.
+- Added email-claim regressions to `tests/api-v2/legacy-public-routes.test.js` and `tests/api-v2/public-quotes-v2-contract.test.js`, covering both accepted-recipient success and rejected-recipient failure cases for the guest quote claim flow.
+- Re-ran `node --check routes/quotes.js`, `node --check tests/api-v2/legacy-public-routes.test.js`, `node --check tests/api-v2/public-quotes-v2-contract.test.js`, `node --test tests/api-v2/legacy-public-routes.test.js`, and `node --test tests/api-v2/public-quotes-v2-contract.test.js`; the full guest/public quote claim regression pack is green after the delivery-verification fix.

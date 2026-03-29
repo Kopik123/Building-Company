@@ -63,6 +63,13 @@ const GUEST_QUOTE_ATTACHMENT_ATTRIBUTES = ['id', 'filename', 'url', 'mimeType', 
 
 const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
 const normalizePhone = (value) => String(value || '').trim();
+const normalizeMailDeliveryAddress = (value) => {
+  if (typeof value === 'string') return normalizeEmail(value);
+  if (value && typeof value === 'object') {
+    return normalizeEmail(value.address || value.email || '');
+  }
+  return '';
+};
 const maskEmailForPreview = (value) => {
   const normalized = normalizeEmail(value);
   if (!normalized.includes('@')) return '';
@@ -213,6 +220,29 @@ const createGuestQuoteRecord = async (basePayload, options = {}) => {
   }
 };
 
+const assertClaimEmailDelivery = (deliveryResult, email) => {
+  const targetEmail = normalizeEmail(email);
+  const acceptedRecipients = Array.isArray(deliveryResult?.accepted)
+    ? deliveryResult.accepted.map(normalizeMailDeliveryAddress).filter(Boolean)
+    : [];
+
+  if (acceptedRecipients.includes(targetEmail)) {
+    return deliveryResult;
+  }
+
+  const rejectedRecipients = Array.isArray(deliveryResult?.rejected)
+    ? deliveryResult.rejected.map(normalizeMailDeliveryAddress).filter(Boolean)
+    : [];
+
+  const err = new Error(
+    rejectedRecipients.includes(targetEmail) || rejectedRecipients.length
+      ? 'The claim email could not be delivered to this address. Please check the email and try again.'
+      : 'The claim email service could not confirm delivery. Please try again later.'
+  );
+  err.statusCode = 502;
+  throw err;
+};
+
 const getClaimEmailTransporter = () => {
   if (!cachedClaimEmailTransporter) {
     const smtpUser = String(process.env.SMTP_USER || '').trim();
@@ -255,12 +285,14 @@ const sendClaimCodeByEmail = async (email, code) => {
 
   const transporter = getClaimEmailTransporter();
 
-  await transporter.sendMail({
+  const deliveryResult = await transporter.sendMail({
     from: `Building Company <${process.env.CONTACT_FROM}>`,
     to: email,
     subject: 'Your quote claim code',
     text: `Your quote claim code is ${code}. It expires in 15 minutes.`
   });
+
+  assertClaimEmailDelivery(deliveryResult, email);
 };
 
 const sendClaimCodeByPhone = async (phone, code) => {
@@ -729,10 +761,19 @@ router.post(
       attempts: 0
     });
 
-    if (channel === 'email') {
-      await sendClaimCodeByEmail(target, code);
-    } else {
-      await sendClaimCodeByPhone(target, code);
+    try {
+      if (channel === 'email') {
+        await sendClaimCodeByEmail(target, code);
+      } else {
+        await sendClaimCodeByPhone(target, code);
+      }
+    } catch (error) {
+      logBlockingQuoteFailure('guest_quote_claim_delivery', error, {
+        quoteId: quote.id,
+        channel,
+        target
+      });
+      throw error;
     }
 
     const referenceCode = await resolveQuoteReferenceCode(Quote, quote);
