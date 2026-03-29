@@ -64,6 +64,15 @@ Najważniejsze mount points:
 | `/uploads` | publiczny dostęp do plików uploadowanych przez system |
 | `/app-v2` | nowa aplikacja webowa |
 
+### 2.3 Decyzja cache runtime
+
+Aktualna decyzja repo/runtime jest nast?puj?ca:
+
+- `HTML` pozostaje na `Cache-Control: no-store`,
+- versioned `CSS` / `JS` / cz??? obraz?w pozostaj? cache'owane,
+- nie cofamy versioned asset?w do `no-store` w trakcie bie??cej iteracji brochure, bo pogorszy?oby to wydajno?? bez rozwi?zania d?ugoterminowego problemu cache,
+- docelowy nast?pny krok to hashed filenames / manifest-driven immutable caching, a nie agresywne wy??czanie cache dla wszystkich asset?w.
+
 ## 3. Podział frontendów
 
 ### 3.1 Public HTML
@@ -369,6 +378,15 @@ To rozdzielenie jest ważne:
 
 - private inbox to relacja user <-> user,
 - group/project chat to relacja wokół obiektu pracy.
+
+### 8.1 Decyzja unread-state dla group/project chat
+
+Aktualna decyzja produktowo-techniczna jest nast?puj?ca:
+
+- private inbox zachowuje w?asny unread-state i preview ownership,
+- group/project chat na razie nie dostaje pe?nego per-member unread tracking,
+- bie??cy model dla group/project chat opiera si? na `latest message preview`, `message counts` i bezpo?rednim wej?ciu do w?tku,
+- temat wraca dopiero wtedy, gdy pojawi si? realna presja produktowa na badge per uczestnik, bo taki model zwi?ksza koszt synchronizacji dla web + przysz?ego Android/iOS.
 
 ## 9. Overview, notifications i activity
 

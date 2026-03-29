@@ -84,7 +84,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [ ] Capture manual social-preview evidence for homepage, services, gallery and one location page after the SEO metadata sweep.
 - [ ] Resolve the local PowerShell execution-policy issue blocking `npm.ps1`; until fixed, keep using `npm.cmd` for local validation commands.
 - [x] Standardise local shell snippets for Windows PowerShell 5.1 (`;` or `cmd /c`) because `&&` chaining is not supported in the current local shell.
-- [ ] Decide whether the current live cache contract should stay as `HTML no-store + versioned assets cached for 7 days`, or whether versioned `CSS`/`JS`/image assets should also move to `no-store` during active brochure iteration.
+- [x] Decide whether the current live cache contract should stay as `HTML no-store + versioned assets cached for 7 days`, or whether versioned `CSS`/`JS`/image assets should also move to `no-store` during active brochure iteration.
 - [x] Add HTML asset cache-busting so deploys emit versioned CSS/JS/image URLs without manually editing every brochure/dashboard HTML file.
 - [x] Make the folder-backed gallery the source of truth for `/api/gallery/services` and folder-driven gallery views, using raw folder names plus alphabetical folder/file ordering instead of curated service bundles.
 
@@ -127,7 +127,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [x] Create a shared web/mobile contract layer for auth/session, project summaries, thread summaries, notifications and estimate state before expanding `mobile-v1` further.
 - [ ] Add persistent mobile session storage, deep-link routing and native Expo/EAS push-token capture on top of the new `mobile-client` / `mobile-company` foundation.
 - [ ] Keep every new feature review aligned with future Android/iOS app readiness, especially API contracts, auth/session handling, messaging and media flows.
-- [ ] Decide whether group/project chat needs per-member unread tracking now that thread summaries already expose latest-message preview and message counts; current group-chat UX still has no unread badge model.
+- [x] Decide whether group/project chat needs per-member unread tracking now that thread summaries already expose latest-message preview and message counts; current group-chat UX still has no unread badge model.
 
 ## Tooling And Quality
 
@@ -178,7 +178,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [x] Continue the `web-v2` refactor with stronger typed/JSDoc view-model contracts and any remaining finer list/detail/editor modules across `quotes`, `crm`, `private-inbox` and `inventory` now that page-level panel adapters are extracted.
 - [ ] Convert `auth.html`, `client-dashboard.html` and `manager-dashboard.html` into thinner compatibility shells once `/app-v2` reaches the remaining operational parity, instead of continuing to grow legacy HTML dashboards.
 - [ ] Revisit immutable caching for brochure/background images once non-gallery media is fully content-addressed; this wave intentionally keeps `/Gallery` and `/uploads` on `no-store` and other images on conservative cache.
-- [ ] Keep using `npm.cmd` for local Windows PowerShell 5.1 flows, because plain `npm` is still blocked by local execution policy during repo automation.
+- [x] Keep using `npm.cmd` for local Windows PowerShell 5.1 flows, because plain `npm` is still blocked by local execution policy during repo automation.
 - [x] Split `apps/web-v2/src/App.jsx` into a thin router plus a shared workspace kit, grouped route modules and central `workspaceRouteDefinitions` / `workspaceNavItems` config, so the authenticated rollout app no longer keeps all pages, helpers and navigation state in one file.
 - [x] Continue the `web-v2` split beyond grouped route modules by breaking `projects+quotes`, `messaging` and `operations` into smaller domain files/hooks after this routing/config wave settles.
 - [x] Extract the first `web-v2` domain hooks for `quotes`, `CRM` and `private inbox` so those pages stop carrying all selection and async-detail effects inline before the next render/component split.

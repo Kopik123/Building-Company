@@ -34,6 +34,7 @@ npm run test:all
 ### Windows PowerShell 5.1
 
 - Use `npm.cmd` instead of `npm` in local PowerShell 5.1.
+- Treat `npm.cmd` as the canonical repo automation path on Windows until the local `npm.ps1` execution-policy issue is solved outside the repo.
 - Do not use Bash-style `&&` directly in PowerShell 5.1; use multi-line fail-fast checks or `cmd /c`.
 - Canonical local examples live in [deploy/WINDOWS_POWERSHELL_5_1_LOCAL_COMMANDS.md](deploy/WINDOWS_POWERSHELL_5_1_LOCAL_COMMANDS.md).
 
