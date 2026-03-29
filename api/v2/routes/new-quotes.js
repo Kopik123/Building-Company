@@ -27,12 +27,10 @@ const { advanceClientLifecycle } = require('../../../utils/crmLifecycle');
 const { createActivityEvent } = require('../../../utils/activityFeed');
 const {
   appendNewQuoteAttachmentEntries,
-  buildNewQuoteProjectTitle,
-  cleanupNewQuoteStoredAttachments,
   createNewQuoteAttachmentEntries,
-  toNewQuoteProjectMediaRows,
   toNewQuoteSummary
 } = require('../../../utils/newQuoteShape');
+const { createStagedNewQuoteWorkflow } = require('../../../utils/stagedNewQuoteWorkflow');
 
 const router = express.Router();
 const DEFAULT_PAGE_SIZE = 25;
@@ -76,6 +74,19 @@ const findManagerRecipients = async () => {
     }
   });
 };
+
+
+const stagedNewQuoteWorkflow = createStagedNewQuoteWorkflow({
+  Project,
+  ProjectMedia,
+  GroupThread,
+  GroupMember,
+  Notification,
+  User,
+  ActivityEvent,
+  advanceClientLifecycle,
+  createActivityEvent
+});
 
 router.get(
   '/',
@@ -369,94 +380,43 @@ router.post(
 
     const newQuote = await loadNewQuote(req.params.id);
     if (!newQuote) return fail(res, 404, 'new_quote_not_found', 'New quote not found');
-
-    const project = await Project.create({
-      title: buildNewQuoteProjectTitle(newQuote),
-      quoteId: null,
-      acceptedEstimateId: null,
-      clientId: newQuote.clientId,
-      assignedManagerId: req.v2User.id,
-      location: newQuote.location || null,
-      description: newQuote.description || null,
-      budgetEstimate: newQuote.budgetRange || null,
-      status: 'planning',
-      isActive: true
-    });
-
-    if (typeof ProjectMedia?.bulkCreate === 'function') {
-      const mediaRows = toNewQuoteProjectMediaRows(newQuote, project.id);
-      if (mediaRows.length) {
-        await ProjectMedia.bulkCreate(mediaRows);
-      }
-    }
-
-    let projectThread = null;
-    if (typeof GroupThread?.create === 'function') {
-      projectThread = await GroupThread.create({
-        name: project.title,
-        quoteId: null,
-        projectId: project.id,
-        createdBy: req.v2User.id
-      });
-
-      if (typeof GroupMember?.findOrCreate === 'function') {
-        await GroupMember.findOrCreate({
-          where: { groupThreadId: projectThread.id, userId: req.v2User.id },
-          defaults: { groupThreadId: projectThread.id, userId: req.v2User.id, role: 'admin' }
-        });
-        if (newQuote.clientId) {
-          await GroupMember.findOrCreate({
-            where: { groupThreadId: projectThread.id, userId: newQuote.clientId },
-            defaults: { groupThreadId: projectThread.id, userId: newQuote.clientId, role: 'member' }
-          });
-        }
-      }
-    }
-
-    const clientRecord = typeof User?.findByPk === 'function' ? await User.findByPk(newQuote.clientId) : null;
-    await advanceClientLifecycle(clientRecord, 'active_project');
-
-    await createActivityEvent(ActivityEvent, {
-      actorUserId: req.v2User.id,
-      entityType: 'project',
-      entityId: project.id,
-      projectId: project.id,
-      clientId: newQuote.clientId || null,
-      visibility: 'client',
-      eventType: 'project_created_from_new_quote',
-      title: 'Project created',
-      message: `Quote request ${newQuote.quoteRef} was accepted and converted into project \"${project.title}\".`,
-      data: {
-        newQuoteId: newQuote.id,
-        quoteRef: newQuote.quoteRef,
-        groupThreadId: projectThread?.id || null
-      }
-    }, 'new_quote_accept_project_activity');
-
-    if (newQuote.clientId && typeof Notification?.create === 'function') {
-      await Notification.create({
-        userId: newQuote.clientId,
+    const result = await stagedNewQuoteWorkflow.accept(newQuote, req.v2User, {
+      buildAcceptClientNotification: ({ newQuote: activeNewQuote, project }) => ({
         type: 'project_created',
         title: 'New project created',
-        body: `Your request ${newQuote.quoteRef} has been accepted and converted into project \"${project.title}\".`,
+        body: `Your request ${activeNewQuote.quoteRef} has been accepted and converted into project "${project.title}".`,
         data: {
-          newQuoteId: newQuote.id,
-          quoteRef: newQuote.quoteRef,
+          newQuoteId: activeNewQuote.id,
+          quoteRef: activeNewQuote.quoteRef,
           projectId: project.id
         }
-      });
-    }
-
+      }),
+      buildAcceptActivity: ({ newQuote: activeNewQuote, actorUser, project, groupThread }) => ({
+        actorUserId: actorUser.id,
+        entityType: 'project',
+        entityId: project.id,
+        projectId: project.id,
+        clientId: activeNewQuote.clientId || null,
+        visibility: 'client',
+        eventType: 'project_created_from_new_quote',
+        title: 'Project created',
+        message: `Quote request ${activeNewQuote.quoteRef} was accepted and converted into project "${project.title}".`,
+        data: {
+          newQuoteId: activeNewQuote.id,
+          quoteRef: activeNewQuote.quoteRef,
+          groupThreadId: groupThread?.id || null
+        }
+      }),
+      acceptActivityContext: 'new_quote_accept_project_activity'
+    });
     const responsePayload = {
       accepted: true,
       deleted: true,
       newQuoteId: newQuote.id,
       quoteRef: newQuote.quoteRef,
-      project,
-      thread: projectThread
+      project: result?.project || null,
+      thread: result?.groupThread || null
     };
-
-    await newQuote.destroy();
     return ok(res, responsePayload, {}, 201);
   })
 );
@@ -477,35 +437,31 @@ router.post(
     const newQuote = await loadNewQuote(req.params.id);
     if (!newQuote) return fail(res, 404, 'new_quote_not_found', 'New quote not found');
 
-    await createActivityEvent(ActivityEvent, {
-      actorUserId: req.v2User.id,
-      entityType: 'new_quote',
-      entityId: newQuote.id,
-      clientId: newQuote.clientId || null,
-      visibility: 'internal',
-      eventType: 'new_quote_rejected',
-      title: 'Quote request rejected',
-      message: `Quote request ${newQuote.quoteRef} was rejected and removed from staging.`,
-      data: {
-        quoteRef: newQuote.quoteRef
-      }
-    }, 'new_quote_reject_activity');
-
-    if (newQuote.clientId && typeof Notification?.create === 'function') {
-      await Notification.create({
-        userId: newQuote.clientId,
+    await stagedNewQuoteWorkflow.reject(newQuote, req.v2User, {
+      buildRejectClientNotification: ({ newQuote: activeNewQuote }) => ({
         type: 'quote_rejected',
         title: 'Quote request not progressed',
-        body: `Your request ${newQuote.quoteRef} was not progressed and has been removed from the review queue.`,
+        body: `Your request ${activeNewQuote.quoteRef} was not progressed and has been removed from the review queue.`,
         data: {
-          newQuoteId: newQuote.id,
-          quoteRef: newQuote.quoteRef
+          newQuoteId: activeNewQuote.id,
+          quoteRef: activeNewQuote.quoteRef
         }
-      });
-    }
-
-    await cleanupNewQuoteStoredAttachments(newQuote);
-    await newQuote.destroy();
+      }),
+      buildRejectActivity: ({ newQuote: activeNewQuote, actorUser }) => ({
+        actorUserId: actorUser.id,
+        entityType: 'new_quote',
+        entityId: activeNewQuote.id,
+        clientId: activeNewQuote.clientId || null,
+        visibility: 'internal',
+        eventType: 'new_quote_rejected',
+        title: 'Quote request rejected',
+        message: `Quote request ${activeNewQuote.quoteRef} was rejected and removed from staging.`,
+        data: {
+          quoteRef: activeNewQuote.quoteRef
+        }
+      }),
+      rejectActivityContext: 'new_quote_reject_activity'
+    });
     return ok(res, {
       rejected: true,
       deleted: true,

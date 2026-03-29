@@ -30,8 +30,8 @@
 - 2026-03-27 20:59 | Manager Header Quick Access Persistence On Workspace | Plans/Manager Header Quick Access Persistence On Workspace.md
 - 2026-03-27 22:05 | Structured Public Quote Intake And Phased Quote Form | Plans/Structured Public Quote Intake And Phased Quote Form.md
 - 2026-03-27 22:34 | 2 Aplikacje Mobilne Android Dla Level Lines | Plans/2 Aplikacje Mobilne Android Dla Level Lines.md
-- 2026-03-28 01:11 | Nowy WyglÄ…d Manager Workspace Z Kartami, Quick Access I Polami Operacyjnymi | Plans/Nowy WyglÄ…d Manager Workspace Z Kartami, Quick Access I Polami Operacyjnymi.md
-- 2026-03-28 21:21 | Pełny Pakiet Dokumentacji Systemu Level Lines Dla Strony, Paneli I Androida | Plans/Pełny Pakiet Dokumentacji Systemu Level Lines Dla Strony, Paneli I Androida.md
+- 2026-03-28 01:11 | Nowy WyglÃ„â€¦d Manager Workspace Z Kartami, Quick Access I Polami Operacyjnymi | Plans/Nowy WyglÃ„â€¦d Manager Workspace Z Kartami, Quick Access I Polami Operacyjnymi.md
+- 2026-03-28 21:21 | PeÅ‚ny Pakiet Dokumentacji Systemu Level Lines Dla Strony, Paneli I Androida | Plans/PeÅ‚ny Pakiet Dokumentacji Systemu Level Lines Dla Strony, Paneli I Androida.md
 - 2026-03-28 22:15 | Project Workflow Stage Enum Quoting Production Hotfix | Plans/Project Workflow Stage Enum Quoting Production Hotfix.md
 - 2026-03-28 22:25 | Project Workflow Status Enum Text Cast Hotfix | Plans/Project Workflow Status Enum Text Cast Hotfix.md
 - 2026-03-28 22:55 | Device Push App Variant Enum Role Text Cast Hotfix | Plans/Device Push App Variant Enum Role Text Cast Hotfix.md
@@ -68,3 +68,4 @@
 - 2026-03-29 23:16 | Logged-In Client New Quote Staging And Manager Conversion Wave 30 | Plans/Logged-In Client New Quote Staging And Manager Conversion Wave 30.md
 - 2026-03-29 23:27 | Logged-In Quote Claim State Cleanup Wave 31 | Plans/Logged-In Quote Claim State Cleanup Wave 31.md
 - 2026-03-30 00:01 | Manager Quote Thumbnail Preview Wave 32 | Plans/Manager Quote Thumbnail Preview Wave 32.md
+- 2026-03-30 00:20 | Staged New Quote Workflow Deduplication Wave 33 | Plans/Staged New Quote Workflow Deduplication Wave 33.md
