@@ -1,3 +1,16 @@
+/**
+ * @typedef {Object} QuoteWorkspacePanels
+ * @property {Object} quoteBoardPanel
+ * @property {Object} quoteDetailPanel
+ * @property {Object} quoteAttachmentsPanel
+ * @property {Object} quoteEstimatesPanel
+ * @property {Object} quoteTimelinePanel
+ */
+
+/**
+ * @param {Object} config
+ * @returns {QuoteWorkspacePanels}
+ */
 function buildQuoteWorkspacePanels({
   canCreateQuotes,
   search,

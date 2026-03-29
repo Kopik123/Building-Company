@@ -1,3 +1,13 @@
+/**
+ * @typedef {Object} PrivateInboxPanelsViewModel
+ * @property {Object} sidebarPanel
+ * @property {Object} conversationPanel
+ */
+
+/**
+ * @param {Object} config
+ * @returns {PrivateInboxPanelsViewModel}
+ */
 function buildPrivateInboxPanels({
   search,
   setSearch,

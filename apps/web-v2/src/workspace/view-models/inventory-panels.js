@@ -1,3 +1,13 @@
+/**
+ * @typedef {Object} InventoryWorkspacePanelsViewModel
+ * @property {Object} servicePanel
+ * @property {Object} materialPanel
+ */
+
+/**
+ * @param {Object} config
+ * @returns {InventoryWorkspacePanelsViewModel}
+ */
 function buildInventoryWorkspacePanels({
   services,
   serviceSearch,

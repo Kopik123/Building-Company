@@ -1,3 +1,15 @@
+/**
+ * @typedef {Object} CrmWorkspacePanels
+ * @property {Object} summaryPanel
+ * @property {Object} createStaffPanel
+ * @property {Object} clientsPanel
+ * @property {Object} staffPanel
+ */
+
+/**
+ * @param {Object} config
+ * @returns {CrmWorkspacePanels}
+ */
 function buildCrmWorkspacePanels({
   search,
   setSearch,
