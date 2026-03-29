@@ -156,7 +156,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [ ] Revisit SonarQube CPD exclusions once more public HTML moves into the shared renderer and fewer static outputs need to stay excluded.
 - [ ] Continue the Sonar cleanup with the remaining higher-complexity smells in dashboard/gallery controllers (`nesting`, `cognitive complexity`, nested template literals) now that the portability/readability pass is done.
 - [x] Create a new current design source-of-truth markdown to replace the removed `Project_Web_Design_Plan.md`.
-- [ ] Re-run the full `npm.cmd run test:e2e:mobile` suite after the manager workspace card-shell rollout; the focused manager Playwright suite is green, but the full browser/mobile command exceeded the local timeout in this session.
+- [ ] Re-run the full `npm.cmd run test:e2e:mobile` suite after the manager workspace card-shell rollout; focused `web-v2` / manager Playwright coverage is green, but the full browser/mobile command still exceeded the local 20-minute timeout in this session and needs a longer unattended run or a narrower bottleneck check.
 - [ ] Remove the remaining local `node:child_process` / `node:test` `spawn EPERM` instability that still hits `test:mobile:foundation` and `spawnSync`-based script tests, so `npm.cmd run test:ci` becomes fully reliable on this workstation again.
 
 ## Later
@@ -174,8 +174,8 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [x] Continue the `web-v2` refactor with page-level view-model adapters across `quotes`, `crm`, `private-inbox` and `inventory` now that all four domains use smaller render subcomponents.
 - [x] Continue the `web-v2` refactor by extracting domain action hooks from `quotes`, `crm`, `private-inbox` and `inventory`, so those pages no longer keep their async submit/save flows inline.
 - [x] Continue the `web-v2` refactor by introducing controller hooks and initial JSDoc panel contracts across `quotes`, `crm`, `private-inbox` and `inventory`, so those route pages become thin shells with explicit panel shapes.
-- [ ] Continue tightening the `web-v2` controller/view-model layer with richer typed contracts and any remaining finer `list/detail/editor` modules now that the route pages, state hooks, action hooks and panel adapters are all separated.
-- [ ] Continue the `web-v2` refactor with stronger typed/JSDoc view-model contracts and any remaining finer list/detail/editor modules across `quotes`, `crm`, `private-inbox` and `inventory` now that page-level panel adapters are extracted.
+- [x] Continue tightening the `web-v2` controller/view-model layer with richer typed contracts and any remaining finer `list/detail/editor` modules now that the route pages, state hooks, action hooks and panel adapters are all separated.
+- [x] Continue the `web-v2` refactor with stronger typed/JSDoc view-model contracts and any remaining finer list/detail/editor modules across `quotes`, `crm`, `private-inbox` and `inventory` now that page-level panel adapters are extracted.
 - [ ] Convert `auth.html`, `client-dashboard.html` and `manager-dashboard.html` into thinner compatibility shells once `/app-v2` reaches the remaining operational parity, instead of continuing to grow legacy HTML dashboards.
 - [ ] Revisit immutable caching for brochure/background images once non-gallery media is fully content-addressed; this wave intentionally keeps `/Gallery` and `/uploads` on `no-store` and other images on conservative cache.
 - [ ] Keep using `npm.cmd` for local Windows PowerShell 5.1 flows, because plain `npm` is still blocked by local execution policy during repo automation.

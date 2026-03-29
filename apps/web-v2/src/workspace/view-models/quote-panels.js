@@ -1,10 +1,90 @@
+﻿/**
+ * @typedef {Object} QuoteBoardPanel
+ * @property {boolean} canCreateQuotes
+ * @property {string} search
+ * @property {Function} setSearch
+ * @property {Function} startNewQuote
+ * @property {Object} quotes
+ * @property {Array<Object>} filteredQuotes
+ * @property {boolean} isCreatingQuote
+ * @property {string | null} selectedQuoteId
+ * @property {Function} selectQuote
+ */
+
+/**
+ * @typedef {Object} QuoteDetailPanel
+ * @property {boolean} canManageQuotes
+ * @property {boolean} isCreatingQuote
+ * @property {Object | null} selectedQuote
+ * @property {Object} detailState
+ * @property {Object} form
+ * @property {Function} setForm
+ * @property {Array<Object>} clients
+ * @property {Array<Object>} managerOptions
+ * @property {Function} onSubmit
+ * @property {Array<File>} quoteFiles
+ * @property {Function} onQuoteFilesChange
+ * @property {boolean} saving
+ * @property {boolean} isSecondaryBusy
+ * @property {string} actionMessage
+ * @property {string} actionError
+ * @property {Function} onTakeOwnership
+ * @property {Function} onConvertToProject
+ * @property {Function} isBusyAction
+ * @property {string | null} selectedQuoteId
+ * @property {Object | null} currentEstimate
+ */
+
+/**
+ * @typedef {Object} QuoteAttachmentsPanel
+ * @property {boolean} canManageQuotes
+ * @property {Object | null} selectedQuote
+ * @property {boolean} isCreatingQuote
+ * @property {string | number} followUpUploadInputKey
+ * @property {Function} onFollowUpQuoteFilesChange
+ * @property {number} remainingQuotePhotoSlots
+ * @property {Array<File>} followUpQuoteFiles
+ * @property {Function} onUploadFollowUpPhotos
+ * @property {boolean} isSecondaryBusy
+ * @property {Function} isBusyAction
+ */
+
+/**
+ * @typedef {Object} QuoteEstimatesPanel
+ * @property {Object | null} selectedQuote
+ * @property {boolean} isCreatingQuote
+ * @property {boolean} canManageQuotes
+ * @property {Object} detailState
+ * @property {Object | null} currentEstimate
+ * @property {Object} estimateForm
+ * @property {Function} setEstimateForm
+ * @property {Function} onCreateEstimate
+ * @property {Function} onSendEstimate
+ * @property {Function} onConvertToProject
+ * @property {boolean} isSecondaryBusy
+ * @property {Function} isBusyAction
+ * @property {boolean} canRespondToEstimates
+ * @property {string} responseNote
+ * @property {Function} setResponseNote
+ * @property {boolean} clientEstimateNeedsDecision
+ * @property {Function} onRespondToEstimate
+ * @property {Array<string>} quoteWorkflowStatuses
+ */
+
+/**
+ * @typedef {Object} QuoteTimelinePanel
+ * @property {Object | null} selectedQuote
+ * @property {boolean} isCreatingQuote
+ * @property {Object} detailState
+ */
+
 /**
  * @typedef {Object} QuoteWorkspacePanels
- * @property {Object} quoteBoardPanel
- * @property {Object} quoteDetailPanel
- * @property {Object} quoteAttachmentsPanel
- * @property {Object} quoteEstimatesPanel
- * @property {Object} quoteTimelinePanel
+ * @property {QuoteBoardPanel} quoteBoardPanel
+ * @property {QuoteDetailPanel} quoteDetailPanel
+ * @property {QuoteAttachmentsPanel} quoteAttachmentsPanel
+ * @property {QuoteEstimatesPanel} quoteEstimatesPanel
+ * @property {QuoteTimelinePanel} quoteTimelinePanel
  */
 
 /**

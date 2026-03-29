@@ -1,7 +1,47 @@
+﻿/**
+ * @typedef {Object} InventoryServicePanel
+ * @property {Object} services
+ * @property {string} serviceSearch
+ * @property {Function} setServiceSearch
+ * @property {Function} startNewService
+ * @property {Array<Object>} filteredServices
+ * @property {boolean} isCreatingService
+ * @property {string | null} selectedServiceId
+ * @property {Function} selectService
+ * @property {Object} serviceForm
+ * @property {Function} onServiceFieldChange
+ * @property {Function} saveService
+ * @property {boolean} serviceSaving
+ * @property {boolean} canDelete
+ * @property {Function} deleteService
+ * @property {string} serviceStatus
+ * @property {string} serviceError
+ */
+
+/**
+ * @typedef {Object} InventoryMaterialPanel
+ * @property {Object} materials
+ * @property {string} materialSearch
+ * @property {Function} setMaterialSearch
+ * @property {Function} startNewMaterial
+ * @property {Array<Object>} filteredMaterials
+ * @property {boolean} isCreatingMaterial
+ * @property {string | null} selectedMaterialId
+ * @property {Function} selectMaterial
+ * @property {Object} materialForm
+ * @property {Function} onMaterialFieldChange
+ * @property {Function} saveMaterial
+ * @property {boolean} materialSaving
+ * @property {boolean} canDelete
+ * @property {Function} deleteMaterial
+ * @property {string} materialStatus
+ * @property {string} materialError
+ */
+
 /**
  * @typedef {Object} InventoryWorkspacePanelsViewModel
- * @property {Object} servicePanel
- * @property {Object} materialPanel
+ * @property {InventoryServicePanel} servicePanel
+ * @property {InventoryMaterialPanel} materialPanel
  */
 
 /**

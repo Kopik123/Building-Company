@@ -1,7 +1,42 @@
+﻿/**
+ * @typedef {Object} PrivateInboxSidebarPanel
+ * @property {string} search
+ * @property {Function} setSearch
+ * @property {boolean} staffMode
+ * @property {Function} startNewThread
+ * @property {Object} directThreads
+ * @property {Array<Object>} filteredThreads
+ * @property {Object | null} user
+ * @property {string | null} selectedThreadId
+ * @property {Function} onSelectThread
+ */
+
+/**
+ * @typedef {Object} PrivateInboxConversationPanel
+ * @property {Object | null} selectedThread
+ * @property {Object | null} user
+ * @property {boolean} staffMode
+ * @property {boolean} canStartThread
+ * @property {string} recipientLabel
+ * @property {Object} messageState
+ * @property {Array<Object>} peopleDirectory
+ * @property {string} recipientEmail
+ * @property {Function} setRecipientEmail
+ * @property {string} subject
+ * @property {Function} setSubject
+ * @property {string} draft
+ * @property {Function} setDraft
+ * @property {Function} onSubmit
+ * @property {Array<File>} selectedFiles
+ * @property {Function} setSelectedFiles
+ * @property {string} composerError
+ * @property {boolean} sending
+ */
+
 /**
  * @typedef {Object} PrivateInboxPanelsViewModel
- * @property {Object} sidebarPanel
- * @property {Object} conversationPanel
+ * @property {PrivateInboxSidebarPanel} sidebarPanel
+ * @property {PrivateInboxConversationPanel} conversationPanel
  */
 
 /**
