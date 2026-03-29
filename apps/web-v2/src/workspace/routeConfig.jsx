@@ -2,20 +2,14 @@ import {
   AccountPage,
   OverviewPage
 } from './pages/account-overview.jsx';
-import {
-  ProjectsPage,
-  QuotesPage
-} from './pages/projects-quotes.jsx';
-import {
-  PrivateInboxPage,
-  MessagesPage
-} from './pages/messaging.jsx';
-import {
-  NotificationsPage,
-  CrmPage,
-  InventoryPage,
-  ServiceCataloguePage
-} from './pages/operations.jsx';
+import { ProjectsPage } from './pages/projects.jsx';
+import { QuotesPage } from './pages/quotes.jsx';
+import { PrivateInboxPage } from './pages/private-inbox.jsx';
+import { MessagesPage } from './pages/messages.jsx';
+import { NotificationsPage } from './pages/notifications.jsx';
+import { CrmPage } from './pages/crm.jsx';
+import { InventoryPage } from './pages/inventory.jsx';
+import { ServiceCataloguePage } from './pages/service-catalogue.jsx';
 
 const workspaceRouteDefinitions = [
   {
