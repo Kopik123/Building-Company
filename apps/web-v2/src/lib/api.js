@@ -1,4 +1,4 @@
-import contractKit from '../../../../shared/contracts/v2.js';
+import contractKit from '@building-company/contracts-v2';
 
 const {
   activityEventSchema,

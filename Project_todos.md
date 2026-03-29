@@ -39,7 +39,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [x] Promote the shared contract layer to Zod-backed runtime validation for `api/v2` and `web-v2`, so the rollout shell stops trusting shared payload shapes without schema checks.
 - [x] Split the future Android surface into `apps/mobile-client` and `apps/mobile-company` with shared `packages/mobile-contracts`, `packages/mobile-core` and `packages/mobile-ui`, while keeping `apps/mobile-v1` as the prototype/seed.
 - [x] Extend `/api/v2/auth` and `/api/v2/devices/push-token` for mobile-native onboarding by adding client `register` plus `DevicePushTokens.appVariant/deviceName` metadata ready for company-vs-client push ownership.
-- [ ] Promote the initial shared contract layer into a generated `TypeScript + Zod` or `TypeScript + OpenAPI` package shared by backend, `web-v2` and `mobile-v1` once the current parity wave settles.
+- [x] Promote the initial shared contract layer into a generated `TypeScript + Zod` or `TypeScript + OpenAPI` package shared by backend, `web-v2` and `mobile-v1` once the current parity wave settles.
 - [x] Move DB migrations to deploy-time only and stop running them automatically on every app boot, so schema changes happen in a deliberate deploy step before `pm2 restart`.
 - [x] Wire `models.ensureIndexes()` into a deliberate CLI/deploy path via `npm run ensure:indexes`, instead of leaving index ownership ambiguous between runtime startup and migrations.
 - [x] Save the launch-ready design/SEO execution plan under `Plans/Plan poprawy designu i SEO dla gotowej strony Level Lines Studio.md` and register it in `Plans/Plan History.md`.
@@ -93,7 +93,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [x] Add a runtime mount for built `web-v2` assets and route handling, keeping legacy dashboards online during the first staged rollout.
 - [x] Introduce an initial shared typed contract layer for auth/session, project summaries, quotes, thread summaries, notifications, CRM and inventory before migrating larger dashboard domains into `web-v2`.
 - [x] Promote the shared contract layer from plain normalizers to Zod-backed runtime schemas for backend and `web-v2` once the first manager parity wave is stable enough to validate at runtime.
-- [ ] Promote the initial shared contract layer into a real generated source-of-truth package for backend, `web-v2` and `mobile-v1` once the Zod-backed package shape settles.
+- [x] Promote the initial shared contract layer into a real generated source-of-truth package for backend, `web-v2` and `mobile-v1` once the Zod-backed package shape settles.
 - [x] Start `web-v2` parity implementation with `overview`, richer `projects` / `quotes`, actionable `notifications`, and the first real `messages` workflow under `/app-v2`.
 - [x] Continue the next `web-v2` parity wave with direct/private messaging by shipping `api/v2` private-thread contracts and `web-v2` `Private Inbox`.
 - [x] Continue the next `web-v2` parity wave with manager CRUD actions and deeper `crm` / `inventory` operations now that direct/private messaging parity is in place.

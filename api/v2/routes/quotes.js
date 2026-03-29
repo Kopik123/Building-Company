@@ -40,7 +40,7 @@ const { parseQuoteProposalDetails, buildQuoteDescriptionFromProposal } = require
 const { authV2 } = require('../middleware/auth');
 const { roleCheckV2 } = require('../middleware/roles');
 const { ok, fail } = require('../utils/response');
-const { QUOTE_CONTACT_METHODS, QUOTE_PRIORITIES, QUOTE_PROJECT_TYPES, QUOTE_STATUSES } = require('../../../shared/contracts/v2');
+const { QUOTE_CONTACT_METHODS, QUOTE_PRIORITIES, QUOTE_PROJECT_TYPES, QUOTE_STATUSES } = require('@building-company/contracts-v2');
 
 const router = express.Router();
 const DEFAULT_PAGE_SIZE = 25;

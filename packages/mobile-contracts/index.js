@@ -1,5 +1,5 @@
 const { z } = require('zod');
-const sharedV2 = require('../../shared/contracts/v2');
+const sharedV2 = require('@building-company/contracts-v2');
 
 const APP_VARIANTS = Object.freeze(['client', 'company']);
 const MOBILE_PLATFORMS = Object.freeze(['android', 'ios', 'web']);

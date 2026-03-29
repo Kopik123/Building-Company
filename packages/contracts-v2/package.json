@@ -1,10 +1,10 @@
 {
-  "name": "@building-company/mobile-contracts",
+  "name": "@building-company/contracts-v2",
   "private": true,
   "version": "0.1.0",
   "main": "index.js",
+  "types": "index.d.ts",
   "dependencies": {
-    "@building-company/contracts-v2": "file:../contracts-v2",
     "zod": "^3.24.4"
   }
 }

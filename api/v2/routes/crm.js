@@ -8,7 +8,7 @@ const { roleCheckV2 } = require('../middleware/roles');
 const { ok, fail } = require('../utils/response');
 const { createActivityEvent } = require('../../../utils/activityFeed');
 const { buildLifecyclePayload, CLIENT_LIFECYCLE_STATUSES } = require('../../../utils/crmLifecycle');
-const { STAFF_CREATION_ROLES, STAFF_ROLES } = require('../../../shared/contracts/v2');
+const { STAFF_CREATION_ROLES, STAFF_ROLES } = require('@building-company/contracts-v2');
 
 const router = express.Router();
 const DEFAULT_PAGE_SIZE = 25;

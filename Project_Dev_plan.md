@@ -747,3 +747,7 @@
 - Updated `README.md` with an explicit `apps/web-v2 first` authenticated-web policy, so future feature work is directed to the canonical auth app instead of drifting back into legacy dashboard growth.
 - Extended `Docs/Level Lines - Architektura Techniczna.md` with a dedicated policy subsection that labels `auth.html`, `client-dashboard.html`, and `manager-dashboard.html` as compatibility-only entry shells during cutover.
 - Added compatibility-only source comments to `auth.html`, `client-dashboard.html`, and `manager-dashboard.html`, so future edits in those files immediately see that new authenticated product work belongs in `apps/web-v2`.
+- Saved `Plans/Generated Contracts Package Wave 14.md`, registered it in `Plans/Plan History.md`, and closed both remaining generated-contract-package todos in `Project_todos.md`.
+- Added `packages/contracts-v2` plus `scripts/generate-contract-package.js`, so `shared/contracts/v2` now has a real generated workspace-package output (`index.js` + `index.d.ts`) instead of only direct source imports.
+- Rewired backend `api/v2` routes, `apps/web-v2`, and `packages/mobile-contracts` to consume `@building-company/contracts-v2`, reducing direct source coupling and making the shared contract layer portable for web and future native clients.
+- Added `tests/mobile/contracts-package-sync.test.js` to verify the generated package stays in sync with `shared/contracts/v2.js` and `shared/contracts/v2.d.ts` apart from the generated banner.

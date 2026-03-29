@@ -9,7 +9,7 @@ const { ok, fail } = require('../utils/response');
 const { clearGalleryCache } = require('../utils/publicCache');
 const { createActivityEvent } = require('../../../utils/activityFeed');
 const { advanceClientLifecycle } = require('../../../utils/crmLifecycle');
-const { PROJECT_STATUSES, PROJECT_STAGES } = require('../../../shared/contracts/v2');
+const { PROJECT_STATUSES, PROJECT_STAGES } = require('@building-company/contracts-v2');
 
 const router = express.Router();
 const DEFAULT_PAGE_SIZE = 25;

@@ -7,7 +7,7 @@ const { authV2 } = require('../middleware/auth');
 const { roleCheckV2 } = require('../middleware/roles');
 const { ok, fail } = require('../utils/response');
 const { clearServicesCache } = require('../utils/publicCache');
-const { MATERIAL_CATEGORIES, SERVICE_CATEGORIES } = require('../../../shared/contracts/v2');
+const { MATERIAL_CATEGORIES, SERVICE_CATEGORIES } = require('@building-company/contracts-v2');
 
 const router = express.Router();
 const DEFAULT_PAGE_SIZE = 25;

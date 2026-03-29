@@ -9,7 +9,7 @@ export default defineConfig({
   plugins: [react()],
   build: {
     commonjsOptions: {
-      include: [/shared[\\/]contracts/, /node_modules/]
+      include: [/shared[\/]contracts/, /packages[\/]contracts-v2/, /node_modules/]
     }
   },
   server: {

@@ -26,7 +26,7 @@ const {
   QUOTE_PRIORITIES,
   QUOTE_STATUSES,
   QUOTE_WORKFLOW_STATUSES
-} = require('../../../shared/contracts/v2');
+} = require('@building-company/contracts-v2');
 const {
   normalizeEstimateDecisionStatus,
   normalizeWorkflowStatus

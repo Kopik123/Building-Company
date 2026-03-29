@@ -5,6 +5,7 @@
   "description": "Building company website with quotes system",
   "main": "server.js",
   "workspaces": [
+    "packages/contracts-v2",
     "packages/mobile-contracts",
     "packages/mobile-core",
     "packages/mobile-ui",
@@ -19,6 +20,7 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "optimize:assets": "node scripts/optimize-assets.js",
+    "generate:contracts": "node scripts/generate-contract-package.js",
     "generate:locations": "node scripts/generate-location-pages.js",
     "generate:services": "node scripts/generate-service-pages.js",
     "generate:public-pages:content": "npm run generate:locations && npm run generate:services",
@@ -40,6 +42,7 @@
     "mobile:company:android": "npm --workspace apps/mobile-company run android"
   },
   "dependencies": {
+    "@building-company/contracts-v2": "file:packages/contracts-v2",
     "bcrypt": "^6.0.0",
     "compression": "^1.8.1",
     "cookie-parser": "^1.4.6",
