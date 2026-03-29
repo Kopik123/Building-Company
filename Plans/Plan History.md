@@ -39,3 +39,4 @@
 - 2026-03-29 00:16 | Frontend Architecture And Public Shell Optimization Wave 1 | Plans/Frontend Architecture And Public Shell Optimization Wave 1.md
 - 2026-03-29 00:37 | Web-v2 Route Modules And Workspace Config Wave 2 | Plans/Web-v2 Route Modules And Workspace Config Wave 2.md
 - 2026-03-29 00:57 | Web-v2 Domain Page Split Wave 3 | Plans/Web-v2 Domain Page Split Wave 3.md
+- 2026-03-29 01:05 | Web-v2 Domain Hook Extraction Wave 4 | Plans/Web-v2 Domain Hook Extraction Wave 4.md
