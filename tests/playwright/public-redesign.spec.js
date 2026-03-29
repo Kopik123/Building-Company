@@ -653,6 +653,53 @@ test('guest quote private preview lets the customer add more photos after submit
   await expect(uploadCard).toContainText(/you can add 4 more photos/i);
 });
 
+
+test('auth page login submit restores the account panel and redirects through next', async ({ page }) => {
+  await page.route('**/api/auth/login', async (route) => {
+    await route.fulfill({
+      json: {
+        token: 'fresh-legacy-token',
+        user: {
+          id: 'client-1',
+          name: 'Marta Client',
+          email: 'client@example.com',
+          role: 'client'
+        },
+        v2Session: {
+          accessToken: 'fresh-access-token',
+          refreshToken: 'fresh-refresh-token'
+        }
+      }
+    });
+  });
+
+  await page.route('**/api/auth/me', async (route) => {
+    await route.fulfill({
+      json: {
+        user: {
+          id: 'client-1',
+          name: 'Marta Client',
+          email: 'client@example.com',
+          role: 'client',
+          phone: '+44 7942 874 446',
+          companyName: 'Level Lines Studio'
+        }
+      }
+    });
+  });
+
+  await page.goto('/auth.html?next=/auth.html');
+  await page.locator('#login-form input[name="email"]').fill('client@example.com');
+  await page.locator('#login-form input[name="password"]').fill('Pass1234!');
+  await page.locator('#login-form button[type="submit"]').click();
+
+  await expect(page.locator('#login-status')).toContainText(/login successful/i);
+  await expect(page).toHaveURL(/\/auth\.html$/);
+  await page.waitForLoadState('domcontentloaded');
+  await expect(page.locator('#auth-account-panel')).toBeVisible();
+  await expect(page.locator('#auth-session-state')).toContainText(/logged in as:/i);
+});
+
 test('authenticated public shell hides login-only controls and keeps one account route', async ({ page }) => {
   await mockPublicClientSession(page);
   await page.goto('/index.html');

@@ -49,6 +49,9 @@ const createStubs = () => {
         async findOne({ where }) {
           return users.find((user) => user.email === where?.email) || null;
         },
+        async findByPk(id) {
+          return users.find((user) => user.id === id) || null;
+        },
         async create(payload) {
           const user = createUser({
             id: `user-${users.length + 1}`,

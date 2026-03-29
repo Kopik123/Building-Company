@@ -54,6 +54,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [x] Fix unreadable dropdown popup backgrounds in shared form controls so `quote`, `auth` and workspace select lists keep dark, readable option panels instead of browser-default contrast glitches.
 - [x] Add a branded chevron and unified field-surface variables for shared single-value selects, so dropdowns across brochure/auth/workspace look intentional instead of mixing system arrows with custom field skins.
 - [x] Fix the public-header regression where authenticated brochure pages could still show autofilled inline login inputs alongside session controls.
+- [x] Fix the public login regression where authenticated brochure pages on mobile could hide the signed-in session panel after a successful login, making the login flow look broken even though the session was created.
 - [x] Verify the live cache policy on `HTML`, `CSS`, `JS` and image assets; current production behavior is `HTML`/`healthz` = `Cache-Control: no-store`, while versioned `CSS`/`JS`/image assets return `Cache-Control: max-age=604800, public`.
 - [ ] Run one consolidated live QA pass on `/`, `/about.html`, `/services.html`, `/gallery.html`, `/quote.html`, `/contact.html`, `/auth.html`, both dashboards, two service pages and two location pages.
 - [ ] In that QA pass, explicitly check: `mainbackground.png` inside cards, gold-text readability, desktop header proportions, mobile stacking, login/account/logout/session state and no horizontal scroll on phone breakpoints.
