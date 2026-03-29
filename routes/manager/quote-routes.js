@@ -9,6 +9,7 @@ const {
   toNewQuoteProjectMediaRows,
   toNewQuoteSummary
 } = require('../../utils/newQuoteShape');
+const { sortQuoteAttachments, toQuoteAttachmentSummary } = require('../../utils/quoteAttachments');
 
 const QUOTE_STATUSES = ['pending', 'in_progress', 'responded', 'closed'];
 const QUOTE_PROJECT_TYPES = ['bathroom', 'kitchen', 'interior', 'tiling', 'extension', 'joinery', 'rendering', 'decorating', 'other'];
@@ -58,6 +59,7 @@ module.exports = function createQuoteRoutes({
   asyncHandler,
   managerGuard,
   Quote,
+  QuoteAttachment,
   NewQuote,
   User,
   GroupThread,
@@ -77,6 +79,16 @@ module.exports = function createQuoteRoutes({
   const router = express.Router();
   const includeClient = [{ model: User, as: 'client', attributes: ['id', 'name', 'email', 'phone', 'companyName'], required: false }];
   const hasNewQuoteStore = () => typeof NewQuote?.findAll === 'function';
+
+  const toLegacyQuoteSummary = (quote) => {
+    const plain = typeof quote?.toJSON === 'function' ? quote.toJSON() : { ...(quote || {}) };
+    const attachments = sortQuoteAttachments(Array.isArray(plain.attachments) ? plain.attachments : []).map(toQuoteAttachmentSummary);
+    return {
+      ...plain,
+      attachments,
+      attachmentCount: Number(plain.attachmentCount ?? attachments.length) || attachments.length
+    };
+  };
 
   const loadStagedNewQuote = async (id) => {
     if (typeof NewQuote?.findByPk !== 'function') return null;
@@ -351,7 +363,15 @@ module.exports = function createQuoteRoutes({
           where,
           include: [
             { model: User, as: 'client', attributes: ['id', 'name', 'email', 'phone'] },
-            { model: User, as: 'assignedManager', attributes: ['id', 'name', 'email'] }
+            { model: User, as: 'assignedManager', attributes: ['id', 'name', 'email'] },
+            {
+              model: QuoteAttachment,
+              as: 'attachments',
+              attributes: ['id', 'filename', 'url', 'mimeType', 'sizeBytes', 'createdAt', 'updatedAt'],
+              required: false,
+              separate: true,
+              order: [['createdAt', 'ASC']]
+            }
           ],
           order: [['createdAt', 'DESC']]
         }),
@@ -363,11 +383,12 @@ module.exports = function createQuoteRoutes({
           : Promise.resolve([])
       ]);
 
+      const legacyQuotes = (Array.isArray(quoteRows) ? quoteRows : []).map(toLegacyQuoteSummary);
       const stagedQuotes = (Array.isArray(stagedNewQuoteRows) ? stagedNewQuoteRows : [])
         .map(toNewQuoteSummary)
         .filter((stagedQuote) => matchesStagedQuoteFilters(stagedQuote, req.query));
 
-      const mergedQuotes = [...(Array.isArray(quoteRows) ? quoteRows : []), ...stagedQuotes].sort((left, right) => {
+      const mergedQuotes = [...legacyQuotes, ...stagedQuotes].sort((left, right) => {
         const leftTime = Date.parse(left?.updatedAt || left?.createdAt || 0) || 0;
         const rightTime = Date.parse(right?.updatedAt || right?.createdAt || 0) || 0;
         return rightTime - leftTime;
@@ -395,12 +416,20 @@ module.exports = function createQuoteRoutes({
       const quote = await Quote.findByPk(req.params.id, {
         include: [
           { model: User, as: 'client', attributes: ['id', 'name', 'email', 'phone'] },
-          { model: User, as: 'assignedManager', attributes: ['id', 'name', 'email'] }
+          { model: User, as: 'assignedManager', attributes: ['id', 'name', 'email'] },
+          {
+            model: QuoteAttachment,
+            as: 'attachments',
+            attributes: ['id', 'filename', 'url', 'mimeType', 'sizeBytes', 'createdAt', 'updatedAt'],
+            required: false,
+            separate: true,
+            order: [['createdAt', 'ASC']]
+          }
         ]
       });
 
       if (quote) {
-        return res.json({ quote });
+        return res.json({ quote: toLegacyQuoteSummary(quote) });
       }
 
       const newQuote = await loadStagedNewQuote(req.params.id);

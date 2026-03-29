@@ -5,6 +5,7 @@ const { Op, fn, col, where: sqlWhere } = require('sequelize');
 const { body, param, query, validationResult } = require('express-validator');
 const {
   Quote,
+  QuoteAttachment,
   NewQuote,
   User,
   GroupThread,
@@ -505,6 +506,7 @@ router.use(createQuoteRoutes({
   asyncHandler,
   managerGuard,
   Quote,
+  QuoteAttachment,
   NewQuote,
   User,
   GroupThread,

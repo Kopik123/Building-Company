@@ -199,7 +199,7 @@ const mockClientSession = async (page) => {
             workflowStatus: 'submitted',
             priority: 'high',
             location: 'Manchester',
-            budgetRange: '£12,000-£20,000',
+            budgetRange: 'Â£12,000-Â£20,000',
             assignedManager: { id: 'manager-1', name: 'Daniel Manager', email: 'manager@example.com' }
           }],
           threads: [{
@@ -472,7 +472,7 @@ const mockManagerSession = async (page) => {
           priority: 'high',
           location: 'Manchester',
           postcode: 'M1',
-          budgetRange: '£12,000-£20,000',
+          budgetRange: 'Â£12,000-Â£20,000',
           description: 'Client requests detailed joinery allowance.'
         }],
         pagination: { page: 1, totalPages: 1, total: 1 }
@@ -1000,7 +1000,22 @@ test('manager dashboard quote controls can accept and update a quote', async ({ 
     location: 'Manchester',
     postcode: 'M1',
     description: 'Client requests detailed joinery allowance.',
-    assignedManagerId: null
+    assignedManagerId: null,
+    attachmentCount: 2,
+    attachments: [
+      {
+        name: 'quote-photo-a.png',
+        url: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9pZ0Sq8AAAAASUVORK5CYII=',
+        mimeType: 'image/png',
+        size: 2048
+      },
+      {
+        name: 'quote-photo-b.png',
+        url: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9pZ0Sq8AAAAASUVORK5CYII=',
+        mimeType: 'image/png',
+        size: 3072
+      }
+    ]
   };
 
   await page.route('**/api/manager/quotes?*', async (route) => {
@@ -1033,6 +1048,8 @@ test('manager dashboard quote controls can accept and update a quote', async ({ 
   const quoteCard = page.locator('#quotes-list .dashboard-item').first();
   await expect(quoteCard).toBeVisible();
   await expect(quoteCard.getByRole('button', { name: 'Accept' })).toBeVisible();
+  await expect(quoteCard.locator('.dashboard-quote-preview-card')).toHaveCount(2);
+  await expect(quoteCard.locator('.dashboard-quote-preview-thumb img').first()).toBeVisible();
 
   await quoteCard.getByRole('button', { name: 'Accept' }).click();
   await expect(quoteCard).toContainText(/in_progress/i);

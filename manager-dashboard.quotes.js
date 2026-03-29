@@ -68,14 +68,18 @@
         return;
       }
 
+      const visibleAttachments = normalized.slice(0, 4);
+      const overflowCount = Math.max(0, normalized.length - visibleAttachments.length);
       const grid = document.createElement('div');
       grid.className = 'dashboard-quote-preview-grid';
-      normalized.slice(0, 6).forEach((attachment, index) => {
+
+      visibleAttachments.forEach((attachment, index) => {
         const link = document.createElement('a');
         link.className = 'dashboard-quote-preview-card';
         link.href = attachment.url || '#';
         link.target = '_blank';
         link.rel = 'noreferrer';
+        link.title = attachment.name || `Quote attachment ${index + 1}`;
 
         const thumb = document.createElement('div');
         thumb.className = 'dashboard-quote-preview-thumb';
@@ -86,6 +90,12 @@
           image.alt = attachment.name || `Quote attachment ${index + 1}`;
           image.loading = 'lazy';
           image.decoding = 'async';
+          image.addEventListener('error', () => {
+            thumb.textContent = '';
+            const fallback = document.createElement('span');
+            fallback.textContent = 'FILE';
+            thumb.appendChild(fallback);
+          }, { once: true });
           thumb.appendChild(image);
         } else {
           const fallback = document.createElement('span');
@@ -106,6 +116,28 @@
         link.appendChild(meta);
         grid.appendChild(link);
       });
+
+      if (overflowCount > 0) {
+        const more = document.createElement('div');
+        more.className = 'dashboard-quote-preview-card dashboard-quote-preview-card--more';
+
+        const moreThumb = document.createElement('div');
+        moreThumb.className = 'dashboard-quote-preview-thumb';
+        moreThumb.textContent = `+${overflowCount}`;
+
+        const moreCaption = document.createElement('p');
+        moreCaption.className = 'dashboard-quote-preview-name';
+        moreCaption.textContent = overflowCount === 1 ? '1 more photo' : `${overflowCount} more photos`;
+
+        const moreMeta = document.createElement('span');
+        moreMeta.className = 'dashboard-quote-preview-size';
+        moreMeta.textContent = `${normalized.length} total`;
+
+        more.appendChild(moreThumb);
+        more.appendChild(moreCaption);
+        more.appendChild(moreMeta);
+        grid.appendChild(more);
+      }
 
       previewRoot.appendChild(grid);
       previewRoot.hidden = false;

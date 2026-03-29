@@ -67,3 +67,4 @@
 - 2026-03-29 21:12 | Contact Card Layout Refresh Wave 29 | Plans/Contact Card Layout Refresh Wave 29.md
 - 2026-03-29 23:16 | Logged-In Client New Quote Staging And Manager Conversion Wave 30 | Plans/Logged-In Client New Quote Staging And Manager Conversion Wave 30.md
 - 2026-03-29 23:27 | Logged-In Quote Claim State Cleanup Wave 31 | Plans/Logged-In Quote Claim State Cleanup Wave 31.md
+- 2026-03-30 00:01 | Manager Quote Thumbnail Preview Wave 32 | Plans/Manager Quote Thumbnail Preview Wave 32.md

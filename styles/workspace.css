@@ -306,7 +306,7 @@
 
 .dashboard-quote-preview-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(156px, 1fr));
   gap: 0.55rem;
 }
 
@@ -338,6 +338,7 @@
   place-items: center;
   color: var(--color-gold-2);
   font-size: 0.76rem;
+  font-weight: 700;
   letter-spacing: 0.08em;
 }
 
@@ -1303,4 +1304,16 @@
   .manager-kpi-grid {
     grid-template-columns: 1fr;
   }
+}
+
+
+.dashboard-quote-preview-card--more {
+  justify-content: center;
+  background:
+    linear-gradient(160deg, rgba(30, 22, 10, 0.92), rgba(10, 8, 4, 0.96)),
+    url('/boxbackground.png') center center / cover no-repeat;
+}
+
+.dashboard-quote-preview-card--more .dashboard-quote-preview-thumb {
+  background: linear-gradient(145deg, rgba(209, 164, 74, 0.22), rgba(12, 12, 12, 0.12));
 }
