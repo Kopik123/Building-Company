@@ -4,88 +4,12 @@ import { v2Api } from '../../lib/api';
 import { CrmWorkspacePanels } from '../components/crm-sections.jsx';
 import { useCrmWorkspaceState } from '../hooks/use-crm-workspace-state.js';
 import {
-  CLIENT_LIFECYCLE_STATUSES,
-  ESTIMATE_DECISION_STATUSES,
-  MATERIAL_CATEGORIES,
-  QUOTE_CONTACT_METHODS,
-  PROJECT_STATUSES,
-  PROJECT_STAGES,
-  QUOTE_PRIORITIES,
-  QUOTE_PROJECT_TYPES,
-  QUOTE_STATUSES,
-  QUOTE_WORKFLOW_STATUSES,
-  SERVICE_CATEGORIES,
-  STAFF_CREATION_ROLES,
-  STAFF_ROLES,
-  roleLabels,
-  roleDescriptions,
-  activeProjectStatuses,
-  openQuoteStatuses,
-  MAX_QUOTE_PHOTO_FILES,
-  FINAL_PROJECT_STAGE,
-  createEmptyOverviewSummary,
-  isStaffRole,
   normalizeText,
-  titleCase,
-  formatDateTime,
-  formatActivityTitle,
-  formatActivityMessage,
-  formatActivityMeta,
-  getActivityTone,
-  compactNumber,
-  getTimestamp,
   sortByRecent,
-  getThreadTitle,
-  getThreadMeta,
-  getThreadPreview,
-  getDirectCounterparty,
-  getDirectThreadTitle,
-  getDirectThreadPreview,
-  getDirectThreadMeta,
-  getNotificationTone,
-  getPriorityTone,
-  updateThreadAfterSend,
-  updateDirectThreadAfterSend,
-  toInputValue,
-  createProjectFormState,
-  projectToFormState,
-  createQuoteFormState,
-  quoteToFormState,
-  createStaffFormState,
-  createClientEditorState,
-  clientToFormState,
-  createStaffEditorState,
-  staffToFormState,
-  createServiceFormState,
-  serviceToFormState,
-  createMaterialFormState,
-  materialToFormState,
   toNullablePayload,
-  toNumberPayload,
-  formatMoney,
-  getNextProjectStage,
-  getEstimateHistoryLabel,
-  getEstimateCardSummary,
-  mergeSelectedFiles,
-  getRemainingQuotePhotoSlots,
-  validateQuotePhotoSelection,
-  createEstimateFormState,
-  useAsyncState,
-  Surface,
-  MetricCard,
-  EmptyState,
-  StatusPill,
-  QuickLinkCard,
-  SelectableCard,
-  ProjectCard,
-  QuoteCard,
-  EstimateCard,
-  QuoteEventRow,
-  ThreadRow,
-  DirectThreadRow,
-  MessageBubble,
-  QuoteAttachmentList,
-  NotificationRow
+  createStaffFormState,
+  clientToFormState,
+  staffToFormState
 } from '../kit.jsx';
 
 function CrmPage() {
@@ -155,7 +79,9 @@ function CrmPage() {
 
       if (!createdStaff?.id) throw new Error('Staff response missing payload');
 
-      staff.setData((prev) => sortByRecent([createdStaff, ...prev.filter((member) => member.id !== createdStaff.id)], ['createdAt', 'updatedAt']));
+      staff.setData((prev) =>
+        sortByRecent([createdStaff, ...prev.filter((member) => member.id !== createdStaff.id)], ['createdAt', 'updatedAt'])
+      );
       setStaffForm(createStaffFormState());
       setActionMessage('Staff member created.');
     } catch (error) {
@@ -212,7 +138,9 @@ function CrmPage() {
       if (!updatedStaff?.id) throw new Error('Staff response missing payload');
 
       staff.setData((prev) =>
-        prev.map((member) => (member.id === updatedStaff.id ? updatedStaff : member)).sort((left, right) => String(left.email || '').localeCompare(String(right.email || '')))
+        prev
+          .map((member) => (member.id === updatedStaff.id ? updatedStaff : member))
+          .sort((left, right) => String(left.email || '').localeCompare(String(right.email || '')))
       );
       setStaffEditorForm(staffToFormState(updatedStaff));
       setStaffMessage('Staff record saved.');
@@ -223,45 +151,64 @@ function CrmPage() {
     }
   };
 
+  const summaryPanel = {
+    search,
+    setSearch,
+    clients,
+    staff
+  };
+
+  const createStaffPanel = {
+    canCreateStaff,
+    onCreateStaff,
+    staffForm,
+    onStaffFieldChange,
+    role,
+    saving,
+    actionMessage,
+    actionError
+  };
+
+  const clientsPanel = {
+    clients,
+    filteredClients,
+    selectedClientId,
+    setSelectedClientId,
+    canEditPeople,
+    selectedClient,
+    onSaveClient,
+    clientForm,
+    onClientFieldChange,
+    clientSaving,
+    clientMessage,
+    clientError,
+    clientActivity
+  };
+
+  const staffPanel = {
+    staff,
+    filteredStaff,
+    selectedStaffId,
+    setSelectedStaffId,
+    canEditPeople,
+    selectedStaff,
+    onSaveStaff,
+    staffEditorForm,
+    onStaffEditorFieldChange,
+    role,
+    staffSaving,
+    staffMessage,
+    staffError
+  };
+
   return (
     <CrmWorkspacePanels
-      search={search}
-      setSearch={setSearch}
-      clients={clients}
-      staff={staff}
-      canCreateStaff={canCreateStaff}
-      onCreateStaff={onCreateStaff}
-      staffForm={staffForm}
-      onStaffFieldChange={onStaffFieldChange}
-      role={role}
-      saving={saving}
-      actionMessage={actionMessage}
-      actionError={actionError}
-      filteredClients={filteredClients}
-      selectedClientId={selectedClientId}
-      setSelectedClientId={setSelectedClientId}
-      canEditPeople={canEditPeople}
-      selectedClient={selectedClient}
-      onSaveClient={onSaveClient}
-      clientForm={clientForm}
-      onClientFieldChange={onClientFieldChange}
-      clientSaving={clientSaving}
-      clientMessage={clientMessage}
-      clientError={clientError}
-      clientActivity={clientActivity}
-      filteredStaff={filteredStaff}
-      selectedStaffId={selectedStaffId}
-      setSelectedStaffId={setSelectedStaffId}
-      selectedStaff={selectedStaff}
-      onSaveStaff={onSaveStaff}
-      staffEditorForm={staffEditorForm}
-      onStaffEditorFieldChange={onStaffEditorFieldChange}
-      staffSaving={staffSaving}
-      staffMessage={staffMessage}
-      staffError={staffError}
+      summaryPanel={summaryPanel}
+      createStaffPanel={createStaffPanel}
+      clientsPanel={clientsPanel}
+      staffPanel={staffPanel}
     />
   );
-
 }
 
 export { CrmPage };

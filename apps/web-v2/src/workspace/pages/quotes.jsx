@@ -4,89 +4,12 @@ import { v2Api } from '../../lib/api';
 import { QuoteWorkspacePanels } from '../components/quotes-sections.jsx';
 import { useQuoteWorkspaceState } from '../hooks/use-quote-workspace-state.js';
 import {
-  CLIENT_LIFECYCLE_STATUSES,
-  ESTIMATE_DECISION_STATUSES,
-  MATERIAL_CATEGORIES,
-  QUOTE_CONTACT_METHODS,
-  PROJECT_STATUSES,
-  PROJECT_STAGES,
-  QUOTE_PRIORITIES,
-  QUOTE_PROJECT_TYPES,
-  QUOTE_STATUSES,
-  QUOTE_WORKFLOW_STATUSES,
-  SERVICE_CATEGORIES,
-  STAFF_CREATION_ROLES,
-  STAFF_ROLES,
-  roleLabels,
-  roleDescriptions,
-  activeProjectStatuses,
-  openQuoteStatuses,
-  MAX_QUOTE_PHOTO_FILES,
-  FINAL_PROJECT_STAGE,
-  createEmptyOverviewSummary,
-  isStaffRole,
   normalizeText,
-  titleCase,
-  formatDateTime,
-  formatActivityTitle,
-  formatActivityMessage,
-  formatActivityMeta,
-  getActivityTone,
-  compactNumber,
-  getTimestamp,
-  sortByRecent,
-  getThreadTitle,
-  getThreadMeta,
-  getThreadPreview,
-  getDirectCounterparty,
-  getDirectThreadTitle,
-  getDirectThreadPreview,
-  getDirectThreadMeta,
-  getNotificationTone,
-  getPriorityTone,
-  updateThreadAfterSend,
-  updateDirectThreadAfterSend,
-  toInputValue,
-  createProjectFormState,
-  projectToFormState,
-  createQuoteFormState,
+  QUOTE_WORKFLOW_STATUSES,
+  MAX_QUOTE_PHOTO_FILES,
   quoteToFormState,
-  createStaffFormState,
-  createClientEditorState,
-  clientToFormState,
-  createStaffEditorState,
-  staffToFormState,
-  createServiceFormState,
-  serviceToFormState,
-  createMaterialFormState,
-  materialToFormState,
   toNullablePayload,
-  toNumberPayload,
-  formatMoney,
-  getNextProjectStage,
-  getEstimateHistoryLabel,
-  getEstimateCardSummary,
-  getSelectedFileKey,
-  mergeSelectedFiles,
-  getRemainingQuotePhotoSlots,
-  validateQuotePhotoSelection,
-  createEstimateFormState,
-  useAsyncState,
-  Surface,
-  MetricCard,
-  EmptyState,
-  StatusPill,
-  QuickLinkCard,
-  SelectableCard,
-  ProjectCard,
-  QuoteCard,
-  EstimateCard,
-  QuoteEventRow,
-  ThreadRow,
-  DirectThreadRow,
-  MessageBubble,
-  QuoteAttachmentList,
-  NotificationRow
+  createEstimateFormState
 } from '../kit.jsx';
 
 function QuotesPage() {
@@ -98,7 +21,6 @@ function QuotesPage() {
   const {
     quotes,
     clients,
-    staff,
     search,
     setSearch,
     selectedQuoteId,
@@ -128,7 +50,6 @@ function QuotesPage() {
     responseNote,
     setResponseNote,
     detailState,
-    setDetailState,
     managerOptions,
     filteredQuotes,
     selectedQuote,
@@ -178,7 +99,9 @@ function QuotesPage() {
           contactEmail: toNullablePayload(form.contactEmail)
         });
       }
-      let savedQuote = selectedQuoteId ? await v2Api.updateQuote(selectedQuoteId, payload) : await v2Api.createQuote(payload);
+      let savedQuote = selectedQuoteId
+        ? await v2Api.updateQuote(selectedQuoteId, payload)
+        : await v2Api.createQuote(payload);
       if (!savedQuote?.id) throw new Error('Quote response missing payload');
 
       let uploadedPhotoCount = 0;
@@ -248,10 +171,12 @@ function QuotesPage() {
         notes: toNullablePayload(estimateForm.notes)
       });
       await loadQuoteWorkspace(selectedQuote.id);
-      setEstimateForm((prev) => createEstimateFormState({
-        title: prev.title,
-        description: prev.description || selectedQuote.description || ''
-      }));
+      setEstimateForm((prev) =>
+        createEstimateFormState({
+          title: prev.title,
+          description: prev.description || selectedQuote.description || ''
+        })
+      );
       setActionMessage('Estimate drafted.');
     } catch (error) {
       setActionError(error.message || 'Could not draft estimate');
@@ -354,52 +279,90 @@ function QuotesPage() {
     }
   };
 
+  const quoteBoardPanel = {
+    canCreateQuotes,
+    search,
+    setSearch,
+    startNewQuote,
+    quotes,
+    filteredQuotes,
+    isCreatingQuote,
+    selectedQuoteId,
+    selectQuote
+  };
+
+  const quoteDetailPanel = {
+    canManageQuotes,
+    isCreatingQuote,
+    selectedQuote,
+    detailState,
+    form,
+    setForm,
+    clients,
+    managerOptions,
+    onSubmit,
+    quoteFiles,
+    onQuoteFilesChange,
+    saving,
+    isSecondaryBusy,
+    actionMessage,
+    actionError,
+    onTakeOwnership,
+    onConvertToProject,
+    isBusyAction,
+    selectedQuoteId,
+    currentEstimate
+  };
+
+  const quoteAttachmentsPanel = {
+    canManageQuotes,
+    selectedQuote,
+    isCreatingQuote,
+    followUpUploadInputKey,
+    onFollowUpQuoteFilesChange,
+    remainingQuotePhotoSlots,
+    followUpQuoteFiles,
+    onUploadFollowUpPhotos,
+    isSecondaryBusy,
+    isBusyAction
+  };
+
+  const quoteEstimatesPanel = {
+    selectedQuote,
+    isCreatingQuote,
+    canManageQuotes,
+    detailState,
+    currentEstimate,
+    estimateForm,
+    setEstimateForm,
+    onCreateEstimate,
+    onSendEstimate,
+    onConvertToProject,
+    isSecondaryBusy,
+    isBusyAction,
+    canRespondToEstimates,
+    responseNote,
+    setResponseNote,
+    clientEstimateNeedsDecision,
+    onRespondToEstimate,
+    quoteWorkflowStatuses: QUOTE_WORKFLOW_STATUSES
+  };
+
+  const quoteTimelinePanel = {
+    selectedQuote,
+    isCreatingQuote,
+    detailState
+  };
+
   return (
     <QuoteWorkspacePanels
-      canManageQuotes={canManageQuotes}
-      canRespondToEstimates={canRespondToEstimates}
-      canCreateQuotes={canCreateQuotes}
-      search={search}
-      setSearch={setSearch}
-      startNewQuote={startNewQuote}
-      quotes={quotes}
-      filteredQuotes={filteredQuotes}
-      isCreatingQuote={isCreatingQuote}
-      selectedQuoteId={selectedQuoteId}
-      selectQuote={selectQuote}
-      selectedQuote={selectedQuote}
-      detailState={detailState}
-      form={form}
-      setForm={setForm}
-      clients={clients}
-      managerOptions={managerOptions}
-      onSubmit={onSubmit}
-      quoteFiles={quoteFiles}
-      onQuoteFilesChange={onQuoteFilesChange}
-      saving={saving}
-      isSecondaryBusy={isSecondaryBusy}
-      actionMessage={actionMessage}
-      actionError={actionError}
-      onTakeOwnership={onTakeOwnership}
-      onConvertToProject={onConvertToProject}
-      isBusyAction={isBusyAction}
-      currentEstimate={currentEstimate}
-      remainingQuotePhotoSlots={remainingQuotePhotoSlots}
-      followUpUploadInputKey={followUpUploadInputKey}
-      onFollowUpQuoteFilesChange={onFollowUpQuoteFilesChange}
-      followUpQuoteFiles={followUpQuoteFiles}
-      onUploadFollowUpPhotos={onUploadFollowUpPhotos}
-      estimateForm={estimateForm}
-      setEstimateForm={setEstimateForm}
-      onCreateEstimate={onCreateEstimate}
-      onSendEstimate={onSendEstimate}
-      responseNote={responseNote}
-      setResponseNote={setResponseNote}
-      clientEstimateNeedsDecision={clientEstimateNeedsDecision}
-      onRespondToEstimate={onRespondToEstimate}
+      quoteBoardPanel={quoteBoardPanel}
+      quoteDetailPanel={quoteDetailPanel}
+      quoteAttachmentsPanel={quoteAttachmentsPanel}
+      quoteEstimatesPanel={quoteEstimatesPanel}
+      quoteTimelinePanel={quoteTimelinePanel}
     />
   );
-
 }
 
 export { QuotesPage };

@@ -3,100 +3,13 @@ import { useAuth } from '../../lib/auth.jsx';
 import { v2Api } from '../../lib/api';
 import { PrivateInboxPanels } from '../components/private-inbox-sections.jsx';
 import { usePrivateInboxWorkspaceState } from '../hooks/use-private-inbox-workspace-state.js';
-import {
-  CLIENT_LIFECYCLE_STATUSES,
-  ESTIMATE_DECISION_STATUSES,
-  MATERIAL_CATEGORIES,
-  QUOTE_CONTACT_METHODS,
-  PROJECT_STATUSES,
-  PROJECT_STAGES,
-  QUOTE_PRIORITIES,
-  QUOTE_PROJECT_TYPES,
-  QUOTE_STATUSES,
-  QUOTE_WORKFLOW_STATUSES,
-  SERVICE_CATEGORIES,
-  STAFF_CREATION_ROLES,
-  STAFF_ROLES,
-  roleLabels,
-  roleDescriptions,
-  activeProjectStatuses,
-  openQuoteStatuses,
-  MAX_QUOTE_PHOTO_FILES,
-  FINAL_PROJECT_STAGE,
-  createEmptyOverviewSummary,
-  isStaffRole,
-  normalizeText,
-  titleCase,
-  formatDateTime,
-  formatActivityTitle,
-  formatActivityMessage,
-  formatActivityMeta,
-  getActivityTone,
-  compactNumber,
-  getTimestamp,
-  sortByRecent,
-  getThreadTitle,
-  getThreadMeta,
-  getThreadPreview,
-  getDirectCounterparty,
-  getDirectThreadTitle,
-  getDirectThreadPreview,
-  getDirectThreadMeta,
-  getNotificationTone,
-  getPriorityTone,
-  updateThreadAfterSend,
-  updateDirectThreadAfterSend,
-  toInputValue,
-  createProjectFormState,
-  projectToFormState,
-  createQuoteFormState,
-  quoteToFormState,
-  createStaffFormState,
-  createClientEditorState,
-  clientToFormState,
-  createStaffEditorState,
-  staffToFormState,
-  createServiceFormState,
-  serviceToFormState,
-  createMaterialFormState,
-  materialToFormState,
-  toNullablePayload,
-  toNumberPayload,
-  formatMoney,
-  getNextProjectStage,
-  getEstimateHistoryLabel,
-  getEstimateCardSummary,
-  mergeSelectedFiles,
-  getRemainingQuotePhotoSlots,
-  validateQuotePhotoSelection,
-  createEstimateFormState,
-  useAsyncState,
-  Surface,
-  MetricCard,
-  EmptyState,
-  StatusPill,
-  QuickLinkCard,
-  SelectableCard,
-  ProjectCard,
-  QuoteCard,
-  EstimateCard,
-  QuoteEventRow,
-  ThreadRow,
-  DirectThreadRow,
-  MessageBubble,
-  QuoteAttachmentList,
-  NotificationRow
-} from '../kit.jsx';
+import { sortByRecent, updateDirectThreadAfterSend } from '../kit.jsx';
 
 function PrivateInboxPage() {
   const { user } = useAuth();
   const {
     staffMode,
     directThreads,
-    projects,
-    quotes,
-    clients,
-    staff,
     selectedThreadId,
     setSelectedThreadId,
     search,
@@ -113,11 +26,9 @@ function PrivateInboxPage() {
     setRecipientEmail,
     subject,
     setSubject,
-    isCreatingNewThread,
     setIsCreatingNewThread,
     messageState,
     setMessageState,
-    preferredManager,
     peopleDirectory,
     filteredThreads,
     selectedThread,
@@ -150,7 +61,11 @@ function PrivateInboxPage() {
       if (!threadId) {
         const recipient = resolveRecipient();
         if (!recipient?.id) {
-          throw new Error(staffMode ? 'Choose an existing client or staff email first.' : 'No assigned manager is available for a private route yet.');
+          throw new Error(
+            staffMode
+              ? 'Choose an existing client or staff email first.'
+              : 'No assigned manager is available for a private route yet.'
+          );
         }
 
         const threadSubject = String(subject || '').trim() || `Private conversation - ${recipient.name || recipient.email}`;
@@ -204,36 +119,40 @@ function PrivateInboxPage() {
     }
   };
 
-  return (
-    <PrivateInboxPanels
-      search={search}
-      setSearch={setSearch}
-      staffMode={staffMode}
-      startNewThread={startNewThread}
-      directThreads={directThreads}
-      filteredThreads={filteredThreads}
-      user={user}
-      selectedThreadId={selectedThreadId}
-      onSelectThread={onSelectThread}
-      selectedThread={selectedThread}
-      canStartThread={canStartThread}
-      recipientLabel={recipientLabel}
-      messageState={messageState}
-      peopleDirectory={peopleDirectory}
-      recipientEmail={recipientEmail}
-      setRecipientEmail={setRecipientEmail}
-      subject={subject}
-      setSubject={setSubject}
-      draft={draft}
-      setDraft={setDraft}
-      onSubmit={onSubmit}
-      selectedFiles={selectedFiles}
-      setSelectedFiles={setSelectedFiles}
-      composerError={composerError}
-      sending={sending}
-    />
-  );
+  const sidebarPanel = {
+    search,
+    setSearch,
+    staffMode,
+    startNewThread,
+    directThreads,
+    filteredThreads,
+    user,
+    selectedThreadId,
+    onSelectThread
+  };
 
+  const conversationPanel = {
+    selectedThread,
+    user,
+    staffMode,
+    canStartThread,
+    recipientLabel,
+    messageState,
+    peopleDirectory,
+    recipientEmail,
+    setRecipientEmail,
+    subject,
+    setSubject,
+    draft,
+    setDraft,
+    onSubmit,
+    selectedFiles,
+    setSelectedFiles,
+    composerError,
+    sending
+  };
+
+  return <PrivateInboxPanels sidebarPanel={sidebarPanel} conversationPanel={conversationPanel} />;
 }
 
 export { PrivateInboxPage };
