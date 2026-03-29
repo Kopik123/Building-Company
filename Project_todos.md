@@ -167,7 +167,8 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [ ] If exact chronology becomes important, replace the derived `Company Events` overview in `manager-dashboard` with a persisted audit/event timeline.
 - [ ] Decide later whether `header.png` should remain only as a historical/supporting asset now that `title.png` is the shared public shell lockup.
 - [ ] Finish the public shell asset split by moving the remaining quote/gallery responsive selectors and other surface-specific leftovers out of `styles/public.css` once the new bundles settle in browser QA.
-- [ ] Continue the `web-v2` refactor after the first render-section extraction by giving `inventory` the same split and then reducing the still-broad props/import surfaces in `quotes`, `crm` and `private-inbox` into smaller list/detail/editor modules.
+- [x] Give `inventory` the same `web-v2` split pattern as `quotes`, `CRM` and `private inbox` by extracting a dedicated workspace-state hook plus render-section components before the next finer-grained component pass.
+- [ ] Continue the `web-v2` refactor after the inventory split by reducing the still-broad props/import surfaces in `quotes`, `crm`, `private-inbox` and `inventory` into smaller list/detail/editor modules.
 - [ ] Convert `auth.html`, `client-dashboard.html` and `manager-dashboard.html` into thinner compatibility shells once `/app-v2` reaches the remaining operational parity, instead of continuing to grow legacy HTML dashboards.
 - [ ] Revisit immutable caching for brochure/background images once non-gallery media is fully content-addressed; this wave intentionally keeps `/Gallery` and `/uploads` on `no-store` and other images on conservative cache.
 - [ ] Keep using `npm.cmd` for local Windows PowerShell 5.1 flows, because plain `npm` is still blocked by local execution policy during repo automation.
