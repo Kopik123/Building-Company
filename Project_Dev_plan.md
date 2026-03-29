@@ -685,6 +685,11 @@
 - Added backend/mobile-foundation regression coverage in `tests/api-v2/auth-flow.test.js`, `tests/api-v2/devices-push-registration.test.js` and `tests/mobile/mobile-foundation.test.js`, then used those suites as the first automated safety net for the new mobile foundation layer.
 ## 2026-03-29
 
+- Saved `Plans/Dropdown Selection Background Readability Wave 22.md`, registered it in `Plans/Plan History.md`, and recorded the shared dropdown-background readability fix as a closed checklist item in `Project_todos.md`.
+- Updated `styles/base.css` so shared `select` controls now opt into `color-scheme: dark` and expanded `option` / `optgroup` rows use an explicit dark background with readable text instead of inheriting unstable browser defaults.
+- Cleared `text-shadow` on popup options so dropdown rows stay readable even when brochure cards or workspace shells apply decorative text-shadow to parent copy.
+- Re-ran `git diff --check` and focused Playwright coverage for the core brochure routes after the shared select-style change; both stayed green.
+
 - Saved `Plans/Public Quote Rate Limit Scope Fix Wave 21.md`, registered it in `Plans/Plan History.md`, and recorded the quote rate-limit scope fix as a closed checklist item in `Project_todos.md`.
 - Updated `app.js` so the shared global `/api/*` limiter now skips public guest quote paths via `isPublicQuoteApiPath(...)`, while `/api/quotes/guest` and `/api/v2/public/quotes` run under a dedicated public-quote limiter and claim confirmation/request routes keep the stricter claim limiter.
 - Added an app-level regression in `tests/api-v2/app-legacy-routes.test.js` that verifies public quote paths are excluded from the global limiter and that the dedicated quote limiter is configured separately from auth/contact limits.

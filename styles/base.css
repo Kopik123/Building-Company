@@ -107,6 +107,21 @@ textarea {
   padding: 0.66rem 0.75rem;
 }
 
+select {
+  color-scheme: dark;
+}
+
+select option,
+select optgroup {
+  color: var(--color-text);
+  background: #090909;
+  text-shadow: none;
+}
+
+select optgroup {
+  font-weight: 700;
+}
+
 input::placeholder,
 textarea::placeholder {
   color: rgba(231, 188, 98, 0.8);
