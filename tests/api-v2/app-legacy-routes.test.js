@@ -84,6 +84,38 @@ test('createApp keeps the legacy gallery contract unchanged', async () => {
   assert.equal(second.headers['x-cache'], 'HIT');
 });
 
+test('public quote API paths are excluded from the global limiter and use a dedicated quote limiter', async () => {
+  mockModels(createModelsStub());
+
+  const capturedRateLimitOptions = [];
+  mock('express-rate-limit', (options = {}) => {
+    capturedRateLimitOptions.push(options);
+    return (_req, _res, next) => next();
+  });
+
+  const { createApp, isPublicQuoteApiPath } = loadRoute('app.js');
+  createApp();
+
+  assert.equal(isPublicQuoteApiPath('/api/quotes/guest'), true);
+  assert.equal(isPublicQuoteApiPath('/api/quotes/guest/abc123/attachments'), true);
+  assert.equal(isPublicQuoteApiPath('/api/v2/public/quotes'), true);
+  assert.equal(isPublicQuoteApiPath('/api/v2/public/quotes/abc123/claim/request'), true);
+  assert.equal(isPublicQuoteApiPath('/api/manager/projects'), false);
+
+  const globalLimiterOptions = capturedRateLimitOptions.find((entry) => entry.max === 150);
+  const publicQuoteLimiterOptions = capturedRateLimitOptions.find((entry) => entry.max === 50);
+  const authLimiterOptions = capturedRateLimitOptions.find((entry) => entry.max === 20);
+  const claimLimiterOptions = capturedRateLimitOptions.find((entry) => entry.max === 10 && entry.windowMs === 15 * 60 * 1000);
+
+  assert.ok(globalLimiterOptions?.skip, 'global limiter should skip public quote paths');
+  assert.equal(globalLimiterOptions.skip({ originalUrl: '/api/v2/public/quotes' }), true);
+  assert.equal(globalLimiterOptions.skip({ originalUrl: '/api/quotes/guest/abc123/attachments' }), true);
+  assert.equal(globalLimiterOptions.skip({ originalUrl: '/api/manager/projects' }), false);
+  assert.equal(publicQuoteLimiterOptions?.windowMs, 15 * 60 * 1000);
+  assert.equal(authLimiterOptions?.windowMs, 15 * 60 * 1000);
+  assert.equal(claimLimiterOptions?.windowMs, 15 * 60 * 1000);
+});
+
 test('createApp keeps legacy contact validation and api 404 responses', async () => {
   mockModels(createModelsStub());
 

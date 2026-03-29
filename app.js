@@ -19,13 +19,23 @@ const contactRoutes = require('./routes/contact');
 const legacyGalleryRoutes = require('./routes/gallery');
 const apiV2Routes = require('./api/v2');
 
-const createRateLimiter = (windowMs, max) =>
+const createRateLimiter = (windowMs, max, options = {}) =>
   rateLimit({
     windowMs,
     max,
     standardHeaders: true,
-    legacyHeaders: false
+    legacyHeaders: false,
+    ...options
   });
+
+const isPublicQuoteApiPath = (reqOrPath) => {
+  const raw = typeof reqOrPath === 'string'
+    ? reqOrPath
+    : (reqOrPath?.originalUrl || reqOrPath?.baseUrl || reqOrPath?.path || reqOrPath?.url || '');
+  const pathname = String(raw || '').split('?')[0];
+  return /^\/api\/quotes\/guest(?:\/|$)/.test(pathname)
+    || /^\/api\/v2\/public\/quotes(?:\/|$)/.test(pathname);
+};
 
 const isMutableMediaPath = (filePath) => {
   const normalized = String(filePath || '').replaceAll('\\', '/').toLowerCase();
@@ -126,8 +136,11 @@ const createApp = () => {
 
   app.set('trust proxy', 1);
 
-  const globalLimiter = createRateLimiter(15 * 60 * 1000, 150);
+  const globalLimiter = createRateLimiter(15 * 60 * 1000, 150, {
+    skip: isPublicQuoteApiPath
+  });
   const authLimiter = createRateLimiter(15 * 60 * 1000, 20);
+  const publicQuoteLimiter = createRateLimiter(15 * 60 * 1000, 50);
   const claimLimiter = createRateLimiter(15 * 60 * 1000, 10);
   const contactLimiter = createRateLimiter(60 * 60 * 1000, 10);
 
@@ -176,7 +189,10 @@ const createApp = () => {
   app.use('/api/', globalLimiter);
   app.use('/api/auth', authLimiter);
   app.use('/api/v2/auth', authLimiter);
+  app.use('/api/quotes/guest', publicQuoteLimiter);
+  app.use('/api/v2/public/quotes', publicQuoteLimiter);
   app.use('/api/quotes/guest/:id/claim', claimLimiter);
+  app.use('/api/v2/public/quotes/:id/claim', claimLimiter);
   app.use('/api/contact', contactLimiter);
 
   app.use('/api/auth', authRoutes);
@@ -230,5 +246,6 @@ const createApp = () => {
 
 module.exports = {
   createApp,
-  setStaticCacheHeaders
+  setStaticCacheHeaders,
+  isPublicQuoteApiPath
 };

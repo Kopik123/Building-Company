@@ -56,3 +56,4 @@
 - 2026-03-29 17:59 | Quote Budget Range Expansion Wave 18 | Plans/Quote Budget Range Expansion Wave 18.md
 - 2026-03-29 18:17 | Quote Friendly Reference Code Wave 19 | Plans/Quote Friendly Reference Code Wave 19.md
 - 2026-03-29 18:59 | Public Runtime Helper Deduplication Wave 20 | Plans/Public Runtime Helper Deduplication Wave 20.md
+- 2026-03-29 19:05 | Public Quote Rate Limit Scope Fix Wave 21 | Plans/Public Quote Rate Limit Scope Fix Wave 21.md

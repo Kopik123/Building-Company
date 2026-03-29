@@ -685,6 +685,11 @@
 - Added backend/mobile-foundation regression coverage in `tests/api-v2/auth-flow.test.js`, `tests/api-v2/devices-push-registration.test.js` and `tests/mobile/mobile-foundation.test.js`, then used those suites as the first automated safety net for the new mobile foundation layer.
 ## 2026-03-29
 
+- Saved `Plans/Public Quote Rate Limit Scope Fix Wave 21.md`, registered it in `Plans/Plan History.md`, and recorded the quote rate-limit scope fix as a closed checklist item in `Project_todos.md`.
+- Updated `app.js` so the shared global `/api/*` limiter now skips public guest quote paths via `isPublicQuoteApiPath(...)`, while `/api/quotes/guest` and `/api/v2/public/quotes` run under a dedicated public-quote limiter and claim confirmation/request routes keep the stricter claim limiter.
+- Added an app-level regression in `tests/api-v2/app-legacy-routes.test.js` that verifies public quote paths are excluded from the global limiter and that the dedicated quote limiter is configured separately from auth/contact limits.
+- Re-ran `node --check app.js`, `node --check tests/api-v2/app-legacy-routes.test.js`, `node --test tests/api-v2/app-legacy-routes.test.js`, and focused Playwright coverage for public quote submit/photo-retry flows; all passed after the limiter-scope fix.
+
 - Saved `Plans/Public Runtime Helper Deduplication Wave 20.md`, registered it in `Plans/Plan History.md`, and recorded the public-shell helper deduplication as a closed checklist item in `Project_todos.md`.
 - Extended `runtime.js` with the shared quote-claim helper surface (`QUOTE_CLAIM_STORAGE_KEY`, pending-claim read/save/clear helpers, active-claim check, `humanizeToken`, `humanChannel`, `formatTimestamp`) so `auth.html` and `quote.html` read one browser runtime implementation instead of keeping their own copies.
 - Removed duplicated quote-claim storage, timestamp-formatting and token-humanization logic from `auth.js` and `quote.js`, rewiring both entry scripts to consume the shared runtime helpers while keeping the guest quote, private preview and auth claim contracts unchanged.
