@@ -48,3 +48,4 @@
 - 2026-03-29 09:16 | Web-v2 Workspace View-Model Adapter Wave 10 | Plans/Web-v2 Workspace View-Model Adapter Wave 10.md
 - 2026-03-29 09:24 | Web-v2 Domain Action Hook Extraction Wave 11 | Plans/Web-v2 Domain Action Hook Extraction Wave 11.md
 - 2026-03-29 09:27 | Web-v2 Controller Hook And JSDoc Contract Wave 12 | Plans/Web-v2 Controller Hook And JSDoc Contract Wave 12.md
+- 2026-03-29 16:00 | Web-v2 First Authenticated Web Policy Wave 13 | Plans/Web-v2 First Authenticated Web Policy Wave 13.md

@@ -102,6 +102,20 @@ W praktyce:
 - `client-dashboard.html` i `manager-dashboard.html` nadal obsługują część realnych workflow,
 - ale strategiczny kierunek auth web to `web-v2`.
 
+### 3.2.1 Polityka dalszego rozwoju auth web
+
+Repo przyjmuje teraz jawny kierunek:
+
+- nowe authenticated web feature work trafia do `apps/web-v2` w pierwszej kolejno?ci,
+- legacy `auth.html`, `client-dashboard.html` i `manager-dashboard.html` s? compatibility-only entry shellami,
+- zmiany w legacy s? dopuszczalne tylko jako hotfix, session/cutover bridge albo ma?y compatibility patch potrzebny do bezpiecznego rolloutu.
+
+To rozr??nienie jest wa?ne, bo:
+
+- `web-v2` opiera si? na `api/v2`, wsp?lnych kontraktach i modelu sesji przygotowanym pod przysz?y Android/iOS,
+- legacy dashboardy s? nadal online, ale nie powinny znowu stawa? si? domy?lnym miejscem rozwoju produktu,
+- ka?de dalsze wzmacnianie legacy zwi?ksza koszt p??niejszego cutoveru i dryf kontrakt?w.
+
 ### 3.3 `web-v2`
 
 `apps/web-v2` to Reactowa aplikacja auth-aware.

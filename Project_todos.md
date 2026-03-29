@@ -31,7 +31,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [x] Finish the remaining manager parity gaps in `web-v2`: richer project lifecycle actions, broader delete/archive ownership, and the last legacy-only manager flows.
 - [x] Add one aggregated `api/v2/overview` contract (or equivalent typed dashboard summary layer) before default cutover so `web-v2` stops composing the top board from many separate requests.
 - [x] Add direct `/app-v2` UI regression coverage for `Private Inbox` and `Project Chat`, including attachment-first direct-thread creation, so rollout-shell messaging is covered outside legacy dashboard smoke tests.
-- [ ] Move new authenticated web feature work to `apps/web-v2` first unless the task is explicitly legacy-only or cutover-critical.
+- [x] Move new authenticated web feature work to `apps/web-v2` first unless the task is explicitly legacy-only or cutover-critical.
 - [x] Unify auth/session ownership across legacy web and `api/v2` by bridging both surfaces through shared token helpers and synced browser session storage, so legacy pages and `web-v2` no longer operate as isolated session islands during cutover.
 - [x] Integrate `apps/web-v2` into the real runtime delivery path under `/app-v2`; the next step is parity work and deciding when account redirects/cutover should start using it by default.
 - [x] Remove the hardcoded production fallback from `apps/mobile-v1/src/api.js` and switch mobile API base selection to explicit local/staging/production config.

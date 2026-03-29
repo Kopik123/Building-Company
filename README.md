@@ -14,6 +14,13 @@ strona firmy budowlanej
 - Mobile v1 app scaffold: `apps/mobile-v1`
 - Cutover checklist: `deploy/CUTOVER_CHECKLIST_STAGING_PROD_v2.md`
 
+### Authenticated web direction
+
+- `apps/web-v2` is the canonical authenticated web app for new product work.
+- `auth.html`, `client-dashboard.html`, and `manager-dashboard.html` remain online only as compatibility entry shells during controlled cutover.
+- New authenticated features should be implemented in `apps/web-v2` first unless the task is explicitly legacy-only or cutover-critical.
+- When a legacy page still needs a change, prefer the smallest compatibility-only patch and keep the real domain/API ownership portable for future `web-v2` and Android/iOS clients.
+
 ### Test commands
 
 ```bash
