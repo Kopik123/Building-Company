@@ -43,3 +43,4 @@
 - 2026-03-29 02:14 | Web-v2 Render Section Split Wave 5 | Plans/Web-v2 Render Section Split Wave 5.md
 - 2026-03-29 02:23 | Web-v2 Inventory Hook And Section Split Wave 6 | Plans/Web-v2 Inventory Hook And Section Split Wave 6.md
 - 2026-03-29 09:00 | Web-v2 Prop Surface Narrowing Wave 7 | Plans/Web-v2 Prop Surface Narrowing Wave 7.md
+- 2026-03-29 09:05 | Web-v2 Quote Surface Component Split Wave 8 | Plans/Web-v2 Quote Surface Component Split Wave 8.md
