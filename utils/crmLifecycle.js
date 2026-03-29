@@ -22,10 +22,10 @@ const buildLifecyclePayload = (status) => ({
   crmLifecycleUpdatedAt: new Date()
 });
 
-const advanceClientLifecycle = async (clientRecord, nextStatus) => {
+const advanceClientLifecycle = async (clientRecord, nextStatus, options = null) => {
   if (!clientRecord || typeof clientRecord.update !== 'function') return clientRecord || null;
   if (!shouldAdvanceLifecycle(clientRecord.crmLifecycleStatus, nextStatus)) return clientRecord;
-  await clientRecord.update(buildLifecyclePayload(nextStatus));
+  await clientRecord.update(buildLifecyclePayload(nextStatus), options || undefined);
   return clientRecord;
 };
 

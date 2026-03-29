@@ -19,7 +19,7 @@ const logActivityFailure = (scope, error, meta = {}) => {
   });
 };
 
-const createActivityEvent = async (ActivityEvent, payload, scope = 'activity_event_create') => {
+const createActivityEvent = async (ActivityEvent, payload, scope = 'activity_event_create', options = null) => {
   if (typeof ActivityEvent?.create !== 'function') return null;
 
   try {
@@ -29,7 +29,7 @@ const createActivityEvent = async (ActivityEvent, payload, scope = 'activity_eve
       message: null,
       data: null,
       ...payload
-    });
+    }, options || undefined);
   } catch (error) {
     logActivityFailure(scope, error, {
       entityType: payload?.entityType,

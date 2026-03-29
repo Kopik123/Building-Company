@@ -63,6 +63,7 @@ module.exports = function createQuoteRoutes({
   Notification,
   Project,
   ProjectMedia,
+  sequelize,
   Op,
   fn,
   col,
@@ -77,6 +78,7 @@ module.exports = function createQuoteRoutes({
   const hasNewQuoteStore = () => typeof NewQuote?.findAll === 'function';
 
   const stagedNewQuoteWorkflow = createStagedNewQuoteWorkflow({
+    sequelize,
     Project,
     ProjectMedia,
     GroupThread,

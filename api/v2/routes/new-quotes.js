@@ -15,7 +15,8 @@ const {
   Notification,
   Project,
   ProjectMedia,
-  User
+  User,
+  sequelize
 } = require('../../../models');
 const asyncHandler = require('../../../utils/asyncHandler');
 const { authV2 } = require('../middleware/auth');
@@ -65,18 +66,27 @@ const loadNewQuote = async (id) => {
   return NewQuote.findByPk(id, { include: includeClient });
 };
 
-const findManagerRecipients = async () => {
+const findManagerRecipients = async (options = null) => {
   if (typeof User?.findAll !== 'function') return [];
   return User.findAll({
     where: {
       role: { [Op.in]: ['manager', 'admin'] },
       isActive: true
-    }
+    },
+    ...(options || {})
   });
 };
 
+const withNewQuoteTransaction = async (handler) => {
+  if (typeof sequelize?.transaction !== 'function') {
+    return handler(null);
+  }
+
+  return sequelize.transaction(async (transaction) => handler(transaction));
+};
 
 const stagedNewQuoteWorkflow = createStagedNewQuoteWorkflow({
+  sequelize,
   Project,
   ProjectMedia,
   GroupThread,
@@ -257,59 +267,66 @@ router.post(
 
     let created;
     try {
-      created = await NewQuote.create({
-        quoteRef,
-        clientId: req.v2User.id,
-        clientName: accountName || String(req.body.name || '').trim() || null,
-        clientEmail: accountEmail || normalizeEmail(req.body.email) || null,
-        clientPhone: accountPhone || normalizePhone(req.body.phone) || null,
-        projectType,
-        location,
-        postcode: postcode || null,
-        budgetRange,
-        proposalDetails,
-        description,
-        attachments: createNewQuoteAttachmentEntries(files),
-        sourceChannel: 'client_quote_portal'
+      created = await withNewQuoteTransaction(async (transaction) => {
+        const transactionOptions = transaction ? { transaction } : undefined;
+        const stagedQuote = await NewQuote.create({
+          quoteRef,
+          clientId: req.v2User.id,
+          clientName: accountName || String(req.body.name || '').trim() || null,
+          clientEmail: accountEmail || normalizeEmail(req.body.email) || null,
+          clientPhone: accountPhone || normalizePhone(req.body.phone) || null,
+          projectType,
+          location,
+          postcode: postcode || null,
+          budgetRange,
+          proposalDetails,
+          description,
+          attachments: createNewQuoteAttachmentEntries(files),
+          sourceChannel: 'client_quote_portal'
+        }, transactionOptions);
+
+        const clientRecord = typeof User?.findByPk === 'function'
+          ? await User.findByPk(req.v2User.id, transactionOptions)
+          : req.v2User;
+        await advanceClientLifecycle(clientRecord, 'quoted', transactionOptions);
+
+        await createActivityEvent(ActivityEvent, {
+          actorUserId: req.v2User.id,
+          entityType: 'new_quote',
+          entityId: stagedQuote.id,
+          clientId: req.v2User.id,
+          visibility: 'internal',
+          eventType: 'new_quote_submitted',
+          title: 'Client quote request submitted',
+          message: `Client submitted staged quote ${quoteRef}.`,
+          data: {
+            quoteRef,
+            projectType,
+            location,
+            attachmentCount: Array.isArray(stagedQuote.attachments) ? stagedQuote.attachments.length : 0
+          }
+        }, 'client_new_quote_submit_activity', transactionOptions);
+
+        const managerRecipients = await findManagerRecipients(transactionOptions);
+        if (managerRecipients.length && typeof Notification?.bulkCreate === 'function') {
+          await Notification.bulkCreate(managerRecipients.map((user) => ({
+            userId: user.id,
+            type: 'new_quote_submitted',
+            title: `New quote request ${quoteRef}`,
+            body: `${accountName || accountEmail || 'Client'} submitted a new quote request for ${projectType} in ${location}.`,
+            data: {
+              newQuoteId: stagedQuote.id,
+              quoteRef,
+              clientId: req.v2User.id
+            }
+          })), transactionOptions);
+        }
+
+        return stagedQuote;
       });
     } catch (error) {
       await cleanupUploadedFiles(files);
       throw error;
-    }
-
-    const clientRecord = typeof User?.findByPk === 'function' ? await User.findByPk(req.v2User.id) : req.v2User;
-    await advanceClientLifecycle(clientRecord, 'quoted');
-
-    await createActivityEvent(ActivityEvent, {
-      actorUserId: req.v2User.id,
-      entityType: 'new_quote',
-      entityId: created.id,
-      clientId: req.v2User.id,
-      visibility: 'internal',
-      eventType: 'new_quote_submitted',
-      title: 'Client quote request submitted',
-      message: `Client submitted staged quote ${quoteRef}.`,
-      data: {
-        quoteRef,
-        projectType,
-        location,
-        attachmentCount: Array.isArray(created.attachments) ? created.attachments.length : 0
-      }
-    }, 'client_new_quote_submit_activity');
-
-    const managerRecipients = await findManagerRecipients();
-    if (managerRecipients.length && typeof Notification?.bulkCreate === 'function') {
-      await Notification.bulkCreate(managerRecipients.map((user) => ({
-        userId: user.id,
-        type: 'new_quote_submitted',
-        title: `New quote request ${quoteRef}`,
-        body: `${accountName || accountEmail || 'Client'} submitted a new quote request for ${projectType} in ${location}.`,
-        data: {
-          newQuoteId: created.id,
-          quoteRef,
-          clientId: req.v2User.id
-        }
-      })));
     }
 
     const hydrated = await loadNewQuote(created.id);

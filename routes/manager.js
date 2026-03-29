@@ -514,6 +514,7 @@ router.use(createQuoteRoutes({
   Notification,
   Project,
   ProjectMedia,
+  sequelize,
   Op,
   fn,
   col,
