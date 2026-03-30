@@ -4,15 +4,18 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Quote | Level Lines Studio</title>
-  <meta name="description" content="Send a premium renovation enquiry to Level Lines Studio for bathroom, kitchen and interior projects across the North West." />
+  <meta name="description" content="Send a private renovation enquiry to Level Lines Studio for bathrooms, kitchens, interior renovations and connected finish trades." />
   <meta name="robots" content="index,follow,max-image-preview:large" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Level Lines Studio" />
   <meta property="og:title" content="Quote | Level Lines Studio" />
-  <meta property="og:description" content="Send a premium renovation enquiry to Level Lines Studio for bathroom, kitchen and interior projects across the North West." />
+  <meta property="og:description" content="Send a private renovation enquiry to Level Lines Studio for bathrooms, kitchens, interior renovations and connected finish trades." />
   <meta property="og:image" content="https://levellines.co.uk/Gallery/premium/kitchen-panorama-main.jpg" />
   <meta property="og:url" content="https://levellines.co.uk/quote.html" />
   <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Quote | Level Lines Studio" />
+  <meta name="twitter:description" content="Send a private renovation enquiry to Level Lines Studio for bathrooms, kitchens, interior renovations and connected finish trades." />
+  <meta name="twitter:image" content="https://levellines.co.uk/Gallery/premium/kitchen-panorama-main.jpg" />
   <link rel="canonical" href="https://levellines.co.uk/quote.html" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -20,50 +23,52 @@
   <link rel="stylesheet" href="/styles/tokens.css" />
   <link rel="stylesheet" href="/styles/base.css" />
   <link rel="stylesheet" href="/styles/public.css" />
-  <link rel="stylesheet" href="/styles/workspace.css" />
+  <link rel="stylesheet" href="/styles/quote-flow.css" />
+  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebPage","name":"Quote | Level Lines Studio","url":"https://levellines.co.uk/quote.html","description":"Private enquiry route for premium renovation briefs."},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://levellines.co.uk/"},{"@type":"ListItem","position":2,"name":"Quote","item":"https://levellines.co.uk/quote.html"}]}]}</script>
 </head>
 <body class="public-site page-quote">
-    <header class="site-header site-header--public-shell" id="top">
+  <header class="site-header site-header--public-shell" id="top">
     <div class="container public-shell-header">
       <div class="public-brand-board">
         <a class="public-brand-link" href="/index.html" aria-label="Level Lines Studio home">
           <picture class="public-brand-picture">
             <source type="image/avif" srcset="/assets/optimized/brand/title.avif" />
             <source type="image/webp" srcset="/assets/optimized/brand/title.webp" />
-            <img src="/assets/optimized/brand/title.png" alt="Level Lines Studio" class="public-brand-title-image" width="1800" height="412" decoding="async" />
+            <img src="/assets/optimized/brand/title.png" alt="Level Lines Studio" class="public-brand-title-image" width="1536" height="232" decoding="async" />
           </picture>
         </a>
       </div>
-      <div class="public-shell-strip">
-        <section class="public-inline-auth" data-inline-auth-shell aria-label="Studio login">
-          <p class="public-strip-heading">Login</p>
-          <form class="public-inline-login-form" data-inline-login-form novalidate>
+      <div class="public-shell-controls">
+        <button class="public-auth-toggle" type="button" data-auth-toggle aria-expanded="false" aria-controls="public-auth-panel">
+          <span class="public-auth-toggle-label">Login</span>
+        </button>
+        <section class="public-auth-panel" id="public-auth-panel" data-auth-panel aria-label="Studio login">
+          <form class="public-inline-login-form" data-inline-login-form data-auth-guest-only novalidate>
             <div class="public-inline-login-row">
-              <input type="email" name="email" autocomplete="username email" placeholder="Email" aria-label="Email" required />
+              <input type="email" name="email" autocomplete="username email" placeholder="Login" aria-label="Login" required />
               <input type="password" name="password" autocomplete="current-password" placeholder="Password" aria-label="Password" required />
-              <button class="public-inline-login-submit" type="submit">Login</button>
-              <a class="public-inline-login-link" href="/auth.html">Register</a>
+              <button class="public-inline-login-submit" type="submit">Enter</button>
             </div>
-            <p class="public-inline-login-helper">Move public enquiries into private project visibility.</p>
           </form>
-          <div class="public-inline-session" data-inline-session hidden>
-            <p class="public-inline-session-copy" data-inline-session-copy>Account ready.</p>
+          <div class="public-inline-session" data-inline-session data-auth-user-only hidden>
+            <p class="public-inline-session-copy" data-inline-session-copy>Signed in.</p>
             <div class="public-inline-session-actions">
-              <a class="public-inline-session-link" href="/auth.html" data-inline-account-link>Open Account</a>
               <button class="public-inline-session-link public-inline-session-link--button" type="button" data-inline-logout>Log out</button>
             </div>
           </div>
           <p class="form-status public-inline-login-status" data-inline-login-status aria-live="polite"></p>
         </section>
         <div class="public-shell-nav menu-wrap" data-menu-wrap>
-          <p class="public-strip-heading public-strip-heading--nav">Menu</p>
-          <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation menu">
+          <button class="nav-toggle public-menu-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation menu">
+            <span class="public-menu-toggle-label">Menu</span>
             <span class="nav-toggle-line"></span>
             <span class="nav-toggle-line"></span>
             <span class="nav-toggle-line"></span>
           </button>
-          <nav class="site-nav site-nav--public-shell" id="site-nav" data-nav-menu aria-label="Main navigation">
-            <a href="/about.html" data-nav-link>About Us</a>
+          <nav class="site-nav site-nav--public-shell" id="site-nav" data-nav-menu aria-label="Main navigation" hidden aria-hidden="true">
+            <a href="/index.html" data-nav-link>Home</a>
+            <a href="/about.html" data-nav-link>About</a>
+            <a href="/services.html" data-nav-link>Services</a>
             <a href="/gallery.html" data-nav-link>Gallery</a>
             <a href="/quote.html" data-nav-link>Quote</a>
             <a href="/contact.html" data-nav-link>Contact</a>
@@ -73,35 +78,317 @@
       </div>
     </div>
   </header>
-  <main>
-    <section class="section section--light">
-      <div class="container brand-page-hero"><div><p class="section-eyebrow">Quote</p><h1>Send one private enquiry for bathrooms, kitchens and interior renovation briefs.</h1><p class="section-lead" data-brand-copy="copy.quote.heroLead">Use one private enquiry route for bathroom, kitchen and interior briefs, then describe the rooms, timing and finish ambition.</p></div><aside class="brand-page-side"><p class="section-eyebrow section-eyebrow--compact">Best first message</p><p>Describe the rooms, whether the brief is finish-led or layout-led, the budget direction and the timing window. That gives the studio enough to respond properly.</p></aside></div>
-    </section>
-    <section class="section section--dark">
-      <div class="container quote-page-grid">
-        <article class="quote-panel quote-panel--dark"><p class="section-eyebrow section-eyebrow--compact">What to include</p><h2>Rooms, finish ambition and timing.</h2><p>The studio uses the same enquiry route for selective bathrooms, kitchens and interior renovation scopes. The reply is measured, not generic.</p></article>
-        <form class="quote-form quote-panel quote-panel--light js-quote-form" data-form-context="Quote Page" novalidate>
-          <input type="hidden" name="location" value="North West" />
-          <div class="form-grid">
-            <label>Name<input type="text" name="name" autocomplete="name" required /></label>
-            <label>Phone<input type="tel" name="phone" autocomplete="tel" /></label>
-            <label>Email<input type="email" name="email" autocomplete="email" /></label>
-            <label>Project type<select name="projectType" required data-brand-project-type-select data-default-label="Select"></select></label>
-            <label>Budget<select name="budget" data-brand-budget-select data-default-label="Select"></select></label>
-            <label class="span-2">Project brief<textarea name="message" rows="6" required placeholder="Tell us about the rooms, the finish ambition and your timing."></textarea></label>
+
+  <main class="public-page-main">
+    <section class="public-section public-section--dark" id="quote-card">
+      <div class="container quote-shell">
+        <article class="content-card content-card--dark quote-shell-header">
+          <div class="quote-shell-header-copy">
+            <p class="section-eyebrow">Private Quote</p>
+            <h1>Build one private renovation brief and get the right next step.</h1>
+            <p class="section-lead">Share rooms, site context, budget direction and reference photos in one route. The studio replies with the right fit, scope and next move instead of a generic response.</p>
           </div>
+          <div class="quote-shell-header-meta">
+            <span class="stat-chip">Bathrooms and kitchens</span>
+            <span class="stat-chip">Interiors and finish trades</span>
+            <span class="stat-chip" data-brand-region>Manchester and the North West</span>
+          </div>
+        </article>
+        <div class="quote-layout">
+          <article class="content-card content-card--dark quote-intro-card">
+            <p class="section-eyebrow section-eyebrow--compact">How it works</p>
+            <h2>Finish the brief once, keep the private link, and add photos later if needed.</h2>
+            <p class="page-aside-copy">Step 1 covers contact and project type. Step 2 frames the property, access and timing. Step 3 finishes the working brief with budget direction, must-haves, known constraints and any reference photos that help the studio reply properly.</p>
+            <ul class="page-bullet-list">
+              <li>Use one route for bathrooms, kitchens, interiors and connected specialist trades.</li>
+              <li>Save the private link after submit to check status, add more photos or claim the quote into your account.</li>
+              <li>Reference photos are optional, but they help the studio answer with the right next step faster.</li>
+            </ul>
+          </article>
+          <form class="quote-form content-card content-card--light js-quote-form" data-form-context="Quote Page" novalidate>
+          <input type="hidden" name="location" value="Manchester and the North West" />
+          <div class="quote-stepper" data-quote-stepper>
+            <div class="quote-stepper-nav" aria-label="Quote brief steps">
+              <button class="quote-stepper-tab" type="button" data-quote-step-tab data-step-index="0" aria-current="step">
+                <span class="quote-stepper-tab-index">01</span>
+                <span class="quote-stepper-tab-copy">
+                  <strong>Basics</strong>
+                  <span>Contact and project type</span>
+                </span>
+              </button>
+              <button class="quote-stepper-tab" type="button" data-quote-step-tab data-step-index="1">
+                <span class="quote-stepper-tab-index">02</span>
+                <span class="quote-stepper-tab-copy">
+                  <strong>Scope</strong>
+                  <span>Property, stage and access</span>
+                </span>
+              </button>
+              <button class="quote-stepper-tab" type="button" data-quote-step-tab data-step-index="2">
+                <span class="quote-stepper-tab-index">03</span>
+                <span class="quote-stepper-tab-copy">
+                  <strong>Brief</strong>
+                  <span>Budget, priorities and photos</span>
+                </span>
+              </button>
+            </div>
+
+            <div class="quote-stepper-panels">
+              <section class="quote-step-panel" data-quote-step-panel data-step-index="0">
+                <div class="quote-step-panel-head">
+                  <p class="section-eyebrow section-eyebrow--compact">Step 1</p>
+                  <h3>Start with the core enquiry.</h3>
+                  <p class="page-aside-copy">Share who should hear back, how to reach you and what kind of project this is.</p>
+                </div>
+                <div class="quote-account-summary" data-quote-account-summary hidden>
+                  <p class="section-eyebrow section-eyebrow--compact">Signed-in client</p>
+                  <h4>Use the details already saved on your account.</h4>
+                  <p class="page-aside-copy" data-quote-account-summary-copy>We found your saved account details. Only choose the project type below and continue.</p>
+                  <dl class="quote-account-summary-list">
+                    <div class="quote-account-summary-item" data-quote-account-item="name">
+                      <dt>Name</dt>
+                      <dd data-quote-account-name></dd>
+                    </div>
+                    <div class="quote-account-summary-item" data-quote-account-item="email">
+                      <dt>Email</dt>
+                      <dd data-quote-account-email></dd>
+                    </div>
+                    <div class="quote-account-summary-item" data-quote-account-item="phone">
+                      <dt>Phone</dt>
+                      <dd data-quote-account-phone></dd>
+                    </div>
+                  </dl>
+                </div>
+                <div class="form-grid quote-form-grid">
+                  <label data-quote-contact-field="name">Name<input type="text" name="name" autocomplete="name" required /></label>
+                  <label data-quote-contact-field="phone">Phone<input type="tel" name="phone" autocomplete="tel" /></label>
+                  <label data-quote-contact-field="email">Email<input type="email" name="email" autocomplete="email" /></label>
+                  <label>Project type
+                    <select name="projectType" required data-brand-project-type-select data-default-label="Select"></select>
+                  </label>
+                </div>
+              </section>
+
+              <section class="quote-step-panel" data-quote-step-panel data-step-index="1" hidden>
+                <div class="quote-step-panel-head">
+                  <p class="section-eyebrow section-eyebrow--compact">Step 2</p>
+                  <h3>Set the site and planning context.</h3>
+                  <p class="page-aside-copy">This helps us frame the right next step before anyone gives you a generic estimate answer.</p>
+                </div>
+                <div class="form-grid quote-form-grid">
+                  <label>Property type
+                    <select name="propertyType" required>
+                      <option value="">Select</option>
+                      <option value="flat">Flat / apartment</option>
+                      <option value="terraced">Terraced house</option>
+                      <option value="semi_detached">Semi-detached</option>
+                      <option value="detached">Detached</option>
+                      <option value="commercial">Commercial unit</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </label>
+                  <label>Occupancy
+                    <select name="occupancyStatus" required>
+                      <option value="">Select</option>
+                      <option value="living_in_home">Living in home</option>
+                      <option value="partially_occupied">Partially occupied</option>
+                      <option value="empty_property">Empty property</option>
+                      <option value="tenanted">Tenanted</option>
+                      <option value="commercial_live">Commercial live site</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </label>
+                  <label>Planning stage
+                    <select name="planningStage" required>
+                      <option value="">Select</option>
+                      <option value="idea">Early idea</option>
+                      <option value="getting_prices">Getting prices</option>
+                      <option value="ready_to_start">Ready to start</option>
+                      <option value="already_underway">Already underway</option>
+                      <option value="urgent_recovery">Urgent recovery</option>
+                    </select>
+                  </label>
+                  <label>Target start
+                    <select name="targetStartWindow" required>
+                      <option value="">Select</option>
+                      <option value="asap">ASAP</option>
+                      <option value="within_1_month">Within 1 month</option>
+                      <option value="within_3_months">Within 3 months</option>
+                      <option value="within_6_months">Within 6 months</option>
+                      <option value="planning_ahead">Planning ahead</option>
+                    </select>
+                  </label>
+                  <label>Finish level
+                    <select name="finishLevel">
+                      <option value="">Select</option>
+                      <option value="essential">Essential refresh</option>
+                      <option value="elevated">Elevated</option>
+                      <option value="premium">Premium</option>
+                      <option value="bespoke">Bespoke</option>
+                    </select>
+                  </label>
+                  <label>Site access
+                    <select name="siteAccess">
+                      <option value="">Select</option>
+                      <option value="easy_ground_floor">Easy ground-floor access</option>
+                      <option value="stairs_only">Stairs only</option>
+                      <option value="tight_access">Tight access</option>
+                      <option value="restricted_parking">Restricted parking</option>
+                      <option value="unknown">Not sure yet</option>
+                    </select>
+                  </label>
+                  <fieldset class="quote-choice-fieldset span-2">
+                    <legend>Rooms involved</legend>
+                    <div class="quote-choice-grid">
+                      <label class="quote-choice-pill"><input type="checkbox" name="roomsInvolved" value="kitchen" /><span>Kitchen</span></label>
+                      <label class="quote-choice-pill"><input type="checkbox" name="roomsInvolved" value="bathroom" /><span>Bathroom</span></label>
+                      <label class="quote-choice-pill"><input type="checkbox" name="roomsInvolved" value="living_area" /><span>Living area</span></label>
+                      <label class="quote-choice-pill"><input type="checkbox" name="roomsInvolved" value="bedroom" /><span>Bedroom</span></label>
+                      <label class="quote-choice-pill"><input type="checkbox" name="roomsInvolved" value="utility" /><span>Utility</span></label>
+                      <label class="quote-choice-pill"><input type="checkbox" name="roomsInvolved" value="hall_stairs" /><span>Hall / stairs</span></label>
+                      <label class="quote-choice-pill"><input type="checkbox" name="roomsInvolved" value="extension_area" /><span>Extension area</span></label>
+                      <label class="quote-choice-pill"><input type="checkbox" name="roomsInvolved" value="outdoor_connection" /><span>Outdoor connection</span></label>
+                      <label class="quote-choice-pill"><input type="checkbox" name="roomsInvolved" value="whole_home" /><span>Whole home</span></label>
+                      <label class="quote-choice-pill"><input type="checkbox" name="roomsInvolved" value="other" /><span>Other</span></label>
+                    </div>
+                  </fieldset>
+                </div>
+              </section>
+
+              <section class="quote-step-panel" data-quote-step-panel data-step-index="2" hidden>
+                <div class="quote-step-panel-head">
+                  <p class="section-eyebrow section-eyebrow--compact">Step 3</p>
+                  <h3>Finish the working brief.</h3>
+                  <p class="page-aside-copy">Add the budget direction, must-haves, known constraints and any reference photos that will save a back-and-forth later.</p>
+                </div>
+                <div class="form-grid quote-form-grid">
+                  <label>Budget
+                    <select name="budget" data-brand-budget-select data-default-label="Select"></select>
+                  </label>
+                  <label>Postcode<input type="text" name="postcode" autocomplete="postal-code" /></label>
+                  <fieldset class="quote-choice-fieldset span-2">
+                    <legend>Priorities</legend>
+                    <div class="quote-choice-grid">
+                      <label class="quote-choice-pill"><input type="checkbox" name="priorities" value="finish_quality" /><span>Finish quality</span></label>
+                      <label class="quote-choice-pill"><input type="checkbox" name="priorities" value="budget_control" /><span>Budget control</span></label>
+                      <label class="quote-choice-pill"><input type="checkbox" name="priorities" value="storage" /><span>Storage</span></label>
+                      <label class="quote-choice-pill"><input type="checkbox" name="priorities" value="speed" /><span>Speed</span></label>
+                      <label class="quote-choice-pill"><input type="checkbox" name="priorities" value="family_living" /><span>Family living</span></label>
+                      <label class="quote-choice-pill"><input type="checkbox" name="priorities" value="low_maintenance" /><span>Low maintenance</span></label>
+                      <label class="quote-choice-pill"><input type="checkbox" name="priorities" value="future_sale" /><span>Future sale</span></label>
+                      <label class="quote-choice-pill"><input type="checkbox" name="priorities" value="energy_efficiency" /><span>Energy efficiency</span></label>
+                    </div>
+                  </fieldset>
+                  <label class="span-2">Must-haves<textarea name="mustHaves" rows="3" placeholder="List the pieces that must make the project work."></textarea></label>
+                  <label class="span-2">Known constraints<textarea name="constraints" rows="3" placeholder="Access limits, neighbours, timescales, structural unknowns or anything else we should factor in."></textarea></label>
+                  <label class="span-2">Reference photos<input type="file" name="files" accept="image/*" multiple /></label>
+                  <label class="span-2">Project brief<textarea name="message" rows="6" required placeholder="Tell us about the rooms, finish ambition and timing."></textarea></label>
+                </div>
+              </section>
+            </div>
+          </div>
+          <div class="quote-step-actions">
+            <button class="btn-outline-gold" type="button" data-quote-step-prev hidden>Back</button>
+            <button class="btn-outline-gold" type="button" data-quote-step-next>Continue</button>
+          </div>
+          <p class="page-aside-copy" data-quote-files-status>Optional: attach up to 8 reference photos.</p>
+          <div class="quote-file-preview" data-quote-file-preview aria-live="polite" hidden></div>
           <button class="btn btn-gold btn-block" type="submit">Send Enquiry</button>
           <p class="form-status" aria-live="polite"></p>
+          <div class="quote-followup-panel" data-quote-followup hidden>
+            <p class="section-eyebrow section-eyebrow--compact">Quote status</p>
+            <h3 data-quote-followup-title>Your private quote link is ready.</h3>
+            <p class="page-aside-copy" data-quote-followup-summary>Keep this private link to check the quote status later and continue from the same enquiry context.</p>
+            <dl class="quote-followup-meta" data-quote-followup-meta></dl>
+            <div class="quote-file-preview quote-file-preview--readonly" data-quote-followup-attachments hidden></div>
+            <div class="page-actions quote-followup-actions" data-quote-followup-actions></div>
+          </div>
         </form>
+        </div>
+      </div>
+    </section>
+
+    <section class="public-section public-section--dark">
+      <div class="container page-grid-3">
+        <article class="content-card content-card--dark">
+          <h2>Best briefs include</h2>
+          <p class="page-aside-copy">Tell us which rooms are involved, what finish level matters most and when the work needs to move.</p>
+        </article>
+        <article class="content-card content-card--light">
+          <h2>Studio reply</h2>
+          <p class="page-aside-copy">The first response is about fit and next step, not a generic brochure follow-up.</p>
+        </article>
+        <article class="content-card content-card--light">
+          <h2>Need a fit check first?</h2>
+          <p class="page-aside-copy">Use contact if you need a quick sense-check before committing to a fuller quote brief.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="public-section public-section--dark">
+      <div class="container">
+        <div class="content-card content-card--dark cta-band">
+          <div>
+            <p class="section-eyebrow">Direct contact</p>
+            <h2>Use contact only when the brief still needs a quick fit check.</h2>
+            <p class="section-lead">If the rooms and timing are already clear, stay on quote and send the full brief now.</p>
+          </div>
+          <div class="page-actions">
+            <a class="btn-outline-gold" href="/contact.html">Contact Studio</a>
+            <a class="btn-outline-gold" href="/gallery.html">View Gallery</a>
+          </div>
+        </div>
       </div>
     </section>
   </main>
-  <footer class="site-footer"><div class="container footer-grid"><div class="footer-block footer-block--brand"><p class="section-eyebrow section-eyebrow--compact">Level Lines Studio</p><h3 data-brand-name>Level Lines Studio</h3><p class="footer-copy" data-brand-footer-copy>A premium renovation studio for bathrooms, kitchens and interiors, shaped with quiet planning, material restraint and finish control across the North West.</p><address class="footer-contact-list" aria-label="Level Lines Studio contact details"><a class="footer-contact-link" data-brand-phone="0" href="tel:+447942874446">+44 7942 874 446</a><a class="footer-contact-link" data-brand-phone="1" href="tel:+447304506391">+44 7304 506 391</a><a class="footer-contact-link" data-brand-email href="mailto:LevelLineStudioMCR@gmail.com">LevelLineStudioMCR@gmail.com</a></address></div><div class="footer-block"><h3>Services</h3><div class="footer-links" data-brand-service-links data-link-class="footer-service-link"></div></div><div class="footer-block"><h3>Studio</h3><div class="footer-links"><a href="/about.html">About Us</a><a href="/gallery.html">Gallery</a><a href="/contact.html">Contact</a><a href="/quote.html">Quote</a><a href="/auth.html">Account</a><a href="/privacy.html">Privacy</a><a href="/cookie-policy.html">Cookie Policy</a><a href="/terms.html">Terms</a></div></div><div class="footer-block"><h3>Studio Region</h3><p class="footer-copy" data-brand-region>North West - Lancashire</p><div class="footer-area-list" data-brand-area-list data-item-class="footer-area-chip"></div></div></div><div class="container footer-bottom"><p>&copy; <span data-current-year></span> Level Lines Studio. All rights reserved.</p><p class="footer-bottom-note">Plan | Design | Craft</p></div></footer>
+
+  <footer class="site-footer">
+    <div class="container footer-grid">
+      <div class="footer-block footer-block--brand">
+        <p class="section-eyebrow section-eyebrow--compact">Level Lines Studio</p>
+        <h3 data-brand-name>Level Lines Studio</h3>
+        <p class="footer-copy" data-brand-footer-copy>A premium renovation studio for bathrooms, kitchens and interiors, shaped for quieter planning and finish control across Manchester and the North West.</p>
+        <address class="footer-contact-list" aria-label="Level Lines Studio contact details">
+          <a class="footer-contact-link" data-brand-phone="0" href="tel:+447942874446">+44 7942 874 446</a>
+          <a class="footer-contact-link" data-brand-phone="1" href="tel:+447304506391">+44 7304 506 391</a>
+          <a class="footer-contact-link" data-brand-email href="mailto:LevelLineStudioMCR@gmail.com">LevelLineStudioMCR@gmail.com</a>
+        </address>
+      </div>
+      <div class="footer-block">
+        <h3>Services</h3>
+        <div class="footer-links" data-brand-service-links data-link-class="footer-service-link"></div>
+      </div>
+      <div class="footer-block">
+        <h3>Studio</h3>
+        <div class="footer-links">
+          <a href="/index.html">Home</a>
+          <a href="/about.html">About</a>
+          <a href="/services.html">Services</a>
+          <a href="/gallery.html">Gallery</a>
+          <a href="/contact.html">Contact</a>
+          <a href="/quote.html">Quote</a>
+          <a href="/auth.html">Account</a>
+          <a href="/privacy.html">Privacy</a>
+          <a href="/cookie-policy.html">Cookie Policy</a>
+          <a href="/terms.html">Terms</a>
+        </div>
+      </div>
+      <div class="footer-block">
+        <h3>Studio Region</h3>
+        <p class="footer-copy" data-brand-region>Manchester and the North West</p>
+        <div class="footer-area-list" data-brand-area-list data-item-class="footer-area-chip"></div>
+      </div>
+    </div>
+    <div class="container footer-bottom">
+      <p>&copy; <span data-current-year></span> Level Lines Studio. All rights reserved.</p>
+      <p class="footer-bottom-note">Plan | Design | Craft</p>
+    </div>
+  </footer>
+
   <script src="/asset-manifest.js" defer></script>
-  <script src="/brand.js" defer></script><script src="/runtime.js" defer></script><script src="/site.js" defer></script><script src="/quote.js" defer></script>
+  <script src="/brand.js" defer></script>
+  <script src="/runtime.js" defer></script>
+  <script src="/site.js" defer></script>
+  <script src="/quote.js" defer></script>
 </body>
 </html>
-
-
-
 

@@ -24,11 +24,34 @@ const Estimate = sequelize.define('Estimate', {
     allowNull: false
   },
   status: {
-    type: DataTypes.ENUM('draft', 'sent', 'approved', 'archived'),
+    type: DataTypes.ENUM('draft', 'sent', 'approved', 'archived', 'superseded'),
     allowNull: false,
     defaultValue: 'draft'
   },
+  decisionStatus: {
+    type: DataTypes.ENUM('pending', 'viewed', 'revision_requested', 'accepted', 'declined'),
+    allowNull: false,
+    defaultValue: 'pending'
+  },
+  versionNumber: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 1
+  },
+  isCurrentVersion: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: true
+  },
   notes: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  clientMessage: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  decisionNote: {
     type: DataTypes.TEXT,
     allowNull: true
   },
@@ -46,6 +69,34 @@ const Estimate = sequelize.define('Estimate', {
     type: DataTypes.BOOLEAN,
     allowNull: false,
     defaultValue: true
+  },
+  sentAt: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  viewedAt: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  respondedAt: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  approvedAt: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  declinedAt: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  supersededById: {
+    type: DataTypes.UUID,
+    allowNull: true
+  },
+  supersededAt: {
+    type: DataTypes.DATE,
+    allowNull: true
   }
 });
 

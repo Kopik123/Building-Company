@@ -26,7 +26,7 @@ const auth = async (req, res, next) => {
     const payload = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findByPk(payload.id, { attributes: AUTH_USER_ATTRIBUTES });
 
-    if (!user || !user.isActive) {
+    if (!user || user.isActive === false) {
       return res.status(401).json({ error: 'Invalid user' });
     }
 

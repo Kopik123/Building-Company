@@ -6,6 +6,7 @@ const {
   Project,
   ProjectMedia,
   Quote,
+  NewQuote,
   GroupMember,
   GroupThread,
   Notification,
@@ -15,6 +16,7 @@ const {
 const { auth, roleCheck } = require('../middleware/auth');
 const { upload } = require('../utils/upload');
 const asyncHandler = require('../utils/asyncHandler');
+const { toNewQuoteSummary } = require('../utils/newQuoteShape');
 
 const router = express.Router();
 const clientGuard = [auth, roleCheck('client')];
@@ -31,6 +33,12 @@ const parseBoolean = (value, fallback = false) => {
   if (['false', '0', 'no', 'off'].includes(normalized)) return false;
   return fallback;
 };
+
+const sortByRecent = (items) => (Array.isArray(items) ? items.slice().sort((left, right) => {
+  const leftTime = Date.parse(left?.updatedAt || left?.createdAt || 0) || 0;
+  const rightTime = Date.parse(right?.updatedAt || right?.createdAt || 0) || 0;
+  return rightTime - leftTime;
+}) : []);
 
 const mapProject = (project) => {
   const plain = project.toJSON();
@@ -63,7 +71,7 @@ router.get(
     }
 
     const includeThreads = parseBoolean(req.query.includeThreads, true);
-    const [projects, quotes, memberships, unreadCount, services] = await Promise.all([
+    const [projects, quotes, stagedNewQuotes, memberships, unreadCount, services] = await Promise.all([
       Project.findAll({
         where: { clientId: req.user.id, isActive: true },
         include: [
@@ -79,6 +87,14 @@ router.get(
         order: [['createdAt', 'DESC']],
         limit: 100
       }),
+      typeof NewQuote?.findAll === 'function'
+        ? NewQuote.findAll({
+          where: { clientId: req.user.id },
+          include: [{ model: User, as: 'client', attributes: ['id', 'name', 'email', 'phone', 'companyName'], required: false }],
+          order: [['createdAt', 'DESC']],
+          limit: 100
+        })
+        : Promise.resolve([]),
       includeThreads
         ? GroupMember.findAll({
           where: { userId: req.user.id },
@@ -93,16 +109,21 @@ router.get(
       })
     ]);
 
+    const mergedQuotes = sortByRecent([
+      ...(Array.isArray(quotes) ? quotes : []),
+      ...((Array.isArray(stagedNewQuotes) ? stagedNewQuotes : []).map(toNewQuoteSummary))
+    ]);
+
     return res.json({
       user: req.user,
       metrics: {
         projectCount: projects.length,
-        quoteCount: quotes.length,
+        quoteCount: mergedQuotes.length,
         unreadNotifications: unreadCount,
         activeProjectCount: projects.filter((item) => item.status === 'in_progress').length
       },
       projects: projects.map(mapProject),
-      quotes,
+      quotes: mergedQuotes,
       threads: includeThreads ? memberships.map((membership) => membership.thread).filter(Boolean) : [],
       services
     });

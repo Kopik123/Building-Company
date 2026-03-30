@@ -17,8 +17,7 @@ $extensions = @(
   'usernamehw.errorlens',
   'formulahendry.auto-rename-tag',
   'naumovs.color-highlight',
-  'streetsidesoftware.code-spell-checker',
-  'ms-vscode.live-server'
+  'streetsidesoftware.code-spell-checker'
 )
 
 function Write-Step {
@@ -26,14 +25,53 @@ function Write-Step {
   Write-Host "==> $Message" -ForegroundColor Cyan
 }
 
+function ConvertTo-PlainHashtable {
+  param([Parameter(ValueFromPipeline = $true)] $InputObject)
+
+  if ($null -eq $InputObject) {
+    return $null
+  }
+
+  if ($InputObject -is [System.Collections.IDictionary]) {
+    $table = [ordered]@{}
+    foreach ($key in $InputObject.Keys) {
+      $table[$key] = ConvertTo-PlainHashtable $InputObject[$key]
+    }
+    return $table
+  }
+
+  if ($InputObject -is [System.Collections.IEnumerable] -and -not ($InputObject -is [string])) {
+    $items = @()
+    foreach ($item in $InputObject) {
+      $items += ,(ConvertTo-PlainHashtable $item)
+    }
+    return $items
+  }
+
+  if ($InputObject -is [pscustomobject]) {
+    $table = [ordered]@{}
+    foreach ($property in $InputObject.PSObject.Properties) {
+      $table[$property.Name] = ConvertTo-PlainHashtable $property.Value
+    }
+    return $table
+  }
+
+  return $InputObject
+}
+
 Write-Step 'Preparing .vscode directory'
 New-Item -ItemType Directory -Path $vscodeDir -Force | Out-Null
 
-if (Get-Command code -ErrorAction SilentlyContinue) {
+$codeCli = Get-Command code.cmd -ErrorAction SilentlyContinue
+if (-not $codeCli) {
+  $codeCli = Get-Command code -ErrorAction SilentlyContinue
+}
+
+if ($codeCli) {
   Write-Step 'Installing recommended VS Code extensions'
   foreach ($extension in $extensions) {
     Write-Host "Installing $extension"
-    & code --install-extension $extension --force | Out-Host
+    & $codeCli.Source --install-extension $extension --force | Out-Host
   }
 } else {
   Write-Warning "VS Code CLI 'code' was not found in PATH. Install it from VS Code: 'Shell Command: Install ''code'' command in PATH'."
@@ -55,7 +93,7 @@ try {
   $settings = if ([string]::IsNullOrWhiteSpace($settingsRaw)) {
     [ordered]@{}
   } else {
-    $settingsRaw | ConvertFrom-Json -AsHashtable
+    ConvertTo-PlainHashtable ($settingsRaw | ConvertFrom-Json)
   }
 } catch {
   throw "The file '$settingsFile' is not valid JSON. Fix it before running this script."

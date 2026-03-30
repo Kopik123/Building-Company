@@ -7,13 +7,11 @@ const { authV2 } = require('../middleware/auth');
 const { roleCheckV2 } = require('../middleware/roles');
 const { ok, fail } = require('../utils/response');
 const { clearServicesCache } = require('../utils/publicCache');
+const { MATERIAL_CATEGORIES, SERVICE_CATEGORIES } = require('@building-company/contracts-v2');
 
 const router = express.Router();
 const DEFAULT_PAGE_SIZE = 25;
 const MAX_PAGE_SIZE = 100;
-const SERVICE_CATEGORIES = ['bathroom', 'kitchen', 'interior', 'outdoor', 'other'];
-const MATERIAL_CATEGORIES = ['tiles', 'plumbing', 'electrical', 'joinery', 'paint', 'hardware', 'other'];
-
 const getPagination = (req) => {
   const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
   const pageSize = Math.min(MAX_PAGE_SIZE, Math.max(1, Number.parseInt(req.query.pageSize, 10) || DEFAULT_PAGE_SIZE));

@@ -21,6 +21,7 @@ git checkout staging
 git pull --ff-only
 npm ci --omit=dev
 npm run migrate
+npm run ensure:indexes
 pm2 restart "$PM2_NAME" --update-env
 sleep 2
 pm2 save
@@ -61,6 +62,7 @@ git checkout main
 git pull --ff-only
 npm ci --omit=dev
 npm run migrate
+npm run ensure:indexes
 pm2 restart "$PM2_NAME" --update-env
 sleep 2
 pm2 save

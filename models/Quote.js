@@ -53,6 +53,10 @@ const Quote = sequelize.define('Quote', {
     type: DataTypes.STRING,
     allowNull: true
   },
+  proposalDetails: {
+    type: DataTypes.JSON,
+    allowNull: true
+  },
   description: {
     type: DataTypes.TEXT,
     allowNull: false
@@ -70,8 +74,64 @@ const Quote = sequelize.define('Quote', {
     allowNull: false,
     defaultValue: 'pending'
   },
+  workflowStatus: {
+    type: DataTypes.ENUM(
+      'submitted',
+      'triaged',
+      'assigned',
+      'awaiting_client_info',
+      'estimate_in_progress',
+      'estimate_sent',
+      'client_review',
+      'approved_ready_for_project',
+      'converted_to_project',
+      'closed_lost'
+    ),
+    allowNull: false,
+    defaultValue: 'submitted'
+  },
+  sourceChannel: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
   assignedManagerId: {
     type: DataTypes.UUID,
+    allowNull: true
+  },
+  currentEstimateId: {
+    type: DataTypes.UUID,
+    allowNull: true
+  },
+  convertedProjectId: {
+    type: DataTypes.UUID,
+    allowNull: true
+  },
+  submittedAt: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  assignedAt: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  convertedAt: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  nextActionAt: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  responseDeadline: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  closedAt: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  lossReason: {
+    type: DataTypes.TEXT,
     allowNull: true
   },
   priority: {

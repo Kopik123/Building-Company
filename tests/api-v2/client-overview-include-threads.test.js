@@ -52,6 +52,41 @@ const createStubs = () => {
           return [];
         }
       },
+      NewQuote: {
+        async findAll() {
+          return [{
+            id: 'new-quote-1',
+            quoteRef: 'LL-M202AB-8487',
+            clientId: '33333333-3333-4333-8333-333333333333',
+            clientName: 'Client Test',
+            clientEmail: 'client@example.com',
+            clientPhone: '+44 7000 000 002',
+            projectType: 'kitchen',
+            location: 'Manchester and the North West',
+            postcode: 'M20 2AB',
+            budgetRange: '?8,000-?12,000',
+            proposalDetails: null,
+            description: 'Kitchen refresh',
+            attachments: [{
+              name: 'brief-photo.png',
+              filename: 'brief-photo.png',
+              url: '/uploads/brief-photo.png',
+              storagePath: 'uploads/brief-photo.png',
+              mimeType: 'image/png',
+              sizeBytes: 2048,
+              mediaType: 'image',
+              createdAt: '2026-03-29T20:00:00Z',
+              updatedAt: '2026-03-29T20:00:00Z'
+            }],
+            sourceChannel: 'client_quote_portal',
+            createdAt: '2026-03-29T20:00:00Z',
+            updatedAt: '2026-03-29T20:00:00Z',
+            toJSON() {
+              return { ...this };
+            }
+          }];
+        }
+      },
       GroupMember: {
         async findAll() {
           groupMemberCalls += 1;
@@ -91,6 +126,9 @@ test('client overview supports includeThreads=false without loading memberships'
     .expect(200);
 
   assert.deepEqual(hiddenThreadsResponse.body?.threads, []);
+  assert.equal(hiddenThreadsResponse.body?.metrics?.quoteCount, 1);
+  assert.equal(hiddenThreadsResponse.body?.quotes?.length, 1);
+  assert.equal(hiddenThreadsResponse.body?.quotes?.[0]?.recordType, 'new_quote');
   assert.equal(stubs.getGroupMemberCalls(), 0);
 
   const defaultResponse = await request(app)

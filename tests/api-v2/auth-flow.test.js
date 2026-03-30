@@ -1,9 +1,16 @@
 const assert = require('node:assert/strict');
+const path = require('node:path');
 const test = require('node:test');
 const request = require('supertest');
 const { buildExpressApp, loadRoute, mock, mockModels } = require('./_helpers');
 
 process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-secret-v2';
+const sessionTokensPath = path.join(__dirname, '..', '..', 'utils', 'sessionTokens.js');
+
+const loadFreshAuthRoute = () => {
+  delete require.cache[require.resolve(sessionTokensPath)];
+  return loadRoute('api/v2/routes/auth.js');
+};
 
 const createUser = ({ id, email, password, role = 'client', name = 'Test User', isActive = true }) => ({
   id,
@@ -45,7 +52,7 @@ const createAuthStubs = () => {
       name: 'Client Test'
     })
   ];
-
+  let nextUserCounter = 3;
   const sessions = [];
   const findUserByEmail = (email) => users.find((user) => user.email === email) || null;
   const findUserById = (id) => users.find((user) => user.id === id) || null;
@@ -98,6 +105,21 @@ const createAuthStubs = () => {
     },
     async findByPk(id) {
       return findUserById(id);
+    },
+    async create(payload) {
+      const counter = String(nextUserCounter);
+      const user = createUser({
+        id: `${counter.repeat(8).slice(0, 8)}-${counter.repeat(4).slice(0, 4)}-4${counter.repeat(3).slice(0, 3)}-8${counter.repeat(3).slice(0, 3)}-${counter.repeat(12).slice(0, 12)}`,
+        email: payload.email,
+        password: payload.password,
+        role: payload.role || 'client',
+        name: payload.name || 'Created User'
+      });
+      user.phone = payload.phone || null;
+      user.companyName = payload.companyName || null;
+      users.push(user);
+      nextUserCounter += 1;
+      return user;
     }
   };
 
@@ -108,89 +130,157 @@ const createAuthStubs = () => {
   };
 };
 
-test.afterEach(() => {
-  mock.stopAll();
-});
+test('auth v2 flows stay stable for mobile-ready register/login/refresh/password behavior', async (suite) => {
+  await suite.test('register creates a client session directly for mobile clients', async () => {
+    try {
+      const stubs = createAuthStubs();
+      mockModels(stubs.models);
 
-test('auth v2 login -> me -> refresh -> logout flow works', async () => {
-  const stubs = createAuthStubs();
-  mockModels(stubs.models);
+      const authRoute = loadFreshAuthRoute();
+      const app = buildExpressApp('/api/v2/auth', authRoute);
 
-  const authRoute = loadRoute('api/v2/routes/auth.js');
-  const app = buildExpressApp('/api/v2/auth', authRoute);
+      const response = await request(app)
+        .post('/api/v2/auth/register')
+        .send({
+          name: 'Mobile Client',
+          email: 'mobile-client@example.com',
+          password: 'Pass1234!',
+          phone: '+44 7000 000 777',
+          companyName: 'Client Co'
+        })
+        .expect(201);
 
-  const loginResponse = await request(app)
-    .post('/api/v2/auth/login')
-    .send({ email: 'MANAGER@example.com', password: 'Pass1234!' })
-    .expect(200);
+      assert.equal(response.body?.data?.user?.role, 'client');
+      assert.ok(response.body?.data?.accessToken);
+      assert.ok(response.body?.data?.refreshToken);
+      assert.ok(response.body?.data?.legacyToken);
+    } finally {
+      mock.stopAll();
+    }
+  });
 
-  assert.ok(loginResponse.body?.data?.accessToken);
-  assert.ok(loginResponse.body?.data?.refreshToken);
-  assert.equal(loginResponse.body?.data?.user?.email, 'manager@example.com');
+  await suite.test('login -> me -> refresh -> logout flow works', async () => {
+    try {
+      const stubs = createAuthStubs();
+      mockModels(stubs.models);
 
-  const meResponse = await request(app)
-    .get('/api/v2/auth/me')
-    .set('Authorization', `Bearer ${loginResponse.body.data.accessToken}`)
-    .expect(200);
-  assert.equal(meResponse.body?.data?.user?.role, 'manager');
+      const authRoute = loadFreshAuthRoute();
+      const app = buildExpressApp('/api/v2/auth', authRoute);
 
-  const refreshResponse = await request(app)
-    .post('/api/v2/auth/refresh')
-    .send({ refreshToken: loginResponse.body.data.refreshToken })
-    .expect(200);
+      const loginResponse = await request(app)
+        .post('/api/v2/auth/login')
+        .send({ email: 'MANAGER@example.com', password: 'Pass1234!' })
+        .expect(200);
 
-  assert.ok(refreshResponse.body?.data?.accessToken);
-  assert.notEqual(refreshResponse.body?.data?.refreshToken, loginResponse.body.data.refreshToken);
+      assert.ok(loginResponse.body?.data?.accessToken);
+      assert.ok(loginResponse.body?.data?.refreshToken);
+      assert.ok(loginResponse.body?.data?.legacyToken);
+      assert.equal(loginResponse.body?.data?.user?.email, 'manager@example.com');
 
-  const logoutResponse = await request(app)
-    .post('/api/v2/auth/logout')
-    .set('Authorization', `Bearer ${refreshResponse.body.data.accessToken}`)
-    .send({ refreshToken: refreshResponse.body.data.refreshToken })
-    .expect(200);
-  assert.equal(logoutResponse.body?.data?.loggedOut, true);
-  assert.equal(logoutResponse.body?.data?.revokedCount, 1);
+      const meResponse = await request(app)
+        .get('/api/v2/auth/me')
+        .set('Authorization', `Bearer ${loginResponse.body.data.accessToken}`)
+        .expect(200);
+      assert.equal(meResponse.body?.data?.user?.role, 'manager');
 
-  await request(app)
-    .post('/api/v2/auth/refresh')
-    .send({ refreshToken: refreshResponse.body.data.refreshToken })
-    .expect(401);
-});
+      const refreshResponse = await request(app)
+        .post('/api/v2/auth/refresh')
+        .send({ refreshToken: loginResponse.body.data.refreshToken })
+        .expect(200);
 
-test('auth v2 rejects invalid credentials', async () => {
-  const stubs = createAuthStubs();
-  mockModels(stubs.models);
+      assert.ok(refreshResponse.body?.data?.accessToken);
+      assert.notEqual(refreshResponse.body?.data?.refreshToken, loginResponse.body.data.refreshToken);
+      assert.ok(refreshResponse.body?.data?.legacyToken);
 
-  const authRoute = loadRoute('api/v2/routes/auth.js');
-  const app = buildExpressApp('/api/v2/auth', authRoute);
+      const logoutResponse = await request(app)
+        .post('/api/v2/auth/logout')
+        .set('Authorization', `Bearer ${refreshResponse.body.data.accessToken}`)
+        .send({ refreshToken: refreshResponse.body.data.refreshToken })
+        .expect(200);
+      assert.equal(logoutResponse.body?.data?.loggedOut, true);
+      assert.equal(logoutResponse.body?.data?.revokedCount, 1);
 
-  const response = await request(app)
-    .post('/api/v2/auth/login')
-    .send({ email: 'manager@example.com', password: 'wrong' })
-    .expect(401);
+      await request(app)
+        .post('/api/v2/auth/refresh')
+        .send({ refreshToken: refreshResponse.body.data.refreshToken })
+        .expect(401);
+    } finally {
+      mock.stopAll();
+    }
+  });
 
-  assert.equal(response.body?.error?.code, 'invalid_credentials');
-});
+  await suite.test('invalid credentials are rejected', async () => {
+    try {
+      const stubs = createAuthStubs();
+      mockModels(stubs.models);
 
-test('auth v2 password change revokes existing refresh sessions', async () => {
-  const stubs = createAuthStubs();
-  mockModels(stubs.models);
+      const authRoute = loadFreshAuthRoute();
+      const app = buildExpressApp('/api/v2/auth', authRoute);
 
-  const authRoute = loadRoute('api/v2/routes/auth.js');
-  const app = buildExpressApp('/api/v2/auth', authRoute);
+      const response = await request(app)
+        .post('/api/v2/auth/login')
+        .send({ email: 'manager@example.com', password: 'wrong' })
+        .expect(401);
 
-  const loginResponse = await request(app)
-    .post('/api/v2/auth/login')
-    .send({ email: 'client@example.com', password: 'Pass1234!' })
-    .expect(200);
+      assert.equal(response.body?.error?.code, 'invalid_credentials');
+    } finally {
+      mock.stopAll();
+    }
+  });
 
-  await request(app)
-    .patch('/api/v2/auth/password')
-    .set('Authorization', `Bearer ${loginResponse.body.data.accessToken}`)
-    .send({ currentPassword: 'Pass1234!', newPassword: 'NewPass5678!' })
-    .expect(200);
+  await suite.test('login and refresh keep legacy users with null isActive compatible', async () => {
+    try {
+      const stubs = createAuthStubs();
+      stubs.users[0].isActive = null;
+      mockModels(stubs.models);
 
-  await request(app)
-    .post('/api/v2/auth/refresh')
-    .send({ refreshToken: loginResponse.body.data.refreshToken })
-    .expect(401);
+      const authRoute = loadFreshAuthRoute();
+      const app = buildExpressApp('/api/v2/auth', authRoute);
+
+      const loginResponse = await request(app)
+        .post('/api/v2/auth/login')
+        .send({ email: 'manager@example.com', password: 'Pass1234!' })
+        .expect(200);
+
+      await request(app)
+        .get('/api/v2/auth/me')
+        .set('Authorization', `Bearer ${loginResponse.body.data.accessToken}`)
+        .expect(200);
+
+      await request(app)
+        .post('/api/v2/auth/refresh')
+        .send({ refreshToken: loginResponse.body.data.refreshToken })
+        .expect(200);
+    } finally {
+      mock.stopAll();
+    }
+  });
+
+  await suite.test('password change revokes existing refresh sessions', async () => {
+    try {
+      const stubs = createAuthStubs();
+      mockModels(stubs.models);
+
+      const authRoute = loadFreshAuthRoute();
+      const app = buildExpressApp('/api/v2/auth', authRoute);
+
+      const loginResponse = await request(app)
+        .post('/api/v2/auth/login')
+        .send({ email: 'client@example.com', password: 'Pass1234!' })
+        .expect(200);
+
+      await request(app)
+        .patch('/api/v2/auth/password')
+        .set('Authorization', `Bearer ${loginResponse.body.data.accessToken}`)
+        .send({ currentPassword: 'Pass1234!', newPassword: 'NewPass5678!' })
+        .expect(200);
+
+      await request(app)
+        .post('/api/v2/auth/refresh')
+        .send({ refreshToken: loginResponse.body.data.refreshToken })
+        .expect(401);
+    } finally {
+      mock.stopAll();
+    }
+  });
 });

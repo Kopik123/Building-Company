@@ -7,12 +7,52 @@ const ensureDir = async (filePath) => {
   await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
 };
 
-const toPublicPath = (filePath) => `/${path.relative(path.join(__dirname, '..'), filePath).replace(/\\/g, '/')}`;
+const toPublicPath = (filePath) =>
+  `/${path.relative(path.join(__dirname, '..'), filePath)
+    .split(path.sep)
+    .map((segment) => encodeURIComponent(segment))
+    .join('/')}`;
 
 const withWidthSuffix = (basePath, width) => `${basePath}-${width}`;
 
+const metadataCache = new Map();
+const forceOptimize = ['1', 'true', 'yes', 'on'].includes(String(process.env.FORCE_ASSET_OPTIMIZE || '').trim().toLowerCase());
+const optimizeStats = {
+  brand: { rendered: 0, reused: 0 },
+  gallery: { rendered: 0, reused: 0 }
+};
+
+const readMetadata = async (source) => {
+  if (!metadataCache.has(source)) {
+    metadataCache.set(source, sharp(source).metadata());
+  }
+
+  return metadataCache.get(source);
+};
+
+const hasFreshOutputs = async (source, outputs) => {
+  if (forceOptimize) return false;
+
+  const sourceStat = await fs.promises.stat(source);
+  const outputStats = await Promise.all(
+    outputs.map(async (filePath) => {
+      try {
+        return await fs.promises.stat(filePath);
+      } catch (_error) {
+        return null;
+      }
+    })
+  );
+
+  if (outputStats.some((stat) => !stat || !stat.isFile() || stat.size <= 0)) {
+    return false;
+  }
+
+  return outputStats.every((stat) => stat.mtimeMs >= sourceStat.mtimeMs);
+};
+
 const resizeMetadata = async (source, width) => {
-  const metadata = await sharp(source).metadata();
+  const metadata = await readMetadata(source);
   const originalWidth = Number(metadata.width) || width;
   const originalHeight = Number(metadata.height) || width;
   const targetWidth = Math.min(originalWidth, width);
@@ -32,6 +72,17 @@ const renderBrandAsset = async (asset) => {
 
   await ensureDir(pngPath);
 
+  if (await hasFreshOutputs(asset.source, [pngPath, webpPath, avifPath])) {
+    optimizeStats.brand.reused += 1;
+    return {
+      fallback: toPublicPath(pngPath),
+      webp: toPublicPath(webpPath),
+      avif: toPublicPath(avifPath),
+      width: targetWidth,
+      height: targetHeight
+    };
+  }
+
   await sharp(asset.source)
     .resize({ width: targetWidth, withoutEnlargement: true })
     .png({ compressionLevel: 9, quality: 85 })
@@ -46,6 +97,8 @@ const renderBrandAsset = async (asset) => {
     .resize({ width: targetWidth, withoutEnlargement: true })
     .avif({ quality: 62 })
     .toFile(avifPath);
+
+  optimizeStats.brand.rendered += 1;
 
   return {
     fallback: toPublicPath(pngPath),
@@ -63,6 +116,16 @@ const renderGalleryVariant = async (source, outputBase, width, suffix = '') => {
   const { targetWidth, targetHeight } = await resizeMetadata(source, width);
 
   await ensureDir(jpgPath);
+
+  if (await hasFreshOutputs(source, [jpgPath, webpPath, avifPath])) {
+    return {
+      width: targetWidth,
+      height: targetHeight,
+      jpgPath,
+      webpPath,
+      avifPath
+    };
+  }
 
   await sharp(source)
     .resize({ width: targetWidth, withoutEnlargement: true })
@@ -90,16 +153,27 @@ const renderGalleryVariant = async (source, outputBase, width, suffix = '') => {
 
 const renderGalleryAsset = async (asset) => {
   const widths = [...new Set((asset.widths || []).map((value) => Number(value)).filter(Boolean))].sort((a, b) => a - b);
-  const sourceMetadata = await sharp(asset.source).metadata();
+  const sourceMetadata = await readMetadata(asset.source);
   const originalWidth = Number(sourceMetadata.width) || widths[widths.length - 1];
   const uniqueWidths = [...new Set(widths.concat(originalWidth))].sort((a, b) => a - b);
 
+  let renderedAnyVariant = false;
   const variants = [];
   for (const width of uniqueWidths) {
     const isLargest = width === uniqueWidths[uniqueWidths.length - 1];
     const outputBase = asset.outputBase;
     const suffix = isLargest ? '' : `-${width}`;
+    const before = forceOptimize ? false : await hasFreshOutputs(asset.source, [`${outputBase}${suffix}.jpg`, `${outputBase}${suffix}.webp`, `${outputBase}${suffix}.avif`]);
     variants.push(await renderGalleryVariant(asset.source, outputBase, width, suffix));
+    if (!before) {
+      renderedAnyVariant = true;
+    }
+  }
+
+  if (renderedAnyVariant) {
+    optimizeStats.gallery.rendered += 1;
+  } else {
+    optimizeStats.gallery.reused += 1;
   }
 
   const largest = variants[variants.length - 1];
@@ -125,7 +199,10 @@ const renderGalleryAsset = async (asset) => {
 const writeManifest = async (manifest) => {
   const filePath = path.join(__dirname, '..', 'asset-manifest.js');
   const content = `const manifest = ${JSON.stringify(manifest, null, 2)};\n\nif (typeof window !== 'undefined') {\n  window.LEVEL_LINES_ASSETS = manifest;\n}\n\nif (typeof module !== 'undefined') {\n  module.exports = manifest;\n}\n`;
-  await fs.promises.writeFile(filePath, content, 'utf8');
+  const existing = await fs.promises.readFile(filePath, 'utf8').catch(() => '');
+  if (existing !== content) {
+    await fs.promises.writeFile(filePath, content, 'utf8');
+  }
 };
 
 const buildManifest = async () => {
@@ -148,7 +225,11 @@ const buildManifest = async () => {
 const run = async () => {
   const manifest = await buildManifest();
   await writeManifest(manifest);
-  console.log(`Optimized ${Object.keys(manifest.brand).length} brand assets and ${Object.keys(manifest.gallery).length} gallery assets.`);
+  console.log(
+    `Optimized ${Object.keys(manifest.brand).length} brand assets and ${Object.keys(manifest.gallery).length} gallery assets. ` +
+      `Rendered brand: ${optimizeStats.brand.rendered}, reused brand: ${optimizeStats.brand.reused}, ` +
+      `rendered gallery: ${optimizeStats.gallery.rendered}, reused gallery: ${optimizeStats.gallery.reused}.`
+  );
 };
 
 run().catch((error) => {

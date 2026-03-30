@@ -2,11 +2,38 @@ const shared = require('./publicPages.shared');
 
 const coreServiceOffer = shared.coreServiceOffer;
 const consultationRouteLead =
-  'Tell us the rooms involved, the finish ambition and the timing you are aiming for. The studio replies with a measured next step rather than a generic sales response.';
+  'Tell us the rooms involved, finish level and timing. The studio replies with the right next step.';
 
 const pages = [
   {
     fileName: 'premium-bathrooms-manchester.html',
+    primaryKeyword: 'premium bathroom renovations manchester',
+    searchIntent: 'service',
+    summaryLine: 'Bathroom renovations planned for cleaner waterproofing, stronger tile lines and calmer final delivery.',
+    proofPoints: ['Wet rooms and suites', 'Waterproofing discipline', 'Storage and trim detail'],
+    internalLinks: [
+      {
+        eyebrow: 'Related services',
+        title: 'Connected service lines',
+        lead: 'Bathroom briefs often overlap with tiling, carpentry and broader interior finish work.',
+        links: [
+          { href: '/services.html', label: 'Services hub' },
+          { href: '/quote.html', label: 'Start Quote' },
+          { href: '/gallery.html', label: 'View Gallery' }
+        ]
+      },
+      {
+        eyebrow: 'Local routes',
+        title: 'Popular renovation locations',
+        lead: 'Related premium briefs across Manchester and the North West.',
+        links: [
+          { href: '/premium-renovations-didsbury.html', label: 'Didsbury' },
+          { href: '/premium-renovations-sale.html', label: 'Sale' },
+          { href: '/premium-renovations-chorlton.html', label: 'Chorlton' }
+        ]
+      }
+    ],
+    suppressHelperCopy: true,
     title: 'Premium Bathroom Renovations Manchester | Level Lines Studio',
     metaDescription:
       'Premium bathroom renovations in Manchester by Level Lines Studio for homeowners who value waterproofing discipline, finish control and a calmer build sequence.',
@@ -112,6 +139,33 @@ const pages = [
   },
   {
     fileName: 'premium-kitchens-manchester.html',
+    primaryKeyword: 'premium kitchen renovations manchester',
+    searchIntent: 'service',
+    summaryLine: 'Kitchen projects shaped around layout logic, joinery precision and tighter finish control.',
+    proofPoints: ['Layout-led planning', 'Joinery precision', 'Lighting and stone coordination'],
+    internalLinks: [
+      {
+        eyebrow: 'Related services',
+        title: 'Connected service lines',
+        lead: 'Kitchen scopes often connect with carpentry, wall systems and broader interior work.',
+        links: [
+          { href: '/services.html', label: 'Services hub' },
+          { href: '/quote.html', label: 'Start Quote' },
+          { href: '/gallery.html', label: 'View Gallery' }
+        ]
+      },
+      {
+        eyebrow: 'Local routes',
+        title: 'Popular renovation locations',
+        lead: 'Related premium briefs across Manchester and the North West.',
+        links: [
+          { href: '/premium-renovations-altrincham.html', label: 'Altrincham' },
+          { href: '/premium-renovations-wilmslow.html', label: 'Wilmslow' },
+          { href: '/premium-renovations-stockport.html', label: 'Stockport' }
+        ]
+      }
+    ],
+    suppressHelperCopy: true,
     title: 'Premium Kitchen Renovations Manchester | Level Lines Studio',
     metaDescription:
       'Premium kitchen renovations in Manchester by Level Lines Studio for homeowners who want layout clarity, joinery precision and tighter finish control.',
@@ -217,6 +271,33 @@ const pages = [
   },
   {
     fileName: 'interior-renovations-manchester.html',
+    primaryKeyword: 'premium interior renovations manchester',
+    searchIntent: 'service',
+    summaryLine: 'Interior renovations and wall-system work carried through one coordinated finish language.',
+    proofPoints: ['Carpentry and joinery', 'Interior and exterior wall systems', 'Multi-room continuity'],
+    internalLinks: [
+      {
+        eyebrow: 'Related services',
+        title: 'Connected service lines',
+        lead: 'Interior briefs often overlap with bathrooms, kitchens and the wider quote route.',
+        links: [
+          { href: '/services.html', label: 'Services hub' },
+          { href: '/premium-bathrooms-manchester.html', label: 'Bathroom service' },
+          { href: '/premium-kitchens-manchester.html', label: 'Kitchen service' }
+        ]
+      },
+      {
+        eyebrow: 'Local routes',
+        title: 'Popular renovation locations',
+        lead: 'Related premium briefs across Manchester and the North West.',
+        links: [
+          { href: '/premium-renovations-stockport.html', label: 'Stockport' },
+          { href: '/premium-renovations-sale.html', label: 'Sale' },
+          { href: '/premium-renovations-wilmslow.html', label: 'Wilmslow' }
+        ]
+      }
+    ],
+    suppressHelperCopy: true,
     title: 'Premium Interior Renovations Manchester | Level Lines Studio',
     metaDescription:
       'Premium interior renovations in Manchester by Level Lines Studio for homeowners seeking carpentry precision, wall-system discipline and one calm finish language.',

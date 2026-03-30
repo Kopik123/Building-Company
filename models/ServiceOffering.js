@@ -20,6 +20,10 @@ const ServiceOffering = sequelize.define('ServiceOffering', {
     type: DataTypes.STRING,
     allowNull: true
   },
+  summaryLine: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
   fullDescription: {
     type: DataTypes.TEXT,
     allowNull: true
@@ -34,6 +38,10 @@ const ServiceOffering = sequelize.define('ServiceOffering', {
     allowNull: true
   },
   heroImageUrl: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  serviceCtaLabel: {
     type: DataTypes.STRING,
     allowNull: true
   },

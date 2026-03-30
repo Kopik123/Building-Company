@@ -1,8 +1,29 @@
 require('dotenv').config();
 
-const { migrator } = require('../db/migrator');
+const applyMigrationDatabaseFallback = () => {
+  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
+  if (!process.env.DEV_DATABASE_URL) return null;
+  process.env.DATABASE_URL = process.env.DEV_DATABASE_URL;
+  return process.env.DATABASE_URL;
+};
+
+const getMissingDatabaseUrlMessage = () =>
+  'DATABASE_URL is required to run migrations. Set DATABASE_URL or DEV_DATABASE_URL in your shell or local .env before running `npm run migrate` or `npm run migrate:status`.';
+
+const ensureDatabaseUrl = () => {
+  if (applyMigrationDatabaseFallback()) return;
+  const error = new Error(getMissingDatabaseUrlMessage());
+  error.code = 'MISSING_DATABASE_URL';
+  throw error;
+};
+
+const loadMigrator = () => {
+  ensureDatabaseUrl();
+  return require('../db/migrator').migrator;
+};
 
 const run = async () => {
+  const migrator = loadMigrator();
   const args = new Set(process.argv.slice(2));
   if (args.has('--status')) {
     const [executed, pending] = await Promise.all([migrator.executed(), migrator.pending()]);
@@ -23,10 +44,23 @@ const run = async () => {
   migrations.forEach((migration) => console.log(`- ${migration.name}`));
 };
 
-run()
-  .then(() => process.exit(0))
-  .catch((error) => {
-    console.error('Migration run failed:', error);
-    process.exit(1);
-  });
+module.exports = {
+  run,
+  applyMigrationDatabaseFallback,
+  ensureDatabaseUrl,
+  getMissingDatabaseUrlMessage,
+  loadMigrator
+};
 
+if (require.main === module) {
+  run()
+    .then(() => process.exit(0))
+    .catch((error) => {
+      if (error?.code === 'MISSING_DATABASE_URL') {
+        console.error(error.message);
+        process.exit(1);
+      }
+      console.error('Migration run failed:', error);
+      process.exit(1);
+    });
+}

@@ -1,6 +1,31 @@
 (() => {
+  const runtime = globalThis.LevelLinesRuntime || {};
   const forms = document.querySelectorAll('.quote-form');
   if (!forms.length) return;
+  const MAX_QUOTE_PHOTOS = 8;
+  const EMPTY_FILES_STATUS_TEXT = 'Optional: attach up to 8 reference photos.';
+  const QUOTE_PREVIEW_QUERY_KEY = 'quote';
+  const QUOTE_WORKSPACE_PATH = '/client-dashboard.html';
+  const PUBLIC_QUOTE_API_BASE = '/api/v2/public/quotes';
+  const NEW_QUOTE_API_BASE = '/api/v2/new-quotes';
+  const TOKEN_KEY = runtime.TOKEN_KEY || 'll_auth_token';
+  const USER_KEY = runtime.USER_KEY || 'll_auth_user';
+  const V2_ACCESS_KEY = runtime.V2_ACCESS_KEY || 'll_v2_access_token';
+  const previewUrlsByRoot = new WeakMap();
+  const followupContextByForm = new WeakMap();
+  const selectedFilesByInput = new WeakMap();
+  const quoteStepStateByForm = new WeakMap();
+  const quotePreviewToken = new URLSearchParams(window.location.search).get(QUOTE_PREVIEW_QUERY_KEY);
+  const formatTimestamp = runtime.formatTimestamp;
+  const humanizeToken = runtime.humanizeToken || runtime.titleCase;
+  const setStatus = runtime.setStatus;
+  const getSavedUser = runtime.getStoredUser;
+  const getPendingQuoteClaim = runtime.getPendingQuoteClaim;
+  const savePendingQuoteClaim = runtime.savePendingQuoteClaim;
+  const clearPendingQuoteClaim = runtime.clearPendingQuoteClaim;
+  const isPendingQuoteClaimActive = runtime.isPendingQuoteClaimActive;
+  const refreshSessionFromV2 = runtime.refreshSessionFromV2;
+  let quotePreviewRequest;
 
   const normalizeProjectType = (value) => {
     const lower = String(value || '').trim().toLowerCase();
@@ -41,69 +66,1753 @@
     return 'other';
   };
 
+  const getFilesStatusText = (files, emptyText = EMPTY_FILES_STATUS_TEXT, suffix = '') => {
+    if (!files.length) return emptyText;
+    const base = files.length === 1 ? `${files[0].name} selected.` : `${files.length} photos selected.`;
+    return suffix ? `${base} ${suffix}` : base;
+  };
+
+  const buildFileFingerprint = (file) => [
+    String(file?.name || ''),
+    Number(file?.size || 0),
+    String(file?.type || ''),
+    Number(file?.lastModified || 0)
+  ].join('::');
+
+  const dedupeFiles = (files) => {
+    const fingerprints = new Set();
+    return (Array.isArray(files) ? files : []).filter((file) => {
+      const fingerprint = buildFileFingerprint(file);
+      if (!fingerprint || fingerprints.has(fingerprint)) {
+        return false;
+      }
+      fingerprints.add(fingerprint);
+      return true;
+    });
+  };
+
+  const syncNativeFileInput = (filesInput, files) => {
+    if (!(filesInput instanceof HTMLInputElement) || typeof DataTransfer === 'undefined') {
+      return;
+    }
+
+    const dataTransfer = new DataTransfer();
+    files.forEach((file) => dataTransfer.items.add(file));
+    filesInput.files = dataTransfer.files;
+  };
+
+  const getSelectedFiles = (filesInput) => {
+    const stored = selectedFilesByInput.get(filesInput);
+    if (Array.isArray(stored)) {
+      return [...stored];
+    }
+    return Array.from(filesInput?.files || []);
+  };
+
+  const setSelectedFiles = (filesInput, files) => {
+    const normalized = dedupeFiles(files);
+    if (filesInput) {
+      if (normalized.length) {
+        selectedFilesByInput.set(filesInput, normalized);
+      } else {
+        selectedFilesByInput.delete(filesInput);
+      }
+      syncNativeFileInput(filesInput, normalized);
+    }
+    return normalized;
+  };
+
+  const mergeSelectedFiles = (filesInput, incomingFiles, maxFiles = MAX_QUOTE_PHOTOS) => {
+    const merged = dedupeFiles([
+      ...getSelectedFiles(filesInput),
+      ...(Array.isArray(incomingFiles) ? incomingFiles : [])
+    ]);
+    const truncated = Number.isFinite(maxFiles) && merged.length > maxFiles;
+    const nextFiles = truncated ? merged.slice(0, maxFiles) : merged;
+    return {
+      files: setSelectedFiles(filesInput, nextFiles),
+      truncated
+    };
+  };
+
+  const clearSelectedFiles = (filesInput) => {
+    setSelectedFiles(filesInput, []);
+  };
+
+  const getFilesLimitSuffix = (maxFiles, truncated) => {
+    if (!truncated || !Number.isFinite(maxFiles)) return '';
+    return `Only the first ${maxFiles} photo${maxFiles === 1 ? '' : 's'} can be kept here.`;
+  };
+
+  const isImageFile = (file) => String(file?.type || '').toLowerCase().startsWith('image/');
+
+  const readResponsePayload = async (response) => {
+    const contentType = String(response?.headers?.get?.('content-type') || '').toLowerCase();
+    if (contentType.includes('application/json')) {
+      return response.json().catch(() => ({}));
+    }
+
+    const textPayload = await response.text().catch(() => '');
+    return {
+      text: textPayload
+    };
+  };
+
+  const buildResponseErrorMessage = (response, payload, fallback, options = {}) => {
+    const payloadMessage = String(payload?.error || payload?.message || '').trim();
+    if (payloadMessage) {
+      return payloadMessage;
+    }
+
+    if (response?.status === 413) {
+      return options.largePayloadMessage || 'The selected photos are too large to upload in one request.';
+    }
+
+    if ([408, 502, 504].includes(Number(response?.status || 0))) {
+      return options.timeoutMessage || 'The upload took too long to finish.';
+    }
+
+    const textPayload = String(payload?.text || '').trim();
+    if (textPayload) {
+      return textPayload.length > 220 ? `${textPayload.slice(0, 217)}...` : textPayload;
+    }
+
+    return fallback;
+  };
+
+  const appendFilesToRequest = (requestBody, files) => {
+    files.forEach((file, index) => {
+      requestBody.append('files', file, file?.name || `quote-photo-${index + 1}.jpg`);
+    });
+  };
+
+  const canvasToBlob = (canvas, mimeType, quality) => new Promise((resolve) => {
+    if (typeof canvas?.toBlob !== 'function') {
+      resolve(null);
+      return;
+    }
+
+    canvas.toBlob((blob) => resolve(blob), mimeType, quality);
+  });
+
+  const loadImageForUpload = (file) => new Promise((resolve, reject) => {
+    const previewUrl = URL.createObjectURL(file);
+    const image = new Image();
+    image.onload = () => {
+      URL.revokeObjectURL(previewUrl);
+      resolve(image);
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(previewUrl);
+      reject(new Error('Could not prepare this image for upload.'));
+    };
+    image.src = previewUrl;
+  });
+
+  const renameFileExtension = (name, nextExtension) => {
+    const baseName = String(name || 'quote-photo').replace(/\.[^.]+$/, '');
+    return `${baseName}${nextExtension}`;
+  };
+
+  const optimizeQuoteImageFile = async (file) => {
+    if (!isImageFile(file) || Number(file?.size || 0) <= 1024 * 1024) {
+      return file;
+    }
+
+    const mimeType = String(file.type || '').toLowerCase();
+    if (mimeType === 'image/gif' || mimeType === 'image/svg+xml') {
+      return file;
+    }
+
+    const image = await loadImageForUpload(file).catch(() => null);
+    if (!image || typeof document === 'undefined') {
+      return file;
+    }
+
+    const sourceWidth = Number(image.naturalWidth || image.width || 0);
+    const sourceHeight = Number(image.naturalHeight || image.height || 0);
+    const largestSide = Math.max(sourceWidth, sourceHeight);
+    if (!largestSide) {
+      return file;
+    }
+
+    const scale = Math.min(1, 1800 / largestSide);
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(sourceWidth * scale));
+    canvas.height = Math.max(1, Math.round(sourceHeight * scale));
+
+    const context = canvas.getContext('2d');
+    if (!context) {
+      return file;
+    }
+
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+    let bestBlob = null;
+    for (const quality of [0.82, 0.74, 0.66, 0.58]) {
+      const candidate = await canvasToBlob(canvas, 'image/jpeg', quality);
+      if (!candidate) {
+        break;
+      }
+      bestBlob = candidate;
+      if (candidate.size <= 900 * 1024) {
+        break;
+      }
+    }
+
+    if (!bestBlob) {
+      return file;
+    }
+
+    const resized = scale < 0.995;
+    const sizeReduced = bestBlob.size < Number(file.size || 0) * 0.94;
+    if (!resized && !sizeReduced) {
+      return file;
+    }
+
+    const optimizedName = renameFileExtension(file.name, '.jpg');
+    if (typeof File === 'function') {
+      return new File([bestBlob], optimizedName, {
+        type: 'image/jpeg',
+        lastModified: Number(file.lastModified || Date.now())
+      });
+    }
+
+    return Object.assign(bestBlob, {
+      name: optimizedName,
+      lastModified: Number(file.lastModified || Date.now())
+    });
+  };
+
+  const prepareQuoteFilesForUpload = async (files, onProgress) => {
+    const prepared = [];
+    for (let index = 0; index < files.length; index += 1) {
+      onProgress?.(`Preparing photo ${index + 1} of ${files.length}...`);
+      prepared.push(await optimizeQuoteImageFile(files[index]));
+    }
+    return prepared;
+  };
+
+  const uploadQuoteAttachmentBatches = async ({ publicToken, files, onProgress }) => {
+    if (!publicToken || !Array.isArray(files) || !files.length) {
+      return null;
+    }
+
+    const preparedFiles = await prepareQuoteFilesForUpload(files, onProgress);
+    const batchSize = 2;
+    let latestPreview = null;
+    const totalBatches = Math.ceil(preparedFiles.length / batchSize);
+
+    for (let index = 0; index < preparedFiles.length; index += batchSize) {
+      const batchNumber = Math.floor(index / batchSize) + 1;
+      const batch = preparedFiles.slice(index, index + batchSize);
+      onProgress?.(`Uploading photo batch ${batchNumber} of ${totalBatches}...`);
+
+      const requestBody = new FormData();
+      appendFilesToRequest(requestBody, batch);
+
+      const response = await fetch(`${PUBLIC_QUOTE_API_BASE}/${encodeURIComponent(publicToken)}/attachments`, {
+        method: 'POST',
+        body: requestBody
+      });
+      const responsePayload = await readResponsePayload(response);
+      if (!response.ok) {
+        const error = new Error(buildResponseErrorMessage(
+          response,
+          responsePayload,
+          'Could not upload the extra quote photos.',
+          {
+            largePayloadMessage: 'The quote was saved, but the selected photos are still too large. Please retry smaller images from the private quote link.',
+            timeoutMessage: 'The quote was saved, but the photo upload timed out. Please retry the photos from the private quote link.'
+          }
+        ));
+        error.preview = latestPreview;
+        throw error;
+      }
+
+      latestPreview = normalizeQuotePreviewPayload(responsePayload, publicToken);
+    }
+
+    return latestPreview;
+  };
+
+  const formatFileSize = (bytes) => {
+    const numericBytes = Number(bytes) || 0;
+    if (numericBytes <= 0) return 'Image file';
+    if (numericBytes < 1024 * 1024) return `${Math.max(1, Math.round(numericBytes / 1024))} KB`;
+    return `${(numericBytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const isValidEmail = (value) => !value || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value).trim());
+  const buildQuoteProposalDetails = ({ formData, location, postcode, budgetRange }) => ({
+    version: 1,
+    source: 'public_quote_form_v2',
+    projectScope: {
+      propertyType: String(formData.get('propertyType') || '').trim() || null,
+      roomsInvolved: formData.getAll('roomsInvolved').map((value) => String(value || '').trim()).filter(Boolean),
+      occupancyStatus: String(formData.get('occupancyStatus') || '').trim() || null,
+      planningStage: String(formData.get('planningStage') || '').trim() || null,
+      targetStartWindow: String(formData.get('targetStartWindow') || '').trim() || null,
+      siteAccess: String(formData.get('siteAccess') || '').trim() || null
+    },
+    commercial: {
+      budgetRange: budgetRange || null,
+      finishLevel: String(formData.get('finishLevel') || '').trim() || null
+    },
+    logistics: {
+      location: location || null,
+      postcode: postcode || null
+    },
+    priorities: formData.getAll('priorities').map((value) => String(value || '').trim()).filter(Boolean),
+    brief: {
+      summary: String(formData.get('message') || '').trim() || null,
+      mustHaves: String(formData.get('mustHaves') || '').trim() || null,
+      constraints: String(formData.get('constraints') || '').trim() || null
+    }
+  });
+  const getProposalMetaItems = (proposalDetails) => {
+    if (!proposalDetails || typeof proposalDetails !== 'object') return [];
+    const rooms = Array.isArray(proposalDetails?.projectScope?.roomsInvolved)
+      ? proposalDetails.projectScope.roomsInvolved.map((entry) => humanizeToken(entry)).filter(Boolean).join(', ')
+      : '';
+    return [
+      ['Property', humanizeToken(proposalDetails?.projectScope?.propertyType)],
+      ['Start', humanizeToken(proposalDetails?.projectScope?.targetStartWindow)],
+      ['Finish', humanizeToken(proposalDetails?.commercial?.finishLevel)],
+      ['Rooms', rooms]
+    ].filter(([, value]) => Boolean(String(value || '').trim()));
+  };
+  const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
+  const normalizePhone = (value) => String(value || '').trim();
+  const normalizeAccountName = (value) => String(value || '').trim();
+  const hasSessionToken = () => Boolean(localStorage.getItem(TOKEN_KEY));
+  const getActiveQuoteAccountProfile = () => {
+    if (!hasSessionToken()) return null;
+    const user = getSavedUser();
+    if (!user || String(user.role || '').trim().toLowerCase() !== 'client') {
+      return null;
+    }
+
+    const profile = {
+      name: normalizeAccountName(user.name),
+      email: normalizeEmail(user.email),
+      phone: normalizePhone(user.phone)
+    };
+
+    if (!profile.name && !profile.email && !profile.phone) {
+      return null;
+    }
+
+    return profile;
+  };
+
+  const readV2AccessToken = () => String(localStorage.getItem(V2_ACCESS_KEY) || '').trim();
+
+  const refreshV2AccessToken = async () => {
+    if (typeof refreshSessionFromV2 !== 'function') return '';
+    try {
+      await refreshSessionFromV2();
+    } catch (_) {
+      return '';
+    }
+    return readV2AccessToken();
+  };
+
+  const fetchWithV2Session = async (url, options = {}) => {
+    const buildHeaders = (accessToken) => {
+      const headers = new Headers(options.headers || {});
+      if (accessToken && !headers.has('Authorization')) {
+        headers.set('Authorization', `Bearer ${accessToken}`);
+      }
+      if (!headers.has('Accept')) {
+        headers.set('Accept', 'application/json');
+      }
+      return headers;
+    };
+
+    let accessToken = readV2AccessToken();
+    if (!accessToken) {
+      accessToken = await refreshV2AccessToken();
+    }
+    if (!accessToken) {
+      throw new Error('Your session expired. Please log in again before sending the quote.');
+    }
+
+    let response = await fetch(url, { ...options, headers: buildHeaders(accessToken) });
+    if (response.status !== 401) {
+      return response;
+    }
+
+    accessToken = await refreshV2AccessToken();
+    if (!accessToken) {
+      return response;
+    }
+    return fetch(url, { ...options, headers: buildHeaders(accessToken) });
+  };
+  const humanizeContactFieldList = (items) => {
+    const normalized = (Array.isArray(items) ? items : []).filter(Boolean);
+    if (!normalized.length) return '';
+    if (normalized.length === 1) return normalized[0];
+    if (normalized.length === 2) return `${normalized[0]} and ${normalized[1]}`;
+    return `${normalized.slice(0, -1).join(', ')}, and ${normalized[normalized.length - 1]}`;
+  };
+  const buildAuthClaimUrl = () => {
+    const authUrl = new URL('/auth.html', window.location.origin);
+    authUrl.searchParams.set('next', QUOTE_WORKSPACE_PATH);
+    return `${authUrl.pathname}${authUrl.search}`;
+  };
+  const getRemainingPhotoSlots = (preview) => Math.max(0, MAX_QUOTE_PHOTOS - Number(preview?.attachmentCount || 0));
+
+  const buildQuotePreviewUrl = (form, publicToken) => {
+    const currentUrl = new URL(window.location.href);
+    currentUrl.searchParams.set(QUOTE_PREVIEW_QUERY_KEY, publicToken);
+    const anchorId = form.closest('section[id], article[id], div[id]')?.id;
+    if (anchorId) {
+      currentUrl.hash = anchorId;
+    }
+    return `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`;
+  };
+
+  const createFollowupMetaItem = (label, value) => {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'quote-followup-meta-item';
+
+    const term = document.createElement('dt');
+    term.textContent = label;
+
+    const description = document.createElement('dd');
+    description.textContent = value;
+
+    wrapper.appendChild(term);
+    wrapper.appendChild(description);
+    return wrapper;
+  };
+
+  const renderSavedAttachments = (previewRoot, attachments) => {
+    if (!previewRoot) return;
+
+    previewRoot.textContent = '';
+    const normalized = Array.isArray(attachments) ? attachments.filter(Boolean) : [];
+    if (!normalized.length) {
+      previewRoot.hidden = true;
+      return;
+    }
+
+    const grid = document.createElement('div');
+    grid.className = 'quote-file-preview-grid';
+
+    normalized.forEach((attachment, index) => {
+      const card = document.createElement('article');
+      card.className = 'quote-file-preview-card quote-file-preview-card--readonly';
+
+      const thumb = document.createElement('div');
+      thumb.className = 'quote-file-preview-thumb';
+
+      const image = document.createElement('img');
+      image.src = attachment.url || '';
+      image.alt = `Submitted quote photo ${index + 1}: ${attachment.name || 'Reference image'}`;
+      image.loading = 'lazy';
+      image.decoding = 'async';
+      thumb.appendChild(image);
+
+      const meta = document.createElement('div');
+      meta.className = 'quote-file-preview-meta';
+
+      const name = document.createElement('p');
+      name.className = 'quote-file-preview-name';
+      name.textContent = attachment.name || `Reference image ${index + 1}`;
+
+      const size = document.createElement('p');
+      size.className = 'quote-file-preview-size';
+      size.textContent = formatFileSize(attachment.size);
+
+      const link = document.createElement('a');
+      link.className = 'quote-file-preview-link';
+      link.href = attachment.url || '#';
+      link.target = '_blank';
+      link.rel = 'noreferrer';
+      link.textContent = 'Open image';
+
+      meta.appendChild(name);
+      meta.appendChild(size);
+      meta.appendChild(link);
+
+      card.appendChild(thumb);
+      card.appendChild(meta);
+      grid.appendChild(card);
+    });
+
+    previewRoot.appendChild(grid);
+    previewRoot.hidden = false;
+  };
+
+  const normalizeQuotePreviewPayload = (payload, publicToken = '') => {
+    const envelope = payload?.data && typeof payload.data === 'object' ? payload.data : (payload || {});
+    const explicitNewQuote = envelope?.newQuote && typeof envelope.newQuote === 'object'
+      ? envelope.newQuote
+      : (payload?.newQuote && typeof payload.newQuote === 'object' ? payload.newQuote : null);
+    const explicitQuote = envelope?.quote && typeof envelope.quote === 'object'
+      ? envelope.quote
+      : (payload?.quote && typeof payload.quote === 'object' ? payload.quote : null);
+    const quote = explicitNewQuote || explicitQuote || envelope;
+    const attachments = Array.isArray(quote.attachments)
+      ? quote.attachments
+      : (Array.isArray(envelope?.attachments) ? envelope.attachments : (Array.isArray(payload?.attachments) ? payload.attachments : []));
+    const quoteRef = quote.quoteRef || quote.referenceCode || envelope?.quoteRef || envelope?.referenceCode || payload?.quoteRef || payload?.referenceCode || '';
+    const recordType = String(
+      quote.recordType
+      || envelope?.recordType
+      || payload?.recordType
+      || (explicitNewQuote ? 'new_quote' : 'quote')
+    ).trim().toLowerCase() || 'quote';
+    const accountLinked = Boolean(quote.accountLinked ?? envelope?.accountLinked ?? payload?.accountLinked ?? recordType === 'new_quote');
+
+    return {
+      quoteId: quote.id || envelope?.quoteId || payload?.quoteId || '',
+      quoteRef,
+      referenceCode: quoteRef,
+      publicToken: publicToken || quote.publicToken || envelope?.publicToken || payload?.publicToken || '',
+      projectType: quote.projectType || envelope?.projectType || payload?.projectType || '',
+      location: quote.location || envelope?.location || payload?.location || '',
+      status: quote.status || envelope?.status || payload?.status || '',
+      workflowStatus: quote.workflowStatus || envelope?.workflowStatus || payload?.workflowStatus || '',
+      priority: quote.priority || envelope?.priority || payload?.priority || '',
+      attachmentCount: Number(quote.attachmentCount ?? envelope?.attachmentCount ?? payload?.attachmentCount ?? attachments.length) || 0,
+      canClaim: Boolean(quote.canClaim ?? envelope?.canClaim ?? payload?.canClaim ?? !accountLinked),
+      claimChannels: Array.isArray(quote.claimChannels)
+        ? quote.claimChannels.filter(Boolean)
+        : (Array.isArray(envelope?.claimChannels)
+          ? envelope.claimChannels.filter(Boolean)
+          : (Array.isArray(payload?.claimChannels) ? payload.claimChannels.filter(Boolean) : [])),
+      maskedGuestEmail: quote.maskedGuestEmail || envelope?.maskedGuestEmail || payload?.maskedGuestEmail || '',
+      maskedGuestPhone: quote.maskedGuestPhone || envelope?.maskedGuestPhone || payload?.maskedGuestPhone || '',
+      proposalDetails: quote.proposalDetails || envelope?.proposalDetails || payload?.proposalDetails || null,
+      attachments,
+      createdAt: quote.createdAt || envelope?.createdAt || payload?.createdAt || '',
+      updatedAt: quote.updatedAt || envelope?.updatedAt || payload?.updatedAt || '',
+      submittedAt: quote.submittedAt || envelope?.submittedAt || payload?.submittedAt || '',
+      assignedAt: quote.assignedAt || envelope?.assignedAt || payload?.assignedAt || '',
+      convertedAt: quote.convertedAt || envelope?.convertedAt || payload?.convertedAt || '',
+      closedAt: quote.closedAt || envelope?.closedAt || payload?.closedAt || '',
+      accountLinked,
+      recordType
+    };
+  };
+
+  const fetchQuotePreview = async (publicToken) => {
+    const response = await fetch(`${PUBLIC_QUOTE_API_BASE}/${encodeURIComponent(publicToken)}`, {
+      headers: {
+        Accept: 'application/json'
+      }
+    });
+    const responsePayload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(responsePayload.error || 'Could not load this private quote link.');
+    }
+    return normalizeQuotePreviewPayload(responsePayload, publicToken);
+  };
+
+  const resolveFollowupContext = (form, options = {}) => {
+    const previous = followupContextByForm.get(form) || {};
+    const next = {
+      guestEmail: Object.hasOwn(options, 'guestEmail')
+        ? normalizeEmail(options.guestEmail)
+        : (previous.guestEmail || ''),
+      guestPhone: Object.hasOwn(options, 'guestPhone')
+        ? normalizePhone(options.guestPhone)
+        : (previous.guestPhone || '')
+    };
+    followupContextByForm.set(form, next);
+    return {
+      ...next,
+      uploadNotice: options.uploadNotice || null
+    };
+  };
+
+  const buildClaimContactHint = (preview, channel) => {
+    if (channel === 'email') {
+      return preview.maskedGuestEmail
+        ? `Use the same email used for this quote (${preview.maskedGuestEmail}).`
+        : 'Use the same email used for this quote.';
+    }
+
+    return preview.maskedGuestPhone
+      ? `Use the same phone used for this quote (${preview.maskedGuestPhone}).`
+      : 'Use the same phone used for this quote.';
+  };
+
+  const createQuoteClaimPanel = ({ preview, previewUrl, guestEmail = '', guestPhone = '' }) => {
+    const availableChannels = [...new Set([
+      ...(Array.isArray(preview.claimChannels) ? preview.claimChannels : []),
+      guestEmail ? 'email' : null,
+      guestPhone ? 'phone' : null
+    ].filter(Boolean))];
+
+    if (!preview.canClaim || !preview.quoteId || !availableChannels.length) {
+      return null;
+    }
+
+    const currentUser = getSavedUser();
+    const pendingClaim = getPendingQuoteClaim();
+    const hasActivePendingClaim = pendingClaim?.quoteId === preview.quoteId && isPendingQuoteClaimActive(pendingClaim);
+    const wrapper = document.createElement('section');
+    wrapper.className = 'quote-claim-card';
+    wrapper.setAttribute('data-quote-claim-panel', '');
+
+    const heading = document.createElement('div');
+    heading.className = 'quote-claim-head';
+
+    const eyebrow = document.createElement('p');
+    eyebrow.className = 'section-eyebrow section-eyebrow--compact';
+    eyebrow.textContent = 'Claim Quote';
+
+    const title = document.createElement('h4');
+    title.textContent = 'Link this private quote to your account.';
+
+    const intro = document.createElement('p');
+    intro.className = 'page-aside-copy';
+    intro.textContent = 'We send a 6-digit code to the same contact you used for this quote. After login or registration, confirm the code in your account.';
+
+    heading.appendChild(eyebrow);
+    heading.appendChild(title);
+    heading.appendChild(intro);
+
+    const form = document.createElement('form');
+    form.className = 'quote-claim-form';
+    form.noValidate = true;
+
+    const controls = document.createElement('div');
+    controls.className = 'quote-claim-grid';
+
+    const channelLabel = document.createElement('label');
+    channelLabel.textContent = 'Delivery channel';
+    const channelSelect = document.createElement('select');
+    channelSelect.name = 'channel';
+    availableChannels.forEach((channel) => {
+      const option = document.createElement('option');
+      option.value = channel;
+      option.textContent = channel === 'email' ? 'Email' : 'Phone';
+      channelSelect.appendChild(option);
+    });
+    channelLabel.appendChild(channelSelect);
+
+    const contactLabel = document.createElement('label');
+    contactLabel.className = 'quote-claim-contact-label';
+    const contactLabelText = document.createElement('span');
+    contactLabelText.textContent = 'Quote email';
+    const contactInput = document.createElement('input');
+    contactInput.required = true;
+    contactLabel.appendChild(contactLabelText);
+    contactLabel.appendChild(contactInput);
+
+    controls.appendChild(channelLabel);
+    controls.appendChild(contactLabel);
+
+    const hint = document.createElement('p');
+    hint.className = 'quote-claim-hint';
+
+    const actionRow = document.createElement('div');
+    actionRow.className = 'quote-claim-actions';
+
+    const requestButton = document.createElement('button');
+    requestButton.type = 'submit';
+    requestButton.className = 'btn-outline-gold';
+    requestButton.textContent = hasActivePendingClaim ? 'Send new claim code' : 'Send claim code';
+
+    const accountLink = document.createElement('a');
+    accountLink.className = 'btn-outline-gold';
+    accountLink.href = buildAuthClaimUrl();
+    accountLink.textContent = currentUser?.email || hasSessionToken()
+      ? 'Open account to confirm code'
+      : 'Login or register to confirm';
+
+    actionRow.appendChild(requestButton);
+    actionRow.appendChild(accountLink);
+
+    const status = document.createElement('p');
+    status.className = 'form-status';
+
+    const syncClaimField = () => {
+      const channel = channelSelect.value === 'phone' ? 'phone' : 'email';
+      if (channel === 'phone') {
+        contactLabelText.textContent = 'Quote phone';
+        contactInput.type = 'tel';
+        contactInput.name = 'guestPhone';
+        contactInput.autocomplete = 'tel';
+        contactInput.inputMode = 'tel';
+        contactInput.value = guestPhone || '';
+      } else {
+        contactLabelText.textContent = 'Quote email';
+        contactInput.type = 'email';
+        contactInput.name = 'guestEmail';
+        contactInput.autocomplete = 'email';
+        contactInput.inputMode = 'email';
+        contactInput.value = guestEmail || '';
+      }
+      contactInput.placeholder = buildClaimContactHint(preview, channel);
+      hint.textContent = buildClaimContactHint(preview, channel);
+    };
+
+    if (hasActivePendingClaim && pendingClaim.channel && availableChannels.includes(pendingClaim.channel)) {
+      channelSelect.value = pendingClaim.channel;
+    }
+    if (availableChannels.length === 1) {
+      channelLabel.hidden = true;
+    }
+    syncClaimField();
+
+    if (hasActivePendingClaim) {
+      const pendingChannelLabel = humanizeToken(pendingClaim.channel);
+      const pendingTarget = pendingClaim.maskedTarget ? ` to ${pendingClaim.maskedTarget}` : '';
+      setStatus(
+        status,
+        `A claim code is already active for this quote. Check your ${pendingChannelLabel.toLowerCase()}${pendingTarget} and confirm it in your account before ${formatTimestamp(pendingClaim.expiresAt)}.`,
+        'success'
+      );
+    }
+
+    channelSelect.addEventListener('change', () => {
+      syncClaimField();
+      setStatus(status, '');
+    });
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const channel = channelSelect.value === 'phone' ? 'phone' : 'email';
+      const contactValue = channel === 'phone'
+        ? normalizePhone(contactInput.value)
+        : normalizeEmail(contactInput.value);
+
+      if (!contactValue) {
+        setStatus(
+          status,
+          channel === 'phone' ? 'Enter the phone number used for this quote.' : 'Enter the email used for this quote.',
+          'error'
+        );
+        return;
+      }
+
+      requestButton.disabled = true;
+      setStatus(status, 'Sending claim code...', 'loading');
+
+      try {
+        const response = await fetch(`${PUBLIC_QUOTE_API_BASE}/${encodeURIComponent(preview.quoteId)}/claim/request`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json'
+          },
+          body: JSON.stringify(channel === 'phone'
+            ? { channel, guestPhone: contactValue }
+            : { channel, guestEmail: contactValue })
+        });
+        const responsePayload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(responsePayload.error || 'Could not send the quote claim code.');
+        }
+
+        const maskedTarget = responsePayload.maskedTarget || (channel === 'phone' ? preview.maskedGuestPhone : preview.maskedGuestEmail) || '';
+        savePendingQuoteClaim({
+          quoteId: preview.quoteId,
+          claimToken: responsePayload.claimToken || '',
+          channel,
+          maskedTarget,
+          expiresAt: responsePayload.expiresAt || '',
+          previewUrl: previewUrl || '',
+          workspacePath: QUOTE_WORKSPACE_PATH,
+          publicToken: preview.publicToken || '',
+          referenceCode: responsePayload.referenceCode || preview.referenceCode || ''
+        });
+
+        setStatus(
+          status,
+          `Claim code sent via ${channel}. ${maskedTarget ? `Target: ${maskedTarget}. ` : ''}Open your account and confirm the 6-digit code before ${formatTimestamp(responsePayload.expiresAt)}.`,
+          'success'
+        );
+        accountLink.textContent = 'Open account to confirm code';
+      } catch (error) {
+        setStatus(status, error.message || 'Could not send the quote claim code.', 'error');
+      } finally {
+        requestButton.disabled = false;
+      }
+    });
+
+    form.appendChild(controls);
+    form.appendChild(hint);
+    form.appendChild(actionRow);
+    form.appendChild(status);
+    wrapper.appendChild(heading);
+    wrapper.appendChild(form);
+    return wrapper;
+  };
+
+  const renderQuoteFollowup = (form, preview, options = {}) => {
+    const context = resolveFollowupContext(form, options);
+    const panel = form.querySelector('[data-quote-followup]');
+    if (!panel) return;
+
+    const title = panel.querySelector('[data-quote-followup-title]');
+    const summary = panel.querySelector('[data-quote-followup-summary]');
+    const meta = panel.querySelector('[data-quote-followup-meta]');
+    const actions = panel.querySelector('[data-quote-followup-actions]');
+    const attachmentsRoot = panel.querySelector('[data-quote-followup-attachments]');
+    const previewUrl = preview.publicToken ? buildQuotePreviewUrl(form, preview.publicToken) : '';
+    const statusLabel = humanizeToken(preview.workflowStatus || preview.status || 'submitted');
+    const projectTypeLabel = preview.projectType ? humanizeToken(preview.projectType) : 'Project';
+    const referenceLabel = preview.referenceCode || preview.quoteRef || preview.quoteId;
+    const isAccountLinked = Boolean(preview.accountLinked);
+    const summaryBits = isAccountLinked
+      ? [
+        referenceLabel ? `Reference ${referenceLabel}.` : 'Quote saved to your account.',
+        preview.location ? `${projectTypeLabel} in ${preview.location}.` : `${projectTypeLabel} request saved.`,
+        'This request is linked to your account and will appear in your quote workspace.'
+      ].filter(Boolean)
+      : [
+        referenceLabel ? `Reference ${referenceLabel}.` : 'Quote saved.',
+        preview.location ? `${projectTypeLabel} in ${preview.location}.` : `${projectTypeLabel} quote.`,
+        preview.publicToken ? 'Keep the private link below to review status later.' : ''
+      ].filter(Boolean);
+
+    if (title) {
+      title.textContent = `Quote status: ${statusLabel}`;
+    }
+    if (summary) {
+      summary.textContent = summaryBits.join(' ');
+    }
+
+    if (meta) {
+      meta.textContent = '';
+      const items = [
+        ['Reference', referenceLabel || 'Pending reference'],
+        ['Workflow', statusLabel],
+        preview.status ? ['Legacy status', humanizeToken(preview.status)] : null,
+        preview.priority ? ['Priority', humanizeToken(preview.priority)] : null,
+        preview.submittedAt ? ['Submitted', formatTimestamp(preview.submittedAt)] : null,
+        preview.assignedAt ? ['Assigned', formatTimestamp(preview.assignedAt)] : null,
+        preview.convertedAt ? ['Converted', formatTimestamp(preview.convertedAt)] : null,
+        preview.closedAt ? ['Closed', formatTimestamp(preview.closedAt)] : null,
+        ['Photos', String(preview.attachmentCount || 0)],
+        ...(isAccountLinked ? [['Account route', 'Client quote workspace']] : []),
+        ...getProposalMetaItems(preview.proposalDetails)
+      ].filter(Boolean);
+
+      items.forEach(([label, value]) => {
+        meta.appendChild(createFollowupMetaItem(label, value));
+      });
+    }
+
+    renderSavedAttachments(attachmentsRoot, preview.attachments);
+
+    if (actions) {
+      actions.textContent = '';
+      const primaryActions = document.createElement('div');
+      primaryActions.className = 'quote-followup-actions-row';
+
+      if (isAccountLinked) {
+        const workspaceLink = document.createElement('a');
+        workspaceLink.className = 'btn-outline-gold';
+        workspaceLink.href = `${QUOTE_WORKSPACE_PATH}#client-quotes-section`;
+        workspaceLink.textContent = 'Open account quotes';
+        primaryActions.appendChild(workspaceLink);
+      } else {
+        if (previewUrl) {
+          const previewLink = document.createElement('a');
+          previewLink.className = 'btn-outline-gold';
+          previewLink.href = previewUrl;
+          previewLink.textContent = 'Open private quote link';
+          primaryActions.appendChild(previewLink);
+        }
+
+        const authLink = document.createElement('a');
+        authLink.className = 'btn-outline-gold';
+        authLink.href = buildAuthClaimUrl();
+        authLink.textContent = hasSessionToken() ? 'Open account' : 'Login or register';
+        primaryActions.appendChild(authLink);
+      }
+      actions.appendChild(primaryActions);
+
+      if (!isAccountLinked) {
+        const claimPanel = createQuoteClaimPanel({
+          preview,
+          previewUrl,
+          guestEmail: context.guestEmail,
+          guestPhone: context.guestPhone
+        });
+        if (claimPanel) {
+          actions.appendChild(claimPanel);
+        }
+      }
+
+      const uploadPanel = createFollowupUploadPanel({
+        form,
+        preview,
+        context
+      });
+      if (uploadPanel) {
+        actions.appendChild(uploadPanel);
+      }
+    }
+
+    panel.hidden = false;
+  };
+
+  const renderQuoteFollowupError = (form, message) => {
+    const panel = form.querySelector('[data-quote-followup]');
+    if (!panel) return;
+    const title = panel.querySelector('[data-quote-followup-title]');
+    const summary = panel.querySelector('[data-quote-followup-summary]');
+    const meta = panel.querySelector('[data-quote-followup-meta]');
+    const actions = panel.querySelector('[data-quote-followup-actions]');
+    const attachmentsRoot = panel.querySelector('[data-quote-followup-attachments]');
+
+    if (title) title.textContent = 'Private quote link unavailable';
+    if (summary) summary.textContent = message || 'We could not load that private quote link.';
+    if (meta) meta.textContent = '';
+    if (actions) actions.textContent = '';
+    if (attachmentsRoot) {
+      attachmentsRoot.textContent = '';
+      attachmentsRoot.hidden = true;
+    }
+    panel.hidden = false;
+  };
+
+  const hideQuoteFollowup = (form) => {
+    const panel = form.querySelector('[data-quote-followup]');
+    if (!panel) return;
+    const meta = panel.querySelector('[data-quote-followup-meta]');
+    const actions = panel.querySelector('[data-quote-followup-actions]');
+    const attachmentsRoot = panel.querySelector('[data-quote-followup-attachments]');
+    if (meta) meta.textContent = '';
+    if (actions) actions.textContent = '';
+    if (attachmentsRoot) {
+      attachmentsRoot.textContent = '';
+      attachmentsRoot.hidden = true;
+    }
+    panel.hidden = true;
+  };
+
+  const revokePreviewUrls = (previewRoot) => {
+    const urls = previewUrlsByRoot.get(previewRoot) || [];
+    urls.forEach((url) => {
+      try {
+        URL.revokeObjectURL(url);
+      } catch (_) {
+        // Ignore browsers that reject repeated revokes.
+      }
+    });
+    previewUrlsByRoot.delete(previewRoot);
+  };
+
+  const clearFilesPreview = (previewRoot) => {
+    revokePreviewUrls(previewRoot);
+    if (!previewRoot) return;
+    previewRoot.hidden = true;
+    previewRoot.textContent = '';
+  };
+
+  const rebuildSelectedFiles = (filesInput, removeIndex) => {
+    if (!(filesInput instanceof HTMLInputElement)) {
+      return false;
+    }
+
+    const files = getSelectedFiles(filesInput);
+    if (removeIndex < 0 || removeIndex >= files.length) {
+      return false;
+    }
+    setSelectedFiles(filesInput, files.filter((_file, index) => index !== removeIndex));
+    return true;
+  };
+
+  const renderFilesPreview = (previewRoot, files) => {
+    if (!previewRoot) return;
+
+    clearFilesPreview(previewRoot);
+
+    if (!files.length) {
+      return;
+    }
+
+    const urls = [];
+    const grid = document.createElement('div');
+    grid.className = 'quote-file-preview-grid';
+
+    files.forEach((file, index) => {
+      const card = document.createElement('article');
+      card.className = 'quote-file-preview-card';
+
+      const thumb = document.createElement('div');
+      thumb.className = 'quote-file-preview-thumb';
+
+      const image = document.createElement('img');
+      const objectUrl = URL.createObjectURL(file);
+      urls.push(objectUrl);
+      image.src = objectUrl;
+      image.alt = `Selected quote photo ${index + 1}: ${file.name}`;
+      image.loading = 'lazy';
+      image.decoding = 'async';
+      thumb.appendChild(image);
+
+      const meta = document.createElement('div');
+      meta.className = 'quote-file-preview-meta';
+
+      const name = document.createElement('p');
+      name.className = 'quote-file-preview-name';
+      name.textContent = file.name;
+
+      const size = document.createElement('p');
+      size.className = 'quote-file-preview-size';
+      size.textContent = formatFileSize(file.size);
+
+      meta.appendChild(name);
+      meta.appendChild(size);
+
+      card.appendChild(thumb);
+      card.appendChild(meta);
+
+      if (typeof DataTransfer !== 'undefined') {
+        const removeButton = document.createElement('button');
+        removeButton.type = 'button';
+        removeButton.className = 'quote-file-preview-remove';
+        removeButton.textContent = 'Remove';
+        removeButton.setAttribute('data-quote-file-remove-index', String(index));
+        removeButton.setAttribute('aria-label', `Remove ${file.name}`);
+        card.appendChild(removeButton);
+      }
+
+      grid.appendChild(card);
+    });
+
+    previewRoot.appendChild(grid);
+    previewRoot.hidden = false;
+    previewUrlsByRoot.set(previewRoot, urls);
+  };
+
+  const syncFilesUi = (filesInput, filesStatus, previewRoot, options = {}) => {
+    const files = getSelectedFiles(filesInput);
+    if (filesStatus) {
+      filesStatus.textContent = getFilesStatusText(files, options.emptyText, options.suffix);
+    }
+    renderFilesPreview(previewRoot, files);
+  };
+
+  const uploadAccountLinkedQuoteAttachmentBatches = async ({ quoteId, files, onProgress }) => {
+    if (!quoteId || !Array.isArray(files) || !files.length) {
+      return null;
+    }
+
+    const preparedFiles = await prepareQuoteFilesForUpload(files, onProgress);
+    const batchSize = 2;
+    let latestPreview = null;
+    const totalBatches = Math.ceil(preparedFiles.length / batchSize);
+
+    for (let index = 0; index < preparedFiles.length; index += batchSize) {
+      const batchNumber = Math.floor(index / batchSize) + 1;
+      const batch = preparedFiles.slice(index, index + batchSize);
+      onProgress?.(`Uploading photo batch ${batchNumber} of ${totalBatches} to your account quote...`);
+
+      const requestBody = new FormData();
+      appendFilesToRequest(requestBody, batch);
+
+      const response = await fetchWithV2Session(`${NEW_QUOTE_API_BASE}/${encodeURIComponent(quoteId)}/attachments`, {
+        method: 'POST',
+        body: requestBody
+      });
+      const responsePayload = await readResponsePayload(response);
+      if (!response.ok) {
+        const error = new Error(buildResponseErrorMessage(
+          response,
+          responsePayload,
+          'Could not upload the extra quote photos to your account request.',
+          {
+            largePayloadMessage: 'The request was saved to your account, but the selected photos are still too large. Retry smaller images from your account quote workspace.',
+            timeoutMessage: 'The request was saved to your account, but the photo upload timed out. Retry the photos from your account quote workspace.'
+          }
+        ));
+        error.preview = latestPreview;
+        throw error;
+      }
+
+      latestPreview = normalizeQuotePreviewPayload(responsePayload, '');
+    }
+
+    return latestPreview;
+  };
+
+  const createFollowupUploadPanel = ({ form, preview, context }) => {
+    const isAccountLinked = Boolean(preview?.accountLinked && preview?.quoteId);
+    const canUploadToGuestQuote = Boolean(preview?.publicToken);
+    if (!isAccountLinked && !canUploadToGuestQuote) {
+      return null;
+    }
+
+    const remainingSlots = getRemainingPhotoSlots(preview);
+    const wrapper = document.createElement('section');
+    wrapper.className = 'quote-claim-card quote-followup-upload-card';
+    wrapper.setAttribute('data-quote-followup-upload-panel', '');
+
+    const heading = document.createElement('div');
+    heading.className = 'quote-claim-head';
+
+    const eyebrow = document.createElement('p');
+    eyebrow.className = 'section-eyebrow section-eyebrow--compact';
+    eyebrow.textContent = 'Add Photos';
+
+    const title = document.createElement('h4');
+    title.textContent = remainingSlots > 0
+      ? (isAccountLinked ? 'Add more reference photos to this account quote.' : 'Add more reference photos to this quote.')
+      : 'Photo limit reached for this quote.';
+
+    const intro = document.createElement('p');
+    intro.className = 'page-aside-copy';
+    intro.textContent = remainingSlots > 0
+      ? (isAccountLinked
+        ? `You can add ${remainingSlots} more photo${remainingSlots === 1 ? '' : 's'} to the same account-linked quote.`
+        : `You can add ${remainingSlots} more photo${remainingSlots === 1 ? '' : 's'} to the same private quote link.`)
+      : `No more than ${MAX_QUOTE_PHOTOS} photos can be stored on one quote.`;
+
+    heading.appendChild(eyebrow);
+    heading.appendChild(title);
+    heading.appendChild(intro);
+
+    const uploadForm = document.createElement('form');
+    uploadForm.className = 'quote-claim-form';
+    uploadForm.noValidate = true;
+
+    const fileLabel = document.createElement('label');
+    fileLabel.className = 'quote-followup-upload-label';
+    fileLabel.textContent = isAccountLinked ? 'Additional account quote photos' : 'Additional quote photos';
+
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.name = 'files';
+    fileInput.accept = 'image/*';
+    fileInput.multiple = true;
+    fileInput.disabled = remainingSlots <= 0;
+    fileLabel.appendChild(fileInput);
+
+    const fileStatus = document.createElement('p');
+    fileStatus.className = 'page-aside-copy';
+    const emptyFollowupFilesText = remainingSlots > 0
+      ? `Optional: add up to ${remainingSlots} more photo${remainingSlots === 1 ? '' : 's'} here.`
+      : `No more than ${MAX_QUOTE_PHOTOS} photos can be stored on one quote.`;
+    fileStatus.textContent = emptyFollowupFilesText;
+
+    const previewRoot = document.createElement('div');
+    previewRoot.className = 'quote-file-preview';
+    previewRoot.hidden = true;
+    previewRoot.setAttribute('aria-live', 'polite');
+
+    const actions = document.createElement('div');
+    actions.className = 'quote-claim-actions';
+
+    const submitButton = document.createElement('button');
+    submitButton.type = 'submit';
+    submitButton.className = 'btn-outline-gold';
+    submitButton.textContent = isAccountLinked ? 'Add photos to account quote' : 'Add photos to quote';
+    submitButton.disabled = remainingSlots <= 0;
+
+    actions.appendChild(submitButton);
+
+    const status = document.createElement('p');
+    status.className = 'form-status';
+    if (context?.uploadNotice) {
+      setStatus(status, context.uploadNotice.message, context.uploadNotice.type);
+    }
+
+    fileInput.addEventListener('change', () => {
+      const { truncated } = mergeSelectedFiles(fileInput, Array.from(fileInput.files || []), remainingSlots);
+      syncFilesUi(fileInput, fileStatus, previewRoot, {
+        emptyText: emptyFollowupFilesText,
+        suffix: getFilesLimitSuffix(remainingSlots, truncated)
+      });
+      if (remainingSlots > 0 && status.textContent) {
+        setStatus(status, '');
+      }
+    });
+
+    previewRoot.addEventListener('click', (event) => {
+      const removeButton = event.target.closest('[data-quote-file-remove-index]');
+      if (!removeButton) return;
+      const removeIndex = Number(removeButton.getAttribute('data-quote-file-remove-index'));
+      if (!Number.isInteger(removeIndex)) return;
+      if (!rebuildSelectedFiles(fileInput, removeIndex)) return;
+      syncFilesUi(fileInput, fileStatus, previewRoot, {
+        emptyText: emptyFollowupFilesText
+      });
+    });
+
+    uploadForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      const files = getSelectedFiles(fileInput);
+      if (!files.length) {
+        setStatus(status, 'Attach at least one new photo before sending the update.', 'error');
+        return;
+      }
+
+      if (files.length > remainingSlots) {
+        setStatus(
+          status,
+          `This quote can only accept ${remainingSlots} more photo${remainingSlots === 1 ? '' : 's'} right now.`,
+          'error'
+        );
+        return;
+      }
+
+      if (files.some((file) => !isImageFile(file))) {
+        setStatus(status, 'Only image files are allowed for quote photo attachments.', 'error');
+        return;
+      }
+
+      submitButton.disabled = true;
+      setStatus(
+        status,
+        isAccountLinked ? 'Preparing additional account quote photos...' : 'Preparing additional quote photos...',
+        'loading'
+      );
+
+      try {
+        const nextPreview = isAccountLinked
+          ? await uploadAccountLinkedQuoteAttachmentBatches({
+            quoteId: preview.quoteId,
+            files,
+            onProgress: (message) => setStatus(status, message, 'loading')
+          })
+          : await uploadQuoteAttachmentBatches({
+            publicToken: preview.publicToken,
+            files,
+            onProgress: (message) => setStatus(status, message, 'loading')
+          });
+        renderQuoteFollowup(form, nextPreview || preview, {
+          guestEmail: context?.guestEmail,
+          guestPhone: context?.guestPhone,
+          uploadNotice: {
+            type: 'success',
+            message: files.length === 1
+              ? (isAccountLinked ? 'Added 1 photo to your account quote.' : 'Added 1 photo to your quote.')
+              : (isAccountLinked ? `Added ${files.length} photos to your account quote.` : `Added ${files.length} photos to your quote.`)
+          }
+        });
+      } catch (error) {
+        setStatus(status, error.message || 'Could not upload the extra quote photos.', 'error');
+        if (error?.preview) {
+          renderQuoteFollowup(form, error.preview, {
+            guestEmail: context?.guestEmail,
+            guestPhone: context?.guestPhone,
+            uploadNotice: {
+              type: 'error',
+              message: error.message || 'Could not upload the extra quote photos.'
+            }
+          });
+        }
+      } finally {
+        submitButton.disabled = false;
+      }
+    });
+
+    uploadForm.appendChild(fileLabel);
+    uploadForm.appendChild(fileStatus);
+    uploadForm.appendChild(previewRoot);
+    uploadForm.appendChild(actions);
+    uploadForm.appendChild(status);
+    wrapper.appendChild(heading);
+    wrapper.appendChild(uploadForm);
+    return wrapper;
+  };
+
+  const syncQuoteAccountContext = (form) => {
+    if (!form) return;
+
+    const accountSummary = form.querySelector('[data-quote-account-summary]');
+    const accountSummaryCopy = form.querySelector('[data-quote-account-summary-copy]');
+    const accountName = form.querySelector('[data-quote-account-name]');
+    const accountEmail = form.querySelector('[data-quote-account-email]');
+    const accountPhone = form.querySelector('[data-quote-account-phone]');
+    const profile = getActiveQuoteAccountProfile();
+    const fieldConfig = {
+      name: {
+        wrapper: form.querySelector('[data-quote-contact-field="name"]'),
+        input: form.querySelector('input[name="name"]'),
+        value: profile?.name || '',
+        label: 'name',
+        fallback: 'Missing on account'
+      },
+      email: {
+        wrapper: form.querySelector('[data-quote-contact-field="email"]'),
+        input: form.querySelector('input[name="email"]'),
+        value: profile?.email || '',
+        label: 'email address',
+        fallback: 'Missing on account'
+      },
+      phone: {
+        wrapper: form.querySelector('[data-quote-contact-field="phone"]'),
+        input: form.querySelector('input[name="phone"]'),
+        value: profile?.phone || '',
+        label: 'phone number',
+        fallback: 'Missing on account'
+      }
+    };
+
+    if (!profile) {
+      if (accountSummary) accountSummary.hidden = true;
+      Object.values(fieldConfig).forEach(({ wrapper }) => {
+        if (wrapper) wrapper.hidden = false;
+      });
+      return;
+    }
+
+    const summaryNodes = {
+      name: accountName,
+      email: accountEmail,
+      phone: accountPhone
+    };
+    const missingFields = [];
+    const providedFields = [];
+
+    Object.entries(fieldConfig).forEach(([key, config]) => {
+      const value = String(config.value || '').trim();
+      const summaryItem = form.querySelector(`[data-quote-account-item="${key}"]`);
+      const summaryNode = summaryNodes[key];
+
+      if (summaryNode) {
+        summaryNode.textContent = value || config.fallback;
+      }
+      if (summaryItem) {
+        summaryItem.classList.toggle('is-missing', !value);
+      }
+      if (config.input && value) {
+        config.input.value = value;
+      }
+      if (config.wrapper) {
+        config.wrapper.hidden = Boolean(value);
+      }
+
+      if (value) {
+        providedFields.push(config.label);
+      } else {
+        missingFields.push(config.label);
+      }
+    });
+
+    if (accountSummaryCopy) {
+      if (missingFields.length) {
+        const providedLabel = humanizeContactFieldList(providedFields);
+        const missingLabel = humanizeContactFieldList(missingFields);
+        accountSummaryCopy.textContent = providedLabel
+          ? `We found your saved ${providedLabel}. Add your missing ${missingLabel} below, then choose the project type.`
+          : `Add your ${missingLabel} below, then choose the project type.`;
+      } else {
+        accountSummaryCopy.textContent = 'We found your saved account details. Only choose the project type below and continue.';
+      }
+    }
+
+    if (accountSummary) {
+      accountSummary.hidden = false;
+    }
+  };
+
+  const applyProjectTypeContext = (form) => {
+    if (!form) return;
+
+    const selectedRaw = new URLSearchParams(window.location.search).get('projectType');
+    if (!selectedRaw) return;
+
+    const select = form.querySelector('select[name="projectType"], select[name="project-type"]');
+    if (!select) return;
+
+    const selectedLower = String(selectedRaw).trim().toLowerCase();
+    const normalized = normalizeProjectType(selectedRaw);
+    const matchedOption = Array.from(select.options).find((option) => {
+      const optionValue = String(option.value || '').trim().toLowerCase();
+      return optionValue === selectedLower || optionValue === normalized;
+    });
+
+    if (matchedOption) {
+      select.value = matchedOption.value;
+    }
+  };
+
   forms.forEach((form) => {
     const submitButton = form.querySelector('button[type="submit"]');
     const status = form.querySelector('.form-status');
+    const filesInput = form.querySelector('input[type="file"][name="files"]');
+    const filesStatus = form.querySelector('[data-quote-files-status]');
+    const filesPreview = form.querySelector('[data-quote-file-preview]');
+    const stepPanels = Array.from(form.querySelectorAll('[data-quote-step-panel]'));
+    const stepTabs = Array.from(form.querySelectorAll('[data-quote-step-tab]'));
+    const prevStepButton = form.querySelector('[data-quote-step-prev]');
+    const nextStepButton = form.querySelector('[data-quote-step-next]');
     if (!submitButton || !status) return;
+
+    const getCurrentStep = () => quoteStepStateByForm.get(form)?.currentStep || 0;
+    const setCurrentStep = (nextIndex) => {
+      if (!stepPanels.length) return;
+      const safeIndex = Math.max(0, Math.min(stepPanels.length - 1, Number(nextIndex) || 0));
+      quoteStepStateByForm.set(form, { currentStep: safeIndex });
+
+      stepPanels.forEach((panel, index) => {
+        panel.hidden = index !== safeIndex;
+      });
+
+      stepTabs.forEach((tab, index) => {
+        tab.classList.toggle('is-active', index === safeIndex);
+        tab.classList.toggle('is-complete', index < safeIndex);
+        if (index === safeIndex) {
+          tab.setAttribute('aria-current', 'step');
+        } else {
+          tab.removeAttribute('aria-current');
+        }
+      });
+
+      if (prevStepButton) {
+        prevStepButton.hidden = safeIndex <= 0;
+      }
+      if (nextStepButton) {
+        nextStepButton.hidden = safeIndex >= stepPanels.length - 1;
+      }
+      submitButton.hidden = safeIndex < stepPanels.length - 1;
+    };
+
+    const getStepValidationMessage = (stepIndex) => {
+      const formData = new FormData(form);
+      const guestName = String(formData.get('name') || '').trim();
+      const guestPhone = normalizePhone(formData.get('phone'));
+      const guestEmail = normalizeEmail(formData.get('email'));
+      const projectType = normalizeProjectType(formData.get('projectType') || formData.get('project-type'));
+      const propertyType = String(formData.get('propertyType') || '').trim();
+      const occupancyStatus = String(formData.get('occupancyStatus') || '').trim();
+      const planningStage = String(formData.get('planningStage') || '').trim();
+      const targetStartWindow = String(formData.get('targetStartWindow') || '').trim();
+      const description = String(formData.get('message') || '').trim();
+      const files = getSelectedFiles(filesInput);
+
+      if (stepIndex === 0) {
+        if (!guestName) return 'Please provide your name before moving on.';
+        if (!guestPhone && !guestEmail) return 'Add either an email address or phone number before continuing.';
+        if (guestEmail && !isValidEmail(guestEmail)) return 'Enter a valid email address before continuing.';
+        if (guestPhone && guestPhone.length < 5) return 'Enter a valid phone number before continuing.';
+        if (!projectType || projectType === 'other' && !String(formData.get('projectType') || '').trim()) {
+          return 'Choose the project type before continuing.';
+        }
+        return '';
+      }
+
+      if (stepIndex === 1) {
+        if (!propertyType) return 'Choose the property type before continuing.';
+        if (!occupancyStatus) return 'Choose the occupancy status before continuing.';
+        if (!planningStage) return 'Choose the planning stage before continuing.';
+        if (!targetStartWindow) return 'Choose the target start window before continuing.';
+        return '';
+      }
+
+      if (!description) return 'Please describe the project brief before sending the quote.';
+      if (files.length > MAX_QUOTE_PHOTOS) return `Attach up to ${MAX_QUOTE_PHOTOS} photos per quote.`;
+      if (files.some((file) => !String(file.type || '').toLowerCase().startsWith('image/'))) {
+        return 'Only image files are allowed for quote photo attachments.';
+      }
+      return '';
+    };
+
+    const moveToStep = (targetIndex) => {
+      if (!stepPanels.length) return true;
+      const currentStep = getCurrentStep();
+      const safeTarget = Math.max(0, Math.min(stepPanels.length - 1, Number(targetIndex) || 0));
+
+      if (safeTarget <= currentStep) {
+        setCurrentStep(safeTarget);
+        setStatus(status, '');
+        return true;
+      }
+
+      for (let stepIndex = currentStep; stepIndex < safeTarget; stepIndex += 1) {
+        const validationMessage = getStepValidationMessage(stepIndex);
+        if (validationMessage) {
+          setCurrentStep(stepIndex);
+          setStatus(status, validationMessage, 'error');
+          return false;
+        }
+      }
+
+      setCurrentStep(safeTarget);
+      setStatus(status, '');
+      return true;
+    };
+
+    applyProjectTypeContext(form);
+    syncQuoteAccountContext(form);
+    hideQuoteFollowup(form);
+    if (stepPanels.length) {
+      setCurrentStep(0);
+      stepTabs.forEach((tab, index) => {
+        tab.addEventListener('click', () => {
+          moveToStep(index);
+        });
+      });
+      if (prevStepButton) {
+        prevStepButton.addEventListener('click', () => {
+          moveToStep(getCurrentStep() - 1);
+        });
+      }
+      if (nextStepButton) {
+        nextStepButton.addEventListener('click', () => {
+          moveToStep(getCurrentStep() + 1);
+        });
+      }
+    }
+
+    if (filesInput) {
+      syncFilesUi(filesInput, filesStatus, filesPreview);
+      filesInput.addEventListener('change', () => {
+        const { truncated } = mergeSelectedFiles(filesInput, Array.from(filesInput.files || []), MAX_QUOTE_PHOTOS);
+        syncFilesUi(filesInput, filesStatus, filesPreview, {
+          suffix: getFilesLimitSuffix(MAX_QUOTE_PHOTOS, truncated)
+        });
+      });
+    } else if (filesStatus) {
+      filesStatus.textContent = EMPTY_FILES_STATUS_TEXT;
+    }
+
+    if (filesInput && filesPreview) {
+      filesPreview.addEventListener('click', (event) => {
+        const removeButton = event.target.closest('[data-quote-file-remove-index]');
+        if (!removeButton) return;
+        const removeIndex = Number(removeButton.getAttribute('data-quote-file-remove-index'));
+        if (!Number.isInteger(removeIndex)) return;
+        if (!rebuildSelectedFiles(filesInput, removeIndex)) return;
+        syncFilesUi(filesInput, filesStatus, filesPreview);
+      });
+    }
+
+    form.addEventListener('reset', () => {
+      setTimeout(() => {
+        applyProjectTypeContext(form);
+        syncQuoteAccountContext(form);
+        if (stepPanels.length) {
+          setCurrentStep(0);
+        }
+        if (filesInput) {
+          clearSelectedFiles(filesInput);
+          syncFilesUi(filesInput, filesStatus, filesPreview);
+        } else if (filesStatus) {
+          filesStatus.textContent = EMPTY_FILES_STATUS_TEXT;
+        }
+      }, 0);
+    });
 
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
 
       const formData = new FormData(form);
+      const accountProfile = getActiveQuoteAccountProfile();
       const guestName = String(formData.get('name') || '').trim();
       const guestPhone = String(formData.get('phone') || '').trim();
       const guestEmail = String(formData.get('email') || '').trim();
+      const contactName = normalizeAccountName(accountProfile?.name || guestName);
+      const contactPhone = normalizePhone(accountProfile?.phone || guestPhone);
+      const contactEmail = normalizeEmail(accountProfile?.email || guestEmail);
       const projectTypeRaw = formData.get('projectType') || formData.get('project-type');
       const projectType = normalizeProjectType(projectTypeRaw);
       const budgetRange = String(formData.get('budget') || '').trim();
       const description = String(formData.get('message') || '').trim();
       const location = String(formData.get('location') || '').trim() || 'Greater Manchester';
       const postcode = String(formData.get('postcode') || '').trim();
+      const files = getSelectedFiles(filesInput);
+      const proposalDetails = buildQuoteProposalDetails({
+        formData,
+        location,
+        postcode,
+        budgetRange
+      });
 
-      status.className = 'form-status';
-      status.textContent = '';
-      if (!guestName || !description || (!guestPhone && !guestEmail)) {
-        status.classList.add('is-error');
-        status.textContent = 'Please provide your name, project details, and either email or phone.';
+      setStatus(status, '');
+      hideQuoteFollowup(form);
+
+      const invalidStepIndex = stepPanels.findIndex((_, stepIndex) => Boolean(getStepValidationMessage(stepIndex)));
+      if (invalidStepIndex >= 0) {
+        setCurrentStep(invalidStepIndex);
+        setStatus(status, getStepValidationMessage(invalidStepIndex), 'error');
         return;
       }
 
       submitButton.disabled = true;
-      status.classList.add('is-loading');
-      status.textContent = 'Sending your request...';
+      setStatus(status, 'Sending your request...', 'loading');
 
       try {
-        const response = await fetch('/api/quotes/guest', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            guestName,
-            guestPhone: guestPhone || undefined,
-            guestEmail: guestEmail || undefined,
-            projectType,
-            budgetRange: budgetRange || undefined,
-            description,
-            location,
-            postcode: postcode || undefined
-          })
-        });
+        let previewPayload = null;
+        let uploadNotice = null;
 
-        const payload = await response.json().catch(() => ({}));
-        if (!response.ok) {
-          throw new Error(payload.error || 'Could not submit your consultation request.');
+        if (accountProfile) {
+          const response = await fetchWithV2Session(NEW_QUOTE_API_BASE, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              name: contactName || null,
+              phone: contactPhone || null,
+              email: contactEmail || null,
+              projectType,
+              budgetRange: budgetRange || null,
+              description,
+              location,
+              postcode: postcode || null,
+              proposalDetails
+            })
+          });
+          const responsePayload = await readResponsePayload(response);
+          if (!response.ok) {
+            throw new Error(buildResponseErrorMessage(response, responsePayload, 'Could not save your account quote request.'));
+          }
+
+          previewPayload = normalizeQuotePreviewPayload(responsePayload, '');
+          if (files.length && previewPayload.quoteId) {
+            try {
+              previewPayload = await uploadAccountLinkedQuoteAttachmentBatches({
+                quoteId: previewPayload.quoteId,
+                files,
+                onProgress: (message) => setStatus(status, message, 'loading')
+              }) || previewPayload;
+            } catch (error) {
+              previewPayload = error?.preview || previewPayload;
+              uploadNotice = {
+                type: 'error',
+                message: error.message || 'The request was saved to your account, but the photo upload still needs a retry from your account quote workspace.'
+              };
+            }
+          }
+
+          const referenceLabel = previewPayload.referenceCode || previewPayload.quoteRef || previewPayload.quoteId;
+          const uploadedPhotoCount = Number(previewPayload.attachmentCount || 0);
+          const successMessage = referenceLabel
+            ? uploadedPhotoCount
+              ? `Request saved to your account with ${uploadedPhotoCount} photo(s). Reference: ${referenceLabel}.`
+              : `Request saved to your account. Reference: ${referenceLabel}.`
+            : 'Request saved to your account.';
+
+          if (uploadNotice) {
+            setStatus(status, `${successMessage} ${uploadNotice.message}`, 'error');
+          } else {
+            setStatus(status, successMessage, 'success');
+          }
+
+          clearPendingQuoteClaim?.();
+          renderQuoteFollowup(form, previewPayload, {
+            guestEmail: contactEmail,
+            guestPhone: contactPhone,
+            uploadNotice
+          });
+          form.reset();
+          return;
         }
 
-        status.className = 'form-status is-success';
-        status.textContent = payload.quoteId
-          ? `Request sent. Reference: ${payload.quoteId}.`
+        const requestBody = new FormData();
+        requestBody.set('guestName', contactName);
+        if (contactPhone) requestBody.set('guestPhone', contactPhone);
+        if (contactEmail) requestBody.set('guestEmail', contactEmail);
+        requestBody.set('projectType', projectType);
+        if (budgetRange) requestBody.set('budgetRange', budgetRange);
+        requestBody.set('description', description);
+        requestBody.set('location', location);
+        if (postcode) requestBody.set('postcode', postcode);
+        requestBody.set('proposalDetails', JSON.stringify(proposalDetails));
+
+        const response = await fetch(PUBLIC_QUOTE_API_BASE, {
+          method: 'POST',
+          body: requestBody
+        });
+
+        const responsePayload = await readResponsePayload(response);
+        if (!response.ok) {
+          throw new Error(buildResponseErrorMessage(response, responsePayload, 'Could not submit your consultation request.'));
+        }
+
+        if (responsePayload.publicToken) {
+          const nextUrl = buildQuotePreviewUrl(form, responsePayload.publicToken);
+          window.history.replaceState({}, '', nextUrl);
+        }
+
+        previewPayload = normalizeQuotePreviewPayload({
+          ...responsePayload,
+          quote: {
+            id: responsePayload.quoteId || '',
+            referenceCode: responsePayload.referenceCode || '',
+            projectType,
+            location,
+            status: responsePayload.status || 'pending',
+            workflowStatus: responsePayload.workflowStatus || 'submitted',
+            attachmentCount: responsePayload.attachmentCount || 0,
+            attachments: responsePayload.attachments || [],
+            submittedAt: new Date().toISOString(),
+            proposalDetails: responsePayload.proposalDetails || proposalDetails
+          }
+        }, responsePayload.publicToken || '');
+
+        if (files.length && responsePayload.publicToken) {
+          try {
+            previewPayload = await uploadQuoteAttachmentBatches({
+              publicToken: responsePayload.publicToken,
+              files,
+              onProgress: (message) => setStatus(status, message, 'loading')
+            }) || previewPayload;
+          } catch (error) {
+            previewPayload = error?.preview || previewPayload;
+            uploadNotice = {
+              type: 'error',
+              message: error.message || 'The quote was saved, but the photo upload still needs a retry from the private link below.'
+            };
+          }
+        }
+
+        const referenceLabel = previewPayload.referenceCode || responsePayload.referenceCode || previewPayload.quoteId || responsePayload.quoteId;
+        const uploadedPhotoCount = Number(previewPayload.attachmentCount || 0);
+        const successMessage = referenceLabel
+          ? uploadedPhotoCount
+            ? `Request sent with ${uploadedPhotoCount} photo(s). Reference: ${referenceLabel}.`
+            : `Request sent. Reference: ${referenceLabel}.`
           : 'Request sent.';
+
+        if (uploadNotice) {
+          setStatus(
+            status,
+            `${successMessage} ${uploadNotice.message}`,
+            'error'
+          );
+        } else {
+          setStatus(status, successMessage, 'success');
+        }
+
+        renderQuoteFollowup(form, previewPayload, {
+          guestEmail: contactEmail,
+          guestPhone: contactPhone,
+          uploadNotice
+        });
         form.reset();
       } catch (error) {
-        status.className = 'form-status is-error';
-        status.textContent = error.message || 'Could not submit your consultation request.';
+        setStatus(status, error.message || 'Could not submit your consultation request.', 'error');
       } finally {
         submitButton.disabled = false;
       }
     });
+
+    const refreshQuoteAccountContext = () => {
+      syncQuoteAccountContext(form);
+    };
+
+    window.addEventListener('ll:session-changed', refreshQuoteAccountContext);
+    if (hasSessionToken()) {
+      window.setTimeout(refreshQuoteAccountContext, 300);
+      window.setTimeout(refreshQuoteAccountContext, 900);
+    }
+
+    if (quotePreviewToken) {
+      quotePreviewRequest ||= fetchQuotePreview(quotePreviewToken);
+      quotePreviewRequest
+        .then((preview) => {
+          renderQuoteFollowup(form, preview);
+        })
+        .catch((error) => {
+          renderQuoteFollowupError(form, error.message || 'Could not load this private quote link.');
+        });
+    }
   });
 })();

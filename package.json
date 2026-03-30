@@ -1,8 +1,17 @@
 {
   "name": "building-company",
+  "private": true,
   "version": "1.0.0",
   "description": "Building company website with quotes system",
   "main": "server.js",
+  "workspaces": [
+    "packages/contracts-v2",
+    "packages/mobile-contracts",
+    "packages/mobile-core",
+    "packages/mobile-ui",
+    "apps/mobile-client",
+    "apps/mobile-company"
+  ],
   "engines": {
     "node": ">=18.0.0",
     "npm": ">=9.0.0"
@@ -11,20 +20,30 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "optimize:assets": "node scripts/optimize-assets.js",
+    "generate:contracts": "node scripts/generate-contract-package.js",
     "generate:locations": "node scripts/generate-location-pages.js",
     "generate:services": "node scripts/generate-service-pages.js",
-    "generate:public-pages": "npm run optimize:assets && npm run generate:locations && npm run generate:services",
+    "generate:public-pages:content": "npm run generate:locations && npm run generate:services",
+    "generate:public-pages:full": "npm run optimize:assets && npm run generate:public-pages:content",
+    "generate:public-pages": "npm run generate:public-pages:full",
     "verify:generated": "node scripts/verify-generated.js",
-    "test:ci": "npm run verify:generated && npm run test:api:v2",
+    "test:ci": "npm run verify:generated && npm run test:api:v2 && npm run test:mobile:foundation",
     "migrate": "node scripts/migrate.js",
     "migrate:status": "node scripts/migrate.js --status",
+    "ensure:indexes": "node scripts/ensure-indexes.js",
     "test:api:v2": "node scripts/run-api-v2-tests.js",
+    "test:mobile:foundation": "node --test tests/mobile/*.test.js",
     "playwright:install": "playwright install chromium webkit",
     "test:e2e:mobile": "node scripts/run-playwright.js -c tests/playwright/playwright.config.js",
-    "test:all": "npm run test:api:v2 && npm run test:e2e:mobile"
+    "test:all": "npm run test:api:v2 && npm run test:mobile:foundation && npm run test:e2e:mobile",
+    "mobile:client:start": "npm --workspace apps/mobile-client run start",
+    "mobile:client:android": "npm --workspace apps/mobile-client run android",
+    "mobile:company:start": "npm --workspace apps/mobile-company run start",
+    "mobile:company:android": "npm --workspace apps/mobile-company run android"
   },
   "dependencies": {
-    "bcrypt": "^5.1.1",
+    "@building-company/contracts-v2": "file:packages/contracts-v2",
+    "bcrypt": "^6.0.0",
     "compression": "^1.8.1",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
@@ -34,12 +53,13 @@
     "express-validator": "^7.0.1",
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
-    "multer": "^1.4.5-lts.1",
+    "multer": "^2.1.1",
     "nodemailer": "^7.0.13",
     "pg": "^8.11.3",
     "pg-hstore": "^2.3.4",
     "sequelize": "^6.35.2",
-    "umzug": "^3.8.1"
+    "umzug": "^3.8.1",
+    "zod": "^3.24.4"
   },
   "devDependencies": {
     "@playwright/test": "^1.53.0",
@@ -47,5 +67,8 @@
     "nodemon": "^3.0.2",
     "sharp": "^0.34.5",
     "supertest": "^7.1.1"
+  },
+  "overrides": {
+    "@rushstack/node-core-library": "5.20.3"
   }
 }

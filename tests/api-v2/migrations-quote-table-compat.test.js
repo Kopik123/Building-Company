@@ -4,6 +4,15 @@ const test = require('node:test');
 const baselineHardening = require('../../migrations/202603080001-production-baseline-hardening.js');
 const sessionDeviceHardening = require('../../migrations/202603080002-v2-session-device-and-email-hardening.js');
 const performanceSearch = require('../../migrations/202603090000-performance-search-trgm-indexes.js');
+const quoteWorkflowAndEvents = require('../../migrations/202603240001-quote-workflow-and-events.js');
+const relaxQuotesClientIdNullability = require('../../migrations/202603240002-relax-quotes-clientid-nullability.js');
+const forceDropQuotesClientIdNotNull = require('../../migrations/202603240003-force-drop-quotes-clientid-not-null.js');
+const quoteAttachmentsMigration = require('../../migrations/202603240004-quote-attachments.js');
+const estimateVersioningMigration = require('../../migrations/202603270001-estimate-versioning-and-approval.js');
+const projectWorkflowParityMigration = require('../../migrations/202603270002-project-workflow-and-owner-parity.js');
+const quoteProposalDetailsMigration = require('../../migrations/202603270003-quote-proposal-details.js');
+const devicePushVariantMigration = require('../../migrations/202603270004-device-push-app-variant-and-device-name.js');
+const newQuotesStagingMigration = require('../../migrations/202603290001-new-quotes-staging.js');
 
 const createQueryInterfaceStub = (tables) => {
   const queries = [];
@@ -40,6 +49,15 @@ const createQueryInterfaceStub = (tables) => {
       async addColumn(tableName, columnName, definition) {
         tables[tableName] = tables[tableName] || {};
         tables[tableName][columnName] = definition;
+      },
+      async createTable(tableName, definition) {
+        tables[tableName] = definition;
+      },
+      async dropTable(tableName) {
+        delete tables[tableName];
+      },
+      async removeIndex() {
+        return undefined;
       }
     }
   };
@@ -177,6 +195,483 @@ test('session/device hardening migration creates missing tables when Sequelize s
   );
   assert.equal(
     queries.includes('CREATE UNIQUE INDEX IF NOT EXISTS users_email_lower_unique_idx ON "Users" (LOWER("email"))'),
+    true
+  );
+});
+
+test('device push variant migration backfills appVariant through enum role text casts on postgres', async () => {
+  const queries = [];
+  const changedColumns = [];
+  const tables = {
+    DevicePushTokens: {
+      id: {},
+      provider: {},
+      userId: {},
+      appVariant: {}
+    },
+    Users: {
+      id: {},
+      role: {}
+    }
+  };
+
+  const queryInterface = {
+    sequelize: {
+      getDialect() {
+        return 'postgres';
+      },
+      async query(sql) {
+        queries.push(sql);
+      }
+    },
+    async describeTable(tableName) {
+      const table = tables[tableName];
+      if (table) {
+        return table;
+      }
+
+      throw new Error(`relation "${tableName}" does not exist`);
+    },
+    async changeColumn(tableName, columnName, definition) {
+      changedColumns.push({ tableName, columnName, definition });
+      tables[tableName][columnName] = definition;
+    },
+    async addColumn(tableName, columnName, definition) {
+      tables[tableName] = tables[tableName] || {};
+      tables[tableName][columnName] = definition;
+    },
+    async removeColumn() {}
+  };
+
+  await assert.doesNotReject(() =>
+    devicePushVariantMigration.up(queryInterface, {
+      DataTypes: {
+        ENUM: (...values) => ({ type: 'ENUM', values }),
+        STRING: 'STRING'
+      },
+      ENUM: (...values) => ({ type: 'ENUM', values }),
+      STRING: 'STRING'
+    })
+  );
+
+  assert.equal(
+    changedColumns.some((item) => item.tableName === 'DevicePushTokens' && item.columnName === 'provider'),
+    true
+  );
+  assert.equal(Object.hasOwn(tables.DevicePushTokens, 'deviceName'), true);
+  assert.equal(
+    queries.some((sql) => sql.includes(`LOWER(COALESCE("Users"."role"::text, 'client')) = 'client'`)),
+    true
+  );
+});
+test('quote workflow migration resumes safely after a partial apply and uses explicit enum casts in backfill SQL', async () => {
+  const queries = [];
+  const addedIndexes = [];
+  const createdTables = [];
+  const tables = {
+    Quotes: {
+      id: {},
+      status: {},
+      clientId: {},
+      isGuest: {},
+      assignedManagerId: {},
+      createdAt: {},
+      updatedAt: {},
+      workflowStatus: {},
+      sourceChannel: {},
+      submittedAt: {}
+    },
+    Estimates: {
+      id: {},
+      quoteId: {},
+      decisionStatus: {}
+    },
+    Projects: {
+      id: {}
+    },
+    QuoteEvents: {
+      id: {},
+      quoteId: {},
+      visibility: {},
+      createdAt: {}
+    }
+  };
+  const indexesByTable = {
+    Quotes: [{ name: 'quotes_current_estimate_idx' }],
+    Estimates: [],
+    Projects: [],
+    QuoteEvents: [{ name: 'quote_events_quote_created_idx' }]
+  };
+
+  const queryInterface = {
+    sequelize: {
+      async query(sql) {
+        queries.push(sql);
+      }
+    },
+    async describeTable(tableName) {
+      const table = tables[tableName];
+      if (table) {
+        return table;
+      }
+
+      throw new Error(`relation "${tableName}" does not exist`);
+    },
+    async addColumn(tableName, columnName, definition) {
+      tables[tableName] = tables[tableName] || {};
+      tables[tableName][columnName] = definition;
+    },
+    async removeColumn() {},
+    async createTable(tableName, definition) {
+      createdTables.push(tableName);
+      tables[tableName] = definition;
+    },
+    async dropTable() {},
+    async showIndex(tableName) {
+      return indexesByTable[tableName] || [];
+    },
+    async addIndex(tableName, fields, options) {
+      indexesByTable[tableName] = [...(indexesByTable[tableName] || []), { name: options.name }];
+      addedIndexes.push({ tableName, fields, options });
+    },
+    async removeIndex() {}
+  };
+
+  await assert.doesNotReject(() =>
+    quoteWorkflowAndEvents.up(queryInterface, {
+      fn: (name) => ({ fn: name }),
+      DataTypes: {
+        UUID: 'UUID',
+        STRING: 'STRING',
+        DATE: 'DATE',
+        TEXT: 'TEXT',
+        INTEGER: 'INTEGER',
+        BOOLEAN: 'BOOLEAN',
+        JSON: 'JSON',
+        ENUM: (...values) => ({ type: 'ENUM', values })
+      }
+    })
+  );
+
+  assert.deepEqual(createdTables, []);
+  assert.equal(Object.hasOwn(tables.Quotes, 'currentEstimateId'), true);
+  assert.equal(Object.hasOwn(tables.Estimates, 'versionNumber'), true);
+  assert.equal(Object.hasOwn(tables.Projects, 'acceptedEstimateId'), true);
+  assert.equal(
+    queries.some((sql) => sql.includes(')::"enum_Quotes_workflowStatus"')),
+    true
+  );
+  assert.equal(
+    addedIndexes.some((item) => item.options.name === 'quotes_current_estimate_idx'),
+    false
+  );
+  assert.equal(
+    addedIndexes.some((item) => item.options.name === 'quotes_workflow_status_created_idx'),
+    true
+  );
+  assert.equal(
+    addedIndexes.some((item) => item.options.name === 'quote_events_quote_visibility_idx'),
+    true
+  );
+});
+
+test('quotes clientId nullability hotfix only changes the column when it is still non-nullable', async () => {
+  const changedColumns = [];
+  const tables = {
+    Quotes: {
+      clientId: { allowNull: false }
+    },
+    Users: {
+      id: {}
+    }
+  };
+
+  const queryInterface = {
+    async describeTable(tableName) {
+      const table = tables[tableName];
+      if (table) {
+        return table;
+      }
+
+      throw new Error(`relation "${tableName}" does not exist`);
+    },
+    async changeColumn(tableName, columnName, definition) {
+      changedColumns.push({ tableName, columnName, definition });
+      tables[tableName][columnName] = { ...tables[tableName][columnName], ...definition };
+    }
+  };
+
+  await assert.doesNotReject(() => relaxQuotesClientIdNullability.up(queryInterface, { UUID: 'UUID' }));
+
+  assert.deepEqual(changedColumns, [{
+    tableName: 'Quotes',
+    columnName: 'clientId',
+    definition: {
+      type: 'UUID',
+      allowNull: true,
+      references: {
+        model: 'Users',
+        key: 'id'
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'SET NULL'
+    }
+  }]);
+});
+
+test('quotes clientId nullability hotfix is a no-op when the column is already nullable', async () => {
+  const changedColumns = [];
+  const tables = {
+    Quotes: {
+      clientId: { allowNull: true }
+    },
+    Users: {
+      id: {}
+    }
+  };
+
+  const queryInterface = {
+    async describeTable(tableName) {
+      const table = tables[tableName];
+      if (table) {
+        return table;
+      }
+
+      throw new Error(`relation "${tableName}" does not exist`);
+    },
+    async changeColumn(tableName, columnName, definition) {
+      changedColumns.push({ tableName, columnName, definition });
+    }
+  };
+
+  await assert.doesNotReject(() => relaxQuotesClientIdNullability.up(queryInterface, { UUID: 'UUID' }));
+
+  assert.deepEqual(changedColumns, []);
+});
+
+test('quotes clientId force-drop hotfix executes a raw ALTER TABLE DROP NOT NULL on the real quotes column', async () => {
+  const queries = [];
+  const queryInterface = {
+    queryGenerator: {
+      quoteTable: (tableName) => `"${tableName}"`,
+      quoteIdentifier: (value) => `"${value}"`
+    },
+    sequelize: {
+      async query(sql) {
+        queries.push(sql);
+      }
+    },
+    async describeTable(tableName) {
+      if (tableName === 'Quotes') {
+        return {
+          clientId: { allowNull: false }
+        };
+      }
+
+      throw new Error(`relation "${tableName}" does not exist`);
+    }
+  };
+
+  await assert.doesNotReject(() => forceDropQuotesClientIdNotNull.up(queryInterface));
+
+  assert.deepEqual(queries, [
+    'ALTER TABLE "Quotes" ALTER COLUMN "clientId" DROP NOT NULL'
+  ]);
+});
+
+test('quote attachments migration creates the table and both supporting indexes when missing', async () => {
+  const { queryInterface, addedIndexes } = createQueryInterfaceStub({
+    Quotes: {
+      id: {}
+    },
+    Users: {
+      id: {}
+    }
+  });
+
+  await assert.doesNotReject(() =>
+    quoteAttachmentsMigration.up(queryInterface, {
+      fn: (name) => ({ fn: name }),
+      DataTypes: {
+        UUID: 'UUID',
+        STRING: 'STRING',
+        INTEGER: 'INTEGER',
+        DATE: 'DATE'
+      }
+    })
+  );
+
+  assert.equal(typeof queryInterface.describeTable, 'function');
+  await assert.doesNotReject(() => queryInterface.describeTable('QuoteAttachments'));
+  assert.equal(
+    addedIndexes.some((item) => item.options?.name === 'quote_attachments_quote_created_idx'),
+    true
+  );
+  assert.equal(
+    addedIndexes.some((item) => item.options?.name === 'quote_attachments_uploader_idx'),
+    true
+  );
+});
+
+test('estimate versioning migration adds superseded status support, decision notes and replacement tracking', async () => {
+  const { queryInterface, queries, addedIndexes } = createQueryInterfaceStub({
+    Estimates: {
+      id: {},
+      quoteId: {},
+      status: {},
+      clientMessage: {},
+      respondedAt: {}
+    }
+  });
+
+  await assert.doesNotReject(() =>
+    estimateVersioningMigration.up(queryInterface, {
+      DataTypes: {
+        UUID: 'UUID',
+        TEXT: 'TEXT',
+        DATE: 'DATE'
+      }
+    })
+  );
+
+  const estimatesTable = await queryInterface.describeTable('Estimates');
+  assert.equal(
+    queries.some((sql) => sql.includes('ALTER TYPE "enum_Estimates_status" ADD VALUE IF NOT EXISTS \'superseded\'')),
+    true
+  );
+  assert.equal(Object.hasOwn(estimatesTable, 'decisionNote'), true);
+  assert.equal(Object.hasOwn(estimatesTable, 'supersededById'), true);
+  assert.equal(Object.hasOwn(estimatesTable, 'supersededAt'), true);
+  assert.equal(
+    queries.some((sql) => sql.includes('SET "decisionNote" = "clientMessage"')),
+    true
+  );
+  assert.equal(
+    addedIndexes.some((item) => item.options?.name === 'estimates_superseded_by_idx'),
+    true
+  );
+});
+
+test('project workflow parity migration adds workflow columns, backfills stage data and owner indexes', async () => {
+  const { queryInterface, queries, addedIndexes } = createQueryInterfaceStub({
+    Projects: {
+      id: {},
+      status: {},
+      endDate: {}
+    }
+  });
+
+  await assert.doesNotReject(() =>
+    projectWorkflowParityMigration.up(queryInterface, {
+      DataTypes: {
+        STRING: 'STRING',
+        DATEONLY: 'DATEONLY'
+      }
+    })
+  );
+
+  const projectsTable = await queryInterface.describeTable('Projects');
+  assert.equal(Object.hasOwn(projectsTable, 'projectStage'), true);
+  assert.equal(projectsTable.projectStage.type, '"enum_Projects_projectStage"');
+  assert.equal(Object.hasOwn(projectsTable, 'currentMilestone'), true);
+  assert.equal(Object.hasOwn(projectsTable, 'workPackage'), true);
+  assert.equal(Object.hasOwn(projectsTable, 'dueDate'), true);
+  assert.equal(
+    queries.some((sql) => sql.includes('CREATE TYPE "enum_Projects_projectStage"')),
+    true
+  );
+  assert.equal(
+    queries.some((sql) => sql.includes(`'handover'::"enum_Projects_projectStage"`)),
+    true
+  );
+  assert.equal(
+    queries.some((sql) => sql.includes(`COALESCE("status"::text, '') = 'completed'`)),
+    true
+  );
+  assert.equal(
+    queries.some((sql) => sql.includes('"dueDate" = COALESCE("dueDate", "endDate")')),
+    true
+  );
+  assert.equal(
+    addedIndexes.some((item) => item.options?.name === 'projects_stage_due_idx'),
+    true
+  );
+  assert.equal(
+    addedIndexes.some((item) => item.options?.name === 'projects_owner_due_idx'),
+    true
+  );
+});
+
+test('quote proposal details migration adds a nullable JSON proposalDetails column when missing', async () => {
+  const { queryInterface } = createQueryInterfaceStub({
+    Quotes: {
+      id: {},
+      description: {}
+    }
+  });
+
+  await assert.doesNotReject(() =>
+    quoteProposalDetailsMigration.up(queryInterface, {
+      DataTypes: {
+        JSON: 'JSON'
+      },
+      JSON: 'JSON'
+    })
+  );
+
+  const quotesTable = await queryInterface.describeTable('Quotes');
+  assert.equal(Object.hasOwn(quotesTable, 'proposalDetails'), true);
+  assert.deepEqual(quotesTable.proposalDetails, {
+    type: 'JSON',
+    allowNull: true
+  });
+});
+
+test('new quotes staging migration creates the staging table and indexes idempotently', async () => {
+  const createdTables = [];
+  const addedIndexes = [];
+  const indexesByTable = {};
+  const tables = {
+    Users: {
+      id: {},
+      email: {}
+    }
+  };
+
+  const queryInterface = {
+    async describeTable(tableName) {
+      const table = tables[tableName];
+      if (table) {
+        return table;
+      }
+      throw new Error(`relation "${tableName}" does not exist`);
+    },
+    async showIndex(tableName) {
+      return indexesByTable[tableName] || [];
+    },
+    async addIndex(tableName, fields, options) {
+      indexesByTable[tableName] = [...(indexesByTable[tableName] || []), { name: options.name }];
+      addedIndexes.push({ tableName, fields, options });
+    },
+    async createTable(tableName, definition) {
+      createdTables.push(tableName);
+      tables[tableName] = definition;
+    },
+    async dropTable() {}
+  };
+
+  await assert.doesNotReject(() => newQuotesStagingMigration.up(queryInterface));
+  await assert.doesNotReject(() => newQuotesStagingMigration.up(queryInterface));
+
+  assert.deepEqual(createdTables, ['new_quotes']);
+  assert.equal(Object.hasOwn(tables.new_quotes, 'quote_ref'), true);
+  assert.equal(Object.hasOwn(tables.new_quotes, 'attachments'), true);
+  assert.equal(
+    addedIndexes.some((item) => item.options.name === 'new_quotes_client_created_idx'),
+    true
+  );
+  assert.equal(
+    addedIndexes.some((item) => item.options.name === 'new_quotes_project_type_created_idx'),
     true
   );
 });

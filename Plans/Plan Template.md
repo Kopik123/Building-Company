@@ -1,32 +1,17 @@
-# [Plan Title]
+# Plan Title
 
 ## Summary
-
-- Scope:
-- Goal:
-- Out of scope:
+- Goal
+- Scope
+- Constraints
 
 ## Key Changes
-
-- Area 1:
-- Area 2:
-- Area 3:
-
-## Public APIs / Interfaces
-
-- Routes:
-- UI contracts:
-- Data contracts:
+- Change 1
+- Change 2
 
 ## Test Plan
-
-- Generation / build:
-- Automated tests:
-- Manual checks:
-- Acceptance criteria:
+- Automated
+- Manual
 
 ## Assumptions
-
-- Assumption 1:
-- Assumption 2:
-- Assumption 3:
+- Assumption 1

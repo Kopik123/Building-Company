@@ -1,6 +1,9 @@
 (() => {
   const TOKEN_KEY = 'll_auth_token';
   const USER_KEY = 'll_auth_user';
+  const V2_ACCESS_KEY = 'll_v2_access_token';
+  const V2_REFRESH_KEY = 'll_v2_refresh_token';
+  const QUOTE_CLAIM_STORAGE_KEY = 'll_quote_claim_pending';
   const assetManifest = window.LEVEL_LINES_ASSETS || { brand: {}, gallery: {} };
 
   const parseError = (payload) => {
@@ -42,16 +45,59 @@
     }
   };
 
-  const saveSession = (token, user) => {
+  const saveSession = (token, user, v2Session = null) => {
     localStorage.setItem(TOKEN_KEY, token);
     localStorage.setItem(USER_KEY, JSON.stringify(user || {}));
+    const accessToken = typeof v2Session?.accessToken === 'string' ? v2Session.accessToken.trim() : '';
+    const refreshToken = typeof v2Session?.refreshToken === 'string' ? v2Session.refreshToken.trim() : '';
+    if (accessToken) {
+      localStorage.setItem(V2_ACCESS_KEY, accessToken);
+    }
+    if (refreshToken) {
+      localStorage.setItem(V2_REFRESH_KEY, refreshToken);
+    }
     window.dispatchEvent(new Event('ll:session-changed'));
   };
 
   const clearSession = () => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
+    localStorage.removeItem(V2_ACCESS_KEY);
+    localStorage.removeItem(V2_REFRESH_KEY);
     window.dispatchEvent(new Event('ll:session-changed'));
+  };
+
+  const dispatchQuoteClaimChange = () => {
+    window.dispatchEvent(new Event('ll:quote-claim-changed'));
+  };
+
+  const getPendingQuoteClaim = () => {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(QUOTE_CLAIM_STORAGE_KEY) || 'null');
+      return parsed && typeof parsed === 'object' ? parsed : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const savePendingQuoteClaim = (payload) => {
+    localStorage.setItem(QUOTE_CLAIM_STORAGE_KEY, JSON.stringify(payload || {}));
+    dispatchQuoteClaimChange();
+  };
+
+  const clearPendingQuoteClaim = () => {
+    localStorage.removeItem(QUOTE_CLAIM_STORAGE_KEY);
+    dispatchQuoteClaimChange();
+  };
+
+  const isPendingQuoteClaimActive = (pendingClaim) => {
+    const expiresAt = Date.parse(String(pendingClaim?.expiresAt || ''));
+    return Boolean(
+      pendingClaim?.quoteId
+      && pendingClaim?.claimToken
+      && Number.isFinite(expiresAt)
+      && expiresAt > Date.now()
+    );
   };
 
   const waitForStoredUser = (timeoutMs = 900) =>
@@ -74,6 +120,35 @@
       tick();
     });
 
+  // Let legacy pages recover when the old auth token expires but the v2 refresh token is still valid.
+  const refreshSessionFromV2 = async () => {
+    const currentRefreshToken = String(localStorage.getItem(V2_REFRESH_KEY) || '').trim();
+    if (!currentRefreshToken) {
+      return null;
+    }
+    const response = await fetch('/api/v2/auth/refresh', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ refreshToken: currentRefreshToken })
+    });
+    const payload = await response.json().catch(() => ({}));
+    const sessionPayload = payload?.data && typeof payload.data === 'object' ? payload.data : payload;
+    const nextLegacyToken = String(sessionPayload?.legacyToken || '').trim();
+    const nextAccessToken = String(sessionPayload?.accessToken || '').trim();
+    const nextRefreshToken = String(sessionPayload?.refreshToken || '').trim();
+    const nextUser = sessionPayload?.user || null;
+    if (!response.ok || !nextUser || !nextLegacyToken) {
+      clearSession();
+      throw new Error(payload?.error?.message || parseError(payload) || 'Session expired.');
+    }
+    saveSession(nextLegacyToken, nextUser, {
+      accessToken: nextAccessToken,
+      refreshToken: nextRefreshToken || currentRefreshToken
+    });
+    return nextUser;
+  };
   const buildQuery = (params) => {
     const q = new URLSearchParams();
     Object.entries(params || {}).forEach(([key, value]) => {
@@ -110,11 +185,28 @@
       .trim()
       .replace(/\b\w/g, (char) => char.toUpperCase());
 
+  const humanizeToken = (value) => titleCase(value);
+
+  const humanChannel = (value) => (String(value || '').toLowerCase() === 'phone' ? 'phone' : 'email');
+
   const formatDateTime = (value) => {
     if (!value) return '';
     const parsed = new Date(value);
     if (Number.isNaN(parsed.getTime())) return '';
     return parsed.toLocaleString('en-GB');
+  };
+
+  const formatTimestamp = (value) => {
+    const timestamp = Date.parse(String(value || ''));
+    if (!Number.isFinite(timestamp)) return '';
+    try {
+      return new Intl.DateTimeFormat('en-GB', {
+        dateStyle: 'medium',
+        timeStyle: 'short'
+      }).format(new Date(timestamp));
+    } catch (_error) {
+      return new Date(timestamp).toLocaleString();
+    }
   };
 
   const createOverviewEntry = ({ title, detail, meta }) => {
@@ -163,6 +255,63 @@
     const frag = document.createDocumentFragment();
     items.slice(0, 2).forEach((item) => frag.appendChild(createOverviewEntry(mapItem(item))));
     node.appendChild(frag);
+  };
+
+  const syncKeyedList = (container, items, { getKey, createNode, updateNode, createEmptyNode } = {}) => {
+    if (!container) return;
+
+    const existingByKey = new Map();
+    let emptyNode = null;
+
+    Array.from(container.children).forEach((child) => {
+      if (child.dataset.emptyState === 'true') {
+        emptyNode = child;
+        return;
+      }
+      if (child.dataset.renderKey) {
+        existingByKey.set(child.dataset.renderKey, child);
+      }
+    });
+
+    if (!Array.isArray(items) || !items.length) {
+      existingByKey.forEach((node) => node.remove());
+      if (!createEmptyNode) {
+        if (emptyNode) emptyNode.remove();
+        return;
+      }
+
+      const nextEmptyNode = createEmptyNode();
+      nextEmptyNode.dataset.emptyState = 'true';
+      if (emptyNode) {
+        if (emptyNode !== nextEmptyNode) emptyNode.replaceWith(nextEmptyNode);
+      } else {
+        container.appendChild(nextEmptyNode);
+      }
+      return;
+    }
+
+    if (emptyNode) emptyNode.remove();
+
+    const orderedNodes = items.map((item, index) => {
+      const key = String(getKey(item, index));
+      let node = existingByKey.get(key);
+      if (!node) {
+        node = createNode(item, index);
+        node.dataset.renderKey = key;
+      }
+      updateNode(node, item, index);
+      existingByKey.delete(key);
+      return node;
+    });
+
+    orderedNodes.forEach((node, index) => {
+      const currentNode = container.children[index];
+      if (currentNode !== node) {
+        container.insertBefore(node, currentNode || null);
+      }
+    });
+
+    existingByKey.forEach((node) => node.remove());
   };
 
   const requestAccordionRefresh = () => {
@@ -271,6 +420,9 @@
   window.LevelLinesRuntime = {
     TOKEN_KEY,
     USER_KEY,
+    V2_ACCESS_KEY,
+    V2_REFRESH_KEY,
+    QUOTE_CLAIM_STORAGE_KEY,
     assetManifest,
     parseError,
     escapeHtml,
@@ -279,14 +431,23 @@
     getStoredUser,
     saveSession,
     clearSession,
+    getPendingQuoteClaim,
+    savePendingQuoteClaim,
+    clearPendingQuoteClaim,
+    isPendingQuoteClaimActive,
     waitForStoredUser,
+    refreshSessionFromV2,
     buildQuery,
     debounce,
     createApiClient,
     titleCase,
+    humanizeToken,
+    humanChannel,
     formatDateTime,
+    formatTimestamp,
     createOverviewEntry,
     renderMailboxPreviewList,
+    syncKeyedList,
     requestAccordionRefresh,
     onceVisible,
     getBrandAsset,

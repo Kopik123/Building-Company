@@ -1,6 +1,7 @@
 const fs = require('fs');
 const { Project, ProjectMedia } = require('../models');
 const { galleryCache, getCached, setCached } = require('./publicCache');
+const { readFolderGalleryProjects } = require('./folderGallery');
 
 const galleryFilesCacheTtlRaw = Number(process.env.GALLERY_CACHE_TTL_MS);
 const GALLERY_FILES_CACHE_TTL_MS = Number.isFinite(galleryFilesCacheTtlRaw) && galleryFilesCacheTtlRaw > 0
@@ -13,6 +14,7 @@ const PUBLIC_GALLERY_TTL_MS = Number.isFinite(publicGalleryTtlRaw) && publicGall
   : 30 * 1000;
 
 const MANAGED_GALLERY_CACHE_KEY = 'managed-projects';
+const SERVICE_GALLERY_CACHE_KEY = 'service-folders';
 const GALLERY_IMAGE_PATTERN = /\.(jpg|jpeg|png|gif|webp)$/i;
 
 let galleryFilesCache = {
@@ -94,6 +96,29 @@ const fetchManagedGalleryProjectsCached = async () => {
   };
 };
 
+const fetchServiceGalleryFolders = async (galleryPath) => readFolderGalleryProjects(galleryPath);
+
+const fetchServiceGalleryFoldersCached = async (galleryPath) => {
+  const cacheKey = `${SERVICE_GALLERY_CACHE_KEY}:${galleryPath}`;
+  const cached = getCached(galleryCache, cacheKey);
+  if (cached) {
+    return {
+      payload: cached,
+      cacheStatus: 'HIT'
+    };
+  }
+
+  const payload = {
+    services: await fetchServiceGalleryFolders(galleryPath)
+  };
+  setCached(galleryCache, cacheKey, payload, GALLERY_FILES_CACHE_TTL_MS);
+
+  return {
+    payload,
+    cacheStatus: 'MISS'
+  };
+};
+
 const fetchGalleryFolderImages = async (galleryPath) => {
   const now = Date.now();
   if (
@@ -123,4 +148,5 @@ module.exports = {
   applyPublicGalleryCacheHeaders,
   fetchGalleryFolderImages,
   fetchManagedGalleryProjectsCached,
+  fetchServiceGalleryFoldersCached,
 };

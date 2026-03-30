@@ -16,9 +16,14 @@ const DevicePushToken = sequelize.define('DevicePushToken', {
     allowNull: false
   },
   provider: {
-    type: DataTypes.ENUM('fcm', 'apns', 'webpush'),
+    type: DataTypes.ENUM('fcm', 'apns', 'webpush', 'expo'),
     allowNull: false,
-    defaultValue: 'fcm'
+    defaultValue: 'expo'
+  },
+  appVariant: {
+    type: DataTypes.ENUM('client', 'company'),
+    allowNull: false,
+    defaultValue: 'client'
   },
   pushToken: {
     type: DataTypes.STRING,
@@ -26,6 +31,10 @@ const DevicePushToken = sequelize.define('DevicePushToken', {
     unique: true
   },
   deviceId: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  deviceName: {
     type: DataTypes.STRING,
     allowNull: true
   },

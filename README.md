@@ -1,5 +1,11 @@
-﻿# Building Company
+# Building Company
 strona firmy budowlanej
+
+## Dokumentacja systemu
+
+- [Docs/Level Lines - System Overview.md](Docs/Level%20Lines%20-%20System%20Overview.md)
+- [Docs/Level Lines - Mapa Strony I Ekranow.md](Docs/Level%20Lines%20-%20Mapa%20Strony%20I%20Ekranow.md)
+- [Docs/Level Lines - Architektura Techniczna.md](Docs/Level%20Lines%20-%20Architektura%20Techniczna.md)
 
 ## API v2 / Web v2 / Mobile v1
 
@@ -7,6 +13,13 @@ strona firmy budowlanej
 - Web v2 app scaffold: `apps/web-v2`
 - Mobile v1 app scaffold: `apps/mobile-v1`
 - Cutover checklist: `deploy/CUTOVER_CHECKLIST_STAGING_PROD_v2.md`
+
+### Authenticated web direction
+
+- `apps/web-v2` is the canonical authenticated web app for new product work.
+- `auth.html`, `client-dashboard.html`, and `manager-dashboard.html` remain online only as compatibility entry shells during controlled cutover.
+- New authenticated features should be implemented in `apps/web-v2` first unless the task is explicitly legacy-only or cutover-critical.
+- When a legacy page still needs a change, prefer the smallest compatibility-only patch and keep the real domain/API ownership portable for future `web-v2` and Android/iOS clients.
 
 ### Test commands
 
@@ -18,16 +31,36 @@ npm run test:e2e:mobile
 npm run test:all
 ```
 
+### Windows PowerShell 5.1
+
+- Use `npm.cmd` instead of `npm` in local PowerShell 5.1.
+- Treat `npm.cmd` as the canonical repo automation path on Windows until the local `npm.ps1` execution-policy issue is solved outside the repo.
+- Do not use Bash-style `&&` directly in PowerShell 5.1; use multi-line fail-fast checks or `cmd /c`.
+- Canonical local examples live in [deploy/WINDOWS_POWERSHELL_5_1_LOCAL_COMMANDS.md](deploy/WINDOWS_POWERSHELL_5_1_LOCAL_COMMANDS.md).
+
+Example:
+
+```powershell
+npm.cmd run verify:generated
+if ($LASTEXITCODE -ne 0) { exit 1 }
+
+npm.cmd run test:ci
+if ($LASTEXITCODE -ne 0) { exit 1 }
+```
+
 ### Generowane strony publiczne
 
 ```bash
 npm run generate:locations
 npm run generate:services
+npm run generate:public-pages:content
 npm run generate:public-pages
 ```
 
 - `npm run verify:generated` sprawdza, czy wygenerowane pliki HTML są zgodne z danymi w `scripts/*.data.js`.
 - `npm run test:ci` uruchamia pełny lekki gate repo: `verify:generated` oraz `test:api:v2`.
+- `npm run generate:public-pages:content` przebudowuje tylko generowane HTML-e.
+- `npm run generate:public-pages` uruchamia pełny pipeline: optymalizacja assetów + generowane HTML-e.
 
 ## Uruchomienie lokalnie
 
@@ -48,7 +81,12 @@ npm run generate:public-pages
 	  - lokalnie / PM2 na serwerze: `127.0.0.1`
 	  - Docker / kontenery: `0.0.0.0`
 
-4. Uruchom serwer:
+4. Przygotuj bazę przed startem aplikacji:
+
+	npm run migrate
+	npm run ensure:indexes
+
+5. Uruchom serwer:
 
 	npm start
 
@@ -62,14 +100,48 @@ curl -sS http://127.0.0.1:3000/healthz
 
 ## Migracje bazy (Umzug)
 
-Migracje uruchamiają się automatycznie przy starcie aplikacji (dev i production).
+Migracje nie uruchamiają się już automatycznie przy starcie aplikacji. Repo używa teraz jawnego flow deploy/start:
+
+- `npm run migrate`
+- opcjonalnie `npm run ensure:indexes`
+- dopiero potem `npm start` albo `pm2 restart ...`
 
 Ręcznie:
 
 ```bash
 npm run migrate
 npm run migrate:status
+npm run ensure:indexes
 ```
+
+- Skrypty migracji wymagają `DATABASE_URL`.
+- Dla wygody lokalnej możesz ustawić `DEV_DATABASE_URL`; `scripts/migrate.js` użyje go tylko jako CLI fallback, jeśli `DATABASE_URL` nie jest ustawione w bieżącym shellu.
+- Runtime aplikacji nadal wymaga normalnego `DATABASE_URL`.
+- `npm run ensure:indexes` używa tego samego preflight/fallback co migracje, ale pozostaje osobnym krokiem CLI zamiast ukrytego startup sync.
+
+## Lokalny Postgres / Compose bootstrap
+
+Repo ma teraz jawny lokalny bootstrap dla Postgresa pod `deploy/docker-compose.local-db.yml`.
+
+Szybki start:
+
+```bash
+docker compose -f deploy/docker-compose.local-db.yml up -d
+```
+
+Następnie ustaw lokalnie:
+
+```bash
+DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/building_company_dev
+```
+
+albo tylko CLI fallback:
+
+```bash
+DEV_DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/building_company_dev
+```
+
+Pełny opis jest w `deploy/LOCAL_POSTGRES_COMPOSE_BOOTSTRAP.md`.
 
 ## Formularz e-mail i galeria
 
@@ -474,4 +546,3 @@ pm2 logs building-company        # live tail
 pm2 monit                         # dashboard CPU/RAM
 tail -f logs/pm2-error.log        # error log
 ```
-

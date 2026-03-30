@@ -1,6 +1,37 @@
 (() => {
-  const runtime = window.LevelLinesRuntime || {};
+  const runtime = globalThis.LevelLinesRuntime || {};
   const getOptimizedMedia = runtime.getOptimizedMedia || ((src) => ({ fallback: src }));
+  const syncKeyedList = runtime.syncKeyedList || ((container, items, { getKey, createNode, updateNode } = {}) => {
+    if (!container) return;
+
+    const existingByKey = new Map();
+    Array.from(container.children).forEach((child) => {
+      if (child.dataset.renderKey) {
+        existingByKey.set(child.dataset.renderKey, child);
+      }
+    });
+
+    const orderedNodes = (Array.isArray(items) ? items : []).map((item, index) => {
+      const key = String(getKey(item, index));
+      let node = existingByKey.get(key);
+      if (!node) {
+        node = createNode(item, index);
+        node.dataset.renderKey = key;
+      }
+      updateNode(node, item, index);
+      existingByKey.delete(key);
+      return node;
+    });
+
+    orderedNodes.forEach((node, index) => {
+      const currentNode = container.children[index];
+      if (currentNode !== node) {
+        container.insertBefore(node, currentNode || null);
+      }
+    });
+
+    existingByKey.forEach((node) => node.remove());
+  });
   const createResponsivePicture = runtime.createResponsivePicture || ((media, options = {}) => {
     const image = document.createElement('img');
     image.src = media?.fallback || media?.src || '';
@@ -24,46 +55,79 @@
   const imageTitleNode = document.querySelector('[data-gallery-active-image-title]');
   const projectTitleNode = document.querySelector('[data-gallery-active-project-title]');
   const projectMetaNode = document.querySelector('[data-gallery-active-project-meta]');
+  const gallerySource = String(document.body?.dataset?.gallerySource || 'services').trim().toLowerCase() === 'services'
+    ? 'services'
+    : 'projects';
 
   if (!roller || !stage || !projectStrip || !prevButton || !nextButton) return;
   roller.setAttribute('tabindex', '0');
   projectStrip.setAttribute('tabindex', '0');
 
-  const defaultProjects = [
-    {
-      name: 'Bathrooms - Didsbury',
-      images: [
-        '/Gallery/premium/bathroom-main.jpg',
-        '/Gallery/premium/bathroom-bathtub.jpg',
-        '/Gallery/premium/bathroom-tiles.jpg'
-      ]
-    },
-    {
-      name: 'Kitchens - Altrincham',
-      images: [
-        '/Gallery/premium/kitchen-panorama-main.jpg',
-        '/Gallery/premium/kitchen-panorama-left.jpg',
-        '/Gallery/premium/kitchen-panorama-right.jpg'
-      ]
-    },
-    {
-      name: 'Exterior Craft - Wilmslow',
-      images: [
-        '/Gallery/premium/exterior-front.jpg',
-        '/Gallery/premium/exterior-chimney.jpg',
-        '/Gallery/premium/exterior-wood-gables.jpg'
-      ]
-    },
-    {
-      name: 'Stone Detail - Chorlton',
-      images: [
-        '/Gallery/premium/brick-dark-main.jpg',
-        '/Gallery/premium/brick-detail-charcoal.jpg',
-        '/Gallery/premium/brick-detail-red.jpg'
-      ]
-    }
-  ];
-  let projects = defaultProjects.slice();
+  const defaultCollectionsBySource = {
+    projects: [
+      {
+        name: 'Bathrooms - Didsbury',
+        images: [
+          '/Gallery/premium/bathroom-main.jpg',
+          '/Gallery/premium/bathroom-bathtub.jpg',
+          '/Gallery/premium/bathroom-tiles.jpg'
+        ]
+      },
+      {
+        name: 'Kitchens - Altrincham',
+        images: [
+          '/Gallery/premium/kitchen-panorama-main.jpg',
+          '/Gallery/premium/kitchen-panorama-left.jpg',
+          '/Gallery/premium/kitchen-panorama-right.jpg'
+        ]
+      },
+      {
+        name: 'Exterior Craft - Wilmslow',
+        images: [
+          '/Gallery/premium/exterior-front.jpg',
+          '/Gallery/premium/exterior-chimney.jpg',
+          '/Gallery/premium/exterior-wood-gables.jpg'
+        ]
+      },
+      {
+        name: 'Stone Detail - Chorlton',
+        images: [
+          '/Gallery/premium/brick-dark-main.jpg',
+          '/Gallery/premium/brick-detail-charcoal.jpg',
+          '/Gallery/premium/brick-detail-red.jpg'
+        ]
+      }
+    ],
+    services: [
+      {
+        name: 'bathroom',
+        images: [
+          { src: '/Gallery/bathroom/Rustic%20Harmony.png', label: 'Rustic Harmony' },
+          { src: '/Gallery/bathroom/The%20Slate%20Suite.png', label: 'The Slate Suite' }
+        ]
+      },
+      {
+        name: 'exterior',
+        images: [
+          { src: '/Gallery/exterior/Brick%20veneers.jpg', label: 'Brick Veneers' },
+          { src: '/Gallery/exterior/charcoal%20brickslips.jpg', label: 'Charcoal Brickslips' },
+          { src: '/Gallery/exterior/charcoal%20brickslips.png', label: 'Charcoal Brickslips' },
+          { src: '/Gallery/exterior/Rendering.jpg', label: 'Rendering' },
+          { src: '/Gallery/exterior/Rendering.png', label: 'Rendering' },
+          { src: '/Gallery/exterior/White%20brickslips.png', label: 'White Brickslips' }
+        ]
+      },
+      {
+        name: 'kitchen',
+        images: [
+          { src: '/Gallery/kitchen/Alabaster%20Horizon.png', label: 'Alabaster Horizon' },
+          { src: '/Gallery/kitchen/Midnight%20Marble.png', label: 'Midnight Marble' },
+          { src: '/Gallery/kitchen/Obsidian%20Oak.png', label: 'Obsidian Oak' }
+        ]
+      }
+    ]
+  };
+  let projects = [];
 
   const MOTION_PROFILES = {
     subtle: {
@@ -143,6 +207,10 @@
     chips: []
   };
 
+  let lightboxRoot = null;
+  let lightboxImageHost = null;
+  let lightboxCaption = null;
+
   const toTitleCase = (value) =>
     String(value || '')
       .split(' ')
@@ -151,14 +219,22 @@
       .join(' ');
 
   const labelFromImagePath = (src) => {
-    const filename = String(src || '').split('/').pop() || '';
+    const filename = decodeURIComponent(String(src || '').split('/').pop() || '');
     const base = filename.replace(/\.[a-z0-9]+$/i, '');
     return toTitleCase(base.replace(/[-_]+/g, ' ')) || 'Selected image';
   };
 
-  const levelLabel = (index) => `Level ${String(index + 1).padStart(2, '0')}`;
+  const levelLabel = (index) => `${gallerySource === 'services' ? 'Service' : 'Level'} ${String(index + 1).padStart(2, '0')}`;
 
   const splitProjectName = (value) => {
+    if (gallerySource === 'services') {
+      const normalizedValue = String(value || 'Service').trim() || 'Service';
+      return {
+        title: normalizedValue,
+        subtitle: 'Folder-driven gallery'
+      };
+    }
+
     const parts = String(value || '')
       .split(/\s+-\s+/)
       .map((part) => part.trim())
@@ -196,7 +272,8 @@
   const normalizeProjects = (rawProjects) =>
     (Array.isArray(rawProjects) ? rawProjects : [])
       .map((project) => ({
-        name: String(project?.name || '').trim() || 'Project',
+        id: String(project?.id || project?.name || '').trim().toLowerCase(),
+        name: String(project?.name || '').trim() || (gallerySource === 'services' ? 'Service' : 'Project'),
         images: (Array.isArray(project?.images) ? project.images : []).map(normalizeImageItem).filter(Boolean)
       }))
       .filter((project) => project.images.length);
@@ -228,6 +305,31 @@
 
   const currentProject = () => projects[state.projectIndex];
 
+  const findPictureImage = (node) => node?.querySelector('img');
+
+  const syncPictureNode = (container, picture, mediaKey) => {
+    const currentPicture = container.firstElementChild;
+    if (container.dataset.mediaKey !== mediaKey || !currentPicture) {
+      if (currentPicture) {
+        currentPicture.replaceWith(picture);
+      } else {
+        container.prepend(picture);
+      }
+      container.dataset.mediaKey = mediaKey;
+      return;
+    }
+
+    const nextImage = findPictureImage(picture);
+    const currentImage = findPictureImage(currentPicture);
+    if (currentImage && nextImage) {
+      currentImage.alt = nextImage.alt;
+      currentImage.loading = nextImage.loading;
+      currentImage.decoding = nextImage.decoding;
+      if (nextImage.width) currentImage.width = nextImage.width;
+      if (nextImage.height) currentImage.height = nextImage.height;
+    }
+  };
+
   const loadManagedProjects = async () => {
     try {
       const response = await fetch('/api/gallery/projects', { headers: { Accept: 'application/json' } });
@@ -238,6 +340,22 @@
 
       if (managed.length) {
         projects = managed;
+      }
+    } catch (error) {
+      // Keep static fallback when API is unavailable.
+    }
+  };
+
+  const loadServiceCollections = async () => {
+    try {
+      const response = await fetch('/api/gallery/services', { headers: { Accept: 'application/json' } });
+      if (!response.ok) return;
+
+      const payload = await response.json().catch(() => ({}));
+      const serviceCollections = normalizeProjects(payload.services);
+
+      if (serviceCollections.length) {
+        projects = serviceCollections;
       }
     } catch (error) {
       // Keep static fallback when API is unavailable.
@@ -261,12 +379,38 @@
     }
   };
 
+  const getPhotoOrdinalText = (index, total) => `photo ${index + 1} of ${total}`;
+
+  const getFallbackImageLabel = (centeredIndex) => `Photo ${centeredIndex + 1}`;
+
+  const getDisplayImageLabel = (imageItem, centeredIndex) => (
+    imageItem?.label || getFallbackImageLabel(centeredIndex)
+  );
+
+  const buildProjectMetaText = ({ project, total, centeredIndex, projectName }) => {
+    const photoOrdinal = getPhotoOrdinalText(centeredIndex, total);
+    if (gallerySource === 'services') {
+      return `${project.description || projectName.subtitle} | ${total} completed-work images | ${photoOrdinal}`;
+    }
+    return `${levelLabel(state.projectIndex)} | ${total} image sequence | ${photoOrdinal}`;
+  };
+
+  const buildGalleryStatusText = ({ project, imageLabel, total, centeredIndex }) => {
+    const photoOrdinal = getPhotoOrdinalText(centeredIndex, total);
+    if (gallerySource === 'services') {
+      return `${project.name} / ${imageLabel} / ${photoOrdinal}`;
+    }
+    return `${levelLabel(state.projectIndex)} / ${project.name} / ${imageLabel} / ${photoOrdinal}`;
+  };
+
   const setStatus = () => {
     const project = currentProject();
     if (!project) return;
     const total = project.images.length;
     const centeredIndex = normalizeIndex(Math.round(state.position), total);
     const imageItem = project.images[centeredIndex];
+    const projectName = splitProjectName(project.name);
+    const imageLabel = getDisplayImageLabel(imageItem, centeredIndex);
 
     if (imageTitleNode) {
       imageTitleNode.textContent = imageItem?.label || 'Selected image';
@@ -277,11 +421,132 @@
     }
 
     if (projectMetaNode) {
-      projectMetaNode.textContent = `${levelLabel(state.projectIndex)} | ${total} image sequence | photo ${centeredIndex + 1} of ${total}`;
+      projectMetaNode.textContent = buildProjectMetaText({ project, total, centeredIndex, projectName });
     }
 
     if (statusNode) {
-      statusNode.textContent = `${levelLabel(state.projectIndex)} / ${project.name} / ${imageItem?.label || `Photo ${centeredIndex + 1}`} / photo ${centeredIndex + 1} of ${total}`;
+      statusNode.textContent = buildGalleryStatusText({ project, imageLabel, total, centeredIndex });
+    }
+  };
+
+  const ensureLightbox = () => {
+    if (lightboxRoot) return lightboxRoot;
+
+    lightboxRoot = document.createElement('div');
+    lightboxRoot.className = 'gallery-lightbox';
+    lightboxRoot.hidden = true;
+    lightboxRoot.setAttribute('aria-hidden', 'true');
+    lightboxRoot.innerHTML = `
+      <div class="gallery-lightbox-backdrop" data-gallery-lightbox-close></div>
+      <div class="gallery-lightbox-dialog" role="dialog" aria-modal="true" aria-label="Gallery image fullscreen view">
+        <button class="gallery-lightbox-close" type="button" data-gallery-lightbox-close aria-label="Close fullscreen image">&times;</button>
+        <figure class="gallery-lightbox-figure">
+          <div class="gallery-lightbox-image" data-gallery-lightbox-image></div>
+          <figcaption class="gallery-lightbox-caption" data-gallery-lightbox-caption></figcaption>
+        </figure>
+      </div>
+    `;
+
+    document.body.appendChild(lightboxRoot);
+    lightboxImageHost = lightboxRoot.querySelector('[data-gallery-lightbox-image]');
+    lightboxCaption = lightboxRoot.querySelector('[data-gallery-lightbox-caption]');
+
+    lightboxRoot.querySelectorAll('[data-gallery-lightbox-close]').forEach((node) => {
+      node.addEventListener('click', () => closeLightbox());
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && lightboxRoot && !lightboxRoot.hidden) {
+        closeLightbox();
+      }
+    });
+
+    return lightboxRoot;
+  };
+
+  const closeLightbox = () => {
+    if (!lightboxRoot || lightboxRoot.hidden) return;
+    lightboxRoot.hidden = true;
+    lightboxRoot.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('gallery-lightbox-open');
+  };
+
+  const openLightbox = (imageItem, project, imageIndex) => {
+    if (!imageItem || !project) return;
+    ensureLightbox();
+
+    const picture = createResponsivePicture(imageItem.media, {
+      alt: `${project.name} - ${imageItem.label}`,
+      className: 'gallery-lightbox-picture',
+      imgClassName: 'gallery-lightbox-photo',
+      loading: 'eager'
+    });
+
+    lightboxImageHost.innerHTML = '';
+    lightboxImageHost.appendChild(picture);
+    lightboxCaption.textContent = `${project.name} | ${imageItem.label} | Photo ${imageIndex + 1} of ${project.images.length}`;
+
+    lightboxRoot.hidden = false;
+    lightboxRoot.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('gallery-lightbox-open');
+  };
+
+  const getRollerCardMediaKey = (project, imageItem, index) => (
+    imageItem.src || imageItem.media?.fallback || `${project.name}-${index}`
+  );
+
+  const openRollerCardLightbox = (card) => {
+    const project = currentProject();
+    if (!project) return;
+    const cardIndex = Number(card.dataset.index || 0);
+    const imageItem = project.images[cardIndex];
+    openLightbox(imageItem, project, cardIndex);
+  };
+
+  const handleRollerCardKeydown = (event, card) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    openRollerCardLightbox(card);
+  };
+
+  const ensureRollerCaptionNode = (card) => {
+    let caption = card.querySelector('.roller-caption');
+    if (!caption) {
+      caption = document.createElement('p');
+      caption.className = 'roller-caption';
+      card.appendChild(caption);
+    }
+    return caption;
+  };
+
+  const createRollerCardNode = () => {
+    const card = document.createElement('article');
+    card.className = 'roller-card is-hidden';
+    card.tabIndex = 0;
+    card.setAttribute('role', 'button');
+    card.setAttribute('aria-label', 'Open image fullscreen');
+    card.addEventListener('click', () => openRollerCardLightbox(card));
+    card.addEventListener('keydown', (event) => handleRollerCardKeydown(event, card));
+    card.appendChild(ensureRollerCaptionNode(card));
+    return card;
+  };
+
+  const updateRollerCardNode = (project, card, imageItem, index) => {
+    card.dataset.index = String(index);
+    card.setAttribute('aria-label', `Open ${imageItem.label} fullscreen`);
+    const mediaKey = getRollerCardMediaKey(project, imageItem, index);
+    const picture = createResponsivePicture(imageItem.media, {
+      alt: `${project.name} - ${imageItem.label}`,
+      className: 'roller-picture',
+      imgClassName: 'roller-image',
+      loading: 'lazy',
+      sizes: imageItem.media?.sizes
+    });
+    syncPictureNode(card, picture, mediaKey);
+
+    const caption = ensureRollerCaptionNode(card);
+    if (caption.textContent !== imageItem.label) {
+      caption.textContent = imageItem.label;
     }
   };
 
@@ -334,13 +599,21 @@
     const cards = state.cards;
     const total = cards.length;
     if (!total) return;
+    const baseCardWidth = cards[0]?.offsetWidth || 0;
+    const stageWidth = stage.clientWidth || 0;
+    const sideGutter = Math.min(48, Math.max(24, stageWidth * 0.03));
+    const availableTranslate = Math.max(0, stageWidth / 2 - baseCardWidth / 2 - sideGutter);
+    const translateBase = Math.max(
+      profile.translateX,
+      Math.min(availableTranslate * 0.95, profile.translateX * 1.75)
+    );
 
     cards.forEach((card, index) => {
       const delta = shortestDelta(state.position, index, total);
       const absDelta = Math.abs(delta);
       const visible = absDelta <= profile.visibleDistance;
 
-      const x = delta * profile.translateX;
+      const x = delta * translateBase;
       const y = absDelta > 1 ? profile.farLift : 0;
       const scale = 1 - Math.min(absDelta, 1.25) * profile.scaleDrop;
       const rotateY = -delta * profile.rotateY;
@@ -406,31 +679,13 @@
     stopAnimation();
 
     const project = currentProject();
-    stage.innerHTML = '';
-    state.cards = [];
-
-    project.images.forEach((imageItem, index) => {
-      const card = document.createElement('article');
-      card.className = 'roller-card is-hidden';
-      card.dataset.index = String(index);
-
-      const image = createResponsivePicture(imageItem.media, {
-        alt: `${project.name} - ${imageItem.label}`,
-        className: 'roller-picture',
-        imgClassName: 'roller-image',
-        loading: 'lazy',
-        sizes: imageItem.media?.sizes
-      });
-
-      const caption = document.createElement('p');
-      caption.className = 'roller-caption';
-      caption.textContent = imageItem.label;
-
-      card.appendChild(image);
-      card.appendChild(caption);
-      stage.appendChild(card);
-      state.cards.push(card);
+    syncKeyedList(stage, project.images, {
+      getKey: (imageItem, index) => getRollerCardMediaKey(project, imageItem, index),
+      createNode: () => createRollerCardNode(),
+      updateNode: (card, imageItem, index) => updateRollerCardNode(project, card, imageItem, index)
     });
+
+    state.cards = Array.from(stage.querySelectorAll('.roller-card'));
 
     state.position = normalizePosition(state.target, project.images.length);
     state.velocity = 0;
@@ -441,53 +696,61 @@
   };
 
   const buildProjectStrip = () => {
-    projectStrip.innerHTML = '';
-    state.chips = [];
-
-    projects.forEach((project, index) => {
-      const projectName = splitProjectName(project.name);
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'project-chip';
-      button.setAttribute('aria-label', `Show project ${project.name}`);
-      button.setAttribute('aria-pressed', 'false');
-
-      const image = createResponsivePicture(project.images[0].media, {
-        alt: `${project.name} thumbnail`,
-        className: 'project-chip-picture',
-        imgClassName: 'project-chip-image',
-        loading: 'lazy',
-        sizes: project.images[0].media?.thumbnailSizes || project.images[0].media?.sizes
-      });
-
-      const copy = document.createElement('div');
-      copy.className = 'project-chip-copy';
-
-      const level = document.createElement('small');
-      level.className = 'project-chip-level';
-      level.textContent = levelLabel(index);
-
-      const title = document.createElement('strong');
-      title.className = 'project-chip-title';
-      title.textContent = projectName.title;
-
-      const subtitle = document.createElement('span');
-      subtitle.className = 'project-chip-subtitle';
-      subtitle.textContent = projectName.subtitle;
-
-      button.appendChild(image);
-      copy.appendChild(level);
-      copy.appendChild(title);
-      copy.appendChild(subtitle);
-      button.appendChild(copy);
-
-      button.addEventListener('click', () => selectProject(index));
-
-      projectStrip.appendChild(button);
-      state.chips.push(button);
+    syncKeyedList(projectStrip, projects, {
+      getKey: (project, index) => project.name || project.images[0]?.src || index,
+      createNode: () => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'gallery-service-button';
+        button.setAttribute('aria-pressed', 'false');
+        button.addEventListener('click', () => {
+          const nextIndex = Number(button.dataset.projectIndex || 0);
+          selectProject(nextIndex);
+        });
+        const label = document.createElement('span');
+        label.className = 'gallery-service-button-label';
+        button.appendChild(label);
+        return button;
+      },
+      updateNode: (button, project, index) => {
+        button.dataset.projectIndex = String(index);
+        button.setAttribute('aria-label', `Show ${gallerySource === 'services' ? 'service' : 'project'} ${project.name}`);
+        const label = button.querySelector('.gallery-service-button-label');
+        if (label && label.textContent !== project.name) {
+          label.textContent = project.name;
+        }
+      }
     });
 
+    state.chips = Array.from(projectStrip.querySelectorAll('.gallery-service-button'));
+
     updateProjectStripState();
+  };
+
+  const getDefaultProjects = () => (
+    normalizeProjects(defaultCollectionsBySource[gallerySource] || defaultCollectionsBySource.projects)
+  );
+
+  const loadRemoteProjects = async () => {
+    if (gallerySource === 'services') {
+      await loadServiceCollections();
+      return;
+    }
+    await loadManagedProjects();
+  };
+
+  const setGalleryDisabledState = () => {
+    if (statusNode) statusNode.textContent = 'No gallery photos available yet.';
+    prevButton.disabled = true;
+    nextButton.disabled = true;
+    if (projectPrevButton) projectPrevButton.disabled = true;
+    if (projectNextButton) projectNextButton.disabled = true;
+  };
+
+  const syncProjectNavigationState = () => {
+    if (projects.length > 1) return;
+    if (projectPrevButton) projectPrevButton.disabled = true;
+    if (projectNextButton) projectNextButton.disabled = true;
   };
 
   const roll = (step) => {
@@ -543,19 +806,15 @@
   });
 
   const init = async () => {
-    projects = normalizeProjects(defaultProjects);
+    projects = getDefaultProjects();
     const hasInlineProjects = loadInlineProjects();
 
     if (!hasInlineProjects) {
-      await loadManagedProjects();
+      await loadRemoteProjects();
     }
 
     if (!projects.length) {
-      if (statusNode) statusNode.textContent = 'No gallery photos available yet.';
-      prevButton.disabled = true;
-      nextButton.disabled = true;
-      if (projectPrevButton) projectPrevButton.disabled = true;
-      if (projectNextButton) projectNextButton.disabled = true;
+      setGalleryDisabledState();
       return;
     }
 
@@ -563,10 +822,7 @@
     buildProjectStrip();
     buildRoller();
 
-    if (projects.length <= 1) {
-      if (projectPrevButton) projectPrevButton.disabled = true;
-      if (projectNextButton) projectNextButton.disabled = true;
-    }
+    syncProjectNavigationState();
   };
 
   init();

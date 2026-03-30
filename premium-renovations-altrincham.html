@@ -24,9 +24,11 @@
   <link rel="stylesheet" href="/styles/tokens.css" />
   <link rel="stylesheet" href="/styles/base.css" />
   <link rel="stylesheet" href="/styles/public.css" />
-  <link rel="stylesheet" href="/styles/workspace.css" />
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"Service","name":"Premium Renovations in Altrincham","description":"Selective bathroom, kitchen and interior renovation briefs in Altrincham by Level Lines Studio for homeowners who value finish control, quieter luxury and a calmer build process.","serviceType":"Premium bathroom, kitchen and interior renovations","image":"https://levellines.co.uk/Gallery/premium/kitchen-panorama-right.jpg","provider":{"@type":"LocalBusiness","name":"Level Lines Studio","telephone":["+44 7942 874 446","+44 7304 506 391"],"email":"LevelLineStudioMCR@gmail.com"},"areaServed":["Altrincham","North West - Lancashire"],"url":"https://levellines.co.uk/premium-renovations-altrincham.html"}</script>
+  <link rel="stylesheet" href="/styles/gallery.css" />
+  <link rel="stylesheet" href="/styles/quote-flow.css" />
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"Service","name":"Premium Renovations in Altrincham","description":"Selective bathroom, kitchen and interior renovation briefs in Altrincham by Level Lines Studio for homeowners who value finish control, quieter luxury and a calmer build process.","serviceType":"Premium bathroom, kitchen and interior renovations","image":"https://levellines.co.uk/Gallery/premium/kitchen-panorama-right.jpg","provider":{"@type":"LocalBusiness","name":"Level Lines Studio","telephone":["+44 7942 874 446","+44 7304 506 391"],"email":"LevelLineStudioMCR@gmail.com"},"areaServed":["Altrincham","Manchester and the North West"],"url":"https://levellines.co.uk/premium-renovations-altrincham.html"}</script>
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Can you renovate just one premium room?","acceptedAnswer":{"@type":"Answer","text":"Yes. Single-room scopes are viable when the finish brief and budget match the studio threshold."}},{"@type":"Question","name":"Do you work with supplied design ideas?","acceptedAnswer":{"@type":"Answer","text":"Yes. We can refine an existing direction and strengthen it technically before site work begins."}},{"@type":"Question","name":"Are Altrincham projects handled locally?","acceptedAnswer":{"@type":"Answer","text":"Yes. Altrincham sits inside the direct service footprint shown across the new site."}}],"url":"https://levellines.co.uk/premium-renovations-altrincham.html"}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://levellines.co.uk/"},{"@type":"ListItem","position":2,"name":"Services","item":"https://levellines.co.uk/services.html"},{"@type":"ListItem","position":3,"name":"Renovations in Altrincham","item":"https://levellines.co.uk/premium-renovations-altrincham.html"}]}</script>
 </head>
 <body class="public-site page-location">
 
@@ -37,44 +39,45 @@
 <picture class="public-brand-picture">
           <source type="image/avif" srcset="/assets/optimized/brand/title.avif" />
           <source type="image/webp" srcset="/assets/optimized/brand/title.webp" />
-          <img src="/assets/optimized/brand/title.png" alt="Level Lines Studio" class="public-brand-title-image" width="1800" height="412" loading="eager" decoding="async" />
+          <img src="/assets/optimized/brand/title.png" alt="Level Lines Studio" class="public-brand-title-image" width="988" height="232" loading="eager" decoding="async" />
         </picture>
         </a>
       </div>
-      <div class="public-shell-strip">
-        <section class="public-inline-auth" data-inline-auth-shell aria-label="Studio login">
-          <p class="public-strip-heading">Login</p>
-          <form class="public-inline-login-form" data-inline-login-form novalidate>
-            <div class="public-inline-login-row">
-              <input type="email" name="email" autocomplete="username email" placeholder="Email" aria-label="Email" required />
-              <input type="password" name="password" autocomplete="current-password" placeholder="Password" aria-label="Password" required />
-              <button class="public-inline-login-submit" type="submit">Login</button>
-              <a class="public-inline-login-link" href="/auth.html">Register</a>
-            </div>
-            <p class="public-inline-login-helper">Move public enquiries into private project visibility.</p>
-          </form>
-          <div class="public-inline-session" data-inline-session hidden>
-            <p class="public-inline-session-copy" data-inline-session-copy>Account ready.</p>
-            <div class="public-inline-session-actions">
-              <a class="public-inline-session-link" href="/auth.html" data-inline-account-link>Open Account</a>
-              <button class="public-inline-session-link public-inline-session-link--button" type="button" data-inline-logout>Log out</button>
-            </div>
+      <div class="public-shell-controls">
+      <button class="public-auth-toggle" type="button" data-auth-toggle aria-expanded="false" aria-controls="public-auth-panel">
+        <span class="public-auth-toggle-label">Login</span>
+      </button>
+      <section class="public-auth-panel" id="public-auth-panel" data-auth-panel aria-label="Studio login">
+        <form class="public-inline-login-form" data-inline-login-form data-auth-guest-only novalidate>
+          <div class="public-inline-login-row">
+            <input type="email" name="email" autocomplete="username email" placeholder="Login" aria-label="Login" required />
+            <input type="password" name="password" autocomplete="current-password" placeholder="Password" aria-label="Password" required />
+            <button class="public-inline-login-submit" type="submit">Enter</button>
           </div>
-          <p class="form-status public-inline-login-status" data-inline-login-status aria-live="polite"></p>
-        </section>
+        </form>
+        <div class="public-inline-session" data-inline-session data-auth-user-only hidden>
+          <p class="public-inline-session-copy" data-inline-session-copy>Signed in.</p>
+          <div class="public-inline-session-actions">
+            <button class="public-inline-session-link public-inline-session-link--button" type="button" data-inline-logout>Log out</button>
+          </div>
+        </div>
+        <p class="form-status public-inline-login-status" data-inline-login-status aria-live="polite"></p>
+      </section>
         <div class="public-shell-nav menu-wrap" data-menu-wrap>
-          <p class="public-strip-heading public-strip-heading--nav">Menu</p>
-          <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation menu">
+          <button class="nav-toggle public-menu-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation menu">
+            <span class="public-menu-toggle-label">Menu</span>
             <span class="nav-toggle-line"></span>
             <span class="nav-toggle-line"></span>
             <span class="nav-toggle-line"></span>
           </button>
-          <nav class="site-nav site-nav--public-shell" id="site-nav" data-nav-menu aria-label="Main navigation">
-          <a href="/about.html" data-nav-link>About Us</a>
-          <a href="/gallery.html" data-nav-link>Gallery</a>
-          <a href="/quote.html" data-nav-link>Quote</a>
-          <a href="/contact.html" data-nav-link>Contact</a>
-          <a href="/auth.html" data-nav-link data-auth-link data-auth-guest-label="Account">Account</a>
+          <nav class="site-nav site-nav--public-shell" id="site-nav" data-nav-menu aria-label="Main navigation" hidden aria-hidden="true">
+          <a href="/index.html" data-nav-link><span>Home</span></a>
+          <a href="/about.html" data-nav-link><span>About</span></a>
+          <a href="/services.html" data-nav-link><span>Services</span></a>
+          <a href="/gallery.html" data-nav-link><span>Gallery</span></a>
+          <a href="/quote.html" data-nav-link><span>Quote</span></a>
+          <a href="/contact.html" data-nav-link><span>Contact</span></a>
+          <a href="/auth.html" data-nav-link data-auth-link data-auth-guest-label="Account"><span>Account</span></a>
           </nav>
         </div>
       </div>
@@ -82,149 +85,17 @@
   </header>
   <main>
 
-    <section class="section section--dark studio-board-shell" id="projects">
-      <div class="container section-shell studio-board">
-        <div class="studio-board-top">
-          <div class="studio-board-heading">
-            <p class="section-eyebrow">Premium renovations | Altrincham</p>
-            <h1>Altrincham Renovations</h1>
-            <p class="section-lead">Altrincham renovations with kitchen-led planning and measured finish control.</p>
-          </div>
-          <div class="studio-board-claim">
-            <p class="section-eyebrow">Plan | Design | Craft</p>
-            <p class="studio-board-claimline">Plan | Design | Craft</p>
-            <p class="studio-board-claimcopy">Altrincham projects often start with kitchens, but the same full bathroom renovations, kitchen installation and refurbishment, large-format tiling, carpentry, wall systems and flooring installation studio scope extends cleanly into the rest of the brief.</p>
-          </div>
-        </div>
-
-        <div class="studio-board-main">
-          <article class="surface-card surface-card--light studio-gallery-panel" id="gallery">
-            <div class="studio-panel-head">
-              <div>
-                <p class="section-eyebrow section-eyebrow--compact">Selected Project</p>
-                <h2 data-gallery-active-image-title>Selected image</h2>
-              </div>
-              <a class="text-link" href="#consultation">Send Enquiry</a>
-            </div>
-            <div class="gallery-roller studio-gallery-roller" data-gallery-roller data-motion-profile="subtle">
-              <button class="gallery-arrow studio-gallery-arrow" type="button" data-gallery-prev aria-label="Previous photo">&#10094;</button>
-              <div class="gallery-stage studio-gallery-stage" data-gallery-stage aria-live="polite"></div>
-              <button class="gallery-arrow studio-gallery-arrow" type="button" data-gallery-next aria-label="Next photo">&#10095;</button>
-            </div>
-          </article>
-
-          <aside class="surface-card surface-card--light studio-projects-panel">
-            <div class="studio-panel-head studio-panel-head--stack">
-              <div>
-                <p class="section-eyebrow section-eyebrow--compact">Projects</p>
-                <h2 data-gallery-active-project-title>Altrincham Kitchen Overhaul</h2>
-              </div>
-              <p class="studio-panel-copy" data-gallery-active-project-meta></p>
-            </div>
-            <button class="project-rail-nav project-rail-nav--up" type="button" data-gallery-project-prev aria-label="Previous project">&#8593;</button>
-            <div class="gallery-project-strip studio-project-strip" data-gallery-projects aria-label="Project selection"></div>
-            <button class="project-rail-nav project-rail-nav--down" type="button" data-gallery-project-next aria-label="Next project">&#8595;</button>
-            <p class="gallery-status studio-gallery-status" data-gallery-status aria-live="polite"></p>
-          </aside>
-        </div>
-
-        <div class="studio-board-bottom">
-          <article class="surface-card surface-card--light studio-summary-card" id="services">
-            <div class="studio-summary-grid">
-              <section class="studio-summary-block studio-summary-block--areas">
-                <div class="studio-summary-heading">
-<span class="studio-summary-icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" focusable="false">
-                    <path d="M12 21s6-4.35 6-10a6 6 0 1 0-12 0c0 5.65 6 10 6 10Z" />
-                    <circle cx="12" cy="11" r="2.5" />
-                  </svg>
-                </span>
-                  <div>
-                    <p class="section-eyebrow section-eyebrow--compact">Coverage</p>
-                    <h3>The local brief sits inside the same direct North West coverage pattern.</h3>
-                  </div>
-                </div>
-                <p class="studio-summary-region">North West - Lancashire</p>
-                <div class="studio-summary-areas">
-              <span class="studio-summary-area">Altrincham</span>
-              <span class="studio-summary-area">Manchester</span>
-              <span class="studio-summary-area">Liverpool</span>
-              <span class="studio-summary-area">Preston</span>
-              <span class="studio-summary-area">Rochdale</span>
-              <span class="studio-summary-area">Oldham</span>
-              <span class="studio-summary-area">Macclesfield</span>
-              <span class="studio-summary-area">Stockport</span>
-              <span class="studio-summary-area">Northwich</span>
-              <span class="studio-summary-area">Warrington</span>
-                </div>
-              </section>
-              <section class="studio-summary-block studio-summary-block--links">
-                <div class="studio-summary-heading">
-<span class="studio-summary-icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" focusable="false">
-                    <rect x="3.5" y="3.5" width="7" height="7" rx="1.5" />
-                    <rect x="13.5" y="3.5" width="7" height="7" rx="1.5" />
-                    <rect x="3.5" y="13.5" width="7" height="7" rx="1.5" />
-                    <rect x="13.5" y="13.5" width="7" height="7" rx="1.5" />
-                  </svg>
-                </span>
-                  <div>
-                    <p class="section-eyebrow section-eyebrow--compact">Services</p>
-                    <h3>Bathroom, kitchen and interior scopes stay inside one refined studio offer.</h3>
-                  </div>
-                </div>
-                <div class="studio-summary-links">
-              <a class="studio-summary-link" href="/premium-bathrooms-manchester.html">Full Bathroom Renovations</a>
-              <a class="studio-summary-link" href="/premium-kitchens-manchester.html">Kitchen Installation and Refurbishment</a>
-              <a class="studio-summary-link" href="/quote.html">Interior Wall Systems</a>
-                </div>
-              </section>
-              <section class="studio-summary-block studio-summary-block--contact">
-                <div class="studio-summary-heading">
-<span class="studio-summary-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" focusable="false">
-                  <path d="M6.5 5.5h11a2 2 0 0 1 2 2v9l-3-2.5H6.5a2 2 0 0 1-2-2v-4.5a2 2 0 0 1 2-2Z" />
-                </svg>
-              </span>
-                  <div>
-                    <p class="section-eyebrow section-eyebrow--compact">Contact Details</p>
-                    <h3>Direct studio contact</h3>
-                  </div>
-                </div>
-                <address class="studio-summary-contact" aria-label="Level Lines Studio contact details">
-                  <a class="studio-summary-link studio-summary-link--contact" data-brand-phone="0" href="tel:+447942874446"><span class="studio-summary-link-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M7.5 4.5h3l1.2 3.6-1.8 1.8a14.2 14.2 0 0 0 4.2 4.2l1.8-1.8 3.6 1.2v3a1.5 1.5 0 0 1-1.5 1.5A13.5 13.5 0 0 1 6 6a1.5 1.5 0 0 1 1.5-1.5Z" /></svg></span>+44 7942 874 446</a>
-                  <a class="studio-summary-link studio-summary-link--contact" data-brand-phone="1" href="tel:+447304506391"><span class="studio-summary-link-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M7.5 4.5h3l1.2 3.6-1.8 1.8a14.2 14.2 0 0 0 4.2 4.2l1.8-1.8 3.6 1.2v3a1.5 1.5 0 0 1-1.5 1.5A13.5 13.5 0 0 1 6 6a1.5 1.5 0 0 1 1.5-1.5Z" /></svg></span>+44 7304 506 391</a>
-                  <a class="studio-summary-link studio-summary-link--contact" data-brand-email href="mailto:LevelLineStudioMCR@gmail.com"><span class="studio-summary-link-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M4.5 6.5h15a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-15a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1Z" /><path d="m5 8 7 5 7-5" /></svg></span>LevelLineStudioMCR@gmail.com</a>
-                </address>
-              </section>
-            </div>
-          </article>
-
-          <article class="surface-card surface-card--light studio-quote-card" id="consultation">
-            <p class="section-eyebrow">Private Consultation</p>
-            <h2>Send Enquiry</h2>
-            <p class="section-lead">Share the rooms involved, the finish ambition and your timing. The studio replies with a measured next step.</p>
-            <form class="quote-form studio-quote-form js-quote-form" data-form-context="Altrincham" novalidate>
-              <input type="hidden" name="location" value="Altrincham" />
-              <div class="form-grid">
-                <label>Name<input type="text" name="name" autocomplete="name" required /></label>
-                <label>Phone<input type="tel" name="phone" autocomplete="tel" /></label>
-                <label>Email<input type="email" name="email" autocomplete="email" /></label>
-                <label>Project type
-                  <select name="projectType" required data-brand-project-type-select data-default-label="Select" data-selected-value=""></select>
-                </label>
-                <label>Budget
-                  <select name="budget" data-brand-budget-select data-default-label="Select"></select>
-                </label>
-                <label class="span-2">Project brief<textarea name="message" rows="5" required placeholder="Tell us about your scope, finish expectations and timing."></textarea></label>
-              </div>
-              <button class="btn btn-gold btn-block" type="submit">Send Enquiry</button>
-              <p class="form-status" aria-live="polite"></p>
-            </form>
-          </article>
+    <section class="public-hero public-hero--inner">
+      <div class="container inner-hero-shell content-card content-card--dark" style="--hero-image: url('/Gallery/premium/kitchen-panorama-right.jpg');">
+        <p class="section-eyebrow">Renovations | Altrincham</p>
+        <h1>Altrincham renovations with kitchen-led planning and measured finish control.</h1>
+        <p class="section-lead">Altrincham projects often start with kitchens, but the same full bathroom renovations, kitchen installation and refurbishment, tiling including large format, wet showers and exterior areas, carpentry, and interior and exterior wall systems studio scope extends cleanly into the rest of the brief.</p>
+        <div class="hero-chip-row">
+          <span class="stat-chip">Altrincham</span>
+          <span class="stat-chip" data-brand-region>Manchester and the North West</span>
+          <span class="stat-chip" data-brand-claim>Plan | Design | Craft</span>
         </div>
       </div>
-      <script type="application/json" data-gallery-projects-json>[{"name":"Altrincham Kitchen Overhaul","images":["/Gallery/premium/kitchen-panorama-main.jpg","/Gallery/premium/kitchen-panorama-right.jpg","/Gallery/premium/kitchen-panorama-left.jpg"]},{"name":"Bathroom Finish Control","images":["/Gallery/premium/bathroom-main.jpg","/Gallery/premium/bathroom-bathtub.jpg","/Gallery/premium/bathroom-tiles.jpg"]},{"name":"Joinery and Surface Tone","images":["/Gallery/premium/brick-detail-charcoal.jpg","/Gallery/premium/brick-detail-red.jpg","/Gallery/premium/brick-dark-main.jpg"]}]</script>
     </section>
 
     <section class="section section--light">
@@ -232,7 +103,7 @@
         <div>
           <p class="section-eyebrow">Location Focus</p>
           <h2>Altrincham projects shaped by detail, not generic packages.</h2>
-          <p class="section-lead">The strongest Altrincham briefs treat full bathroom renovations, kitchen installation and refurbishment, large-format tiling, carpentry, wall systems and flooring installation as one coordinated premium scope instead of a disconnected set of trades.</p>
+          <p class="section-lead">The strongest Altrincham briefs treat full bathroom renovations, kitchen installation and refurbishment, tiling including large format, wet showers and exterior areas, carpentry, and interior and exterior wall systems as one coordinated premium scope instead of a disconnected set of trades.</p>
         </div>
         <div class="surface-card surface-card--light detail-card">
           <div class="area-list" data-brand-area-list></div>
@@ -277,10 +148,41 @@
           </div>
         </div>
         <picture class="feature-image-frame">
-          <source type="image/avif" srcset="/Gallery/premium/kitchen-panorama-main-960.avif 960w, /Gallery/premium/kitchen-panorama-main-1600.avif 1600w, /Gallery/premium/kitchen-panorama-main.avif 6824w" sizes="(max-width: 640px) 88vw, (max-width: 992px) 92vw, 66vw" />
-          <source type="image/webp" srcset="/Gallery/premium/kitchen-panorama-main-960.webp 960w, /Gallery/premium/kitchen-panorama-main-1600.webp 1600w, /Gallery/premium/kitchen-panorama-main.webp 6824w" sizes="(max-width: 640px) 88vw, (max-width: 992px) 92vw, 66vw" />
-          <img src="/Gallery/premium/kitchen-panorama-main.jpg" srcset="/Gallery/premium/kitchen-panorama-main-960.jpg 960w, /Gallery/premium/kitchen-panorama-main-1600.jpg 1600w, /Gallery/premium/kitchen-panorama-main.jpg 6824w" sizes="(max-width: 640px) 88vw, (max-width: 992px) 92vw, 66vw" alt="Contemporary kitchen overhaul" class="feature-image" width="6824" height="2160" loading="lazy" decoding="async" />
+          <source type="image/avif" srcset="/Gallery/premium/kitchen-panorama-main-960.avif 960w, /Gallery/premium/kitchen-panorama-main-1536.avif 1536w, /Gallery/premium/kitchen-panorama-main.avif 1536w" sizes="(max-width: 640px) 88vw, (max-width: 992px) 92vw, 66vw" />
+          <source type="image/webp" srcset="/Gallery/premium/kitchen-panorama-main-960.webp 960w, /Gallery/premium/kitchen-panorama-main-1536.webp 1536w, /Gallery/premium/kitchen-panorama-main.webp 1536w" sizes="(max-width: 640px) 88vw, (max-width: 992px) 92vw, 66vw" />
+          <img src="/Gallery/premium/kitchen-panorama-main.jpg" srcset="/Gallery/premium/kitchen-panorama-main-960.jpg 960w, /Gallery/premium/kitchen-panorama-main-1536.jpg 1536w, /Gallery/premium/kitchen-panorama-main.jpg 1536w" sizes="(max-width: 640px) 88vw, (max-width: 992px) 92vw, 66vw" alt="Contemporary kitchen overhaul" class="feature-image" width="1536" height="1024" loading="lazy" decoding="async" />
         </picture>
+      </div>
+    </section>
+
+    <section class="section section--light">
+      <div class="container section-shell">
+        <div class="section-heading">
+          <p class="section-eyebrow">Local routes</p>
+          <h2>Service and quote routes for Altrincham.</h2>
+        </div>
+        <div class="page-grid-2">
+          <article class="content-card content-card--light">
+            <p class="section-eyebrow section-eyebrow--compact">Service routes</p>
+            <h3>Core service pages</h3>
+            <p class="page-aside-copy">Start with the service line that leads the brief, then move into quote.</p>
+            <div class="page-link-cluster">
+              <a class="page-link-pill" href="/premium-bathrooms-manchester.html">Bathroom service</a>
+              <a class="page-link-pill" href="/premium-kitchens-manchester.html">Kitchen service</a>
+              <a class="page-link-pill" href="/interior-renovations-manchester.html">Interior service</a>
+            </div>
+          </article>
+          <article class="content-card content-card--light">
+            <p class="section-eyebrow section-eyebrow--compact">Next step</p>
+            <h3>Move into the brief</h3>
+            <p class="page-aside-copy">Use the direct route when the rooms, timing and finish level are known.</p>
+            <div class="page-link-cluster">
+              <a class="page-link-pill" href="/quote.html">Start Quote</a>
+              <a class="page-link-pill" href="/services.html">Services hub</a>
+              <a class="page-link-pill" href="/gallery.html">View Gallery</a>
+            </div>
+          </article>
+        </div>
       </div>
     </section>
 
@@ -296,7 +198,269 @@
       </div>
     </section>
 
+  <section class="section section--dark contact-band-shell">
+    <div class="container contact-band surface-card surface-card--dark">
+      <div class="contact-band-copy">
+        <p class="section-eyebrow section-eyebrow--compact">Studio Contact</p>
+        <h2>Discuss premium renovations in Altrincham directly with the studio.</h2>
+        <p>Every local brief keeps the same direct contact route so scope, finish ambition and sequencing can be clarified without delay.</p>
+      </div>
+      <address class="contact-band-links" aria-label="Level Lines Studio contact details">
+        <a class="contact-band-link" data-brand-phone="0" href="tel:+447942874446">+44 7942 874 446</a>
+        <a class="contact-band-link" data-brand-phone="1" href="tel:+447304506391">+44 7304 506 391</a>
+        <a class="contact-band-link" data-brand-email href="mailto:LevelLineStudioMCR@gmail.com">LevelLineStudioMCR@gmail.com</a>
+      </address>
+    </div>
+  </section>
 
+
+  <section class="section section--light" id="consultation">
+    <div class="container consultation-shell">
+      <div class="consultation-copy">
+        <p class="section-eyebrow">Private Consultation</p>
+        <h2>Send Enquiry</h2>
+        <p class="section-lead">Share the rooms involved, finish level and timing. The studio replies with the right next step.</p>
+        <div class="hero-chip-row consultation-chip-row">
+          <span class="stat-chip" data-brand-region>Manchester and the North West</span>
+          <span class="stat-chip">Send Enquiry</span>
+          <span class="stat-chip">Plan | Design | Craft</span>
+        </div>
+      </div>
+      <form class="quote-form surface-card surface-card--light js-quote-form" data-form-context="Location | Altrincham" novalidate>
+              <input type="hidden" name="location" value="Altrincham" />
+              <div class="quote-stepper" data-quote-stepper>
+                <div class="quote-stepper-nav" aria-label="Quote brief steps">
+                  <button class="quote-stepper-tab" type="button" data-quote-step-tab data-step-index="0" aria-current="step">
+                    <span class="quote-stepper-tab-index">01</span>
+                    <span class="quote-stepper-tab-copy">
+                      <strong>Basics</strong>
+                      <span>Contact and project type</span>
+                    </span>
+                  </button>
+                  <button class="quote-stepper-tab" type="button" data-quote-step-tab data-step-index="1">
+                    <span class="quote-stepper-tab-index">02</span>
+                    <span class="quote-stepper-tab-copy">
+                      <strong>Scope</strong>
+                      <span>Property, stage and access</span>
+                    </span>
+                  </button>
+                  <button class="quote-stepper-tab" type="button" data-quote-step-tab data-step-index="2">
+                    <span class="quote-stepper-tab-index">03</span>
+                    <span class="quote-stepper-tab-copy">
+                      <strong>Brief</strong>
+                      <span>Budget, priorities and photos</span>
+                    </span>
+                  </button>
+                </div>
+
+                <div class="quote-stepper-panels">
+                  <section class="quote-step-panel" data-quote-step-panel data-step-index="0">
+                    <div class="quote-step-panel-head">
+                      <p class="section-eyebrow section-eyebrow--compact">Step 1</p>
+                      <h3>Start with the core enquiry.</h3>
+                      <p class="page-aside-copy">Share who should hear back, how to reach you and what kind of project this is.</p>
+                    </div>
+                    <div class="form-grid quote-form-grid">
+                      <label>Name<input type="text" name="name" autocomplete="name" required /></label>
+                      <label>Phone<input type="tel" name="phone" autocomplete="tel" /></label>
+                      <label>Email<input type="email" name="email" autocomplete="email" /></label>
+                      <label>Project type
+                        <select name="projectType" required data-brand-project-type-select data-default-label="Select" data-selected-value=""></select>
+                      </label>
+                    </div>
+                  </section>
+
+                  <section class="quote-step-panel" data-quote-step-panel data-step-index="1" hidden>
+                    <div class="quote-step-panel-head">
+                      <p class="section-eyebrow section-eyebrow--compact">Step 2</p>
+                      <h3>Set the site and planning context.</h3>
+                      <p class="page-aside-copy">This helps us frame the right next step before anyone gives you a generic estimate answer.</p>
+                    </div>
+                    <div class="form-grid quote-form-grid">
+                      <label>Property type
+                        <select name="propertyType" required>
+                          <option value="">Select</option>
+                          <option value="flat">Flat / apartment</option>
+                          <option value="terraced">Terraced house</option>
+                          <option value="semi_detached">Semi-detached</option>
+                          <option value="detached">Detached</option>
+                          <option value="commercial">Commercial unit</option>
+                          <option value="other">Other</option>
+                        </select>
+                      </label>
+                      <label>Occupancy
+                        <select name="occupancyStatus" required>
+                          <option value="">Select</option>
+                          <option value="living_in_home">Living in home</option>
+                          <option value="partially_occupied">Partially occupied</option>
+                          <option value="empty_property">Empty property</option>
+                          <option value="tenanted">Tenanted</option>
+                          <option value="commercial_live">Commercial live site</option>
+                          <option value="other">Other</option>
+                        </select>
+                      </label>
+                      <label>Planning stage
+                        <select name="planningStage" required>
+                          <option value="">Select</option>
+                          <option value="idea">Early idea</option>
+                          <option value="getting_prices">Getting prices</option>
+                          <option value="ready_to_start">Ready to start</option>
+                          <option value="already_underway">Already underway</option>
+                          <option value="urgent_recovery">Urgent recovery</option>
+                        </select>
+                      </label>
+                      <label>Target start
+                        <select name="targetStartWindow" required>
+                          <option value="">Select</option>
+                          <option value="asap">ASAP</option>
+                          <option value="within_1_month">Within 1 month</option>
+                          <option value="within_3_months">Within 3 months</option>
+                          <option value="within_6_months">Within 6 months</option>
+                          <option value="planning_ahead">Planning ahead</option>
+                        </select>
+                      </label>
+                      <label>Finish level
+                        <select name="finishLevel">
+                          <option value="">Select</option>
+                          <option value="essential">Essential refresh</option>
+                          <option value="elevated">Elevated</option>
+                          <option value="premium">Premium</option>
+                          <option value="bespoke">Bespoke</option>
+                        </select>
+                      </label>
+                      <label>Site access
+                        <select name="siteAccess">
+                          <option value="">Select</option>
+                          <option value="easy_ground_floor">Easy ground-floor access</option>
+                          <option value="stairs_only">Stairs only</option>
+                          <option value="tight_access">Tight access</option>
+                          <option value="restricted_parking">Restricted parking</option>
+                          <option value="unknown">Not sure yet</option>
+                        </select>
+                      </label>
+                      <fieldset class="quote-choice-fieldset span-2">
+                        <legend>Rooms involved</legend>
+                        <div class="quote-choice-grid">
+              <label class="quote-choice-pill">
+                <input type="checkbox" name="roomsInvolved" value="kitchen" />
+                <span>Kitchen</span>
+              </label>
+              <label class="quote-choice-pill">
+                <input type="checkbox" name="roomsInvolved" value="bathroom" />
+                <span>Bathroom</span>
+              </label>
+              <label class="quote-choice-pill">
+                <input type="checkbox" name="roomsInvolved" value="living_area" />
+                <span>Living area</span>
+              </label>
+              <label class="quote-choice-pill">
+                <input type="checkbox" name="roomsInvolved" value="bedroom" />
+                <span>Bedroom</span>
+              </label>
+              <label class="quote-choice-pill">
+                <input type="checkbox" name="roomsInvolved" value="utility" />
+                <span>Utility</span>
+              </label>
+              <label class="quote-choice-pill">
+                <input type="checkbox" name="roomsInvolved" value="hall_stairs" />
+                <span>Hall / stairs</span>
+              </label>
+              <label class="quote-choice-pill">
+                <input type="checkbox" name="roomsInvolved" value="extension_area" />
+                <span>Extension area</span>
+              </label>
+              <label class="quote-choice-pill">
+                <input type="checkbox" name="roomsInvolved" value="outdoor_connection" />
+                <span>Outdoor connection</span>
+              </label>
+              <label class="quote-choice-pill">
+                <input type="checkbox" name="roomsInvolved" value="whole_home" />
+                <span>Whole home</span>
+              </label>
+              <label class="quote-choice-pill">
+                <input type="checkbox" name="roomsInvolved" value="other" />
+                <span>Other</span>
+              </label>
+                        </div>
+                      </fieldset>
+                    </div>
+                  </section>
+
+                  <section class="quote-step-panel" data-quote-step-panel data-step-index="2" hidden>
+                    <div class="quote-step-panel-head">
+                      <p class="section-eyebrow section-eyebrow--compact">Step 3</p>
+                      <h3>Finish the working brief.</h3>
+                      <p class="page-aside-copy">Add the budget direction, must-haves, known constraints and any reference photos that will save a back-and-forth later.</p>
+                    </div>
+                    <div class="form-grid quote-form-grid">
+                      <label>Budget
+                        <select name="budget" data-brand-budget-select data-default-label="Select"></select>
+                      </label>
+                      <label>Postcode<input type="text" name="postcode" autocomplete="postal-code" /></label>
+                      <fieldset class="quote-choice-fieldset span-2">
+                        <legend>Priorities</legend>
+                        <div class="quote-choice-grid">
+              <label class="quote-choice-pill">
+                <input type="checkbox" name="priorities" value="finish_quality" />
+                <span>Finish quality</span>
+              </label>
+              <label class="quote-choice-pill">
+                <input type="checkbox" name="priorities" value="budget_control" />
+                <span>Budget control</span>
+              </label>
+              <label class="quote-choice-pill">
+                <input type="checkbox" name="priorities" value="storage" />
+                <span>Storage</span>
+              </label>
+              <label class="quote-choice-pill">
+                <input type="checkbox" name="priorities" value="speed" />
+                <span>Speed</span>
+              </label>
+              <label class="quote-choice-pill">
+                <input type="checkbox" name="priorities" value="family_living" />
+                <span>Family living</span>
+              </label>
+              <label class="quote-choice-pill">
+                <input type="checkbox" name="priorities" value="low_maintenance" />
+                <span>Low maintenance</span>
+              </label>
+              <label class="quote-choice-pill">
+                <input type="checkbox" name="priorities" value="future_sale" />
+                <span>Future sale</span>
+              </label>
+              <label class="quote-choice-pill">
+                <input type="checkbox" name="priorities" value="energy_efficiency" />
+                <span>Energy efficiency</span>
+              </label>
+                        </div>
+                      </fieldset>
+                      <label class="span-2">Must-haves<textarea name="mustHaves" rows="3" placeholder="List the pieces that must make the project work."></textarea></label>
+                      <label class="span-2">Known constraints<textarea name="constraints" rows="3" placeholder="Access limits, neighbours, timescales, structural unknowns or anything else we should factor in."></textarea></label>
+                      <label class="span-2">Reference photos<input type="file" name="files" accept="image/*" multiple /></label>
+                      <label class="span-2">Project brief<textarea name="message" rows="6" required placeholder="Tell us about your scope, finish expectations and timing."></textarea></label>
+                    </div>
+                  </section>
+                </div>
+              </div>
+              <div class="quote-step-actions">
+                <button class="btn-outline-gold" type="button" data-quote-step-prev hidden>Back</button>
+                <button class="btn-outline-gold" type="button" data-quote-step-next>Continue</button>
+              </div>
+              <p class="page-aside-copy" data-quote-files-status>Optional: attach up to 8 reference photos.</p>
+              <div class="quote-file-preview" data-quote-file-preview aria-live="polite" hidden></div>
+              <button class="btn btn-gold btn-block" type="submit">Send Enquiry</button>
+              <p class="form-status" aria-live="polite"></p>
+              <div class="quote-followup-panel" data-quote-followup hidden>
+                <p class="section-eyebrow section-eyebrow--compact">Quote status</p>
+                <h3 data-quote-followup-title>Your private quote link is ready.</h3>
+                <p class="page-aside-copy" data-quote-followup-summary>Keep this private link to check the quote status later and continue from the same enquiry context.</p>
+                <dl class="quote-followup-meta" data-quote-followup-meta></dl>
+                <div class="quote-file-preview quote-file-preview--readonly" data-quote-followup-attachments hidden></div>
+                <div class="page-actions quote-followup-actions" data-quote-followup-actions></div>
+              </div>
+      </form>
+    </div>
+  </section>
   </main>
 
   <footer class="site-footer">
@@ -304,7 +468,7 @@
       <div class="footer-block footer-block--brand">
         <p class="section-eyebrow section-eyebrow--compact">Level Lines Studio</p>
         <h3 data-brand-name>Level Lines Studio</h3>
-        <p class="footer-copy" data-brand-footer-copy>A premium renovation studio for bathrooms, kitchens and interiors, shaped with quiet planning, material restraint and finish control across the North West.</p>
+        <p class="footer-copy" data-brand-footer-copy>A premium renovation studio for bathrooms, kitchens and interiors, shaped for quieter planning and finish control across Manchester and the North West.</p>
         <address class="footer-contact-list" aria-label="Level Lines Studio contact details">
           <a class="footer-contact-link" data-brand-phone="0" href="tel:+447942874446">+44 7942 874 446</a>
           <a class="footer-contact-link" data-brand-phone="1" href="tel:+447304506391">+44 7304 506 391</a>
@@ -316,17 +480,17 @@
         <div class="footer-links" data-brand-service-links data-link-class="footer-service-link">
           <a class="footer-service-link" href="/premium-bathrooms-manchester.html">Full Bathroom Renovations</a>
           <a class="footer-service-link" href="/premium-kitchens-manchester.html">Kitchen Installation and Refurbishment</a>
-          <a class="footer-service-link" href="/quote.html">Tiling incl. Large Format / Wet Showers</a>
+          <a class="footer-service-link" href="/quote.html">Tiling incl. Large Format / Wet Showers / Exterior</a>
           <a class="footer-service-link" href="/quote.html">Carpentry</a>
-          <a class="footer-service-link" href="/quote.html">External Wall Systems</a>
-          <a class="footer-service-link" href="/quote.html">Interior Wall Systems</a>
-          <a class="footer-service-link" href="/quote.html">Flooring Installation</a>
+          <a class="footer-service-link" href="/quote.html?projectType=interior#quote-card">Interior and Exterior Wall</a>
         </div>
       </div>
       <div class="footer-block">
         <h3>Studio</h3>
         <div class="footer-links">
-          <a href="/about.html">About Us</a>
+          <a href="/index.html">Home</a>
+          <a href="/about.html">About</a>
+          <a href="/services.html">Services</a>
           <a href="/gallery.html">Gallery</a>
           <a href="/contact.html">Contact</a>
           <a href="/quote.html">Quote</a>
@@ -338,7 +502,7 @@
       </div>
       <div class="footer-block">
         <h3>Studio Region</h3>
-        <p class="footer-copy" data-brand-region>North West - Lancashire</p>
+        <p class="footer-copy" data-brand-region>Manchester and the North West</p>
         <div class="footer-area-list" data-brand-area-list data-item-class="footer-area-chip"></div>
       </div>
     </div>
@@ -347,6 +511,7 @@
       <p class="footer-bottom-note">Plan | Design | Craft</p>
     </div>
   </footer>
+  <script type="application/json" data-gallery-projects-json>[{"id":"bathroom","name":"bathroom","images":[{"src":"/Gallery/bathroom/Rustic%20Harmony.png","label":"Rustic Harmony"},{"src":"/Gallery/bathroom/The%20Slate%20Suite.png","label":"The Slate Suite"}]},{"id":"exterior","name":"exterior","images":[{"src":"/Gallery/exterior/Brick%20veneers.jpg","label":"Brick Veneers"},{"src":"/Gallery/exterior/charcoal%20brickslips.jpg","label":"Charcoal Brickslips"},{"src":"/Gallery/exterior/charcoal%20brickslips.png","label":"Charcoal Brickslips"},{"src":"/Gallery/exterior/Rendering.jpg","label":"Rendering"},{"src":"/Gallery/exterior/Rendering.png","label":"Rendering"},{"src":"/Gallery/exterior/White%20brickslips.png","label":"White Brickslips"}]},{"id":"kitchen","name":"kitchen","images":[{"src":"/Gallery/kitchen/Alabaster%20Horizon.png","label":"Alabaster Horizon"},{"src":"/Gallery/kitchen/Midnight%20Marble.png","label":"Midnight Marble"},{"src":"/Gallery/kitchen/Obsidian%20Oak.png","label":"Obsidian Oak"}]}]</script>
   <script src="/asset-manifest.js" defer></script>
   <script src="/brand.js" defer></script>
   <script src="/runtime.js" defer></script>

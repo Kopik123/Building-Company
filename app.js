@@ -1,9 +1,11 @@
+const fs = require('fs');
 const path = require('path');
 const express = require('express');
 const compression = require('compression');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const { createAssetVersion, createVersionedHtmlMiddleware } = require('./utils/assetVersioning');
 
 const authRoutes = require('./routes/auth');
 const quotesRoutes = require('./routes/quotes');
@@ -17,29 +19,55 @@ const contactRoutes = require('./routes/contact');
 const legacyGalleryRoutes = require('./routes/gallery');
 const apiV2Routes = require('./api/v2');
 
-const createRateLimiter = (windowMs, max) =>
+const createRateLimiter = (windowMs, max, options = {}) =>
   rateLimit({
     windowMs,
     max,
     standardHeaders: true,
-    legacyHeaders: false
+    legacyHeaders: false,
+    ...options
   });
+
+const isPublicQuoteApiPath = (reqOrPath) => {
+  const raw = typeof reqOrPath === 'string'
+    ? reqOrPath
+    : (reqOrPath?.originalUrl || reqOrPath?.baseUrl || reqOrPath?.path || reqOrPath?.url || '');
+  const pathname = String(raw || '').split('?')[0];
+  return /^\/api\/quotes\/guest(?:\/|$)/.test(pathname)
+    || /^\/api\/v2\/public\/quotes(?:\/|$)/.test(pathname);
+};
+
+const isMutableMediaPath = (filePath) => {
+  const normalized = String(filePath || '').replaceAll('\\', '/').toLowerCase();
+  return normalized.includes('/uploads/') || normalized.includes('/gallery/');
+};
 
 const setStaticCacheHeaders = (res, filePath) => {
   const ext = String(path.extname(filePath) || '').toLowerCase();
+  const mutableMedia = isMutableMediaPath(filePath);
 
   if (ext === '.html') {
-    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Cache-Control', 'no-store');
     return;
   }
 
-  if (['.css', '.js'].includes(ext)) {
-    res.setHeader('Cache-Control', 'public, max-age=86400');
+  if (['.css', '.js', '.mjs'].includes(ext)) {
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     return;
   }
 
-  if (['.png', '.jpg', '.jpeg', '.webp', '.avif', '.svg', '.woff', '.woff2'].includes(ext)) {
-    res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
+  if (['.png', '.jpg', '.jpeg', '.webp', '.avif', '.svg', '.gif', '.ico'].includes(ext)) {
+    if (mutableMedia) {
+      res.setHeader('Cache-Control', 'no-store');
+      return;
+    }
+
+    res.setHeader('Cache-Control', 'public, max-age=604800, stale-while-revalidate=86400');
+    return;
+  }
+
+  if (['.woff', '.woff2', '.ttf', '.otf'].includes(ext)) {
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
     return;
   }
 
@@ -48,8 +76,59 @@ const setStaticCacheHeaders = (res, filePath) => {
   }
 };
 
+const DEFAULT_WEB_V2_MOUNT_PATH = '/app-v2';
+
+const normalizeMountPath = (value, fallback = DEFAULT_WEB_V2_MOUNT_PATH) => {
+  const raw = String(value || fallback).trim();
+  if (!raw || raw === '/') return fallback;
+  const normalized = `/${raw.replace(/^\/+/, '').replace(/\/+$/, '')}`;
+  return normalized === '/' ? fallback : normalized;
+};
+
+const mountWebV2 = (app) => {
+  const mountPath = normalizeMountPath(process.env.WEB_V2_MOUNT_PATH);
+  const distDir = path.join(__dirname, 'apps', 'web-v2', 'dist');
+  const indexPath = path.join(distDir, 'index.html');
+
+  if (!fs.existsSync(indexPath)) {
+    return;
+  }
+
+  const sendIndex = (req, res, next) => {
+    if (!['GET', 'HEAD'].includes(req.method)) {
+      next();
+      return;
+    }
+
+    if (path.extname(req.path)) {
+      next();
+      return;
+    }
+
+    res.setHeader('Cache-Control', 'no-store');
+    if (req.method === 'HEAD') {
+      res.status(200).end();
+      return;
+    }
+
+    res.sendFile(indexPath);
+  };
+
+  app.locals.webV2MountPath = mountPath;
+  app.use(mountPath, express.static(distDir, {
+    index: false,
+    redirect: false,
+    setHeaders: setStaticCacheHeaders
+  }));
+  app.get(mountPath, sendIndex);
+  app.get(`${mountPath}/*`, sendIndex);
+};
+
 const createApp = () => {
   const app = express();
+  const assetVersion = createAssetVersion();
+  app.locals.galleryPath = path.join(__dirname, 'Gallery');
+  app.locals.assetVersion = assetVersion;
   const allowedOrigins = String(process.env.CORS_ORIGINS || '')
     .split(',')
     .map((origin) => origin.trim())
@@ -57,8 +136,11 @@ const createApp = () => {
 
   app.set('trust proxy', 1);
 
-  const globalLimiter = createRateLimiter(15 * 60 * 1000, 150);
+  const globalLimiter = createRateLimiter(15 * 60 * 1000, 150, {
+    skip: isPublicQuoteApiPath
+  });
   const authLimiter = createRateLimiter(15 * 60 * 1000, 20);
+  const publicQuoteLimiter = createRateLimiter(15 * 60 * 1000, 50);
   const claimLimiter = createRateLimiter(15 * 60 * 1000, 10);
   const contactLimiter = createRateLimiter(60 * 60 * 1000, 10);
 
@@ -70,7 +152,7 @@ const createApp = () => {
         scriptSrc: ["'self'", "'unsafe-inline'"],
         styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
         fontSrc: ["'self'", 'https://fonts.gstatic.com'],
-        imgSrc: ["'self'", 'data:'],
+        imgSrc: ["'self'", 'data:', 'blob:'],
         connectSrc: ["'self'"],
         objectSrc: ["'none'"],
         frameAncestors: ["'none'"]
@@ -107,7 +189,10 @@ const createApp = () => {
   app.use('/api/', globalLimiter);
   app.use('/api/auth', authLimiter);
   app.use('/api/v2/auth', authLimiter);
+  app.use('/api/quotes/guest', publicQuoteLimiter);
+  app.use('/api/v2/public/quotes', publicQuoteLimiter);
   app.use('/api/quotes/guest/:id/claim', claimLimiter);
+  app.use('/api/v2/public/quotes/:id/claim', claimLimiter);
   app.use('/api/contact', contactLimiter);
 
   app.use('/api/auth', authRoutes);
@@ -120,12 +205,18 @@ const createApp = () => {
   app.use('/api/v2', apiV2Routes);
   app.use('/api', publicRoutes);
   app.use('/api/gallery', legacyGalleryRoutes({
-    galleryPath: path.join(__dirname, 'Gallery')
+    galleryPath: app.locals.galleryPath
   }));
   app.use('/api/contact', contactRoutes());
 
   app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
     setHeaders: setStaticCacheHeaders
+  }));
+  mountWebV2(app);
+  app.use(createVersionedHtmlMiddleware({
+    rootDir: __dirname,
+    assetVersion,
+    cacheControl: 'no-store'
   }));
   app.use(express.static(path.join(__dirname), {
     setHeaders: setStaticCacheHeaders
@@ -154,5 +245,7 @@ const createApp = () => {
 };
 
 module.exports = {
-  createApp
+  createApp,
+  setStaticCacheHeaders,
+  isPublicQuoteApiPath
 };

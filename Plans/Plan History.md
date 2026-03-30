@@ -1,13 +1,78 @@
 # Plan History
 
-| Date | Time | Plan Title | File |
-| --- | --- | --- | --- |
-| 2026-03-13 | 00:09:56 +00:00 | Redesign Publicznego Shellu Pod title.png | `Plans/Redesign Publicznego Shellu Pod title.png.md` |
-| 2026-03-12 | 17:55:58 +00:00 | Plan Naprawy Bledow Znalezionych Przez SonarQube | `Plans/Plan Naprawy Bledow Znalezionych Przez SonarQube.md` |
-| 2026-03-12 | 00:57:12 +00:00 | Pelna Analiza Projektu I Plan Naprawy / Usprawnien | `Plans/Pelna Analiza Projektu I Plan Naprawy - Usprawnien.md` |
-| 2026-03-11 | 23:40:43 +00:00 | Live QA, Asset Optimization And Richer Gold Tuning | `Plans/Live QA, Asset Optimization And Richer Gold Tuning.md` |
-| 2026-03-11 | 22:05:55 +00:00 | Full Stabilization, Mobile Sizing, Performance And Growth Plan For The Site | `Plans/Full Stabilization, Mobile Sizing, Performance And Growth Plan For The Site.md` |
-| 2026-03-10 | 23:55:13 +00:00 | Professional Client Proposal Quote Form Plan | `Plans/Professional Client Proposal Quote Form Plan.md` |
-| 2026-03-10 | 23:30:16 +00:00 | Premium Marble / Dark Gold Theme Replan | `Plans/Premium Marble - Dark Gold Theme Replan.md` |
-| 2026-03-10 | 21:25:13 +00:00 | Premium Web Replan For Design, Performance And SEO | `Plans/Premium Web Replan For Design, Performance And SEO.md` |
-| 2026-03-10 | 12:28:56 +00:00 | Responsive Rewrite For Site + HTML Dashboards | `Plans/Responsive Rewrite For Site + HTML Dashboards.md` |
+- 2026-03-20 21:46 | Plan poprawy designu i SEO dla gotowej strony Level Lines Studio | Plans/Plan poprawy designu i SEO dla gotowej strony Level Lines Studio.md
+- 2026-03-22 19:24 | Analiza Projektu Building Company - Stan, Ryzyka I Kierunek | Plans/Analiza Projektu Building Company - Stan, Ryzyka I Kierunek.md
+- 2026-03-22 19:37 | Decyzja Docelowej Warstwy Web - web-v2 z Kontrolowanym Cutoverem | Plans/Decyzja Docelowej Warstwy Web - web-v2 z Kontrolowanym Cutoverem.md
+- 2026-03-22 20:27 | Web-v2 Parity Sprint - Overview, Inbox And Notifications | Plans/Web-v2 Parity Sprint - Overview, Inbox And Notifications.md
+- 2026-03-23 18:07 | Web-v2 Parity Sprint - Private Inbox And Direct Messaging | Plans/Web-v2 Parity Sprint - Private Inbox And Direct Messaging.md
+- 2026-03-23 19:37 | Web-v2 Parity Sprint - Manager CRUD, Rollout Coverage And Shared Contracts | Plans/Web-v2 Parity Sprint - Manager CRUD, Rollout Coverage And Shared Contracts.md
+- 2026-03-23 20:58 | Web-v2 Parity Sprint - Quote Creation, CRM Editing And Zod Contracts | Plans/Web-v2 Parity Sprint - Quote Creation, CRM Editing And Zod Contracts.md
+- 2026-03-23 21:37 | Folder Names As Gallery Source Of Truth | Plans/Folder Names As Gallery Source Of Truth.md
+- 2026-03-23 21:54 | Responsive Folder Gallery Media Pipeline | Plans/Responsive Folder Gallery Media Pipeline.md
+- 2026-03-24 19:16 | Quotes Lifecycle System - Client Portal, Manager Workflow And Project Conversion | Plans/Quotes Lifecycle System - Client Portal, Manager Workflow And Project Conversion.md
+- 2026-03-24 19:44 | Quote Workflow Production Migration Recovery Hotfix | Plans/Quote Workflow Production Migration Recovery Hotfix.md
+- 2026-03-24 19:54 | Public Guest Quote Submit Hardening | Plans/Public Guest Quote Submit Hardening.md
+- 2026-03-24 20:14 | Public Guest Quote Compatibility Fallback | Plans/Public Guest Quote Compatibility Fallback.md
+- 2026-03-24 20:49 | Quotes ClientId Nullability Production Hotfix | Plans/Quotes ClientId Nullability Production Hotfix.md
+- 2026-03-24 20:57 | Quotes ClientId Force Drop Not Null Hotfix | Plans/Quotes ClientId Force Drop Not Null Hotfix.md
+- 2026-03-24 21:24 | Quote Photo Attachments For Public And Web-v2 Intake | Plans/Quote Photo Attachments For Public And Web-v2 Intake.md
+- 2026-03-24 22:22 | Quote Multi Photo Preview And Thumbnail UX | Plans/Quote Multi Photo Preview And Thumbnail UX.md
+- 2026-03-26 18:15 | Guest Quote Private Preview Link And Follow Up Panel | Plans/Guest Quote Private Preview Link And Follow Up Panel.md
+- 2026-03-26 18:55 | Guest Quote Claim Handoff Between Quote Preview And Auth Account | Plans/Guest Quote Claim Handoff Between Quote Preview And Auth Account.md
+- 2026-03-26 20:56 | Guest Quote Follow Up Photo Upload From Private Preview | Plans/Guest Quote Follow Up Photo Upload From Private Preview.md
+- 2026-03-26 21:04 | Quote File Picker Append And Thumbnail Preview Hotfix | Plans/Quote File Picker Append And Thumbnail Preview Hotfix.md
+- 2026-03-26 21:40 | Web-v2 Overview Aggregation, Claimed Quote Follow Up Uploads And Mobile API Environment Hardening | Plans/Web-v2 Overview Aggregation, Claimed Quote Follow Up Uploads And Mobile API Environment Hardening.md
+- 2026-03-26 22:09 | Auth Session Bridge, Deploy-time Migrations And Project Lifecycle Hardening | Plans/Auth Session Bridge, Deploy-time Migrations And Project Lifecycle Hardening.md
+- 2026-03-26 23:17 | CRM Lifecycle, Activity Feed And V2 Public Quote Portal | Plans/CRM Lifecycle, Activity Feed And V2 Public Quote Portal.md
+- 2026-03-26 23:32 | Auth Account Panel Card Navigation | Plans/Auth Account Panel Card Navigation.md
+- 2026-03-27 20:22 | Estimate Versioning And Explicit Quote Approval | Plans/Estimate Versioning And Explicit Quote Approval.md
+- 2026-03-27 20:51 | Web-v2 Project Workflow, Ownership And Quote-Seeding Parity | Plans/Web-v2 Project Workflow, Ownership And Quote-Seeding Parity.md
+- 2026-03-27 20:59 | Manager Header Quick Access Persistence On Workspace | Plans/Manager Header Quick Access Persistence On Workspace.md
+- 2026-03-27 22:05 | Structured Public Quote Intake And Phased Quote Form | Plans/Structured Public Quote Intake And Phased Quote Form.md
+- 2026-03-27 22:34 | 2 Aplikacje Mobilne Android Dla Level Lines | Plans/2 Aplikacje Mobilne Android Dla Level Lines.md
+- 2026-03-28 01:11 | Nowy WyglÃƒÆ’Ã¢â‚¬Å¾ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦d Manager Workspace Z Kartami, Quick Access I Polami Operacyjnymi | Plans/Nowy WyglÃƒÆ’Ã¢â‚¬Å¾ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦d Manager Workspace Z Kartami, Quick Access I Polami Operacyjnymi.md
+- 2026-03-28 21:21 | PeÃƒâ€¦Ã¢â‚¬Å¡ny Pakiet Dokumentacji Systemu Level Lines Dla Strony, Paneli I Androida | Plans/PeÃƒâ€¦Ã¢â‚¬Å¡ny Pakiet Dokumentacji Systemu Level Lines Dla Strony, Paneli I Androida.md
+- 2026-03-28 22:15 | Project Workflow Stage Enum Quoting Production Hotfix | Plans/Project Workflow Stage Enum Quoting Production Hotfix.md
+- 2026-03-28 22:25 | Project Workflow Status Enum Text Cast Hotfix | Plans/Project Workflow Status Enum Text Cast Hotfix.md
+- 2026-03-28 22:55 | Device Push App Variant Enum Role Text Cast Hotfix | Plans/Device Push App Variant Enum Role Text Cast Hotfix.md
+- 2026-03-28 23:29 | Manager Sticky Header Height Compression Hotfix | Plans/Manager Sticky Header Height Compression Hotfix.md
+- 2026-03-29 00:16 | Frontend Architecture And Public Shell Optimization Wave 1 | Plans/Frontend Architecture And Public Shell Optimization Wave 1.md
+- 2026-03-29 00:37 | Web-v2 Route Modules And Workspace Config Wave 2 | Plans/Web-v2 Route Modules And Workspace Config Wave 2.md
+- 2026-03-29 00:57 | Web-v2 Domain Page Split Wave 3 | Plans/Web-v2 Domain Page Split Wave 3.md
+- 2026-03-29 01:05 | Web-v2 Domain Hook Extraction Wave 4 | Plans/Web-v2 Domain Hook Extraction Wave 4.md
+- 2026-03-29 02:14 | Web-v2 Render Section Split Wave 5 | Plans/Web-v2 Render Section Split Wave 5.md
+- 2026-03-29 02:23 | Web-v2 Inventory Hook And Section Split Wave 6 | Plans/Web-v2 Inventory Hook And Section Split Wave 6.md
+- 2026-03-29 09:00 | Web-v2 Prop Surface Narrowing Wave 7 | Plans/Web-v2 Prop Surface Narrowing Wave 7.md
+- 2026-03-29 09:05 | Web-v2 Quote Surface Component Split Wave 8 | Plans/Web-v2 Quote Surface Component Split Wave 8.md
+- 2026-03-29 09:11 | Web-v2 CRM Inbox And Inventory Surface Split Wave 9 | Plans/Web-v2 CRM Inbox And Inventory Surface Split Wave 9.md
+- 2026-03-29 09:16 | Web-v2 Workspace View-Model Adapter Wave 10 | Plans/Web-v2 Workspace View-Model Adapter Wave 10.md
+- 2026-03-29 09:24 | Web-v2 Domain Action Hook Extraction Wave 11 | Plans/Web-v2 Domain Action Hook Extraction Wave 11.md
+- 2026-03-29 09:27 | Web-v2 Controller Hook And JSDoc Contract Wave 12 | Plans/Web-v2 Controller Hook And JSDoc Contract Wave 12.md
+- 2026-03-29 16:00 | Web-v2 First Authenticated Web Policy Wave 13 | Plans/Web-v2 First Authenticated Web Policy Wave 13.md
+- 2026-03-29 16:12 | Generated Contracts Package Wave 14 | Plans/Generated Contracts Package Wave 14.md
+- 2026-03-29 16:28 | Workspace Surface Submodules And Panel Contracts Wave 15 | Plans/Workspace Surface Submodules And Panel Contracts Wave 15.md
+- 2026-03-29 16:51 | Operational Decisions For Cache, Group Chat Unread And PowerShell Flows Wave 16 | Plans/Operational Decisions For Cache, Group Chat Unread And PowerShell Flows Wave 16.md
+- 2026-03-29 17:22 | Quote Stage 3 Upload Recovery And Layout Refresh Wave 17 | Plans/Quote Stage 3 Upload Recovery And Layout Refresh Wave 17.md
+- 2026-03-29 17:59 | Quote Budget Range Expansion Wave 18 | Plans/Quote Budget Range Expansion Wave 18.md
+- 2026-03-29 18:17 | Quote Friendly Reference Code Wave 19 | Plans/Quote Friendly Reference Code Wave 19.md
+- 2026-03-29 18:59 | Public Runtime Helper Deduplication Wave 20 | Plans/Public Runtime Helper Deduplication Wave 20.md
+- 2026-03-29 19:05 | Public Quote Rate Limit Scope Fix Wave 21 | Plans/Public Quote Rate Limit Scope Fix Wave 21.md
+- 2026-03-29 19:08 | Dropdown Selection Background Readability Wave 22 | Plans/Dropdown Selection Background Readability Wave 22.md
+- 2026-03-29 19:31 | Select Chevron And Field Surface Unification Wave 23 | Plans/Select Chevron And Field Surface Unification Wave 23.md
+- 2026-03-29 19:43 | Manager Header Duplicate Panel Removal Wave 24 | Plans/Manager Header Duplicate Panel Removal Wave 24.md
+- 2026-03-29 20:21 | Manager Menu Simplification And Label Cleanup Wave 25 | Plans/Manager Menu Simplification And Label Cleanup Wave 25.md
+- 2026-03-29 20:42 | Login Recovery And Mobile Auth Session Visibility Wave 26 | Plans/Login Recovery And Mobile Auth Session Visibility Wave 26.md
+- 2026-03-29 20:52 | Quote Claim Email Delivery Verification Wave 27 | Plans/Quote Claim Email Delivery Verification Wave 27.md
+- 2026-03-29 21:05 | Logged-In Client Quote Contact Reuse Wave 28 | Plans/Logged-In Client Quote Contact Reuse Wave 28.md
+- 2026-03-29 21:12 | Contact Card Layout Refresh Wave 29 | Plans/Contact Card Layout Refresh Wave 29.md
+- 2026-03-29 23:16 | Logged-In Client New Quote Staging And Manager Conversion Wave 30 | Plans/Logged-In Client New Quote Staging And Manager Conversion Wave 30.md
+- 2026-03-29 23:27 | Logged-In Quote Claim State Cleanup Wave 31 | Plans/Logged-In Quote Claim State Cleanup Wave 31.md
+- 2026-03-30 00:01 | Manager Quote Thumbnail Preview Wave 32 | Plans/Manager Quote Thumbnail Preview Wave 32.md
+- 2026-03-30 00:20 | Staged New Quote Workflow Deduplication Wave 33 | Plans/Staged New Quote Workflow Deduplication Wave 33.md
+- 2026-03-30 00:37 | Staged New Quote Transaction Safety Wave 34 | Plans/Staged New Quote Transaction Safety Wave 34.md
+- 2026-03-30 00:55 | Deferred Staged Quote Attachment Cleanup Wave 35 | Plans/Deferred Staged Quote Attachment Cleanup Wave 35.md
+- 2026-03-30 01:14 | Deferred Cleanup Queue Health Overview Wave 36 | Plans/Deferred Cleanup Queue Health Overview Wave 36.md
+- 2026-03-30 01:42 | Public Guest Quote V2 Shared Workflow Wave 37 | Plans/Public Guest Quote V2 Shared Workflow Wave 37.md
+- 2026-03-30 02:01 | Quote Review Shared Data Helpers Wave 38 | Plans/Quote Review Shared Data Helpers Wave 38.md
+- 2026-03-30 02:13 | Quote Review Collection Merge And Detail Helper Wave 39 | Plans/Quote Review Collection Merge And Detail Helper Wave 39.md
+- 2026-03-30 02:25 | Quote Review Record Lookup Helper Wave 40 | Plans/Quote Review Record Lookup Helper Wave 40.md

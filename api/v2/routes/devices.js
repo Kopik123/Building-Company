@@ -6,15 +6,35 @@ const { authV2 } = require('../middleware/auth');
 const { ok, fail } = require('../utils/response');
 
 const router = express.Router();
+const APP_VARIANTS = Object.freeze(['client', 'company']);
+const PUSH_PROVIDERS = Object.freeze(['fcm', 'apns', 'webpush', 'expo']);
+
+const inferProvider = (platform, explicitProvider) => {
+  if (explicitProvider && PUSH_PROVIDERS.includes(String(explicitProvider))) {
+    return String(explicitProvider);
+  }
+
+  if (String(platform) === 'web') return 'webpush';
+  return 'expo';
+};
+
+const inferAppVariant = (user, explicitVariant) => {
+  if (explicitVariant && APP_VARIANTS.includes(String(explicitVariant))) {
+    return String(explicitVariant);
+  }
+  return String(user?.role || '').toLowerCase() === 'client' ? 'client' : 'company';
+};
 
 router.post(
   '/push-token',
   [
     authV2,
     body('platform').isIn(['android', 'ios', 'web']),
-    body('provider').optional().isIn(['fcm', 'apns', 'webpush']),
+    body('provider').optional().isIn(PUSH_PROVIDERS),
+    body('appVariant').optional().isIn(APP_VARIANTS),
     body('pushToken').isString().isLength({ min: 16 }),
     body('deviceId').optional().isString().isLength({ max: 255 }),
+    body('deviceName').optional().isString().isLength({ max: 120 }),
     body('appVersion').optional().isString().isLength({ max: 80 })
   ],
   asyncHandler(async (req, res) => {
@@ -26,9 +46,11 @@ router.post(
     const payload = {
       userId: req.v2User.id,
       platform: String(req.body.platform),
-      provider: String(req.body.provider || 'fcm'),
+      provider: inferProvider(req.body.platform, req.body.provider),
+      appVariant: inferAppVariant(req.v2User, req.body.appVariant),
       pushToken: String(req.body.pushToken),
       deviceId: req.body.deviceId ? String(req.body.deviceId) : null,
+      deviceName: req.body.deviceName ? String(req.body.deviceName) : null,
       appVersion: req.body.appVersion ? String(req.body.appVersion) : null,
       lastSeenAt: new Date()
     };

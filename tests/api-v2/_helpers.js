@@ -5,6 +5,7 @@ const mock = require('mock-require');
 
 const rootDir = path.resolve(__dirname, '..', '..');
 const modelsPath = path.join(rootDir, 'models', 'index.js');
+const publicGuestQuoteRoutesPath = path.join(rootDir, 'utils', 'publicGuestQuoteRoutes.js');
 
 const clearModule = (modulePath) => {
   delete require.cache[require.resolve(modulePath)];
@@ -13,6 +14,11 @@ const clearModule = (modulePath) => {
 const mockModels = (modelsStub) => {
   mock.stopAll();
   mock(modelsPath, modelsStub);
+  try {
+    clearModule(publicGuestQuoteRoutesPath);
+  } catch (_error) {
+    // The guest quote shared module may not be loaded in every test.
+  }
 };
 
 const loadRoute = (relativePath) => {

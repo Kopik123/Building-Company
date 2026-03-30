@@ -1,54 +1,69 @@
-const crypto = require('crypto');
 const express = require('express');
-const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const { User, SessionRefreshToken } = require('../../../models');
 const asyncHandler = require('../../../utils/asyncHandler');
 const { authV2 } = require('../middleware/auth');
 const { ok, fail } = require('../utils/response');
+const {
+  ACCESS_TOKEN_EXPIRES_IN,
+  REFRESH_TOKEN_EXPIRES_DAYS,
+  hashToken,
+  issueV2SessionTokens,
+  signLegacyToken
+} = require('../../../utils/sessionTokens');
 
 const router = express.Router();
-const ACCESS_TOKEN_EXPIRES_IN = process.env.ACCESS_TOKEN_EXPIRES_IN || '15m';
-const REFRESH_TOKEN_EXPIRES_DAYS = Math.max(
-  1,
-  Number.parseInt(process.env.REFRESH_TOKEN_EXPIRES_DAYS || '30', 10) || 30
-);
 
 const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
-const hashToken = (value) => crypto.createHash('sha256').update(String(value)).digest('hex');
-const createRefreshToken = () => crypto.randomBytes(48).toString('base64url');
 
-const signAccessToken = (user) =>
-  jwt.sign(
-    {
-      id: user.id,
-      role: user.role,
-      type: 'access'
-    },
-    process.env.JWT_SECRET,
-    { expiresIn: ACCESS_TOKEN_EXPIRES_IN }
-  );
+router.post(
+  '/register',
+  [
+    body('email').isEmail(),
+    body('password').isString().isLength({ min: 8 }),
+    body('name').trim().isLength({ min: 2, max: 120 }),
+    body('phone').optional({ nullable: true }).trim().isLength({ max: 40 }),
+    body('companyName').optional({ nullable: true }).trim().isLength({ max: 120 })
+  ],
+  asyncHandler(async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return fail(res, 400, 'validation_failed', 'Validation failed', errors.array());
+    }
 
-const issueSessionTokens = async (user, req) => {
-  const accessToken = signAccessToken(user);
-  const refreshToken = createRefreshToken();
-  const expiresAt = new Date(Date.now() + REFRESH_TOKEN_EXPIRES_DAYS * 24 * 60 * 60 * 1000);
+    const email = normalizeEmail(req.body.email);
+    const existing = await User.findOne({ where: { email } });
+    if (existing) {
+      return fail(res, 409, 'email_taken', 'Email already registered');
+    }
 
-  const session = await SessionRefreshToken.create({
-    userId: user.id,
-    tokenHash: hashToken(refreshToken),
-    userAgent: String(req.get('user-agent') || '').slice(0, 255) || null,
-    ipAddress: String(req.ip || req.connection?.remoteAddress || '').slice(0, 255) || null,
-    expiresAt
-  });
+    const user = await User.create({
+      email,
+      password: String(req.body.password || ''),
+      name: String(req.body.name || '').trim(),
+      phone: String(req.body.phone || '').trim() || null,
+      companyName: String(req.body.companyName || '').trim() || null,
+      role: 'client'
+    });
 
-  return {
-    accessToken,
-    refreshToken,
-    refreshTokenId: session.id,
-    expiresAt
-  };
-};
+    const tokens = await issueV2SessionTokens(user, req);
+    return ok(
+      res,
+      {
+        user,
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        legacyToken: signLegacyToken(user.id)
+      },
+      {
+        tokenType: 'Bearer',
+        accessTokenExpiresIn: ACCESS_TOKEN_EXPIRES_IN,
+        refreshTokenExpiresInDays: REFRESH_TOKEN_EXPIRES_DAYS
+      },
+      201
+    );
+  })
+);
 
 router.post(
   '/login',
@@ -66,7 +81,7 @@ router.post(
     if (!user) {
       return fail(res, 401, 'invalid_credentials', 'Invalid credentials');
     }
-    if (!user.isActive) {
+    if (user.isActive === false) {
       return fail(res, 403, 'user_inactive', 'User is inactive');
     }
 
@@ -76,14 +91,15 @@ router.post(
     }
 
     await user.update({ lastLogin: new Date() });
-    const tokens = await issueSessionTokens(user, req);
+    const tokens = await issueV2SessionTokens(user, req);
 
     return ok(
       res,
       {
         user,
         accessToken: tokens.accessToken,
-        refreshToken: tokens.refreshToken
+        refreshToken: tokens.refreshToken,
+        legacyToken: signLegacyToken(user.id)
       },
       {
         tokenType: 'Bearer',
@@ -115,11 +131,11 @@ router.post(
       include: [{ model: User, as: 'user' }]
     });
 
-    if (!oldSession || !oldSession.user || !oldSession.user.isActive || new Date(oldSession.expiresAt) <= now) {
+    if (!oldSession || !oldSession.user || oldSession.user.isActive === false || new Date(oldSession.expiresAt) <= now) {
       return fail(res, 401, 'invalid_refresh_token', 'Invalid refresh token');
     }
 
-    const tokens = await issueSessionTokens(oldSession.user, req);
+    const tokens = await issueV2SessionTokens(oldSession.user, req);
     await oldSession.update({
       revokedAt: now,
       replacedByTokenId: tokens.refreshTokenId
@@ -130,7 +146,8 @@ router.post(
       {
         user: oldSession.user,
         accessToken: tokens.accessToken,
-        refreshToken: tokens.refreshToken
+        refreshToken: tokens.refreshToken,
+        legacyToken: signLegacyToken(oldSession.user.id)
       },
       {
         tokenType: 'Bearer',

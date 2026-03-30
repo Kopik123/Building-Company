@@ -1,17 +1,103 @@
-const assetManifest = window.LEVEL_LINES_ASSETS || {};
+const assetManifest = globalThis.LEVEL_LINES_ASSETS || {};
 const brandAssets = assetManifest.brand || {};
+const roleProfiles = {
+  client: {
+    label: 'Client',
+    accountPath: '/client-dashboard.html'
+  },
+  employee: {
+    label: 'Employee',
+    accountPath: '/manager-dashboard.html',
+    managerWorkspace: true
+  },
+  manager: {
+    label: 'Manager',
+    accountPath: '/manager-dashboard.html',
+    managerWorkspace: true,
+    canRunSeed: true
+  },
+  admin: {
+    label: 'Admin',
+    accountPath: '/manager-dashboard.html',
+    managerWorkspace: true,
+    canRunSeed: true
+  }
+};
+const managerQuickAccess = [
+  {
+    key: 'createProject',
+    label: 'Create Project',
+    href: '/manager-dashboard.html#projects',
+    roles: ['employee', 'manager', 'admin']
+  },
+  {
+    key: 'projectManager',
+    label: 'Project Board',
+    href: '/manager-dashboard.html#projects',
+    roles: ['employee', 'manager', 'admin']
+  },
+  {
+    key: 'quotesReview',
+    label: 'Quote Review',
+    href: '/manager-dashboard.html#quotes',
+    roles: ['manager', 'admin']
+  },
+  {
+    key: 'servicesManage',
+    label: 'Service Catalogue',
+    href: '/manager-dashboard.html#services',
+    roles: ['manager', 'admin']
+  },
+  {
+    key: 'materialsTrack',
+    label: 'Materials / Stock',
+    href: '/manager-dashboard.html#stock',
+    roles: ['manager', 'admin']
+  },
+  {
+    key: 'clients',
+    label: 'Clients',
+    href: '/manager-dashboard.html#crm',
+    roles: ['manager', 'admin']
+  },
+  {
+    key: 'staff',
+    label: 'Staff',
+    href: '/manager-dashboard.html#staff',
+    roles: ['manager', 'admin']
+  },
+  {
+    key: 'estimate',
+    label: 'Estimates',
+    href: '/manager-dashboard.html#estimates',
+    roles: ['manager', 'admin']
+  },
+  {
+    key: 'privateChat',
+    label: 'Private Inbox',
+    href: '/manager-dashboard.html#inbox:private',
+    roles: ['employee', 'manager', 'admin']
+  },
+  {
+    key: 'projectChat',
+    label: 'Project Chat',
+    href: '/manager-dashboard.html#inbox:project',
+    roles: ['employee', 'manager', 'admin']
+  }
+];
 
-window.LEVEL_LINES_BRAND = {
+globalThis.LEVEL_LINES_BRAND = {
   name: 'Level Lines Studio',
   shortName: 'Level Lines',
   claim: 'Plan | Design | Craft',
-  region: 'North West - Lancashire',
+  region: 'Manchester and the North West',
   headerIconPath: brandAssets.headerIcon?.fallback || '/logo.png',
   titleImagePath: brandAssets.title?.fallback || '/title.png',
   workspaceImagePath: brandAssets.workspace?.fallback || '/logo4.png',
   publicAuthLabel: 'Account',
+  roleProfiles,
   consultationCtaLabel: 'Send Enquiry',
-  footerCopy: 'A premium renovation studio for bathrooms, kitchens and interiors, shaped with quiet planning, material restraint and finish control across the North West.',
+  footerCopy: 'A premium renovation studio for bathrooms, kitchens and interiors, shaped for quieter planning and finish control across Manchester and the North West.',
   email: 'LevelLineStudioMCR@gmail.com',
   phones: [
     {
@@ -25,40 +111,69 @@ window.LEVEL_LINES_BRAND = {
       href: 'tel:+447304506391'
     }
   ],
-  budgetRanges: ['£8,000-£12,000', '£12,000-£20,000', '£20,000-£30,000', '£30,000+'],
+  budgetRanges: ['\u00A33,000-\u00A36,000', '\u00A36,000-\u00A38,000', '\u00A38,000-\u00A312,000', '\u00A312,000-\u00A320,000', '\u00A320,000-\u00A330,000', '\u00A330,000+'],
   copy: {
     home: {
-      heroLead: 'Level Lines Studio shapes premium bathroom, kitchen and interior renovation briefs for homeowners who expect strong line quality, quieter luxury and a controlled building process.',
-      servicesTitle: 'A curated renovation scope held in one premium studio structure.',
-      servicesLead: 'Bathrooms, kitchens, large-format tiling, carpentry, wall systems and flooring are held in one composed scope, so layout logic, detailing and finish control stay aligned.',
-      processLead: 'Plan, design and craft are treated as one disciplined sequence: define the brief properly, shape the material language and execute without noise.',
-      areasLead: 'The studio keeps its footprint close enough for direct oversight, tighter sequencing and more controlled communication.',
-      contactLead: 'Direct studio numbers and email remain visible because first conversations should feel precise, calm and uncomplicated.',
+      heroLead: 'Level Lines Studio shapes premium bathroom, kitchen and interior renovation briefs for homeowners who want cleaner scope, quieter planning and stronger finish control.',
+      servicesTitle: 'A curated renovation scope held in one studio structure.',
+      servicesLead: 'Bathrooms, kitchens, tiling, carpentry and wall systems stay aligned inside one service-led route.',
+      processLead: 'Plan, design and craft stay connected from first survey to final handover.',
+      areasLead: 'The studio footprint stays selective enough for direct oversight and controlled delivery.',
+      contactLead: 'Direct studio contact stays visible because first conversations should feel clear and calm.',
       consultationTitle: 'Send Enquiry',
       consultationLead:
-        'Share the rooms involved, the finish ambition and your timing. The studio replies with a measured next step.'
+        'Share the rooms involved, finish level and timing. The studio replies with the right next step.'
     },
     about: {
-      heroLead: 'A premium renovation studio shaped around line quality, restrained materials and execution that feels deliberate rather than improvised.'
+      heroLead: 'A premium renovation studio shaped around clearer scope, restrained materials and deliberate execution.'
     },
     contact: {
-      heroLead: 'Contact the studio directly when the brief calls for premium finish control, cleaner planning and a quieter route from enquiry to site.'
+      heroLead: 'Contact the studio directly when the brief calls for premium finish control and a cleaner route from enquiry to site.'
     },
     quote: {
-      heroLead: 'Use one private enquiry route for bathroom, kitchen and interior briefs, then describe the rooms, timing and finish ambition.'
+      heroLead: 'Use one private enquiry route for bathroom, kitchen and interior briefs, then describe rooms, timing and finish level.'
     }
   },
   serviceAreas: [
     'Manchester',
     'Liverpool',
     'Preston',
+    'Sheffield',
     'Rochdale',
+    'Leeds',
     'Oldham',
     'Macclesfield',
     'Stockport',
     'Northwich',
     'Warrington'
   ],
+  featuredLocationLinks: [
+    {
+      label: 'Didsbury',
+      href: '/premium-renovations-didsbury.html'
+    },
+    {
+      label: 'Altrincham',
+      href: '/premium-renovations-altrincham.html'
+    },
+    {
+      label: 'Stockport',
+      href: '/premium-renovations-stockport.html'
+    },
+    {
+      label: 'Sale',
+      href: '/premium-renovations-sale.html'
+    },
+    {
+      label: 'Chorlton',
+      href: '/premium-renovations-chorlton.html'
+    },
+    {
+      label: 'Wilmslow',
+      href: '/premium-renovations-wilmslow.html'
+    }
+  ],
+  managerQuickAccess,
   pillars: ['Plan', 'Design', 'Craft'],
   services: [
     {
@@ -83,13 +198,13 @@ window.LEVEL_LINES_BRAND = {
     },
     {
       key: 'tiling',
-      title: 'Tiling incl. Large Format / Wet Showers',
+      title: 'Tiling incl. Large Format / Wet Showers / Exterior',
       category: 'tiling',
-      aliases: ['tiling', 'tiles', 'tile setting', 'tile installation', 'large format tiling', 'wet showers'],
+      aliases: ['tiling', 'tiles', 'tile setting', 'tile installation', 'large format tiling', 'wet showers', 'exterior tiling', 'external tiling'],
       image: '/Gallery/premium/bathroom-tiles.jpg',
       href: '/quote.html',
       cta: 'Request consultation',
-      description: 'Tiling for large-format surfaces and wet showers delivered with straight setting-out, aligned cuts and disciplined trims.'
+      description: 'Tiling for large-format surfaces, wet showers and exterior areas delivered with straight setting-out, aligned cuts and disciplined trims.'
     },
     {
       key: 'carpentry',
@@ -102,34 +217,14 @@ window.LEVEL_LINES_BRAND = {
       description: 'Carpentry and joinery delivered with clean reveals, storage detailing, trim precision and a finish standard that matches the wider brief.'
     },
     {
-      key: 'external-wall-systems',
-      title: 'External Wall Systems',
-      category: 'rendering',
-      aliases: ['rendering', 'outdoor', 'external wall systems', 'external wall system', 'external walls', 'facade enhancement'],
-      image: '/Gallery/premium/exterior-front.jpg',
-      href: '/quote.html',
-      cta: 'Discuss exterior scope',
-      description: 'External wall systems delivered with envelope awareness, finish consistency and disciplined site sequencing.'
-    },
-    {
-      key: 'interior-wall-systems',
-      title: 'Interior Wall Systems',
+      key: 'interior-exterior-wall',
+      title: 'Interior and Exterior Wall',
       category: 'interior',
-      aliases: ['interior', 'interior wall systems', 'interior wall system', 'internal wall systems', 'internal wall system', 'internal walls', 'full interior refurbishment', 'full-interior-refurbishment'],
+      aliases: ['interior', 'rendering', 'outdoor', 'interior wall systems', 'interior wall system', 'external wall systems', 'external wall system', 'internal wall systems', 'internal wall system', 'internal walls', 'external walls', 'wall systems', 'wall system', 'full interior refurbishment', 'full-interior-refurbishment'],
       image: '/Gallery/premium/brick-detail-charcoal.jpg',
-      href: '/quote.html',
+      href: '/quote.html?projectType=interior#quote-card',
       cta: 'Discuss wall systems',
-      description: 'Interior wall systems planned for clean lines, correct build-ups, service coordination and durable performance.'
-    },
-    {
-      key: 'flooring-installation',
-      title: 'Flooring Installation',
-      category: 'other',
-      aliases: ['flooring', 'flooring installation', 'floor installation', 'floor fit-out'],
-      image: '/Gallery/premium/brick-dark-main.jpg',
-      href: '/quote.html',
-      cta: 'Discuss flooring',
-      description: 'Flooring installation delivered with level preparation, careful setting-out and a finish standard that matches the wider brief.'
+      description: 'Interior and external wall systems scoped with correct build-ups, sequencing and finish consistency.'
     }
   ]
 };

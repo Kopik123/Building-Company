@@ -3,7 +3,8 @@ const {
   GALLERY_FILES_CACHE_TTL_MS,
   applyPublicGalleryCacheHeaders,
   fetchGalleryFolderImages,
-  fetchManagedGalleryProjectsCached
+  fetchManagedGalleryProjectsCached,
+  fetchServiceGalleryFoldersCached
 } = require('../utils/publicGallery');
 
 const createLegacyGalleryRouter = ({ galleryPath }) => {
@@ -17,6 +18,17 @@ const createLegacyGalleryRouter = ({ galleryPath }) => {
       return res.json(payload);
     } catch (error) {
       return res.status(500).json({ error: 'Failed to load gallery projects' });
+    }
+  });
+
+  router.get('/services', async (_req, res) => {
+    try {
+      const { payload, cacheStatus } = await fetchServiceGalleryFoldersCached(galleryPath);
+      applyPublicGalleryCacheHeaders(res, GALLERY_FILES_CACHE_TTL_MS);
+      res.set('X-Cache', cacheStatus);
+      return res.json(payload);
+    } catch (error) {
+      return res.status(500).json({ error: 'Failed to load gallery services' });
     }
   });
 

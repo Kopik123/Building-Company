@@ -127,6 +127,7 @@ test('api v2 public gallery route uses shared payload and cache headers', async 
   loadRoute('utils/publicGallery.js');
   const publicRoute = loadRoute('api/v2/routes/public.js');
   const app = buildExpressApp('/api/v2', publicRoute);
+  app.locals.galleryPath = 'C:\\fake\\Gallery';
 
   const first = await request(app)
     .get('/api/v2/gallery/projects')
@@ -142,4 +143,75 @@ test('api v2 public gallery route uses shared payload and cache headers', async 
 
   assert.equal(second.body?.meta?.cache, 'HIT');
   assert.equal(stubs.findAllCalls, 1);
+});
+
+test('api v2 public service gallery route groups folder images and caches the payload', async () => {
+  mockModels(createProjectStubs().models);
+  mock('fs', {
+    promises: {
+      async readdir(targetPath, options) {
+        if (String(targetPath).endsWith('\\Gallery') && options?.withFileTypes) {
+          return [
+            { name: 'premium', isDirectory: () => true },
+            { name: 'bathrooms', isDirectory: () => true },
+            { name: 'interiors', isDirectory: () => true }
+          ];
+        }
+
+        if (String(targetPath).endsWith('\\Gallery\\bathrooms')) {
+          return ['freestanding-bath-detail.jpg', 'primary-suite-overview.jpg'];
+        }
+
+        if (String(targetPath).endsWith('\\Gallery\\interiors')) {
+          return ['warm-finish-detail.jpg'];
+        }
+
+        return [];
+      }
+    }
+  });
+
+  loadRoute('utils/publicGallery.js');
+  const publicRoute = loadRoute('api/v2/routes/public.js');
+  const app = buildExpressApp('/api/v2', publicRoute);
+  app.locals.galleryPath = 'C:\\fake\\Gallery';
+
+  const first = await request(app)
+    .get('/api/v2/gallery/services')
+    .expect(200);
+
+  assert.equal(first.body?.meta?.cache, 'MISS');
+  assert.match(first.headers['cache-control'], /public, max-age=\d+, stale-while-revalidate=\d+/);
+  assert.deepEqual(first.body?.data?.services, [
+    {
+      id: 'bathrooms',
+      name: 'Bathrooms',
+      images: [
+        {
+          src: '/Gallery/bathrooms/freestanding-bath-detail.jpg',
+          label: 'Freestanding Bath Detail'
+        },
+        {
+          src: '/Gallery/bathrooms/primary-suite-overview.jpg',
+          label: 'Primary Suite Overview'
+        }
+      ]
+    },
+    {
+      id: 'interiors',
+      name: 'Interiors',
+      images: [
+        {
+          src: '/Gallery/interiors/warm-finish-detail.jpg',
+          label: 'Warm Finish Detail'
+        }
+      ]
+    }
+  ]);
+
+  const second = await request(app)
+    .get('/api/v2/gallery/services')
+    .expect(200);
+
+  assert.equal(second.body?.meta?.cache, 'HIT');
 });

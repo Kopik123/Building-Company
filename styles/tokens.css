@@ -1,81 +1,42 @@
 :root {
-  --ll-bg: #040404;
-  --ll-bg-soft: #090909;
-  --ll-surface-dark: #11100d;
-  --ll-surface-ink: #1a1713;
-  --ll-surface-light: #f3eee6;
-  --ll-surface-marble:
-    linear-gradient(144deg, rgba(253, 251, 247, 0.99) 0%, rgba(242, 237, 230, 0.97) 38%, rgba(228, 221, 211, 0.95) 72%, rgba(247, 243, 236, 0.98) 100%);
-  --ll-surface-marble-strong:
-    linear-gradient(152deg, rgba(255, 255, 255, 0.99) 0%, rgba(241, 236, 229, 0.98) 34%, rgba(222, 214, 204, 0.94) 64%, rgba(250, 247, 242, 0.98) 100%);
-  --ll-surface-marble-shadow:
-    linear-gradient(120deg, rgba(16, 14, 12, 0.06) 0%, transparent 18%, rgba(147, 136, 121, 0.12) 44%, transparent 58%, rgba(42, 39, 34, 0.08) 100%);
-  --ll-border-gold: rgba(164, 128, 71, 0.92);
-  --ll-border-soft: rgba(164, 128, 71, 0.38);
-  --ll-border-gold-strong: rgba(196, 160, 95, 0.74);
-  --ll-accent-gold: #b18b4f;
-  --ll-accent-gold-soft: #c4a05f;
-  --ll-text-light: #f7f2eb;
-  --ll-text-dark: #181410;
-  --ll-text-muted: rgba(247, 242, 235, 0.72);
-  --ll-text-muted-dark: rgba(24, 20, 16, 0.68);
-  --ll-text-on-light: #181410;
-  --ll-text-on-light-muted: rgba(24, 20, 16, 0.68);
-  --ll-text-on-dark: #c4a05f;
-  --ll-text-on-dark-strong: #ddb574;
-  --ll-text-on-dark-muted: rgba(196, 160, 95, 0.78);
-  --ll-shadow-premium: 0 26px 76px rgba(0, 0, 0, 0.42);
-  --ll-shadow-line: inset 0 0 0 1px rgba(134, 100, 48, 0.24);
-  --ll-shadow-frame: inset 0 0 0 1px rgba(255, 255, 255, 0.34);
-  --ll-window-line: rgba(164, 128, 71, 0.3);
-  --ll-window-line-soft: rgba(164, 128, 71, 0.15);
-  --ll-radius-card: 30px;
-  --ll-radius-panel: 20px;
-  --ll-space-2xs: 0.35rem;
-  --ll-space-xs: 0.6rem;
-  --ll-space-sm: 0.95rem;
-  --ll-space-md: 1.35rem;
-  --ll-space-lg: 2rem;
-  --ll-space-xl: 3rem;
-  --ll-space-2xl: 4.75rem;
-  --ll-max-width: 1500px;
-  --ll-header-logo-width: clamp(112px, 9vw, 168px);
-  --ll-header-title-width: min(100%, 980px);
-  --ll-header-row-height: 138px;
-  --ll-line-thickness: 1px;
-}
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-ui: 'Montserrat', 'Segoe UI', sans-serif;
 
-@media (max-width: 992px) {
-  :root {
-    --ll-header-logo-width: clamp(78px, 12vw, 116px);
-    --ll-header-title-width: min(100%, 520px);
-    --ll-header-row-height: auto;
-    --ll-space-xl: 2.4rem;
-    --ll-space-2xl: 3.25rem;
-  }
-}
+  --color-bg: #050505;
+  --color-bg-elevated: #0d0d0d;
+  --color-surface-light: #f6f2e9;
+  --color-surface-light-2: #f0eadf;
+  --color-surface-dark: #090909;
+  --color-surface-dark-2: #111111;
 
-@media (max-width: 640px) {
-  :root {
-    --ll-header-logo-width: clamp(66px, 18vw, 92px);
-    --ll-header-title-width: min(100%, 340px);
-    --ll-space-lg: 1.35rem;
-    --ll-space-xl: 2rem;
-    --ll-space-2xl: 2.4rem;
-    --ll-radius-card: 24px;
-    --ll-radius-panel: 18px;
-  }
-}
+  --color-gold-1: #e7bc62;
+  --color-gold-2: #c8963b;
+  --color-gold-3: #a46b15;
+  --color-gold-4: #6f4709;
 
-@media (max-width: 390px) {
-  :root {
-    --ll-header-logo-width: clamp(58px, 19vw, 82px);
-    --ll-header-title-width: min(100%, 280px);
-    --ll-space-md: 1rem;
-    --ll-space-lg: 1.1rem;
-    --ll-space-xl: 1.55rem;
-    --ll-space-2xl: 1.9rem;
-    --ll-radius-card: 22px;
-    --ll-radius-panel: 16px;
-  }
+  --color-text: var(--color-gold-1);
+  --color-text-muted: #cca05a;
+  --color-text-strong: #ffd489;
+  --color-border: rgba(200, 150, 59, 0.52);
+  --color-border-strong: rgba(255, 212, 137, 0.72);
+
+  --shadow-soft: 0 18px 50px rgba(0, 0, 0, 0.35);
+  --shadow-header: 0 12px 28px rgba(0, 0, 0, 0.55);
+
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius-md: 18px;
+  --radius-lg: 26px;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 2.75rem;
+  --space-8: 3.5rem;
+
+  --header-brand-max: 920px;
+  --header-shell-max: 1240px;
 }

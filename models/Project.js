@@ -15,6 +15,10 @@ const Project = sequelize.define('Project', {
     type: DataTypes.UUID,
     allowNull: true
   },
+  acceptedEstimateId: {
+    type: DataTypes.UUID,
+    allowNull: true
+  },
   clientId: {
     type: DataTypes.UUID,
     allowNull: true
@@ -36,6 +40,19 @@ const Project = sequelize.define('Project', {
     allowNull: false,
     defaultValue: 'planning'
   },
+  projectStage: {
+    type: DataTypes.ENUM('briefing', 'scope_locked', 'procurement', 'site_prep', 'installation', 'finishing', 'handover', 'aftercare'),
+    allowNull: false,
+    defaultValue: 'briefing'
+  },
+  currentMilestone: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  workPackage: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
   budgetEstimate: {
     type: DataTypes.STRING,
     allowNull: true
@@ -45,6 +62,10 @@ const Project = sequelize.define('Project', {
     allowNull: true
   },
   endDate: {
+    type: DataTypes.DATEONLY,
+    allowNull: true
+  },
+  dueDate: {
     type: DataTypes.DATEONLY,
     allowNull: true
   },

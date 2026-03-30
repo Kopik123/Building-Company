@@ -4,15 +4,18 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Contact | Level Lines Studio</title>
-  <meta name="description" content="Direct contact details for Level Lines Studio, including studio phone numbers, email and premium renovation coverage across the North West." />
+  <meta name="description" content="Contact Level Lines Studio directly for premium renovation enquiries, quote support and project fit conversations across the North West." />
   <meta name="robots" content="index,follow,max-image-preview:large" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Level Lines Studio" />
   <meta property="og:title" content="Contact | Level Lines Studio" />
-  <meta property="og:description" content="Direct studio phone numbers, email and premium renovation coverage across the North West." />
+  <meta property="og:description" content="Contact Level Lines Studio directly for premium renovation enquiries, quote support and project fit conversations across the North West." />
   <meta property="og:image" content="https://levellines.co.uk/Gallery/premium/exterior-front.jpg" />
   <meta property="og:url" content="https://levellines.co.uk/contact.html" />
   <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Contact | Level Lines Studio" />
+  <meta name="twitter:description" content="Contact Level Lines Studio directly for premium renovation enquiries, quote support and project fit conversations across the North West." />
+  <meta name="twitter:image" content="https://levellines.co.uk/Gallery/premium/exterior-front.jpg" />
   <link rel="canonical" href="https://levellines.co.uk/contact.html" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -20,51 +23,51 @@
   <link rel="stylesheet" href="/styles/tokens.css" />
   <link rel="stylesheet" href="/styles/base.css" />
   <link rel="stylesheet" href="/styles/public.css" />
-  <link rel="stylesheet" href="/styles/workspace.css" />
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"ContactPage","name":"Contact Level Lines Studio","url":"https://levellines.co.uk/contact.html","description":"Direct contact details for Level Lines Studio."}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"ContactPage","name":"Contact | Level Lines Studio","url":"https://levellines.co.uk/contact.html","description":"Direct studio contact for premium renovation enquiries."},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://levellines.co.uk/"},{"@type":"ListItem","position":2,"name":"Contact","item":"https://levellines.co.uk/contact.html"}]}]}</script>
 </head>
 <body class="public-site page-contact">
-    <header class="site-header site-header--public-shell" id="top">
+  <header class="site-header site-header--public-shell" id="top">
     <div class="container public-shell-header">
       <div class="public-brand-board">
         <a class="public-brand-link" href="/index.html" aria-label="Level Lines Studio home">
           <picture class="public-brand-picture">
             <source type="image/avif" srcset="/assets/optimized/brand/title.avif" />
             <source type="image/webp" srcset="/assets/optimized/brand/title.webp" />
-            <img src="/assets/optimized/brand/title.png" alt="Level Lines Studio" class="public-brand-title-image" width="1800" height="412" decoding="async" />
+            <img src="/assets/optimized/brand/title.png" alt="Level Lines Studio" class="public-brand-title-image" width="1536" height="232" decoding="async" />
           </picture>
         </a>
       </div>
-      <div class="public-shell-strip">
-        <section class="public-inline-auth" data-inline-auth-shell aria-label="Studio login">
-          <p class="public-strip-heading">Login</p>
-          <form class="public-inline-login-form" data-inline-login-form novalidate>
+      <div class="public-shell-controls">
+        <button class="public-auth-toggle" type="button" data-auth-toggle aria-expanded="false" aria-controls="public-auth-panel">
+          <span class="public-auth-toggle-label">Login</span>
+        </button>
+        <section class="public-auth-panel" id="public-auth-panel" data-auth-panel aria-label="Studio login">
+          <form class="public-inline-login-form" data-inline-login-form data-auth-guest-only novalidate>
             <div class="public-inline-login-row">
-              <input type="email" name="email" autocomplete="username email" placeholder="Email" aria-label="Email" required />
+              <input type="email" name="email" autocomplete="username email" placeholder="Login" aria-label="Login" required />
               <input type="password" name="password" autocomplete="current-password" placeholder="Password" aria-label="Password" required />
-              <button class="public-inline-login-submit" type="submit">Login</button>
-              <a class="public-inline-login-link" href="/auth.html">Register</a>
+              <button class="public-inline-login-submit" type="submit">Enter</button>
             </div>
-            <p class="public-inline-login-helper">Move public enquiries into private project visibility.</p>
           </form>
-          <div class="public-inline-session" data-inline-session hidden>
-            <p class="public-inline-session-copy" data-inline-session-copy>Account ready.</p>
+          <div class="public-inline-session" data-inline-session data-auth-user-only hidden>
+            <p class="public-inline-session-copy" data-inline-session-copy>Signed in.</p>
             <div class="public-inline-session-actions">
-              <a class="public-inline-session-link" href="/auth.html" data-inline-account-link>Open Account</a>
               <button class="public-inline-session-link public-inline-session-link--button" type="button" data-inline-logout>Log out</button>
             </div>
           </div>
           <p class="form-status public-inline-login-status" data-inline-login-status aria-live="polite"></p>
         </section>
         <div class="public-shell-nav menu-wrap" data-menu-wrap>
-          <p class="public-strip-heading public-strip-heading--nav">Menu</p>
-          <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation menu">
+          <button class="nav-toggle public-menu-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="site-nav" aria-label="Open navigation menu">
+            <span class="public-menu-toggle-label">Menu</span>
             <span class="nav-toggle-line"></span>
             <span class="nav-toggle-line"></span>
             <span class="nav-toggle-line"></span>
           </button>
-          <nav class="site-nav site-nav--public-shell" id="site-nav" data-nav-menu aria-label="Main navigation">
-            <a href="/about.html" data-nav-link>About Us</a>
+          <nav class="site-nav site-nav--public-shell" id="site-nav" data-nav-menu aria-label="Main navigation" hidden aria-hidden="true">
+            <a href="/index.html" data-nav-link>Home</a>
+            <a href="/about.html" data-nav-link>About</a>
+            <a href="/services.html" data-nav-link>Services</a>
             <a href="/gallery.html" data-nav-link>Gallery</a>
             <a href="/quote.html" data-nav-link>Quote</a>
             <a href="/contact.html" data-nav-link>Contact</a>
@@ -74,23 +77,127 @@
       </div>
     </div>
   </header>
-  <main>
-    <section class="section section--light">
-      <div class="container brand-page-hero"><div><p class="section-eyebrow">Contact</p><h1>Direct studio contact for premium bathroom, kitchen and interior briefs.</h1><p class="section-lead" data-brand-copy="copy.contact.heroLead">Contact the studio directly when the brief calls for premium finish control, cleaner planning and a quieter route from enquiry to site.</p></div><aside class="brand-page-side"><p class="section-eyebrow section-eyebrow--compact">Response pattern</p><p>Early conversations focus on rooms, finish ambition, budget direction and timing. If the fit is right, the next step becomes a more detailed quote route.</p></aside></div>
-    </section>
-    <section class="section section--dark">
-      <div class="container contact-page-grid">
-        <article class="contact-panel contact-panel--light"><p class="section-eyebrow section-eyebrow--compact">Direct studio</p><h2>Phone and email</h2><address><a href="tel:+447942874446" data-brand-phone="0">+44 7942 874 446</a><a href="tel:+447304506391" data-brand-phone="1">+44 7304 506 391</a><a href="mailto:LevelLineStudioMCR@gmail.com" data-brand-email>LevelLineStudioMCR@gmail.com</a></address></article>
-        <article class="contact-panel contact-panel--dark"><p class="section-eyebrow section-eyebrow--compact">Coverage</p><h2>North West project footprint</h2><p data-brand-region>North West - Lancashire</p><div class="footer-area-list" data-brand-area-list data-item-class="footer-area-chip"></div></article>
+
+  <main class="public-page-main">
+    <section class="public-section public-section--dark">
+      <div class="container contact-shell">
+        <article class="content-card content-card--light contact-heading-band">
+          <p class="section-eyebrow">Contact</p>
+          <h1>Direct studio contact for premium renovation briefs that need a measured answer.</h1>
+          <p class="section-lead">Contact stays simple: direct lines, North West coverage and the clearest next route when a quote, account or quick fit check is needed.</p>
+        </article>
+
+        <article class="content-card content-card--dark contact-direct-strip" aria-label="Direct studio contact lines">
+          <div class="contact-direct-block">
+            <p class="section-eyebrow section-eyebrow--compact">Phone</p>
+            <div class="contact-direct-values">
+              <a data-brand-phone="0" href="tel:+447942874446">+44 7942 874 446</a>
+              <a data-brand-phone="1" href="tel:+447304506391">+44 7304 506 391</a>
+            </div>
+          </div>
+          <div class="contact-direct-divider" aria-hidden="true"></div>
+          <div class="contact-direct-block">
+            <p class="section-eyebrow section-eyebrow--compact">Email</p>
+            <div class="contact-direct-values">
+              <a data-brand-email href="mailto:LevelLineStudioMCR@gmail.com">LevelLineStudioMCR@gmail.com</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="content-card content-card--dark contact-coverage-band">
+          <div class="contact-coverage-copy">
+            <p class="section-eyebrow">Coverage</p>
+            <h2>North West footprint</h2>
+            <p class="page-aside-copy" data-brand-region>Manchester and the North West</p>
+          </div>
+          <div class="contact-coverage-chips footer-area-list" data-brand-area-list data-item-class="footer-area-chip"></div>
+        </article>
+
+        <div class="contact-card-stack">
+          <article class="content-card content-card--dark contact-guidance-card">
+            <div class="contact-guidance-copy">
+              <p class="section-eyebrow">Best route</p>
+              <h2>Quote-first when ready</h2>
+              <p class="contact-card-copy">If the scope is already clear, quote is faster than a generic contact message.</p>
+            </div>
+            <div class="contact-guidance-actions">
+              <a class="btn btn-gold" href="/quote.html">Start Quote</a>
+            </div>
+          </article>
+
+          <article class="content-card content-card--dark contact-guidance-card">
+            <div class="contact-guidance-copy">
+              <p class="section-eyebrow">Private visibility</p>
+              <h2>Account when private visibility is needed</h2>
+              <p class="contact-card-copy">The account route is for clients who already need private project or quote visibility.</p>
+            </div>
+            <div class="contact-guidance-actions">
+              <a class="btn-outline-gold" href="/auth.html" data-auth-link data-auth-guest-label="Account">Account</a>
+            </div>
+          </article>
+
+          <article class="content-card content-card--dark contact-guidance-card">
+            <div class="contact-guidance-copy">
+              <p class="section-eyebrow">Follow-up</p>
+              <h2>Professional follow-up</h2>
+              <p class="contact-card-copy">The response pattern stays direct and measured: fit first, then next-step clarity.</p>
+            </div>
+            <div class="contact-guidance-actions contact-guidance-actions--copy">
+              <p class="page-aside-copy">The studio keeps the reply practical: sense-check first, then the right scope route.</p>
+            </div>
+          </article>
+        </div>
       </div>
     </section>
   </main>
-  <footer class="site-footer"><div class="container footer-grid"><div class="footer-block footer-block--brand"><p class="section-eyebrow section-eyebrow--compact">Level Lines Studio</p><h3 data-brand-name>Level Lines Studio</h3><p class="footer-copy" data-brand-footer-copy>A premium renovation studio for bathrooms, kitchens and interiors, shaped with quiet planning, material restraint and finish control across the North West.</p><address class="footer-contact-list" aria-label="Level Lines Studio contact details"><a class="footer-contact-link" data-brand-phone="0" href="tel:+447942874446">+44 7942 874 446</a><a class="footer-contact-link" data-brand-phone="1" href="tel:+447304506391">+44 7304 506 391</a><a class="footer-contact-link" data-brand-email href="mailto:LevelLineStudioMCR@gmail.com">LevelLineStudioMCR@gmail.com</a></address></div><div class="footer-block"><h3>Services</h3><div class="footer-links" data-brand-service-links data-link-class="footer-service-link"></div></div><div class="footer-block"><h3>Studio</h3><div class="footer-links"><a href="/about.html">About Us</a><a href="/gallery.html">Gallery</a><a href="/contact.html">Contact</a><a href="/quote.html">Quote</a><a href="/auth.html">Account</a><a href="/privacy.html">Privacy</a><a href="/cookie-policy.html">Cookie Policy</a><a href="/terms.html">Terms</a></div></div><div class="footer-block"><h3>Studio Region</h3><p class="footer-copy" data-brand-region>North West - Lancashire</p><div class="footer-area-list" data-brand-area-list data-item-class="footer-area-chip"></div></div></div><div class="container footer-bottom"><p>&copy; <span data-current-year></span> Level Lines Studio. All rights reserved.</p><p class="footer-bottom-note">Plan | Design | Craft</p></div></footer>
+
+  <footer class="site-footer">
+    <div class="container footer-grid">
+      <div class="footer-block footer-block--brand">
+        <p class="section-eyebrow section-eyebrow--compact">Level Lines Studio</p>
+        <h3 data-brand-name>Level Lines Studio</h3>
+        <p class="footer-copy" data-brand-footer-copy>A premium renovation studio for bathrooms, kitchens and interiors, shaped for quieter planning and finish control across Manchester and the North West.</p>
+        <address class="footer-contact-list" aria-label="Level Lines Studio contact details">
+          <a class="footer-contact-link" data-brand-phone="0" href="tel:+447942874446">+44 7942 874 446</a>
+          <a class="footer-contact-link" data-brand-phone="1" href="tel:+447304506391">+44 7304 506 391</a>
+          <a class="footer-contact-link" data-brand-email href="mailto:LevelLineStudioMCR@gmail.com">LevelLineStudioMCR@gmail.com</a>
+        </address>
+      </div>
+      <div class="footer-block">
+        <h3>Services</h3>
+        <div class="footer-links" data-brand-service-links data-link-class="footer-service-link"></div>
+      </div>
+      <div class="footer-block">
+        <h3>Studio</h3>
+        <div class="footer-links">
+          <a href="/index.html">Home</a>
+          <a href="/about.html">About</a>
+          <a href="/services.html">Services</a>
+          <a href="/gallery.html">Gallery</a>
+          <a href="/contact.html">Contact</a>
+          <a href="/quote.html">Quote</a>
+          <a href="/auth.html">Account</a>
+          <a href="/privacy.html">Privacy</a>
+          <a href="/cookie-policy.html">Cookie Policy</a>
+          <a href="/terms.html">Terms</a>
+        </div>
+      </div>
+      <div class="footer-block">
+        <h3>Studio Region</h3>
+        <p class="footer-copy" data-brand-region>Manchester and the North West</p>
+        <div class="footer-area-list" data-brand-area-list data-item-class="footer-area-chip"></div>
+      </div>
+    </div>
+    <div class="container footer-bottom">
+      <p>&copy; <span data-current-year></span> Level Lines Studio. All rights reserved.</p>
+      <p class="footer-bottom-note">Plan | Design | Craft</p>
+    </div>
+  </footer>
+
   <script src="/asset-manifest.js" defer></script>
-  <script src="/brand.js" defer></script><script src="/runtime.js" defer></script><script src="/site.js" defer></script>
+  <script src="/brand.js" defer></script>
+  <script src="/runtime.js" defer></script>
+  <script src="/site.js" defer></script>
 </body>
 </html>
-
-
-
 

@@ -29,7 +29,7 @@ const authV2 = async (req, res, next) => {
     }
 
     const user = await User.findByPk(payload.id, { attributes: AUTH_USER_ATTRIBUTES });
-    if (!user || !user.isActive) {
+    if (!user || user.isActive === false) {
       return fail(res, 401, 'invalid_user', 'Invalid user');
     }
 

@@ -1,6 +1,19 @@
 import Constants from 'expo-constants';
 
-export const API_BASE = Constants?.expoConfig?.extra?.apiBaseUrl || 'https://levellines.co.uk/api/v2';
+const resolveApiBase = () => {
+  const extra = Constants?.expoConfig?.extra || {};
+  const explicitBase = typeof extra.apiBaseUrl === 'string' ? extra.apiBaseUrl.trim() : '';
+  if (explicitBase) return explicitBase;
+
+  const environment = typeof extra.apiEnvironment === 'string' ? extra.apiEnvironment.trim().toLowerCase() : '';
+  const configuredUrls = extra.apiBaseUrls && typeof extra.apiBaseUrls === 'object' ? extra.apiBaseUrls : {};
+  const environmentBase = typeof configuredUrls[environment] === 'string' ? configuredUrls[environment].trim() : '';
+  if (environmentBase) return environmentBase;
+
+  throw new Error('Missing mobile API base configuration. Set Expo extra.apiBaseUrl or extra.apiBaseUrls for the chosen apiEnvironment.');
+};
+
+export const API_BASE = resolveApiBase();
 
 export async function request(path, options = {}) {
   const response = await fetch(`${API_BASE}${path}`, options);
