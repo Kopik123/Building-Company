@@ -1,5 +1,7 @@
 const nodemailer = require('nodemailer');
 
+// Singleton: safe under Node.js single-threaded event loop because
+// nodemailer.createTransport() is synchronous – no race between check and set.
 let cachedTransporter;
 
 const getTransporter = () => {

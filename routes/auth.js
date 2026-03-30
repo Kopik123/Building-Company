@@ -18,6 +18,10 @@ const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
 
 const bootstrapLockPath = path.join(__dirname, '..', '.bootstrap.lock');
 
+// HMAC is used solely to normalise both inputs to equal-length (32-byte)
+// buffers so timingSafeEqual never short-circuits on length differences.
+// The static key does not need to be secret – it prevents timing leaks,
+// not brute-force attacks.
 const safeCompare = (left, right) => {
   const key = 'safeCompare';
   const leftHmac = crypto.createHmac('sha256', key).update(String(left || '')).digest();

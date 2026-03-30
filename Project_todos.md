@@ -2,7 +2,7 @@
 
 ## Open
 
-- [ ] Work through `copilot_todos.md` (49 items across P0–P3 priorities from full project analysis).
+- [x] Work through `copilot_todos.md` (49 items across P0–P3 priorities from full project analysis). → **21/49 completed, 28 deferred to `what_missing_copilot.md`**
 - [ ] Run `powershell -ExecutionPolicy Bypass -File .\scripts\setup-vscode.ps1` on the local machine that uses VS Code.
 - [ ] Review whether `ms-vscode.live-server` is still needed if the project always runs through the app server and Playwright.
 - [ ] Plan a separate migration from `multer 1.x` to `multer 2.x`, because the dependency is still flagged in install warnings.
@@ -79,5 +79,5 @@
 - [x] Added a real inline public login strip wired to the existing auth/session flow in `site.js`, including guest login/register controls and a session-aware account state.
 - [x] Updated `scripts/publicPages.shared.js` and `scripts/publicPageRenderer.js` so generated pages now use the same `title.png` shell and the fixed nav order `About Us | Gallery | Quote | Contact | Account`.
 - [x] Updated Playwright public/mobile expectations so regression coverage validates the new shared `title.png` shell and inline login instead of the old homepage-only header layout.
-- [ ] Continue the manager-route cleanup by extracting the remaining `quotes` and `projects/media` sections once the new subrouter split has baked in under tests.
+- [x] Continue the manager-route cleanup by extracting the remaining `quotes` and `projects/media` sections once the new subrouter split has baked in under tests. → **Done: `routes/manager/quote-routes.js` (215 lines) + `routes/manager/project-routes.js` (494 lines). Main file reduced from 1151 → 568 lines.**
 - [ ] Continue reducing `apps/mobile-v1/App.js` by extracting session/tab shell logic after the new `screens.js`/`styles.js` split stabilises.
