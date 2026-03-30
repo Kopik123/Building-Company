@@ -19,14 +19,11 @@ const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
 const bootstrapLockPath = path.join(__dirname, '..', '.bootstrap.lock');
 
 const safeCompare = (left, right) => {
-  const leftBuffer = Buffer.from(String(left || ''));
-  const rightBuffer = Buffer.from(String(right || ''));
+  const key = 'safeCompare';
+  const leftHmac = crypto.createHmac('sha256', key).update(String(left || '')).digest();
+  const rightHmac = crypto.createHmac('sha256', key).update(String(right || '')).digest();
 
-  if (leftBuffer.length !== rightBuffer.length) {
-    return false;
-  }
-
-  return crypto.timingSafeEqual(leftBuffer, rightBuffer);
+  return crypto.timingSafeEqual(leftHmac, rightHmac);
 };
 
 const isBootstrapLocked = () => fs.existsSync(bootstrapLockPath);
