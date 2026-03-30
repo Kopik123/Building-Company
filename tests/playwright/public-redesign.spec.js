@@ -46,8 +46,7 @@ const createGuestQuotePreviewPayload = () => ({
         targetStartWindow: 'within_3_months',
         siteAccess: 'easy_ground_floor'
       },
-      commercial: {
-        budgetRange: 'Â£8,000-Â£12,000',
+      commercial: {        budgetRange: '\u00A38,000-\u00A312,000',
         finishLevel: 'premium'
       },
       logistics: {
@@ -84,8 +83,7 @@ const fillPhasedQuoteForm = async (form, options = {}) => {
     targetStartWindow: 'within_3_months',
     finishLevel: 'premium',
     siteAccess: 'easy_ground_floor',
-    roomsInvolved: ['kitchen'],
-    budget: 'Â£8,000-Â£12,000',
+    roomsInvolved: ['kitchen'],    budget: '\u00A38,000-\u00A312,000',
     postcode: 'M20 2AB',
     priorities: ['finish_quality', 'storage'],
     mustHaves: 'Hidden pantry storage and layered task lighting.',

@@ -125,7 +125,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [x] Design and implement a durable activity/audit feed for company, client and project timelines.
 - [x] Close the operational gap in `quote -> estimate -> approval -> project` so estimate approvals are explicit, versioned and portable to mobile clients.
 - [x] Add the first public guest quote follow-up layer by showing a private status/preview panel from `publicToken`, including reference, workflow state and attached quote photos after submit.
-- [ ] Finish public guest quote portal parity on a v2 contract (`submit`, `preview`, `claim`, later response access) so guest quote UX no longer depends on legacy-only routes.
+- [x] Finish public guest quote portal parity on a v2 contract (`submit`, `preview`, `claim`, later response access) so guest quote UX no longer depends on legacy-only routes.
 - [x] Move the live public guest quote browser flow onto `/api/v2/public/quotes` paths for submit, preview, follow-up uploads and claim handoff, while keeping the current legacy guest router only as a temporary adapter behind the v2 contract.
 - [x] Let guest customers add follow-up quote photos from the private preview link after the initial submission, not only during the first send.
 - [x] Fix public quote file pickers so selecting more photos again appends to the current selection instead of replacing it before submit or follow-up upload.
@@ -207,6 +207,5 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [x] Deduplicate staged `new_quotes` accept/reject workflow between `/api/v2/new-quotes` and legacy manager quote review so project conversion, attachment carry-over, lifecycle updates, notifications and cleanup run through one shared service path.
 - [x] Wrap staged `new_quotes` create/accept/reject database writes in transactions so project conversion, lifecycle updates, notifications and activity rows no longer leave partial state on failure.
 - [x] Consider surfacing deferred file cleanup queue health in ops/admin tooling once enough live data exists to judge whether retries are accumulating or staying near zero.
-
 
 - [ ] If deferred cleanup retries ever start accumulating on live, add a dedicated admin/ops view with per-job detail, threshold alerting and manual retry/clear actions instead of relying only on overview counters.

@@ -106,8 +106,6 @@ test.afterEach(() => {
 test('v2 public quotes creates a guest quote through the live public contract path', async () => {
   const { state, models } = createGuestQuoteModelsStub();
   mockModels(models);
-
-  loadRoute('routes/quotes.js');
   const route = loadRoute('api/v2/routes/public-quotes.js');
   const app = buildExpressApp('/api/v2/public/quotes', route);
 
@@ -264,8 +262,6 @@ test('v2 public quotes returns guest preview data from the private public token 
       }
     }
   });
-
-  loadRoute('routes/quotes.js');
   const route = loadRoute('api/v2/routes/public-quotes.js');
   const app = buildExpressApp('/api/v2/public/quotes', route);
 
@@ -338,8 +334,6 @@ test('v2 public quotes sends a guest claim code through the v2 contract path', a
       }
     }
   });
-
-  loadRoute('routes/quotes.js');
   const route = loadRoute('api/v2/routes/public-quotes.js');
   const app = buildExpressApp('/api/v2/public/quotes', route);
 
@@ -433,8 +427,6 @@ test('v2 public quotes claim request sends an email code only after smtp accepts
       };
     }
   });
-
-  loadRoute('routes/quotes.js');
   const route = loadRoute('api/v2/routes/public-quotes.js');
   const app = buildExpressApp('/api/v2/public/quotes', route);
 
