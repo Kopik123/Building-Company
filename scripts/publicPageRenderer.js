@@ -557,6 +557,7 @@ const renderPublicPage = ({
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="icon" type="image/png" href="/assets/optimized/brand/logo.png" />
+  <link rel="preload" as="image" type="image/avif" href="/assets/optimized/brand/title.avif" />
   <title>${escapeHtml(title)}</title>
   <meta name="description" content="${escapeHtml(metaDescription)}" />
   <meta name="robots" content="${escapeHtml(robotsContent)}" />
