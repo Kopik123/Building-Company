@@ -1,5 +1,29 @@
 # Project Dev Plan
 
+## 2026-03-30 (execution pass)
+
+- Executed 21 out of 49 items from the full project analysis (`copilot_todos.md`).
+- Cleaned up the latest Sonar findings in `routes/auth.js`, `routes/manager/project-routes.js` and `routes/manager/quote-routes.js` by removing the hard-coded HMAC key pattern, simplifying `undefined` comparisons, reducing media-handler complexity and using optional chaining for the quote accept flow.
+- Fixed `safeCompare()` timing leak in `routes/auth.js` – now uses SHA-256 digests to normalise both inputs before constant-time comparison regardless of input lengths.
+- Fixed `createClaimCode()` in `routes/quotes.js` to use `crypto.randomInt()` instead of `Math.random()` for cryptographically secure OTP codes.
+- Removed unused `cookie-parser` dependency from `package.json`.
+- Fixed font-family declarations in `styles/base.css`: replaced `Inter` → `Montserrat` and `Playfair Display` → `Cormorant Garamond` to match the fonts actually loaded in HTML.
+- Added `<link rel="icon">` (favicon) to all 20 HTML files and the page generator template.
+- Added `<link rel="preload">` for LCP `title.avif` image to all 17 public pages and the generator.
+- Changed `<html lang="en">` to `<html lang="en-GB">` across all 20 HTML files and the page generator.
+- Added warning comment to the `bootstrap/rotate-key` endpoint about non-persistent key mutation.
+- Fixed PORT validation in `server.js` to reject invalid values (range 1–65535).
+- Updated `robots.txt` to block `/api/`, `/uploads/` and dashboard pages from search crawlers.
+- Extracted duplicated SMTP transporter logic from `routes/contact.js` and `routes/quotes.js` into shared `utils/mailer.js`.
+- Completed the `routes/manager.js` split by extracting `quote-routes.js` (215 lines) and `project-routes.js` (494 lines), reducing the main file from 1151 to 568 lines.
+- Removed dead files and directories: `styles.css`, `.anima/`, `backup/logos/`, `iteBuilding-Company/`, `code/dev_plan/`, `todos.md`, `dev_plan.md`.
+- Created `what_missing_copilot.md` documenting 28 deferred items that require live environment, infrastructure or architectural decisions.
+- Updated `copilot_todos.md` with completion status for all 49 items (21 done, 28 deferred).
+
+## 2026-03-30
+
+- Created `copilot_todos.md` with 49 categorised items from a full project analysis covering security bugs, architectural issues, cleanup targets, SEO/performance gaps and mobile/app readiness.
+
 ## 2026-03-10
 
 - Added `scripts/setup-vscode.ps1` to install the recommended VS Code extensions and merge workspace settings.

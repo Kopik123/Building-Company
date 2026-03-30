@@ -18,15 +18,13 @@ const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
 
 const bootstrapLockPath = path.join(__dirname, '..', '.bootstrap.lock');
 
+// SHA-256 is used solely to normalise both inputs to equal-length (32-byte)
+// buffers so timingSafeEqual never short-circuits on length differences.
 const safeCompare = (left, right) => {
-  const leftBuffer = Buffer.from(String(left || ''));
-  const rightBuffer = Buffer.from(String(right || ''));
+  const leftHash = crypto.createHash('sha256').update(String(left || '')).digest();
+  const rightHash = crypto.createHash('sha256').update(String(right || '')).digest();
 
-  if (leftBuffer.length !== rightBuffer.length) {
-    return false;
-  }
-
-  return crypto.timingSafeEqual(leftBuffer, rightBuffer);
+  return crypto.timingSafeEqual(leftHash, rightHash);
 };
 
 const isBootstrapLocked = () => fs.existsSync(bootstrapLockPath);
@@ -228,9 +226,12 @@ router.post(
       return res.status(400).json({ error: 'New bootstrap key must be different' });
     }
 
+    // WARNING: This only mutates the in-memory process.env. The key reverts
+    // to its original value after a server restart. For persistent rotation,
+    // update the .env file or environment variable source and restart.
     process.env.BOOTSTRAP_ADMIN_KEY = String(newBootstrapKey);
 
-    return res.json({ message: 'Bootstrap admin key rotated successfully' });
+    return res.json({ message: 'Bootstrap admin key rotated successfully (in-memory only – update .env for persistence)' });
   })
 );
 

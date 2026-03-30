@@ -11,7 +11,8 @@ if (missingEnvVars.length) {
   process.exit(1);
 }
 
-const PORT = Number(process.env.PORT) || 3000;
+const rawPort = Number(process.env.PORT);
+const PORT = (Number.isFinite(rawPort) && rawPort > 0 && rawPort <= 65535) ? rawPort : 3000;
 const HOST = String(process.env.HOST || '').trim() || '127.0.0.1';
 const app = createApp();
 
