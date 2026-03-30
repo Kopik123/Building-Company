@@ -50,6 +50,7 @@ const {
   buildMergedQuoteReviewCollection,
   paginateQuoteReviewCollection
 } = require('../../../utils/quoteReviewCollection');
+const { loadAccessibleQuoteReviewRecord } = require('../../../utils/quoteReviewLookup');
 const { authV2 } = require('../middleware/auth');
 const { roleCheckV2 } = require('../middleware/roles');
 const { ok, fail } = require('../utils/response');
@@ -436,21 +437,20 @@ router.get(
       return fail(res, 400, 'validation_failed', 'Validation failed', errors.array());
     }
 
-    const quote = await loadQuote(req.params.id);
-    if (quote) {
-      if (req.v2User.role === 'client' && quote.clientId !== req.v2User.id) {
-        return fail(res, 404, 'quote_not_found', 'Quote not found');
-      }
+    const reviewRecord = await loadAccessibleQuoteReviewRecord({
+      id: req.params.id,
+      user: req.v2User,
+      loadLegacyQuote: loadQuote,
+      loadStagedQuote: loadStagedNewQuote,
+      canAccessLegacyQuote: canAccessQuote,
+      canAccessStagedQuote: canAccessNewQuote
+    });
 
-      return ok(res, { quote });
-    }
-
-    const stagedNewQuote = await loadStagedNewQuote(req.params.id);
-    if (!stagedNewQuote || !canAccessNewQuote(stagedNewQuote, req.v2User)) {
+    if (!reviewRecord) {
       return fail(res, 404, 'quote_not_found', 'Quote not found');
     }
 
-    return ok(res, { quote: toNewQuoteSummary(stagedNewQuote) });
+    return ok(res, { quote: reviewRecord.isStaged ? toNewQuoteSummary(reviewRecord.record) : reviewRecord.record });
   })
 );
 
@@ -470,25 +470,22 @@ router.post(
       return fail(res, 400, 'validation_failed', 'Validation failed', errors.array());
     }
 
-    let quote = await Quote.findByPk(req.params.id, { include: quoteIncludes });
-    let stagedNewQuote = null;
-    const isStagedNewQuote = !quote && hasNewQuoteStore();
+    const reviewRecord = await loadAccessibleQuoteReviewRecord({
+      id: req.params.id,
+      user: req.v2User,
+      loadLegacyQuote: (id) => Quote.findByPk(id, { include: quoteIncludes }),
+      loadStagedQuote: hasNewQuoteStore() ? loadStagedNewQuote : async () => null,
+      canAccessLegacyQuote: canAccessQuote,
+      canAccessStagedQuote: canAccessNewQuote
+    });
 
-    if (quote) {
-      if (!canAccessQuote(quote, req.v2User)) {
-        await cleanupUploadedFiles(files);
-        return fail(res, 404, 'quote_not_found', 'Quote not found');
-      }
-    } else if (isStagedNewQuote) {
-      stagedNewQuote = await loadStagedNewQuote(req.params.id);
-      if (!stagedNewQuote || !canAccessNewQuote(stagedNewQuote, req.v2User)) {
-        await cleanupUploadedFiles(files);
-        return fail(res, 404, 'quote_not_found', 'Quote not found');
-      }
-    } else {
+    if (!reviewRecord) {
       await cleanupUploadedFiles(files);
       return fail(res, 404, 'quote_not_found', 'Quote not found');
     }
+
+    const quote = reviewRecord.isLegacy ? reviewRecord.record : null;
+    const stagedNewQuote = reviewRecord.isStaged ? reviewRecord.record : null;
 
     const attachmentValidationError = validateQuoteAttachmentFiles(files);
     if (attachmentValidationError) {
@@ -731,14 +728,21 @@ router.patch(
       return fail(res, 400, 'validation_failed', 'Validation failed', errors.array());
     }
 
-    const quote = await Quote.findByPk(req.params.id);
-    if (!quote) {
-      const stagedNewQuote = await loadStagedNewQuote(req.params.id);
-      if (!stagedNewQuote || !canAccessNewQuote(stagedNewQuote, req.v2User)) {
-        return fail(res, 404, 'quote_not_found', 'Quote not found');
-      }
+    const reviewRecord = await loadAccessibleQuoteReviewRecord({
+      id: req.params.id,
+      user: req.v2User,
+      loadLegacyQuote: (id) => Quote.findByPk(id),
+      loadStagedQuote: loadStagedNewQuote,
+      canAccessLegacyQuote: canAccessQuote,
+      canAccessStagedQuote: canAccessNewQuote
+    });
+    if (!reviewRecord) {
+      return fail(res, 404, 'quote_not_found', 'Quote not found');
+    }
+    if (reviewRecord.isStaged) {
       return fail(res, 400, 'quote_update_not_supported', 'Staged new quotes cannot be edited. Accept or reject the request instead.');
     }
+    const quote = reviewRecord.record;
 
     const payload = {};
     if (Object.prototype.hasOwnProperty.call(req.body, 'projectType')) payload.projectType = req.body.projectType;
@@ -827,17 +831,21 @@ router.get(
       return fail(res, 400, 'validation_failed', 'Validation failed', errors.array());
     }
 
-    const quote = await Quote.findByPk(req.params.id);
-    if (!quote) {
-      const stagedNewQuote = await loadStagedNewQuote(req.params.id);
-      if (!stagedNewQuote || !canAccessNewQuote(stagedNewQuote, req.v2User)) {
-        return fail(res, 404, 'quote_not_found', 'Quote not found');
-      }
-      return ok(res, { events: [] });
-    }
-    if (req.v2User.role === 'client' && quote.clientId !== req.v2User.id) {
+    const reviewRecord = await loadAccessibleQuoteReviewRecord({
+      id: req.params.id,
+      user: req.v2User,
+      loadLegacyQuote: (id) => Quote.findByPk(id),
+      loadStagedQuote: loadStagedNewQuote,
+      canAccessLegacyQuote: canAccessQuote,
+      canAccessStagedQuote: canAccessNewQuote
+    });
+    if (!reviewRecord) {
       return fail(res, 404, 'quote_not_found', 'Quote not found');
     }
+    if (reviewRecord.isStaged) {
+      return ok(res, { events: [] });
+    }
+    const quote = reviewRecord.record;
 
     const visibility = req.v2User.role === 'client' ? ['client', 'public'] : ['internal', 'client', 'public'];
     const events = await loadQuoteEvents(quote.id, visibility);
@@ -858,17 +866,21 @@ router.get(
       return fail(res, 400, 'validation_failed', 'Validation failed', errors.array());
     }
 
-    const quote = await Quote.findByPk(req.params.id);
-    if (!quote) {
-      const stagedNewQuote = await loadStagedNewQuote(req.params.id);
-      if (!stagedNewQuote || !canAccessNewQuote(stagedNewQuote, req.v2User)) {
-        return fail(res, 404, 'quote_not_found', 'Quote not found');
-      }
-      return ok(res, { estimates: [] });
-    }
-    if (req.v2User.role === 'client' && quote.clientId !== req.v2User.id) {
+    const reviewRecord = await loadAccessibleQuoteReviewRecord({
+      id: req.params.id,
+      user: req.v2User,
+      loadLegacyQuote: (id) => Quote.findByPk(id),
+      loadStagedQuote: loadStagedNewQuote,
+      canAccessLegacyQuote: canAccessQuote,
+      canAccessStagedQuote: canAccessNewQuote
+    });
+    if (!reviewRecord) {
       return fail(res, 404, 'quote_not_found', 'Quote not found');
     }
+    if (reviewRecord.isStaged) {
+      return ok(res, { estimates: [] });
+    }
+    const quote = reviewRecord.record;
 
     const estimates = await loadQuoteEstimates(quote.id, { excludeDraft: req.v2User.role === 'client' });
     if (req.v2User.role === 'client') {

@@ -75,3 +75,4 @@
 - 2026-03-30 01:42 | Public Guest Quote V2 Shared Workflow Wave 37 | Plans/Public Guest Quote V2 Shared Workflow Wave 37.md
 - 2026-03-30 02:01 | Quote Review Shared Data Helpers Wave 38 | Plans/Quote Review Shared Data Helpers Wave 38.md
 - 2026-03-30 02:13 | Quote Review Collection Merge And Detail Helper Wave 39 | Plans/Quote Review Collection Merge And Detail Helper Wave 39.md
+- 2026-03-30 02:25 | Quote Review Record Lookup Helper Wave 40 | Plans/Quote Review Record Lookup Helper Wave 40.md

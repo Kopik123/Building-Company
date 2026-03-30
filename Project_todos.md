@@ -208,6 +208,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [x] Wrap staged `new_quotes` create/accept/reject database writes in transactions so project conversion, lifecycle updates, notifications and activity rows no longer leave partial state on failure.
 - [x] Deduplicate staged quote review helper logic across `/api/v2/quotes`, `/api/v2/new-quotes` and legacy manager review so include/access/filter/attachment-summary logic stops drifting between those routes.
 - [x] Deduplicate merged quote review list/detail assembly across legacy manager review and client `/api/v2/quotes`, so merged sort/pagination/detail fallback stops drifting between those surfaces.
+- [x] Deduplicate legacy-vs-staged quote record lookup and access checks inside `/api/v2/quotes`, so detail, attachment append, timeline, estimate-list and staged update-not-supported paths stop drifting between endpoints.
 - [x] Consider surfacing deferred file cleanup queue health in ops/admin tooling once enough live data exists to judge whether retries are accumulating or staying near zero.
 
 - [ ] If deferred cleanup retries ever start accumulating on live, add a dedicated admin/ops view with per-job detail, threshold alerting and manual retry/clear actions instead of relying only on overview counters.
