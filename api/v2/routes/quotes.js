@@ -46,6 +46,10 @@ const {
   loadStagedNewQuote: loadStagedNewQuoteForModel,
   matchesStagedQuoteFilters
 } = require('../../../utils/quoteReviewData');
+const {
+  buildMergedQuoteReviewCollection,
+  paginateQuoteReviewCollection
+} = require('../../../utils/quoteReviewCollection');
 const { authV2 } = require('../middleware/auth');
 const { roleCheckV2 } = require('../middleware/roles');
 const { ok, fail } = require('../utils/response');
@@ -396,21 +400,15 @@ router.get(
           : Promise.resolve([])
       ]);
 
-      const mergedQuotes = [...legacyQuotes.map(hydrateQuotePayload)];
-      (Array.isArray(stagedNewQuotes) ? stagedNewQuotes : []).forEach((newQuote) => {
-        const summary = toNewQuoteSummary(newQuote);
-        if (matchesStagedQuoteFilters(summary, req.query)) {
-          mergedQuotes.push(summary);
-        }
+      const mergedQuotes = buildMergedQuoteReviewCollection({
+        legacyRecords: legacyQuotes,
+        stagedRecords: stagedNewQuotes,
+        mapLegacyRecord: hydrateQuotePayload,
+        mapStagedRecord: toNewQuoteSummary,
+        includeStagedRecord: (summary) => matchesStagedQuoteFilters(summary, req.query)
       });
-
-      const sortedQuotes = mergedQuotes.sort((left, right) => {
-        const leftTime = Date.parse(left?.updatedAt || left?.createdAt || 0) || 0;
-        const rightTime = Date.parse(right?.updatedAt || right?.createdAt || 0) || 0;
-        return rightTime - leftTime;
-      });
-      const quotes = sortedQuotes.slice(offset, offset + pageSize);
-      const total = sortedQuotes.length;
+      const quotes = paginateQuoteReviewCollection(mergedQuotes, { offset, pageSize });
+      const total = mergedQuotes.length;
       return ok(res, { quotes }, { page, pageSize, total, totalPages: Math.max(1, Math.ceil(total / pageSize)) });
     }
 

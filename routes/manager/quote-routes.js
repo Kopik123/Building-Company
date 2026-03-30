@@ -12,6 +12,11 @@ const {
   matchesStagedQuoteFilters,
   toLegacyQuoteSummary
 } = require('../../utils/quoteReviewData');
+const {
+  buildMergedQuoteReviewCollection,
+  loadQuoteReviewRecordById,
+  paginateQuoteReviewCollection
+} = require('../../utils/quoteReviewCollection');
 
 const QUOTE_STATUSES = ['pending', 'in_progress', 'responded', 'closed'];
 const QUOTE_PROJECT_TYPES = ['bathroom', 'kitchen', 'interior', 'tiling', 'extension', 'joinery', 'rendering', 'decorating', 'other'];
@@ -60,6 +65,19 @@ module.exports = function createQuoteRoutes({
     createActivityEvent
   });
   const loadStagedNewQuote = async (id) => loadStagedNewQuoteForModel(NewQuote, includeClient, id);
+
+  const legacyQuoteInclude = [
+    { model: User, as: 'client', attributes: ['id', 'name', 'email', 'phone'] },
+    { model: User, as: 'assignedManager', attributes: ['id', 'name', 'email'] },
+    {
+      model: QuoteAttachment,
+      as: 'attachments',
+      attributes: ['id', 'filename', 'url', 'mimeType', 'sizeBytes', 'createdAt', 'updatedAt'],
+      required: false,
+      separate: true,
+      order: [['createdAt', 'ASC']]
+    }
+  ];
 
   const acceptStagedNewQuote = (newQuote, user) => stagedNewQuoteWorkflow.accept(newQuote, user, {
     buildAcceptClientNotification: ({ newQuote: activeNewQuote, project, groupThread }) => ({
@@ -263,18 +281,7 @@ module.exports = function createQuoteRoutes({
       const [quoteRows, stagedNewQuoteRows] = await Promise.all([
         Quote.findAll({
           where,
-          include: [
-            { model: User, as: 'client', attributes: ['id', 'name', 'email', 'phone'] },
-            { model: User, as: 'assignedManager', attributes: ['id', 'name', 'email'] },
-            {
-              model: QuoteAttachment,
-              as: 'attachments',
-              attributes: ['id', 'filename', 'url', 'mimeType', 'sizeBytes', 'createdAt', 'updatedAt'],
-              required: false,
-              separate: true,
-              order: [['createdAt', 'ASC']]
-            }
-          ],
+          include: legacyQuoteInclude,
           order: [['createdAt', 'DESC']]
         }),
         hasNewQuoteStore()
@@ -285,19 +292,16 @@ module.exports = function createQuoteRoutes({
           : Promise.resolve([])
       ]);
 
-      const legacyQuotes = (Array.isArray(quoteRows) ? quoteRows : []).map(toLegacyQuoteSummary);
-      const stagedQuotes = (Array.isArray(stagedNewQuoteRows) ? stagedNewQuoteRows : [])
-        .map(toNewQuoteSummary)
-        .filter((stagedQuote) => matchesStagedQuoteFilters(stagedQuote, req.query));
-
-      const mergedQuotes = [...legacyQuotes, ...stagedQuotes].sort((left, right) => {
-        const leftTime = Date.parse(left?.updatedAt || left?.createdAt || 0) || 0;
-        const rightTime = Date.parse(right?.updatedAt || right?.createdAt || 0) || 0;
-        return rightTime - leftTime;
+      const mergedQuotes = buildMergedQuoteReviewCollection({
+        legacyRecords: quoteRows,
+        stagedRecords: stagedNewQuoteRows,
+        mapLegacyRecord: toLegacyQuoteSummary,
+        mapStagedRecord: toNewQuoteSummary,
+        includeStagedRecord: (stagedQuote) => matchesStagedQuoteFilters(stagedQuote, req.query)
       });
 
       const { page, pageSize, offset } = getPagination(req);
-      const pagedQuotes = mergedQuotes.slice(offset, offset + pageSize);
+      const pagedQuotes = paginateQuoteReviewCollection(mergedQuotes, { offset, pageSize });
 
       return res.json({
         quotes: pagedQuotes,
@@ -315,31 +319,19 @@ module.exports = function createQuoteRoutes({
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const quote = await Quote.findByPk(req.params.id, {
-        include: [
-          { model: User, as: 'client', attributes: ['id', 'name', 'email', 'phone'] },
-          { model: User, as: 'assignedManager', attributes: ['id', 'name', 'email'] },
-          {
-            model: QuoteAttachment,
-            as: 'attachments',
-            attributes: ['id', 'filename', 'url', 'mimeType', 'sizeBytes', 'createdAt', 'updatedAt'],
-            required: false,
-            separate: true,
-            order: [['createdAt', 'ASC']]
-          }
-        ]
+      const reviewRecord = await loadQuoteReviewRecordById({
+        id: req.params.id,
+        loadLegacyRecord: (id) => Quote.findByPk(id, { include: legacyQuoteInclude }),
+        loadStagedRecord: loadStagedNewQuote,
+        mapLegacyRecord: toLegacyQuoteSummary,
+        mapStagedRecord: toNewQuoteSummary
       });
 
-      if (quote) {
-        return res.json({ quote: toLegacyQuoteSummary(quote) });
-      }
-
-      const newQuote = await loadStagedNewQuote(req.params.id);
-      if (!newQuote) {
+      if (!reviewRecord) {
         return res.status(404).json({ error: 'Quote not found' });
       }
 
-      return res.json({ quote: toNewQuoteSummary(newQuote) });
+      return res.json({ quote: reviewRecord.quote });
     })
   );
 
