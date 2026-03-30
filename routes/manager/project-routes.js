@@ -1,4 +1,109 @@
 const express = require('express');
+const {
+  createValidatedHandler,
+  findByPkOrRespond,
+  findOneOrRespond,
+  cleanupUploadedFiles
+} = require('./route-helpers');
+
+const hasOwn = (source, key) => Object.prototype.hasOwnProperty.call(source, key);
+const toTrimmedOrNull = (value) => String(value || '').trim() || null;
+const toIntegerOrZero = (value) => Number.parseInt(value, 10) || 0;
+
+const createProjectWriteValidators = ({ body, PROJECT_STATUSES, partial = false }) => {
+  const titleValidator = partial
+    ? body('title').optional().trim().notEmpty()
+    : body('title').trim().notEmpty();
+
+  return [
+    titleValidator,
+    body('location').optional().trim(),
+    body('description').optional().trim(),
+    body('status').optional().isIn(PROJECT_STATUSES),
+    body('quoteId').optional({ nullable: true }).isUUID(),
+    body('clientId').optional({ nullable: true }).isUUID(),
+    body('clientEmail').optional({ checkFalsy: true }).isEmail(),
+    body('assignedManagerId').optional({ nullable: true }).isUUID(),
+    body('assignedManagerEmail').optional({ checkFalsy: true }).isEmail(),
+    body('budgetEstimate').optional().trim(),
+    body('startDate').optional().isISO8601(),
+    body('endDate').optional().isISO8601(),
+    body('showInGallery').optional().isBoolean(),
+    body('galleryOrder').optional().isInt(),
+    body('isActive').optional().isBoolean()
+  ];
+};
+
+const createProjectInclude = ({ ProjectMedia, User, Quote, includeMedia = false }) => [
+  ...(includeMedia ? [{ model: ProjectMedia, as: 'media' }] : []),
+  { model: User, as: 'client', attributes: ['id', 'name', 'email'], required: false },
+  { model: User, as: 'assignedManager', attributes: ['id', 'name', 'email'], required: false },
+  { model: Quote, as: 'quote', attributes: ['id', 'status', 'projectType', 'location'], required: false }
+];
+
+const buildProjectPayload = (source, { partial, parseBoolean }) => {
+  const payload = {};
+  const assign = (key, value) => {
+    if (!partial || hasOwn(source, key)) payload[key] = value;
+  };
+
+  assign('title', String(source.title || '').trim());
+  assign('quoteId', source.quoteId || null);
+  assign('clientId', source.clientId || null);
+  assign('assignedManagerId', source.assignedManagerId || null);
+  assign('location', hasOwn(source, 'location') || !partial ? toTrimmedOrNull(source.location) : undefined);
+  assign('description', hasOwn(source, 'description') || !partial ? toTrimmedOrNull(source.description) : undefined);
+  assign('status', partial ? source.status : source.status || 'planning');
+  assign('budgetEstimate', hasOwn(source, 'budgetEstimate') || !partial ? toTrimmedOrNull(source.budgetEstimate) : undefined);
+  assign('startDate', source.startDate || null);
+  assign('endDate', source.endDate || null);
+  assign('showInGallery', partial ? parseBoolean(source.showInGallery) : parseBoolean(source.showInGallery, false));
+  assign('galleryOrder', toIntegerOrZero(source.galleryOrder));
+  assign('isActive', partial ? parseBoolean(source.isActive) : parseBoolean(source.isActive, true));
+
+  Object.keys(payload).forEach((key) => {
+    if (typeof payload[key] === 'undefined') {
+      delete payload[key];
+    }
+  });
+
+  return payload;
+};
+
+const applyProjectIdentityOverrides = async ({
+  source,
+  payload,
+  partial,
+  resolveClientByIdentity,
+  resolveManagerByIdentity
+}) => {
+  if (!partial || hasOwn(source, 'clientEmail')) {
+    payload.clientId = await resolveClientByIdentity({
+      clientId: payload.clientId,
+      clientEmail: source.clientEmail
+    });
+  }
+
+  if (!partial || hasOwn(source, 'assignedManagerEmail')) {
+    payload.assignedManagerId = await resolveManagerByIdentity({
+      assignedManagerId: payload.assignedManagerId,
+      assignedManagerEmail: source.assignedManagerEmail
+    });
+  }
+};
+
+const applyQuoteProjectDefaults = async ({ payload, partial, Quote }) => {
+  if ((!partial || hasOwn(payload, 'quoteId')) && payload.quoteId) {
+    const quote = await Quote.findByPk(payload.quoteId);
+    if (!quote) {
+      throw new Error('Invalid quoteId');
+    }
+
+    if ((!partial || !hasOwn(payload, 'clientId')) && quote.clientId) payload.clientId = quote.clientId;
+    if ((!partial || !hasOwn(payload, 'assignedManagerId')) && quote.assignedManagerId) payload.assignedManagerId = quote.assignedManagerId;
+    if ((!partial || !hasOwn(payload, 'location')) && quote.location) payload.location = quote.location;
+  }
+};
 
 module.exports = function createProjectRoutes({
   body,
@@ -6,7 +111,6 @@ module.exports = function createProjectRoutes({
   query,
   validationResult,
   asyncHandler,
-  managerGuard,
   staffGuard,
   Quote,
   User,
@@ -23,7 +127,6 @@ module.exports = function createProjectRoutes({
   escapeLike,
   parseBoolean,
   normalizeEmail,
-  toNullableNumber,
   resolveClientByIdentity,
   resolveManagerByIdentity,
   toProjectDto,
@@ -34,6 +137,9 @@ module.exports = function createProjectRoutes({
   clearGalleryCache
 }) {
   const router = express.Router();
+  const withValidation = createValidatedHandler({ validationResult, asyncHandler });
+  const projectDetailInclude = createProjectInclude({ ProjectMedia, User, Quote, includeMedia: true });
+  const projectListBaseInclude = createProjectInclude({ ProjectMedia, User, Quote, includeMedia: false });
 
   router.get(
     '/projects',
@@ -48,12 +154,7 @@ module.exports = function createProjectRoutes({
       query('page').optional().isInt({ min: 1 }).toInt(),
       query('pageSize').optional().isInt({ min: 1, max: MAX_PAGE_SIZE }).toInt()
     ],
-    asyncHandler(async (req, res) => {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
-
+    withValidation(async (req, res) => {
       const where = {};
       if (req.query.status) where.status = req.query.status;
       if (typeof req.query.showInGallery !== 'undefined') {
@@ -83,10 +184,7 @@ module.exports = function createProjectRoutes({
       const { rows, count } = await Project.findAndCountAll({
         where,
         include: [
-          ...(includeMedia ? [{ model: ProjectMedia, as: 'media' }] : []),
-          { model: User, as: 'client', attributes: ['id', 'name', 'email'], required: false },
-          { model: User, as: 'assignedManager', attributes: ['id', 'name', 'email'], required: false },
-          { model: Quote, as: 'quote', attributes: ['id', 'status', 'projectType', 'location'], required: false }
+          ...(includeMedia ? projectDetailInclude : projectListBaseInclude)
         ],
         order: [['galleryOrder', 'ASC'], ['createdAt', 'DESC']],
         distinct: true,
@@ -108,23 +206,12 @@ module.exports = function createProjectRoutes({
   router.get(
     '/projects/:id',
     [...staffGuard, param('id').isUUID()],
-    asyncHandler(async (req, res) => {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
-
-      const project = await Project.findByPk(req.params.id, {
-        include: [
-          { model: ProjectMedia, as: 'media' },
-          { model: User, as: 'client', attributes: ['id', 'name', 'email'], required: false },
-          { model: User, as: 'assignedManager', attributes: ['id', 'name', 'email'], required: false },
-          { model: Quote, as: 'quote', attributes: ['id', 'status', 'projectType', 'location'], required: false }
-        ]
+    withValidation(async (req, res) => {
+      const project = await findByPkOrRespond(Project, req.params.id, res, {
+        message: 'Project not found',
+        include: projectDetailInclude
       });
-      if (!project) {
-        return res.status(404).json({ error: 'Project not found' });
-      }
+      if (!project) return null;
 
       return res.json({ project: toProjectDto(project) });
     })
@@ -134,66 +221,22 @@ module.exports = function createProjectRoutes({
     '/projects',
     [
       ...staffGuard,
-      body('title').trim().notEmpty(),
-      body('location').optional().trim(),
-      body('description').optional().trim(),
-      body('status').optional().isIn(PROJECT_STATUSES),
-      body('quoteId').optional({ nullable: true }).isUUID(),
-      body('clientId').optional({ nullable: true }).isUUID(),
-      body('clientEmail').optional({ checkFalsy: true }).isEmail(),
-      body('assignedManagerId').optional({ nullable: true }).isUUID(),
-      body('assignedManagerEmail').optional({ checkFalsy: true }).isEmail(),
-      body('budgetEstimate').optional().trim(),
-      body('startDate').optional().isISO8601(),
-      body('endDate').optional().isISO8601(),
-      body('showInGallery').optional().isBoolean(),
-      body('galleryOrder').optional().isInt(),
-      body('isActive').optional().isBoolean()
+      ...createProjectWriteValidators({ body, PROJECT_STATUSES })
     ],
-    asyncHandler(async (req, res) => {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
-
-      const payload = {
-        title: String(req.body.title || '').trim(),
-        quoteId: req.body.quoteId || null,
-        clientId: req.body.clientId || null,
-        assignedManagerId: req.body.assignedManagerId || null,
-        location: req.body.location ? String(req.body.location).trim() : null,
-        description: req.body.description ? String(req.body.description).trim() : null,
-        status: req.body.status || 'planning',
-        budgetEstimate: req.body.budgetEstimate ? String(req.body.budgetEstimate).trim() : null,
-        startDate: req.body.startDate || null,
-        endDate: req.body.endDate || null,
-        showInGallery: parseBoolean(req.body.showInGallery, false),
-        galleryOrder: Number.parseInt(req.body.galleryOrder, 10) || 0,
-        isActive: parseBoolean(req.body.isActive, true)
-      };
+    withValidation(async (req, res) => {
+      const payload = buildProjectPayload(req.body, { partial: false, parseBoolean });
 
       try {
-        const resolvedClientId = await resolveClientByIdentity({
-          clientId: payload.clientId,
-          clientEmail: req.body.clientEmail
+        await applyProjectIdentityOverrides({
+          source: req.body,
+          payload,
+          partial: false,
+          resolveClientByIdentity,
+          resolveManagerByIdentity
         });
-        if (typeof resolvedClientId !== 'undefined') payload.clientId = resolvedClientId;
-
-        const resolvedManagerId = await resolveManagerByIdentity({
-          assignedManagerId: payload.assignedManagerId,
-          assignedManagerEmail: req.body.assignedManagerEmail
-        });
-        if (typeof resolvedManagerId !== 'undefined') payload.assignedManagerId = resolvedManagerId;
+        await applyQuoteProjectDefaults({ payload, partial: false, Quote });
       } catch (error) {
         return res.status(400).json({ error: error.message || 'Invalid assignee/client identity' });
-      }
-
-      if (payload.quoteId) {
-        const quote = await Quote.findByPk(payload.quoteId);
-        if (!quote) return res.status(400).json({ error: 'Invalid quoteId' });
-        if (!payload.clientId && quote.clientId) payload.clientId = quote.clientId;
-        if (!payload.assignedManagerId && quote.assignedManagerId) payload.assignedManagerId = quote.assignedManagerId;
-        if (!payload.location && quote.location) payload.location = quote.location;
       }
 
       const project = await Project.create(payload);
@@ -207,80 +250,29 @@ module.exports = function createProjectRoutes({
     [
       ...staffGuard,
       param('id').isUUID(),
-      body('title').optional().trim().notEmpty(),
-      body('location').optional().trim(),
-      body('description').optional().trim(),
-      body('status').optional().isIn(PROJECT_STATUSES),
-      body('quoteId').optional({ nullable: true }).isUUID(),
-      body('clientId').optional({ nullable: true }).isUUID(),
-      body('clientEmail').optional({ checkFalsy: true }).isEmail(),
-      body('assignedManagerId').optional({ nullable: true }).isUUID(),
-      body('assignedManagerEmail').optional({ checkFalsy: true }).isEmail(),
-      body('budgetEstimate').optional().trim(),
-      body('startDate').optional().isISO8601(),
-      body('endDate').optional().isISO8601(),
-      body('showInGallery').optional().isBoolean(),
-      body('galleryOrder').optional().isInt(),
-      body('isActive').optional().isBoolean()
+      ...createProjectWriteValidators({ body, PROJECT_STATUSES, partial: true })
     ],
-    asyncHandler(async (req, res) => {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
+    withValidation(async (req, res) => {
+      const project = await findByPkOrRespond(Project, req.params.id, res, { message: 'Project not found' });
+      if (!project) return null;
 
-      const project = await Project.findByPk(req.params.id);
-      if (!project) {
-        return res.status(404).json({ error: 'Project not found' });
-      }
+      const payload = buildProjectPayload(req.body, { partial: true, parseBoolean });
 
-      const payload = {};
-      if (typeof req.body.title !== 'undefined') payload.title = String(req.body.title || '').trim();
-      if (typeof req.body.quoteId !== 'undefined') payload.quoteId = req.body.quoteId || null;
-      if (typeof req.body.clientId !== 'undefined') payload.clientId = req.body.clientId || null;
-      if (typeof req.body.assignedManagerId !== 'undefined') payload.assignedManagerId = req.body.assignedManagerId || null;
-      if (typeof req.body.location !== 'undefined') payload.location = String(req.body.location || '').trim() || null;
-      if (typeof req.body.description !== 'undefined') payload.description = String(req.body.description || '').trim() || null;
-      if (typeof req.body.status !== 'undefined') payload.status = req.body.status;
-      if (typeof req.body.budgetEstimate !== 'undefined') payload.budgetEstimate = String(req.body.budgetEstimate || '').trim() || null;
-      if (typeof req.body.startDate !== 'undefined') payload.startDate = req.body.startDate || null;
-      if (typeof req.body.endDate !== 'undefined') payload.endDate = req.body.endDate || null;
-      if (typeof req.body.showInGallery !== 'undefined') payload.showInGallery = parseBoolean(req.body.showInGallery);
-      if (typeof req.body.galleryOrder !== 'undefined') payload.galleryOrder = Number.parseInt(req.body.galleryOrder, 10) || 0;
-      if (typeof req.body.isActive !== 'undefined') payload.isActive = parseBoolean(req.body.isActive);
-
-      if (Object.prototype.hasOwnProperty.call(req.body, 'clientEmail')) {
-        try {
-          payload.clientId = await resolveClientByIdentity({
-            clientId: payload.clientId,
-            clientEmail: req.body.clientEmail
-          });
-        } catch (error) {
-          return res.status(400).json({ error: error.message || 'Invalid client identity' });
-        }
-      }
-
-      if (Object.prototype.hasOwnProperty.call(req.body, 'assignedManagerEmail')) {
-        try {
-          payload.assignedManagerId = await resolveManagerByIdentity({
-            assignedManagerId: payload.assignedManagerId,
-            assignedManagerEmail: req.body.assignedManagerEmail
-          });
-        } catch (error) {
-          return res.status(400).json({ error: error.message || 'Invalid staff identity' });
-        }
+      try {
+        await applyProjectIdentityOverrides({
+          source: req.body,
+          payload,
+          partial: true,
+          resolveClientByIdentity,
+          resolveManagerByIdentity
+        });
+        await applyQuoteProjectDefaults({ payload, partial: true, Quote });
+      } catch (error) {
+        return res.status(400).json({ error: error.message || 'Invalid staff identity' });
       }
 
       if (!Object.keys(payload).length) {
         return res.status(400).json({ error: 'No changes provided' });
-      }
-
-      if (Object.prototype.hasOwnProperty.call(payload, 'quoteId') && payload.quoteId) {
-        const quote = await Quote.findByPk(payload.quoteId);
-        if (!quote) return res.status(400).json({ error: 'Invalid quoteId' });
-        if (!Object.prototype.hasOwnProperty.call(payload, 'clientId') && quote.clientId) payload.clientId = quote.clientId;
-        if (!Object.prototype.hasOwnProperty.call(payload, 'assignedManagerId') && quote.assignedManagerId) payload.assignedManagerId = quote.assignedManagerId;
-        if (!Object.prototype.hasOwnProperty.call(payload, 'location') && quote.location) payload.location = quote.location;
       }
 
       await project.update(payload);
@@ -292,18 +284,12 @@ module.exports = function createProjectRoutes({
   router.delete(
     '/projects/:id',
     [...staffGuard, param('id').isUUID()],
-    asyncHandler(async (req, res) => {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
-
-      const project = await Project.findByPk(req.params.id, {
+    withValidation(async (req, res) => {
+      const project = await findByPkOrRespond(Project, req.params.id, res, {
+        message: 'Project not found',
         include: [{ model: ProjectMedia, as: 'media' }]
       });
-      if (!project) {
-        return res.status(404).json({ error: 'Project not found' });
-      }
+      if (!project) return null;
 
       for (const media of project.media || []) {
         await safeUnlink(media.storagePath);
@@ -320,16 +306,9 @@ module.exports = function createProjectRoutes({
   router.get(
     '/projects/:id/media',
     [...staffGuard, param('id').isUUID()],
-    asyncHandler(async (req, res) => {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
-
-      const project = await Project.findByPk(req.params.id);
-      if (!project) {
-        return res.status(404).json({ error: 'Project not found' });
-      }
+    withValidation(async (req, res) => {
+      const project = await findByPkOrRespond(Project, req.params.id, res, { message: 'Project not found' });
+      if (!project) return null;
 
       const media = await ProjectMedia.findAll({
         where: { projectId: project.id },
@@ -343,18 +322,11 @@ module.exports = function createProjectRoutes({
   router.post(
     '/projects/:id/media/upload',
     [...staffGuard, param('id').isUUID(), upload.array('files', 20)],
-    asyncHandler(async (req, res) => {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
-
-      const project = await Project.findByPk(req.params.id);
+    withValidation(async (req, res) => {
+      const project = await findByPkOrRespond(Project, req.params.id, res, { message: 'Project not found' });
       if (!project) {
-        for (const file of req.files || []) {
-          await safeUnlink(normalizeStoragePath(file.path));
-        }
-        return res.status(404).json({ error: 'Project not found' });
+        await cleanupUploadedFiles(req.files, normalizeStoragePath, safeUnlink);
+        return null;
       }
 
       const files = Array.isArray(req.files) ? req.files : [];
@@ -411,21 +383,14 @@ module.exports = function createProjectRoutes({
       body('galleryOrder').optional().isInt(),
       body('isCover').optional().isBoolean()
     ],
-    asyncHandler(async (req, res) => {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
-
-      const media = await ProjectMedia.findOne({
-        where: {
-          id: req.params.mediaId,
-          projectId: req.params.id
-        }
-      });
-      if (!media) {
-        return res.status(404).json({ error: 'Media not found' });
-      }
+    withValidation(async (req, res) => {
+      const media = await findOneOrRespond(
+        ProjectMedia,
+        { id: req.params.mediaId, projectId: req.params.id },
+        res,
+        { message: 'Media not found' }
+      );
+      if (!media) return null;
 
       const payload = {};
       if (typeof req.body.caption !== 'undefined') payload.caption = String(req.body.caption || '').trim() || null;
@@ -467,21 +432,14 @@ module.exports = function createProjectRoutes({
   router.delete(
     '/projects/:id/media/:mediaId',
     [...staffGuard, param('id').isUUID(), param('mediaId').isUUID()],
-    asyncHandler(async (req, res) => {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
-
-      const media = await ProjectMedia.findOne({
-        where: {
-          id: req.params.mediaId,
-          projectId: req.params.id
-        }
-      });
-      if (!media) {
-        return res.status(404).json({ error: 'Media not found' });
-      }
+    withValidation(async (req, res) => {
+      const media = await findOneOrRespond(
+        ProjectMedia,
+        { id: req.params.mediaId, projectId: req.params.id },
+        res,
+        { message: 'Media not found' }
+      );
+      if (!media) return null;
 
       await safeUnlink(media.storagePath);
       await media.destroy();

@@ -527,8 +527,7 @@ router.use(createQuoteRoutes({
   MAX_PAGE_SIZE,
   getPagination,
   paginationDto,
-  escapeLike,
-  parseBoolean
+  escapeLike
 }));
 
 router.use(createProjectRoutes({
@@ -537,7 +536,6 @@ router.use(createProjectRoutes({
   query,
   validationResult,
   asyncHandler,
-  managerGuard,
   staffGuard,
   Quote,
   User,
@@ -554,7 +552,6 @@ router.use(createProjectRoutes({
   escapeLike,
   parseBoolean,
   normalizeEmail,
-  toNullableNumber,
   resolveClientByIdentity,
   resolveManagerByIdentity,
   toProjectDto,

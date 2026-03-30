@@ -1,4 +1,5 @@
 const express = require('express');
+const { createValidatedHandler, findByPkOrRespond } = require('./route-helpers');
 
 module.exports = function createQuoteRoutes({
   param,
@@ -19,27 +20,24 @@ module.exports = function createQuoteRoutes({
   MAX_PAGE_SIZE,
   getPagination,
   paginationDto,
-  escapeLike,
-  parseBoolean
+  escapeLike
 }) {
   const router = express.Router();
+  const withValidation = createValidatedHandler({ validationResult, asyncHandler });
+  const quoteInclude = [
+    { model: User, as: 'client', attributes: ['id', 'name', 'email', 'phone'] },
+    { model: User, as: 'assignedManager', attributes: ['id', 'name', 'email'] }
+  ];
 
   router.post(
     '/quotes/:id/accept',
     [...managerGuard, param('id').isUUID()],
-    asyncHandler(async (req, res) => {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
-
-      const quote = await Quote.findByPk(req.params.id, {
+    withValidation(async (req, res) => {
+      const quote = await findByPkOrRespond(Quote, req.params.id, res, {
+        message: 'Quote not found',
         include: [{ model: User, as: 'client', attributes: ['id', 'name', 'email'] }]
       });
-
-      if (!quote) {
-        return res.status(404).json({ error: 'Quote not found' });
-      }
+      if (!quote) return null;
 
       if (quote.assignedManagerId) {
         return res.status(409).json({ error: 'Quote is already assigned to a manager' });
@@ -108,12 +106,7 @@ module.exports = function createQuoteRoutes({
         query('page').optional().isInt({ min: 1 }).toInt(),
         query('pageSize').optional().isInt({ min: 1, max: MAX_PAGE_SIZE }).toInt()
       ],
-    asyncHandler(async (req, res) => {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
-
+    withValidation(async (req, res) => {
       const where = {};
       if (req.query.status) where.status = req.query.status;
       if (req.query.priority) where.priority = req.query.priority;
@@ -133,10 +126,7 @@ module.exports = function createQuoteRoutes({
       const { page, pageSize, offset } = getPagination(req);
       const { rows, count } = await Quote.findAndCountAll({
         where,
-        include: [
-          { model: User, as: 'client', attributes: ['id', 'name', 'email', 'phone'] },
-          { model: User, as: 'assignedManager', attributes: ['id', 'name', 'email'] }
-        ],
+        include: quoteInclude,
         order: [['createdAt', 'DESC']],
         distinct: true,
         limit: pageSize,
@@ -145,12 +135,7 @@ module.exports = function createQuoteRoutes({
 
       return res.json({
         quotes: rows,
-        pagination: {
-          page,
-          pageSize,
-          total: count,
-          totalPages: Math.max(1, Math.ceil(count / pageSize))
-        }
+        pagination: paginationDto(page, pageSize, count)
       });
     })
   );
@@ -158,22 +143,12 @@ module.exports = function createQuoteRoutes({
   router.get(
     '/quotes/:id',
     [...managerGuard, param('id').isUUID()],
-    asyncHandler(async (req, res) => {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
-
-      const quote = await Quote.findByPk(req.params.id, {
-        include: [
-          { model: User, as: 'client', attributes: ['id', 'name', 'email', 'phone'] },
-          { model: User, as: 'assignedManager', attributes: ['id', 'name', 'email'] }
-        ]
+    withValidation(async (req, res) => {
+      const quote = await findByPkOrRespond(Quote, req.params.id, res, {
+        message: 'Quote not found',
+        include: quoteInclude
       });
-
-      if (!quote) {
-        return res.status(404).json({ error: 'Quote not found' });
-      }
+      if (!quote) return null;
 
       return res.json({ quote });
     })
@@ -187,16 +162,9 @@ module.exports = function createQuoteRoutes({
       body('status').optional().isIn(['pending', 'in_progress', 'responded', 'closed']),
       body('priority').optional().isIn(['low', 'medium', 'high'])
     ],
-    asyncHandler(async (req, res) => {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
-
-      const quote = await Quote.findByPk(req.params.id);
-      if (!quote) {
-        return res.status(404).json({ error: 'Quote not found' });
-      }
+    withValidation(async (req, res) => {
+      const quote = await findByPkOrRespond(Quote, req.params.id, res, { message: 'Quote not found' });
+      if (!quote) return null;
 
       const payload = {};
       if (req.body.status) payload.status = req.body.status;
