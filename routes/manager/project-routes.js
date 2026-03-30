@@ -6,7 +6,7 @@ const {
   cleanupUploadedFiles
 } = require('./route-helpers');
 
-const hasOwn = (source, key) => Object.prototype.hasOwnProperty.call(source, key);
+const hasOwn = (source, key) => Object.hasOwn(source, key);
 const toTrimmedOrNull = (value) => String(value || '').trim() || null;
 const toIntegerOrZero = (value) => Number.parseInt(value, 10) || 0;
 
@@ -44,28 +44,24 @@ const createProjectInclude = ({ ProjectMedia, User, Quote, includeMedia = false 
 const buildProjectPayload = (source, { partial, parseBoolean }) => {
   const payload = {};
   const assign = (key, value) => {
-    if (!partial || hasOwn(source, key)) payload[key] = value;
+    if ((!partial || hasOwn(source, key)) && typeof value !== 'undefined') {
+      payload[key] = value;
+    }
   };
 
   assign('title', String(source.title || '').trim());
   assign('quoteId', source.quoteId || null);
   assign('clientId', source.clientId || null);
   assign('assignedManagerId', source.assignedManagerId || null);
-  assign('location', hasOwn(source, 'location') || !partial ? toTrimmedOrNull(source.location) : undefined);
-  assign('description', hasOwn(source, 'description') || !partial ? toTrimmedOrNull(source.description) : undefined);
+  assign('location', toTrimmedOrNull(source.location));
+  assign('description', toTrimmedOrNull(source.description));
   assign('status', partial ? source.status : source.status || 'planning');
-  assign('budgetEstimate', hasOwn(source, 'budgetEstimate') || !partial ? toTrimmedOrNull(source.budgetEstimate) : undefined);
+  assign('budgetEstimate', toTrimmedOrNull(source.budgetEstimate));
   assign('startDate', source.startDate || null);
   assign('endDate', source.endDate || null);
   assign('showInGallery', partial ? parseBoolean(source.showInGallery) : parseBoolean(source.showInGallery, false));
   assign('galleryOrder', toIntegerOrZero(source.galleryOrder));
   assign('isActive', partial ? parseBoolean(source.isActive) : parseBoolean(source.isActive, true));
-
-  Object.keys(payload).forEach((key) => {
-    if (typeof payload[key] === 'undefined') {
-      delete payload[key];
-    }
-  });
 
   return payload;
 };
@@ -92,16 +88,16 @@ const applyProjectIdentityOverrides = async ({
   }
 };
 
-const applyQuoteProjectDefaults = async ({ payload, partial, Quote }) => {
-  if ((!partial || hasOwn(payload, 'quoteId')) && payload.quoteId) {
+const applyQuoteProjectDefaults = async ({ payload, source, partial, Quote }) => {
+  if ((!partial || hasOwn(source, 'quoteId')) && payload.quoteId) {
     const quote = await Quote.findByPk(payload.quoteId);
     if (!quote) {
       throw new Error('Invalid quoteId');
     }
 
-    if ((!partial || !hasOwn(payload, 'clientId')) && quote.clientId) payload.clientId = quote.clientId;
-    if ((!partial || !hasOwn(payload, 'assignedManagerId')) && quote.assignedManagerId) payload.assignedManagerId = quote.assignedManagerId;
-    if ((!partial || !hasOwn(payload, 'location')) && quote.location) payload.location = quote.location;
+    if ((!partial || !hasOwn(source, 'clientId')) && quote.clientId) payload.clientId = quote.clientId;
+    if ((!partial || !hasOwn(source, 'assignedManagerId')) && quote.assignedManagerId) payload.assignedManagerId = quote.assignedManagerId;
+    if ((!partial || !hasOwn(source, 'location')) && quote.location) payload.location = quote.location;
   }
 };
 
@@ -211,7 +207,7 @@ module.exports = function createProjectRoutes({
         message: 'Project not found',
         include: projectDetailInclude
       });
-      if (!project) return null;
+      if (!project) return;
 
       return res.json({ project: toProjectDto(project) });
     })
@@ -234,7 +230,7 @@ module.exports = function createProjectRoutes({
           resolveClientByIdentity,
           resolveManagerByIdentity
         });
-        await applyQuoteProjectDefaults({ payload, partial: false, Quote });
+        await applyQuoteProjectDefaults({ payload, source: req.body, partial: false, Quote });
       } catch (error) {
         return res.status(400).json({ error: error.message || 'Invalid assignee/client identity' });
       }
@@ -254,7 +250,7 @@ module.exports = function createProjectRoutes({
     ],
     withValidation(async (req, res) => {
       const project = await findByPkOrRespond(Project, req.params.id, res, { message: 'Project not found' });
-      if (!project) return null;
+      if (!project) return;
 
       const payload = buildProjectPayload(req.body, { partial: true, parseBoolean });
 
@@ -266,7 +262,7 @@ module.exports = function createProjectRoutes({
           resolveClientByIdentity,
           resolveManagerByIdentity
         });
-        await applyQuoteProjectDefaults({ payload, partial: true, Quote });
+        await applyQuoteProjectDefaults({ payload, source: req.body, partial: true, Quote });
       } catch (error) {
         return res.status(400).json({ error: error.message || 'Invalid staff identity' });
       }
@@ -289,7 +285,7 @@ module.exports = function createProjectRoutes({
         message: 'Project not found',
         include: [{ model: ProjectMedia, as: 'media' }]
       });
-      if (!project) return null;
+      if (!project) return;
 
       for (const media of project.media || []) {
         await safeUnlink(media.storagePath);
@@ -308,7 +304,7 @@ module.exports = function createProjectRoutes({
     [...staffGuard, param('id').isUUID()],
     withValidation(async (req, res) => {
       const project = await findByPkOrRespond(Project, req.params.id, res, { message: 'Project not found' });
-      if (!project) return null;
+      if (!project) return;
 
       const media = await ProjectMedia.findAll({
         where: { projectId: project.id },
@@ -326,7 +322,7 @@ module.exports = function createProjectRoutes({
       const project = await findByPkOrRespond(Project, req.params.id, res, { message: 'Project not found' });
       if (!project) {
         await cleanupUploadedFiles(req.files, normalizeStoragePath, safeUnlink);
-        return null;
+        return;
       }
 
       const files = Array.isArray(req.files) ? req.files : [];
@@ -390,7 +386,7 @@ module.exports = function createProjectRoutes({
         res,
         { message: 'Media not found' }
       );
-      if (!media) return null;
+      if (!media) return;
 
       const payload = {};
       if (typeof req.body.caption !== 'undefined') payload.caption = String(req.body.caption || '').trim() || null;
@@ -439,7 +435,7 @@ module.exports = function createProjectRoutes({
         res,
         { message: 'Media not found' }
       );
-      if (!media) return null;
+      if (!media) return;
 
       await safeUnlink(media.storagePath);
       await media.destroy();

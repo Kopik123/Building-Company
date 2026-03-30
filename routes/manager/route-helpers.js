@@ -8,6 +8,9 @@ const createValidatedHandler = ({ validationResult, asyncHandler }) => (handler)
     return handler(req, res);
   });
 
+// `message` is a local helper option for the 404 response and is not passed to Sequelize.
+// Callers must stop execution when this returns null because the 404 response
+// has already been sent here.
 const findByPkOrRespond = async (Model, id, res, { message, ...options } = {}) => {
   const entity = await Model.findByPk(id, options);
   if (!entity) {
@@ -18,10 +21,13 @@ const findByPkOrRespond = async (Model, id, res, { message, ...options } = {}) =
   return entity;
 };
 
-const findOneOrRespond = async (Model, where, res, options = {}) => {
+// `message` is a local helper option for the 404 response and is not passed to Sequelize.
+// Callers must stop execution when this returns null because the 404 response
+// has already been sent here.
+const findOneOrRespond = async (Model, where, res, { message, ...options } = {}) => {
   const entity = await Model.findOne({ where, ...options });
   if (!entity) {
-    res.status(404).json({ error: options.message || `${Model.name} not found` });
+    res.status(404).json({ error: message || `${Model.name} not found` });
     return null;
   }
 

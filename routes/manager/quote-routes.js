@@ -37,7 +37,7 @@ module.exports = function createQuoteRoutes({
         message: 'Quote not found',
         include: [{ model: User, as: 'client', attributes: ['id', 'name', 'email'] }]
       });
-      if (!quote) return null;
+      if (!quote) return;
 
       if (quote.assignedManagerId) {
         return res.status(409).json({ error: 'Quote is already assigned to a manager' });
@@ -148,7 +148,7 @@ module.exports = function createQuoteRoutes({
         message: 'Quote not found',
         include: quoteInclude
       });
-      if (!quote) return null;
+      if (!quote) return;
 
       return res.json({ quote });
     })
@@ -164,11 +164,11 @@ module.exports = function createQuoteRoutes({
     ],
     withValidation(async (req, res) => {
       const quote = await findByPkOrRespond(Quote, req.params.id, res, { message: 'Quote not found' });
-      if (!quote) return null;
+      if (!quote) return;
 
       const payload = {};
-      if (req.body.status) payload.status = req.body.status;
-      if (req.body.priority) payload.priority = req.body.priority;
+      if (typeof req.body.status !== 'undefined') payload.status = req.body.status;
+      if (typeof req.body.priority !== 'undefined') payload.priority = req.body.priority;
 
       if (!Object.keys(payload).length) {
         return res.status(400).json({ error: 'No changes provided' });
