@@ -2,6 +2,7 @@
 
 ## Open
 
+- [ ] Work through `copilot_todos.md` (49 items across P0–P3 priorities from full project analysis).
 - [ ] Run `powershell -ExecutionPolicy Bypass -File .\scripts\setup-vscode.ps1` on the local machine that uses VS Code.
 - [ ] Review whether `ms-vscode.live-server` is still needed if the project always runs through the app server and Playwright.
 - [ ] Plan a separate migration from `multer 1.x` to `multer 2.x`, because the dependency is still flagged in install warnings.

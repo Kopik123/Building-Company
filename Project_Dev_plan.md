@@ -1,5 +1,9 @@
 # Project Dev Plan
 
+## 2026-03-30
+
+- Created `copilot_todos.md` with 49 categorised items from a full project analysis covering security bugs, architectural issues, cleanup targets, SEO/performance gaps and mobile/app readiness.
+
 ## 2026-03-10
 
 - Added `scripts/setup-vscode.ps1` to install the recommended VS Code extensions and merge workspace settings.
