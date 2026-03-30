@@ -32,6 +32,12 @@ const {
   createNewQuoteAttachmentEntries,
   toNewQuoteSummary
 } = require('../../../utils/newQuoteShape');
+const {
+  canAccessStagedNewQuote,
+  getNewQuoteIncludeClient,
+  hasNewQuoteStore: hasNewQuoteStoreForModel,
+  loadStagedNewQuote: loadStagedNewQuoteForModel
+} = require('../../../utils/quoteReviewData');
 const { createStagedNewQuoteWorkflow } = require('../../../utils/stagedNewQuoteWorkflow');
 
 const router = express.Router();
@@ -39,17 +45,11 @@ const DEFAULT_PAGE_SIZE = 25;
 const MAX_PAGE_SIZE = 100;
 const PROJECT_TYPES = ['bathroom', 'kitchen', 'interior', 'tiling', 'extension', 'joinery', 'rendering', 'decorating', 'other'];
 
-const hasNewQuoteStore = () => typeof NewQuote?.create === 'function';
+const hasNewQuoteStore = (method = 'create') => hasNewQuoteStoreForModel(NewQuote, method);
 const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
 const normalizePhone = (value) => String(value || '').trim();
 const escapeLike = (value) => String(value || '').replace(/[\\%_]/g, '\\$&');
 const toQueryText = (value) => `%${escapeLike(String(value || '').trim())}%`;
-const canAccessNewQuote = (newQuote, user) => {
-  if (!newQuote || !user) return false;
-  const role = String(user.role || '').toLowerCase();
-  if (role === 'client') return newQuote.clientId === user.id;
-  return ['manager', 'admin', 'employee'].includes(role);
-};
 const getPagination = (req) => {
   const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
   const pageSize = Math.min(MAX_PAGE_SIZE, Math.max(1, Number.parseInt(req.query.pageSize, 10) || DEFAULT_PAGE_SIZE));
@@ -60,12 +60,9 @@ const getPagination = (req) => {
   };
 };
 
-const includeClient = [{ model: User, as: 'client', attributes: ['id', 'name', 'email', 'phone', 'companyName'], required: false }];
+const includeClient = getNewQuoteIncludeClient(User);
 
-const loadNewQuote = async (id) => {
-  if (typeof NewQuote?.findByPk !== 'function') return null;
-  return NewQuote.findByPk(id, { include: includeClient });
-};
+const loadNewQuote = async (id) => loadStagedNewQuoteForModel(NewQuote, includeClient, id);
 
 const findManagerRecipients = async (options = null) => {
   if (typeof User?.findAll !== 'function') return [];
@@ -181,7 +178,7 @@ router.get(
 
     const newQuote = await loadNewQuote(req.params.id);
     if (!newQuote) return fail(res, 404, 'new_quote_not_found', 'New quote not found');
-    if (!canAccessNewQuote(newQuote, req.v2User)) {
+    if (!canAccessStagedNewQuote(newQuote, req.v2User)) {
       return fail(res, 403, 'new_quote_forbidden', 'You do not have access to this new quote');
     }
 
@@ -358,7 +355,7 @@ router.post(
       await cleanupUploadedFiles(files);
       return fail(res, 404, 'new_quote_not_found', 'New quote not found');
     }
-    if (!canAccessNewQuote(newQuote, req.v2User)) {
+    if (!canAccessStagedNewQuote(newQuote, req.v2User)) {
       await cleanupUploadedFiles(files);
       return fail(res, 403, 'new_quote_forbidden', 'You do not have access to this new quote');
     }

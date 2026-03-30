@@ -5,48 +5,16 @@ const { advanceClientLifecycle } = require('../../utils/crmLifecycle');
 const { createActivityEvent } = require('../../utils/activityFeed');
 const { toNewQuoteSummary } = require('../../utils/newQuoteShape');
 const { createStagedNewQuoteWorkflow } = require('../../utils/stagedNewQuoteWorkflow');
-const { sortQuoteAttachments, toQuoteAttachmentSummary } = require('../../utils/quoteAttachments');
+const {
+  getNewQuoteIncludeClient,
+  hasNewQuoteStore: hasNewQuoteStoreForModel,
+  loadStagedNewQuote: loadStagedNewQuoteForModel,
+  matchesStagedQuoteFilters,
+  toLegacyQuoteSummary
+} = require('../../utils/quoteReviewData');
 
 const QUOTE_STATUSES = ['pending', 'in_progress', 'responded', 'closed'];
 const QUOTE_PROJECT_TYPES = ['bathroom', 'kitchen', 'interior', 'tiling', 'extension', 'joinery', 'rendering', 'decorating', 'other'];
-const NEW_QUOTE_WORKFLOW_STATUS = 'submitted';
-const NEW_QUOTE_PRIORITY = 'medium';
-
-const matchesStagedQuoteFilters = (quote, filters = {}) => {
-  if (!quote) return false;
-
-  if (filters.status && filters.status !== 'pending') return false;
-  if (filters.workflowStatus && String(filters.workflowStatus).trim().toLowerCase() !== NEW_QUOTE_WORKFLOW_STATUS) return false;
-  if (filters.priority && String(filters.priority).trim().toLowerCase() !== NEW_QUOTE_PRIORITY) return false;
-  if (filters.projectType && String(filters.projectType).trim().toLowerCase() !== String(quote.projectType || '').trim().toLowerCase()) {
-    return false;
-  }
-
-  if (filters.q) {
-    const needle = String(filters.q || '').trim().toLowerCase();
-    const haystack = [
-      quote.quoteRef,
-      quote.referenceCode,
-      quote.projectType,
-      quote.location,
-      quote.postcode,
-      quote.client?.name,
-      quote.client?.email,
-      quote.guestName,
-      quote.guestEmail,
-      quote.budgetRange,
-      quote.description
-    ]
-      .filter(Boolean)
-      .join(' ')
-      .toLowerCase();
-
-    if (!haystack.includes(needle)) return false;
-  }
-
-  return true;
-};
-
 module.exports = function createQuoteRoutes({
   body,
   param,
@@ -75,8 +43,8 @@ module.exports = function createQuoteRoutes({
   paginationDto
 }) {
   const router = express.Router();
-  const includeClient = [{ model: User, as: 'client', attributes: ['id', 'name', 'email', 'phone', 'companyName'], required: false }];
-  const hasNewQuoteStore = () => typeof NewQuote?.findAll === 'function';
+  const includeClient = getNewQuoteIncludeClient(User);
+  const hasNewQuoteStore = (method = 'findAll') => hasNewQuoteStoreForModel(NewQuote, method);
 
   const stagedNewQuoteWorkflow = createStagedNewQuoteWorkflow({
     sequelize,
@@ -91,21 +59,7 @@ module.exports = function createQuoteRoutes({
     advanceClientLifecycle,
     createActivityEvent
   });
-
-  const toLegacyQuoteSummary = (quote) => {
-    const plain = typeof quote?.toJSON === 'function' ? quote.toJSON() : { ...(quote || {}) };
-    const attachments = sortQuoteAttachments(Array.isArray(plain.attachments) ? plain.attachments : []).map(toQuoteAttachmentSummary);
-    return {
-      ...plain,
-      attachments,
-      attachmentCount: Number(plain.attachmentCount ?? attachments.length) || attachments.length
-    };
-  };
-
-  const loadStagedNewQuote = async (id) => {
-    if (typeof NewQuote?.findByPk !== 'function') return null;
-    return NewQuote.findByPk(id, { include: includeClient });
-  };
+  const loadStagedNewQuote = async (id) => loadStagedNewQuoteForModel(NewQuote, includeClient, id);
 
   const acceptStagedNewQuote = (newQuote, user) => stagedNewQuoteWorkflow.accept(newQuote, user, {
     buildAcceptClientNotification: ({ newQuote: activeNewQuote, project, groupThread }) => ({

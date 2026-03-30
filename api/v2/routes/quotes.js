@@ -1,4 +1,4 @@
-﻿const crypto = require('crypto');
+const crypto = require('crypto');
 const express = require('express');
 const { Op, fn, col, where: sqlWhere } = require('sequelize');
 const { body, param, query, validationResult } = require('express-validator');
@@ -39,6 +39,13 @@ const { advanceClientLifecycle } = require('../../../utils/crmLifecycle');
 const { createActivityEvent } = require('../../../utils/activityFeed');
 const { parseQuoteProposalDetails, buildQuoteDescriptionFromProposal } = require('../../../utils/quoteProposal');
 const { appendNewQuoteAttachmentEntries, toNewQuoteSummary } = require('../../../utils/newQuoteShape');
+const {
+  canAccessStagedNewQuote,
+  getNewQuoteIncludeClient,
+  hasNewQuoteStore: hasNewQuoteStoreForModel,
+  loadStagedNewQuote: loadStagedNewQuoteForModel,
+  matchesStagedQuoteFilters
+} = require('../../../utils/quoteReviewData');
 const { authV2 } = require('../middleware/auth');
 const { roleCheckV2 } = require('../middleware/roles');
 const { ok, fail } = require('../utils/response');
@@ -187,43 +194,10 @@ const canAccessQuote = (quote, user) => {
   return ['employee', 'manager', 'admin'].includes(String(user.role || '').toLowerCase());
 };
 
-const canAccessNewQuote = (newQuote, user) => {
-  if (!newQuote || !user) return false;
-  if (String(user.role || '').toLowerCase() === 'client') return newQuote.clientId === user.id;
-  return ['employee', 'manager', 'admin'].includes(String(user.role || '').toLowerCase());
-};
-
-const newQuoteIncludeClient = [{ model: User, as: 'client', attributes: ['id', 'name', 'email', 'phone', 'companyName'], required: false }];
-const hasNewQuoteStore = () => typeof NewQuote?.findAll === 'function';
-const loadStagedNewQuote = async (id) => {
-  if (!hasNewQuoteStore() || typeof NewQuote?.findByPk !== 'function') return null;
-  return NewQuote.findByPk(id, { include: newQuoteIncludeClient });
-};
-
-const matchesStagedQuoteFilters = (quote, filters = {}) => {
-  if (!quote) return false;
-  if (filters.status && String(filters.status).trim().toLowerCase() !== 'pending') return false;
-  if (filters.workflowStatus && String(filters.workflowStatus).trim().toLowerCase() !== 'submitted') return false;
-  if (filters.priority && String(filters.priority).trim().toLowerCase() !== 'medium') return false;
-  if (filters.q) {
-    const needle = String(filters.q || '').trim().toLowerCase();
-    const haystack = [
-      quote.quoteRef,
-      quote.referenceCode,
-      quote.projectType,
-      quote.location,
-      quote.postcode,
-      quote.client?.name,
-      quote.client?.email,
-      quote.guestName,
-      quote.guestEmail,
-      quote.budgetRange,
-      quote.description
-    ].filter(Boolean).join(' ').toLowerCase();
-    if (!haystack.includes(needle)) return false;
-  }
-  return true;
-};
+const newQuoteIncludeClient = getNewQuoteIncludeClient(User);
+const hasNewQuoteStore = (method = 'findAll') => hasNewQuoteStoreForModel(NewQuote, method);
+const loadStagedNewQuote = async (id) => loadStagedNewQuoteForModel(NewQuote, newQuoteIncludeClient, id);
+const canAccessNewQuote = (newQuote, user) => canAccessStagedNewQuote(newQuote, user);
 
 const loadQuote = async (id) => {
   const quote = await Quote.findByPk(id, {

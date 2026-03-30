@@ -206,6 +206,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [x] Surface quote photo thumbnails directly inside the manager quote review panel for both staged `new_quotes` and legacy quotes, instead of only showing photo counts or requiring blind open-in-new-tab review.
 - [x] Deduplicate staged `new_quotes` accept/reject workflow between `/api/v2/new-quotes` and legacy manager quote review so project conversion, attachment carry-over, lifecycle updates, notifications and cleanup run through one shared service path.
 - [x] Wrap staged `new_quotes` create/accept/reject database writes in transactions so project conversion, lifecycle updates, notifications and activity rows no longer leave partial state on failure.
+- [x] Deduplicate staged quote review helper logic across `/api/v2/quotes`, `/api/v2/new-quotes` and legacy manager review so include/access/filter/attachment-summary logic stops drifting between those routes.
 - [x] Consider surfacing deferred file cleanup queue health in ops/admin tooling once enough live data exists to judge whether retries are accumulating or staying near zero.
 
 - [ ] If deferred cleanup retries ever start accumulating on live, add a dedicated admin/ops view with per-job detail, threshold alerting and manual retry/clear actions instead of relying only on overview counters.
