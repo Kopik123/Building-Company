@@ -11,7 +11,7 @@ const router = express.Router();
 
 const createPublicToken = () => crypto.randomBytes(16).toString('hex');
 const createClaimToken = () => crypto.randomBytes(24).toString('hex');
-const createClaimCode = () => String(Math.floor(100000 + Math.random() * 900000));
+const createClaimCode = () => String(crypto.randomInt(100000, 1000000));
 const createClaimCodeHash = (value) => crypto.createHash('sha256').update(value).digest('hex');
 const CLAIM_MAX_ATTEMPTS = 5;
 let cachedClaimEmailTransporter;
