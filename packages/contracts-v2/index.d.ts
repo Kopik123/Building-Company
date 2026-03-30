@@ -322,6 +322,7 @@ export interface OverviewMetricsSummary {
   clientCount: number;
   staffCount: number;
   lowStockMaterialCount: number;
+  deferredCleanupJobCount: number;
   publicServiceCount: number;
 }
 

@@ -69,6 +69,7 @@ test('web-v2 overview uses the aggregated overview contract for workspace summar
             clientCount: 5,
             staffCount: 2,
             lowStockMaterialCount: 1,
+            deferredCleanupJobCount: 2,
             publicServiceCount: 0
           },
           projects: [
@@ -325,6 +326,7 @@ test('web-v2 overview uses the aggregated overview contract for workspace summar
   await expect(page.getByRole('heading', { name: 'Manager Workspace overview' })).toBeVisible();
   await expect(page.locator('.metrics-grid')).toContainText('Projects');
   await expect(page.locator('.metrics-grid')).toContainText('Low stock');
+  await expect(page.locator('.metrics-grid')).toContainText('Cleanup queue');
   await expect(page.locator('.quick-link-grid').first()).toContainText('2 open');
   await expect(page.locator('.quick-link-grid').first()).toContainText('1 flagged');
   await expect(page.locator('.grid-two').first()).toContainText('Prestige Kitchen');

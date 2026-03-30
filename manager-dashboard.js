@@ -41,6 +41,7 @@
     managerOverviewUnreadInbox: document.getElementById('manager-overview-unread-inbox'),
     managerOverviewLowStock: document.getElementById('manager-overview-low-stock'),
     managerOverviewCrmOpen: document.getElementById('manager-overview-crm-open'),
+    managerOverviewCleanupJobs: document.getElementById('manager-overview-cleanup-jobs'),
     managerOverviewDueList: document.getElementById('manager-overview-due-list'),
     managerOverviewPriorityList: document.getElementById('manager-overview-priority-list'),
     projectCreateForm: document.getElementById('project-create-form'),

@@ -431,6 +431,7 @@ const overviewMetricsSchema = z.object({
   clientCount: z.number(),
   staffCount: z.number(),
   lowStockMaterialCount: z.number(),
+  deferredCleanupJobCount: z.number(),
   publicServiceCount: z.number()
 });
 
@@ -793,6 +794,7 @@ const normalizeOverviewSummary = (value) => {
       clientCount: toNullableNumber(metrics.clientCount) ?? 0,
       staffCount: toNullableNumber(metrics.staffCount) ?? 0,
       lowStockMaterialCount: toNullableNumber(metrics.lowStockMaterialCount) ?? 0,
+      deferredCleanupJobCount: toNullableNumber(metrics.deferredCleanupJobCount) ?? 0,
       publicServiceCount: toNullableNumber(metrics.publicServiceCount) ?? 0
     },
     projects: toArray(plain.projects).map(normalizeProjectSummary),

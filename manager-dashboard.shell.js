@@ -316,6 +316,7 @@
       if (el.managerOverviewUnreadInbox) el.managerOverviewUnreadInbox.textContent = String(unreadInboxCount);
       if (el.managerOverviewLowStock) el.managerOverviewLowStock.textContent = String(metrics.lowStockMaterialCount || 0);
       if (el.managerOverviewCrmOpen) el.managerOverviewCrmOpen.textContent = String(crmOpenCount);
+      if (el.managerOverviewCleanupJobs) el.managerOverviewCleanupJobs.textContent = String(metrics.deferredCleanupJobCount || 0);
 
       const dueProjects = [...(summary?.projects || state.projects || [])]
         .filter((project) => project?.dueDate || project?.endDate)
@@ -362,6 +363,14 @@
           ].filter(Boolean).join(' | ')
         }));
 
+      const cleanupQueueItems = Number(metrics.deferredCleanupJobCount || 0) > 0
+        ? [{
+          title: `${metrics.deferredCleanupJobCount} cleanup retry job${Number(metrics.deferredCleanupJobCount) === 1 ? '' : 's'} waiting`,
+          detail: 'Deferred quote-file cleanup still has work queued after reject cleanup.',
+          meta: 'Ops follow-up | Deferred cleanup worker'
+        }]
+        : [];
+
       const notificationItems = [...(summary?.notifications || [])]
         .slice(0, 2)
         .map((notification) => ({
@@ -377,7 +386,7 @@
       );
       renderOverviewList(
         el.managerOverviewPriorityList,
-        [...priorityQuotes, ...lowStockItems, ...notificationItems].slice(0, 4),
+        [...cleanupQueueItems, ...priorityQuotes, ...lowStockItems, ...notificationItems].slice(0, 4),
         'Projects, estimates and CRM routes needing action will appear here.'
       );
     };

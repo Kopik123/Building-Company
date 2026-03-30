@@ -181,6 +181,7 @@ const mockClientSession = async (page) => {
             clientCount: 3,
             staffCount: 2,
             lowStockMaterialCount: 1,
+            deferredCleanupJobCount: 0,
             publicServiceCount: 0
           },
           projects: [{

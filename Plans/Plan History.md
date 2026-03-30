@@ -71,3 +71,4 @@
 - 2026-03-30 00:20 | Staged New Quote Workflow Deduplication Wave 33 | Plans/Staged New Quote Workflow Deduplication Wave 33.md
 - 2026-03-30 00:37 | Staged New Quote Transaction Safety Wave 34 | Plans/Staged New Quote Transaction Safety Wave 34.md
 - 2026-03-30 00:55 | Deferred Staged Quote Attachment Cleanup Wave 35 | Plans/Deferred Staged Quote Attachment Cleanup Wave 35.md
+- 2026-03-30 01:14 | Deferred Cleanup Queue Health Overview Wave 36 | Plans/Deferred Cleanup Queue Health Overview Wave 36.md

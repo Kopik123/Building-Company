@@ -50,6 +50,7 @@ const createEmptyOverviewSummary = () => ({
     clientCount: 0,
     staffCount: 0,
     lowStockMaterialCount: 0,
+    deferredCleanupJobCount: 0,
     publicServiceCount: 0
   },
   projects: [],

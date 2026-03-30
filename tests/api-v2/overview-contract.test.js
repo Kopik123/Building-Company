@@ -543,6 +543,11 @@ const createOverviewStubs = () => {
           return services.slice(0, limit || services.length);
         }
       },
+      DeferredFileCleanupJob: {
+        async count() {
+          return 2;
+        }
+      },
       User: {
         async findByPk(id) {
           return users[id] || null;
@@ -640,6 +645,7 @@ test('overview v2 aggregates manager workspace metrics and recent records into o
   assert.equal(overview.metrics.clientCount, 2);
   assert.equal(overview.metrics.staffCount, 2);
   assert.equal(overview.metrics.lowStockMaterialCount, 1);
+  assert.equal(overview.metrics.deferredCleanupJobCount, 2);
   assert.equal(overview.projects[0].imageCount, 2);
   assert.equal(overview.quotes[0].attachmentCount, 1);
   assert.equal(overview.lowStockMaterials.length, 1);
@@ -695,6 +701,7 @@ test('overview v2 keeps client payloads scoped to the current customer and expos
   assert.equal(overview.metrics.clientCount, 0);
   assert.equal(overview.metrics.staffCount, 0);
   assert.equal(overview.metrics.lowStockMaterialCount, 0);
+  assert.equal(overview.metrics.deferredCleanupJobCount, 0);
   assert.equal(overview.metrics.publicServiceCount, 2);
   assert.equal(overview.projects.length, 1);
   assert.equal(overview.quotes.length, 2);

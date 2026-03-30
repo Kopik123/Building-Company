@@ -15,6 +15,7 @@ const {
   NewQuote,
   QuoteAttachment,
   ServiceOffering,
+  DeferredFileCleanupJob,
   User
 } = require('../../../models');
 const asyncHandler = require('../../../utils/asyncHandler');
@@ -219,7 +220,8 @@ router.get(
       clientCount,
       staffCount,
       materials,
-      publicServices
+      publicServices,
+      deferredCleanupJobCount
     ] = await Promise.all([
       Project.findAll({
         where: projectWhere,
@@ -291,7 +293,10 @@ router.get(
           order: [['displayOrder', 'ASC'], ['createdAt', 'ASC']],
           limit: 4
         })
-        : Promise.resolve([])
+        : Promise.resolve([]),
+      staffMode && typeof DeferredFileCleanupJob?.count === 'function'
+        ? DeferredFileCleanupJob.count()
+        : Promise.resolve(0)
     ]);
 
     const mediaCountByProjectId = await buildProjectMediaCountMap(recentProjects.map((project) => project.id));
@@ -338,6 +343,7 @@ router.get(
           clientCount: staffMode ? clientCount : 0,
           staffCount: staffMode ? staffCount : 0,
           lowStockMaterialCount: staffMode ? lowStockMaterials.length : 0,
+          deferredCleanupJobCount: staffMode ? Number(deferredCleanupJobCount || 0) : 0,
           publicServiceCount: staffMode ? 0 : publicServices.length
         },
         projects: recentProjects.map((project) => projectDto(project, mediaCountByProjectId)),

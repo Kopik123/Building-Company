@@ -178,6 +178,9 @@ function OverviewPage() {
         ) : (
           <MetricCard label="Service routes" value={metrics.publicServiceCount} detail="Current brochure catalogue contract" />
         )}
+        {staffMode ? (
+          <MetricCard label="Cleanup queue" value={metrics.deferredCleanupJobCount} detail="Deferred quote-file cleanup retry jobs waiting to run" tone={metrics.deferredCleanupJobCount ? 'danger' : 'neutral'} />
+        ) : null}
       </div>
 
       <div className="grid-two">
