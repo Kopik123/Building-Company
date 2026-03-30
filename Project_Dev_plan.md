@@ -3,7 +3,8 @@
 ## 2026-03-30 (execution pass)
 
 - Executed 21 out of 49 items from the full project analysis (`copilot_todos.md`).
-- Fixed `safeCompare()` timing leak in `routes/auth.js` – now uses HMAC-SHA256 for constant-time comparison regardless of input lengths.
+- Cleaned up the latest Sonar findings in `routes/auth.js`, `routes/manager/project-routes.js` and `routes/manager/quote-routes.js` by removing the hard-coded HMAC key pattern, simplifying `undefined` comparisons, reducing media-handler complexity and using optional chaining for the quote accept flow.
+- Fixed `safeCompare()` timing leak in `routes/auth.js` – now uses SHA-256 digests to normalise both inputs before constant-time comparison regardless of input lengths.
 - Fixed `createClaimCode()` in `routes/quotes.js` to use `crypto.randomInt()` instead of `Math.random()` for cryptographically secure OTP codes.
 - Removed unused `cookie-parser` dependency from `package.json`.
 - Fixed font-family declarations in `styles/base.css`: replaced `Inter` → `Montserrat` and `Playfair Display` → `Cormorant Garamond` to match the fonts actually loaded in HTML.

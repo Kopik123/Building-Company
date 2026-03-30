@@ -9,6 +9,64 @@ const {
 const hasOwn = (source, key) => Object.hasOwn(source, key);
 const toTrimmedOrNull = (value) => String(value || '').trim() || null;
 const toIntegerOrZero = (value) => Number.parseInt(value, 10) || 0;
+const resolveUploadedMediaType = (file, forcedType) =>
+  forcedType || (String(file.mimetype || '').startsWith('image/') ? 'image' : 'document');
+
+const buildProjectMediaUploadRecords = ({
+  project,
+  files,
+  forcedType,
+  showInGallery,
+  galleryOrderStart,
+  caption,
+  markFirstAsCover,
+  normalizeStoragePath
+}) =>
+  files.map((file, index) => {
+    const mediaType = resolveUploadedMediaType(file, forcedType);
+
+    return {
+      projectId: project.id,
+      mediaType,
+      url: `/uploads/${file.filename}`,
+      storagePath: normalizeStoragePath(file.path),
+      filename: file.originalname,
+      mimeType: file.mimetype || null,
+      sizeBytes: Number.isFinite(file.size) ? file.size : null,
+      caption,
+      showInGallery: mediaType === 'image' ? showInGallery : false,
+      galleryOrder: galleryOrderStart + index,
+      isCover: mediaType === 'image' ? markFirstAsCover && index === 0 : false
+    };
+  });
+
+const buildProjectMediaPatchPayload = ({ body, media, parseBoolean }) => {
+  const payload = {};
+
+  if (body.caption !== undefined) payload.caption = String(body.caption || '').trim() || null;
+  if (body.galleryOrder !== undefined) payload.galleryOrder = Number.parseInt(body.galleryOrder, 10) || 0;
+
+  if (body.showInGallery !== undefined) {
+    const requested = parseBoolean(body.showInGallery, false);
+    if (media.mediaType !== 'image' && requested) {
+      throw new Error('Only image files can be shown in gallery');
+    }
+    payload.showInGallery = media.mediaType === 'image' ? requested : false;
+  }
+
+  if (body.isCover !== undefined) {
+    const requestedCover = parseBoolean(body.isCover, false);
+    if (media.mediaType !== 'image' && requestedCover) {
+      throw new Error('Only image files can be cover media');
+    }
+    payload.isCover = media.mediaType === 'image' ? requestedCover : false;
+    if (requestedCover) {
+      payload.showInGallery = true;
+    }
+  }
+
+  return payload;
+};
 
 const createProjectWriteValidators = ({ body, PROJECT_STATUSES, partial = false }) => {
   const titleValidator = partial
@@ -44,7 +102,7 @@ const createProjectInclude = ({ ProjectMedia, User, Quote, includeMedia = false 
 const buildProjectPayload = (source, { partial, parseBoolean }) => {
   const payload = {};
   const assign = (key, value) => {
-    if ((!partial || hasOwn(source, key)) && typeof value !== 'undefined') {
+    if ((!partial || hasOwn(source, key)) && value !== undefined) {
       payload[key] = value;
     }
   };
@@ -153,7 +211,7 @@ module.exports = function createProjectRoutes({
     withValidation(async (req, res) => {
       const where = {};
       if (req.query.status) where.status = req.query.status;
-      if (typeof req.query.showInGallery !== 'undefined') {
+      if (req.query.showInGallery !== undefined) {
         where.showInGallery = parseBoolean(req.query.showInGallery);
       }
       if (req.query.clientEmail) {
@@ -340,27 +398,16 @@ module.exports = function createProjectRoutes({
         await ProjectMedia.update({ isCover: false }, { where: { projectId: project.id, mediaType: 'image' } });
       }
 
-      const records = [];
-      for (let index = 0; index < files.length; index += 1) {
-        const file = files[index];
-        const mediaType = forcedType || (String(file.mimetype || '').startsWith('image/') ? 'image' : 'document');
-        const shouldShowInGallery = mediaType === 'image' ? showInGallery : false;
-        const isCover = mediaType === 'image' ? markFirstAsCover && index === 0 : false;
-
-        records.push({
-          projectId: project.id,
-          mediaType,
-          url: `/uploads/${file.filename}`,
-          storagePath: normalizeStoragePath(file.path),
-          filename: file.originalname,
-          mimeType: file.mimetype || null,
-          sizeBytes: Number.isFinite(file.size) ? file.size : null,
-          caption,
-          showInGallery: shouldShowInGallery,
-          galleryOrder: galleryOrderStart + index,
-          isCover
-        });
-      }
+      const records = buildProjectMediaUploadRecords({
+        project,
+        files,
+        forcedType,
+        showInGallery,
+        galleryOrderStart,
+        caption,
+        markFirstAsCover,
+        normalizeStoragePath
+      });
 
       const created = await ProjectMedia.bulkCreate(records, { returning: true });
       clearGalleryCache();
@@ -388,31 +435,18 @@ module.exports = function createProjectRoutes({
       );
       if (!media) return;
 
-      const payload = {};
-      if (typeof req.body.caption !== 'undefined') payload.caption = String(req.body.caption || '').trim() || null;
-      if (typeof req.body.galleryOrder !== 'undefined') payload.galleryOrder = Number.parseInt(req.body.galleryOrder, 10) || 0;
-
-      if (typeof req.body.showInGallery !== 'undefined') {
-        const requested = parseBoolean(req.body.showInGallery, false);
-        if (media.mediaType !== 'image' && requested) {
-          return res.status(400).json({ error: 'Only image files can be shown in gallery' });
-        }
-        payload.showInGallery = media.mediaType === 'image' ? requested : false;
+      let payload;
+      try {
+        payload = buildProjectMediaPatchPayload({ body: req.body, media, parseBoolean });
+      } catch (error) {
+        return res.status(400).json({ error: error.message });
       }
 
-      if (typeof req.body.isCover !== 'undefined') {
-        const requestedCover = parseBoolean(req.body.isCover, false);
-        if (media.mediaType !== 'image' && requestedCover) {
-          return res.status(400).json({ error: 'Only image files can be cover media' });
-        }
-        payload.isCover = media.mediaType === 'image' ? requestedCover : false;
-        if (requestedCover) {
-          payload.showInGallery = true;
-          await ProjectMedia.update(
-            { isCover: false },
-            { where: { projectId: media.projectId, mediaType: 'image', id: { [Op.ne]: media.id } } }
-          );
-        }
+      if (req.body.isCover !== undefined && payload.isCover) {
+        await ProjectMedia.update(
+          { isCover: false },
+          { where: { projectId: media.projectId, mediaType: 'image', id: { [Op.ne]: media.id } } }
+        );
       }
 
       if (!Object.keys(payload).length) {

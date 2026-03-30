@@ -49,7 +49,7 @@ module.exports = function createQuoteRoutes({
       });
 
       // Create a group chat for this project
-      const projectName = `${quote.projectType} - ${quote.guestName || (quote.client && quote.client.name) || 'Project'} (${quote.postcode || quote.location})`;
+      const projectName = `${quote.projectType} - ${quote.guestName || quote.client?.name || 'Project'} (${quote.postcode || quote.location})`;
 
       const groupThread = await GroupThread.create({
         name: projectName,
@@ -167,8 +167,8 @@ module.exports = function createQuoteRoutes({
       if (!quote) return;
 
       const payload = {};
-      if (typeof req.body.status !== 'undefined') payload.status = req.body.status;
-      if (typeof req.body.priority !== 'undefined') payload.priority = req.body.priority;
+      if (req.body.status !== undefined) payload.status = req.body.status;
+      if (req.body.priority !== undefined) payload.priority = req.body.priority;
 
       if (!Object.keys(payload).length) {
         return res.status(400).json({ error: 'No changes provided' });

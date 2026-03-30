@@ -18,16 +18,13 @@ const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
 
 const bootstrapLockPath = path.join(__dirname, '..', '.bootstrap.lock');
 
-// HMAC is used solely to normalise both inputs to equal-length (32-byte)
+// SHA-256 is used solely to normalise both inputs to equal-length (32-byte)
 // buffers so timingSafeEqual never short-circuits on length differences.
-// The static key does not need to be secret – it prevents timing leaks,
-// not brute-force attacks.
 const safeCompare = (left, right) => {
-  const key = 'safeCompare';
-  const leftHmac = crypto.createHmac('sha256', key).update(String(left || '')).digest();
-  const rightHmac = crypto.createHmac('sha256', key).update(String(right || '')).digest();
+  const leftHash = crypto.createHash('sha256').update(String(left || '')).digest();
+  const rightHash = crypto.createHash('sha256').update(String(right || '')).digest();
 
-  return crypto.timingSafeEqual(leftHmac, rightHmac);
+  return crypto.timingSafeEqual(leftHash, rightHash);
 };
 
 const isBootstrapLocked = () => fs.existsSync(bootstrapLockPath);
