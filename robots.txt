@@ -1,4 +1,10 @@
 User-agent: *
 Allow: /
 
+Disallow: /api/
+Disallow: /uploads/
+Disallow: /client-dashboard.html
+Disallow: /manager-dashboard.html
+Disallow: /auth.html
+
 Sitemap: https://levellines.co.uk/sitemap.xml

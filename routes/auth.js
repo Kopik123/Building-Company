@@ -225,9 +225,12 @@ router.post(
       return res.status(400).json({ error: 'New bootstrap key must be different' });
     }
 
+    // WARNING: This only mutates the in-memory process.env. The key reverts
+    // to its original value after a server restart. For persistent rotation,
+    // update the .env file or environment variable source and restart.
     process.env.BOOTSTRAP_ADMIN_KEY = String(newBootstrapKey);
 
-    return res.json({ message: 'Bootstrap admin key rotated successfully' });
+    return res.json({ message: 'Bootstrap admin key rotated successfully (in-memory only – update .env for persistence)' });
   })
 );
 
