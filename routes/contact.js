@@ -1,5 +1,5 @@
 const express = require('express');
-const nodemailer = require('nodemailer');
+const { getTransporter } = require('../utils/mailer');
 
 const escapeHtml = (value) =>
   String(value)
@@ -11,31 +11,6 @@ const escapeHtml = (value) =>
 
 const createContactRouter = () => {
   const router = express.Router();
-  let cachedContactTransporter;
-
-  const getContactTransporter = () => {
-    if (!cachedContactTransporter) {
-      const smtpUser = String(process.env.SMTP_USER || '').trim();
-      const smtpPass = String(process.env.SMTP_PASS || '').trim();
-      const transporterConfig = {
-        host: process.env.SMTP_HOST,
-        port: Number(process.env.SMTP_PORT) || 587,
-        secure: process.env.SMTP_SECURE === 'true',
-        pool: true
-      };
-
-      if (smtpUser && smtpPass) {
-        transporterConfig.auth = {
-          user: smtpUser,
-          pass: smtpPass
-        };
-      }
-
-      cachedContactTransporter = nodemailer.createTransport(transporterConfig);
-    }
-
-    return cachedContactTransporter;
-  };
 
   router.post('/', async (req, res, next) => {
     try {
@@ -68,7 +43,7 @@ const createContactRouter = () => {
         return res.status(503).json({ error: 'SMTP auth config is incomplete. Set both SMTP_USER and SMTP_PASS.' });
       }
 
-      const transporter = getContactTransporter();
+      const transporter = getTransporter();
 
       await transporter.sendMail({
         from: `Building Company <${process.env.CONTACT_FROM || process.env.SMTP_USER}>`,

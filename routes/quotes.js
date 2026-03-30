@@ -1,11 +1,11 @@
 const crypto = require('crypto');
 const express = require('express');
-const nodemailer = require('nodemailer');
 const { Op } = require('sequelize');
 const { body, validationResult, param } = require('express-validator');
 const { Quote, QuoteClaimToken, User, Notification } = require('../models');
 const { auth } = require('../middleware/auth');
 const asyncHandler = require('../utils/asyncHandler');
+const { getTransporter } = require('../utils/mailer');
 
 const router = express.Router();
 
@@ -14,34 +14,9 @@ const createClaimToken = () => crypto.randomBytes(24).toString('hex');
 const createClaimCode = () => String(crypto.randomInt(100000, 1000000));
 const createClaimCodeHash = (value) => crypto.createHash('sha256').update(value).digest('hex');
 const CLAIM_MAX_ATTEMPTS = 5;
-let cachedClaimEmailTransporter;
 
 const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
 const normalizePhone = (value) => String(value || '').trim();
-
-const getClaimEmailTransporter = () => {
-  if (!cachedClaimEmailTransporter) {
-    const smtpUser = String(process.env.SMTP_USER || '').trim();
-    const smtpPass = String(process.env.SMTP_PASS || '').trim();
-    const transporterConfig = {
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT) || 587,
-      secure: process.env.SMTP_SECURE === 'true',
-      pool: true
-    };
-
-    if (smtpUser && smtpPass) {
-      transporterConfig.auth = {
-        user: smtpUser,
-        pass: smtpPass
-      };
-    }
-
-    cachedClaimEmailTransporter = nodemailer.createTransport(transporterConfig);
-  }
-
-  return cachedClaimEmailTransporter;
-};
 
 const sendClaimCodeByEmail = async (email, code) => {
   const smtpUser = String(process.env.SMTP_USER || '').trim();
@@ -59,7 +34,7 @@ const sendClaimCodeByEmail = async (email, code) => {
     throw err;
   }
 
-  const transporter = getClaimEmailTransporter();
+  const transporter = getTransporter();
 
   await transporter.sendMail({
     from: `Building Company <${process.env.CONTACT_FROM}>`,
