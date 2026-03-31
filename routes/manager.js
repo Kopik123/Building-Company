@@ -8,6 +8,7 @@ const {
   User,
   GroupThread,
   GroupMember,
+  InboxThread,
   Notification,
   Project,
   ProjectMedia,
@@ -21,6 +22,12 @@ const { auth, roleCheck } = require('../middleware/auth');
 const asyncHandler = require('../utils/asyncHandler');
 const { upload } = require('../utils/upload');
 const { clearServicesCache, clearGalleryCache } = require('../utils/publicCache');
+const {
+  QUOTE_WORKFLOW_STATUSES,
+  QUOTE_VISIT_STATUSES,
+  QUOTE_CLIENT_DECISION_STATUSES,
+  deriveLegacyQuoteStatus
+} = require('../utils/quoteWorkflow');
 const createStaffSearchSeedRoutes = require('./manager/staff-search-seed');
 const createCatalogRoutes = require('./manager/catalog-routes');
 const createEstimateRoutes = require('./manager/estimate-routes');
@@ -519,7 +526,9 @@ router.use(createQuoteRoutes({
   User,
   GroupThread,
   GroupMember,
+  InboxThread,
   Notification,
+  Project,
   Op,
   fn,
   col,
@@ -527,7 +536,11 @@ router.use(createQuoteRoutes({
   MAX_PAGE_SIZE,
   getPagination,
   paginationDto,
-  escapeLike
+  escapeLike,
+  QUOTE_WORKFLOW_STATUSES,
+  QUOTE_VISIT_STATUSES,
+  QUOTE_CLIENT_DECISION_STATUSES,
+  deriveLegacyQuoteStatus
 }));
 
 router.use(createProjectRoutes({

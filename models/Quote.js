@@ -78,6 +78,57 @@ const Quote = sequelize.define('Quote', {
     type: DataTypes.ENUM('low', 'medium', 'high'),
     allowNull: false,
     defaultValue: 'medium'
+  },
+  workflowStatus: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    defaultValue: 'new'
+  },
+  siteVisitStatus: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    defaultValue: 'not_scheduled'
+  },
+  siteVisitDate: {
+    type: DataTypes.DATEONLY,
+    allowNull: true
+  },
+  siteVisitTimeWindow: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  proposedStartDate: {
+    type: DataTypes.DATEONLY,
+    allowNull: true
+  },
+  scopeOfWork: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  materialsPlan: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  labourEstimate: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  estimateDocumentUrl: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  clientDecisionStatus: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    defaultValue: 'pending'
+  },
+  clientDecisionNotes: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  archivedAt: {
+    type: DataTypes.DATE,
+    allowNull: true
   }
 });
 

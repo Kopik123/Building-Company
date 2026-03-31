@@ -96,6 +96,16 @@
 
     return item;
   });
+  const createControlField = (labelText, control) => {
+    const field = document.createElement('label');
+    field.className = 'dashboard-control-field';
+    const label = document.createElement('span');
+    label.className = 'dashboard-control-label';
+    label.textContent = labelText;
+    field.appendChild(label);
+    field.appendChild(control);
+    return field;
+  };
   const renderMailboxPreviewList = runtime.renderMailboxPreviewList || ((node, items, { loaded, loadingText, emptyText, mapItem }) => {
     node.innerHTML = '';
 
@@ -231,9 +241,81 @@
 
     const frag = document.createDocumentFragment();
     state.quotes.forEach((quote) => {
+      const workflowStatus = quote.workflowStatus || 'new';
+      const visitDetail = quote.siteVisitDate
+        ? `${quote.siteVisitDate}${quote.siteVisitTimeWindow ? ` (${quote.siteVisitTimeWindow})` : ''}`
+        : 'Awaiting manager proposal';
+      const startDetail = quote.proposedStartDate || 'Pending';
+      const decisionStatus = quote.clientDecisionStatus || 'pending';
       const card = document.createElement('article');
       card.className = 'dashboard-item';
-      card.innerHTML = `<h3>${escapeHtml(quote.projectType)}</h3><p class="muted">${escapeHtml(quote.status)} | Priority ${escapeHtml(quote.priority)} | ${escapeHtml(quote.location || '-')}</p><p>${escapeHtml(quote.description || '')}</p>`;
+      card.innerHTML = `<h3>${escapeHtml(quote.projectType)}</h3><p class="muted">${escapeHtml(quote.status)} | Priority ${escapeHtml(quote.priority)} | ${escapeHtml(quote.location || '-')}</p><p class="muted">Workflow: ${escapeHtml(workflowStatus)} | Visit: ${escapeHtml(visitDetail)} | Proposed start: ${escapeHtml(startDetail)} | Your decision: ${escapeHtml(decisionStatus)}</p><p>${escapeHtml(quote.description || '')}</p>`;
+
+      const form = document.createElement('div');
+      form.className = 'dashboard-edit-grid dashboard-edit-grid--wide';
+      const visitDateInput = document.createElement('input');
+      visitDateInput.type = 'date';
+      visitDateInput.value = toDateInputValue(quote.siteVisitDate);
+      const visitWindowInput = document.createElement('input');
+      visitWindowInput.type = 'text';
+      visitWindowInput.placeholder = 'Preferred time window';
+      visitWindowInput.value = quote.siteVisitTimeWindow || '';
+      const decisionSelect = document.createElement('select');
+      [
+        { value: '', label: 'Keep current decision' },
+        { value: 'accepted', label: 'Accept quote' },
+        { value: 'rejected', label: 'Reject quote' },
+        { value: 'request_edit', label: 'Request changes' }
+      ].forEach((item) => {
+        const option = document.createElement('option');
+        option.value = item.value;
+        option.textContent = item.label;
+        decisionSelect.appendChild(option);
+      });
+      const notesInput = document.createElement('textarea');
+      notesInput.rows = 3;
+      notesInput.placeholder = 'Message for your manager (optional)';
+      notesInput.value = quote.clientDecisionNotes || '';
+      const saveBtn = document.createElement('button');
+      saveBtn.type = 'button';
+      saveBtn.className = 'btn btn-outline';
+      saveBtn.textContent = 'Send update';
+      saveBtn.addEventListener('click', async () => {
+        try {
+          const payload = {};
+          const visitDateValue = visitDateInput.value || null;
+          const visitWindowValue = visitWindowInput.value.trim() || null;
+          const notesValue = notesInput.value.trim() || null;
+          if (visitDateValue !== (quote.siteVisitDate || null)) payload.siteVisitDate = visitDateValue;
+          if (visitWindowValue !== (quote.siteVisitTimeWindow || null)) payload.siteVisitTimeWindow = visitWindowValue;
+          if (decisionSelect.value) payload.clientDecisionStatus = decisionSelect.value;
+          if (notesValue !== (quote.clientDecisionNotes || null)) payload.clientDecisionNotes = notesValue;
+          if (!Object.keys(payload).length) {
+            window.alert('Add a decision or a preferred visit change first.');
+            return;
+          }
+          await api(`/api/client/quotes/${quote.id}/workflow`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          await loadOverview();
+        } catch (error) {
+          window.alert(error.message || 'Failed to update quote workflow');
+        }
+      });
+
+      form.appendChild(createOverviewEntry({
+        title: 'Visit change request',
+        detail: 'Suggest another day or time window if the current visit plan does not work for you.',
+        meta: ''
+      }));
+      form.appendChild(createControlField('Preferred visit date', visitDateInput));
+      form.appendChild(createControlField('Preferred visit time', visitWindowInput));
+      form.appendChild(createControlField('Decision', decisionSelect));
+      form.appendChild(createControlField('Notes', notesInput));
+      form.appendChild(saveBtn);
+      card.appendChild(form);
       frag.appendChild(card);
     });
     el.quotesList.appendChild(frag);

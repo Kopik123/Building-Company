@@ -4,6 +4,7 @@ const test = require('node:test');
 const baselineHardening = require('../../migrations/202603080001-production-baseline-hardening.js');
 const sessionDeviceHardening = require('../../migrations/202603080002-v2-session-device-and-email-hardening.js');
 const performanceSearch = require('../../migrations/202603090000-performance-search-trgm-indexes.js');
+const quoteWorkflowPhase1 = require('../../migrations/202603310001-quote-workflow-phase1.js');
 
 const createQueryInterfaceStub = (tables) => {
   const queries = [];
@@ -177,6 +178,61 @@ test('session/device hardening migration creates missing tables when Sequelize s
   );
   assert.equal(
     queries.includes('CREATE UNIQUE INDEX IF NOT EXISTS users_email_lower_unique_idx ON "Users" (LOWER("email"))'),
+    true
+  );
+});
+
+test('quote workflow phase-1 migration adds workflow columns and indexes when Quotes already exists', async () => {
+  const tables = {
+    Quotes: {
+      id: {},
+      status: {},
+      priority: {},
+      assignedManagerId: {},
+      createdAt: {},
+      updatedAt: {}
+    }
+  };
+  const addedIndexes = [];
+
+  const queryInterface = {
+    async describeTable(tableName) {
+      const table = tables[tableName];
+      if (table) return table;
+      throw new Error(`relation "${tableName}" does not exist`);
+    },
+    async addColumn(tableName, columnName, definition) {
+      tables[tableName] = tables[tableName] || {};
+      tables[tableName][columnName] = definition;
+    },
+    async showIndex() {
+      return [];
+    },
+    async addIndex(tableName, fields, options) {
+      addedIndexes.push({ tableName, fields, options });
+    }
+  };
+
+  await assert.doesNotReject(() =>
+    quoteWorkflowPhase1.up(queryInterface, {
+      DataTypes: {
+        STRING: 'STRING',
+        TEXT: 'TEXT',
+        DATE: 'DATE',
+        DATEONLY: 'DATEONLY'
+      }
+    })
+  );
+
+  assert.equal(Boolean(tables.Quotes.workflowStatus), true);
+  assert.equal(Boolean(tables.Quotes.siteVisitDate), true);
+  assert.equal(Boolean(tables.Quotes.clientDecisionStatus), true);
+  assert.equal(
+    addedIndexes.some((item) => item.options.name === 'quotes_workflow_status_created_idx'),
+    true
+  );
+  assert.equal(
+    addedIndexes.some((item) => item.options.name === 'quotes_client_decision_idx'),
     true
   );
 });

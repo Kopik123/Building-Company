@@ -1,5 +1,10 @@
 # Project Dev Plan
 
+## 2026-03-31 (quote workflow phase-1 start)
+
+- Saved `Plans/Quote Workflow, Visit Scheduling And Client Manager Coordination.md` and registered it in `Plans/Plan History.md` as the active execution plan for expanding the quote lifecycle.
+- Recorded the new follow-up checklist in `Project_todos.md`, including the phase-1 workflow workstream and the current local API-test dependency blocker (`supertest` missing in the sandbox runtime before implementation).
+
 ## 2026-03-30 (execution pass)
 
 - Executed 21 out of 49 items from the full project analysis (`copilot_todos.md`).

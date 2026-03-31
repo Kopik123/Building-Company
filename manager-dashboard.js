@@ -761,11 +761,17 @@
     const frag = document.createDocumentFragment();
     state.quotes.forEach((quote) => {
       const owner = quote.guestName || quote.client?.name || quote.client?.email || 'Unknown client';
+      const workflowStatus = quote.workflowStatus || 'new';
+      const visitDetail = quote.siteVisitDate
+        ? `${quote.siteVisitDate}${quote.siteVisitTimeWindow ? ` (${quote.siteVisitTimeWindow})` : ''}`
+        : 'Not planned';
+      const proposedStart = quote.proposedStartDate || 'Not proposed';
+      const clientDecision = quote.clientDecisionStatus || 'pending';
       const card = document.createElement('article');
       card.className = 'dashboard-item';
-      card.innerHTML = `<h3>${escapeHtml(quote.projectType)} | ${escapeHtml(owner)}</h3><p class=\"muted\">${escapeHtml(quote.status)} | priority ${escapeHtml(quote.priority)} | ${escapeHtml(quote.location || '-')} ${escapeHtml(quote.postcode || '')}</p><p>${escapeHtml(quote.description || '')}</p>`;
+      card.innerHTML = `<h3>${escapeHtml(quote.projectType)} | ${escapeHtml(owner)}</h3><p class=\"muted\">${escapeHtml(quote.status)} | priority ${escapeHtml(quote.priority)} | ${escapeHtml(quote.location || '-')} ${escapeHtml(quote.postcode || '')}</p><p class=\"muted\">Workflow: ${escapeHtml(workflowStatus)} | Visit: ${escapeHtml(visitDetail)} | Client decision: ${escapeHtml(clientDecision)} | Proposed start: ${escapeHtml(proposedStart)}</p><p>${escapeHtml(quote.description || '')}</p>`;
       const row = document.createElement('div');
-      row.className = 'dashboard-edit-grid';
+      row.className = 'dashboard-edit-grid dashboard-edit-grid--wide';
       const statusSelect = document.createElement('select');
       ['pending', 'in_progress', 'responded', 'closed'].forEach((value) => {
         const option = document.createElement('option');
@@ -782,10 +788,49 @@
         option.selected = quote.priority === value;
         prioritySelect.appendChild(option);
       });
+      const workflowSelect = document.createElement('select');
+      [
+        'new',
+        'manager_review',
+        'visit_proposed',
+        'visit_reschedule_requested',
+        'visit_confirmed',
+        'first_view',
+        'quote_requested',
+        'client_review',
+        'changes_requested',
+        'accepted',
+        'rejected',
+        'archived'
+      ].forEach((value) => {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = value;
+        option.selected = workflowStatus === value;
+        workflowSelect.appendChild(option);
+      });
+      const visitDateInput = document.createElement('input');
+      visitDateInput.type = 'date';
+      visitDateInput.value = toDateInputValue(quote.siteVisitDate);
+      const visitWindowInput = document.createElement('input');
+      visitWindowInput.type = 'text';
+      visitWindowInput.placeholder = 'AM / PM / 10:00-12:00';
+      visitWindowInput.value = quote.siteVisitTimeWindow || '';
+      const startDateInput = document.createElement('input');
+      startDateInput.type = 'date';
+      startDateInput.value = toDateInputValue(quote.proposedStartDate);
+      const decisionSelect = document.createElement('select');
+      ['pending', 'accepted', 'rejected', 'request_edit'].forEach((value) => {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = value;
+        option.selected = clientDecision === value;
+        decisionSelect.appendChild(option);
+      });
       const saveBtn = document.createElement('button');
       saveBtn.type = 'button';
       saveBtn.className = 'btn btn-gold';
-      saveBtn.textContent = 'Save';
+      saveBtn.textContent = 'Save legacy fields';
       saveBtn.disabled = !canManage;
       saveBtn.addEventListener('click', async () => {
         try {
@@ -799,8 +844,36 @@
           window.alert(error.message || 'Failed to update quote');
         }
       });
+      const workflowSaveBtn = document.createElement('button');
+      workflowSaveBtn.type = 'button';
+      workflowSaveBtn.className = 'btn btn-outline';
+      workflowSaveBtn.textContent = 'Save workflow';
+      workflowSaveBtn.disabled = !canManage;
+      workflowSaveBtn.addEventListener('click', async () => {
+        try {
+          await api(`/api/manager/quotes/${quote.id}/workflow`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              workflowStatus: workflowSelect.value,
+              siteVisitDate: visitDateInput.value || null,
+              siteVisitTimeWindow: visitWindowInput.value.trim() || null,
+              proposedStartDate: startDateInput.value || null,
+              clientDecisionStatus: decisionSelect.value
+            })
+          });
+          await loadQuotes();
+        } catch (error) {
+          window.alert(error.message || 'Failed to update quote workflow');
+        }
+      });
       row.appendChild(createControlField('Status', statusSelect));
       row.appendChild(createControlField('Priority', prioritySelect));
+      row.appendChild(createControlField('Workflow', workflowSelect));
+      row.appendChild(createControlField('Visit date', visitDateInput));
+      row.appendChild(createControlField('Visit window', visitWindowInput));
+      row.appendChild(createControlField('Proposed start', startDateInput));
+      row.appendChild(createControlField('Client decision', decisionSelect));
       let acceptBtn = null;
       if (!quote.assignedManagerId && quote.status === 'pending' && canManage) {
         acceptBtn = document.createElement('button');
@@ -816,7 +889,23 @@
           }
         });
       }
-      row.appendChild(createEditActions([acceptBtn, saveBtn]));
+      let convertBtn = null;
+      if (canManage && (workflowSelect.value === 'accepted' || clientDecision === 'accepted')) {
+        convertBtn = document.createElement('button');
+        convertBtn.type = 'button';
+        convertBtn.className = 'btn btn-outline';
+        convertBtn.textContent = 'Create project';
+        convertBtn.addEventListener('click', async () => {
+          if (!window.confirm('Create a project from this accepted quote?')) return;
+          try {
+            await api(`/api/manager/quotes/${quote.id}/convert-to-project`, { method: 'POST' });
+            await Promise.all([loadQuotes(), loadProjects()]);
+          } catch (error) {
+            window.alert(error.message || 'Failed to create project from quote');
+          }
+        });
+      }
+      row.appendChild(createEditActions([acceptBtn, workflowSaveBtn, convertBtn, saveBtn]));
       card.appendChild(row);
       frag.appendChild(card);
     });
