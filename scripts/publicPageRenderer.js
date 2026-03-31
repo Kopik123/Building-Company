@@ -572,9 +572,7 @@ const renderPublicPage = ({
   <meta name="twitter:description" content="${escapeHtml(metaDescription)}" />
   <meta name="twitter:image" content="${escapeHtml(ogImage)}" />
   <link rel="canonical" href="${escapeHtml(`${shared.siteUrl}/${fileName}`)}" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles/fonts.css" />
 ${renderStylesheets()}
 ${renderJsonLdScripts(jsonLd)}
 </head>

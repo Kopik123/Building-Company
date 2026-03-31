@@ -2,6 +2,7 @@
 
 ## Open
 
+- [ ] Validate the full self-hosted font migration after deployment, including public pages, auth, manager workspace and client workspace typography.
 - [ ] Validate the auth/about pages after deployment to confirm the fallback typography still looks acceptable without the removed external font stylesheet.
 - [ ] Consider a separate site-wide self-hosted font migration so remaining pages can drop third-party font requests without visual regressions.
 - [ ] Validate review-page deep links after deployment, including opening a specific diff entry from client and manager dashboard actions.
@@ -46,6 +47,7 @@
 
 ## Completed
 
+- [x] Added self-hosted Montserrat and Cormorant Garamond assets, switched the tracked pages off Google Fonts, and removed the related external CSP allowances.
 - [x] Remediated the flagged security hotspots in the touched slice: replaced the risky regex checks, removed the unsafe manager-review `innerHTML` fallback, and removed the flagged third-party font stylesheet from the affected pages.
 - [x] Added review-page deep links, timeline filters, selected-entry highlighting and premium changed-field badges across the shared client/manager diff experience.
 - [x] Saved `Plans/Review Timeline UX Follow-up.md` and registered it in `Plans/Plan History.md` for the review timeline polish slice.

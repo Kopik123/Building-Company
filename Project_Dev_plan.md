@@ -1,5 +1,10 @@
 # Project Dev Plan
 
+## 2026-03-31 (self-hosted fonts migration start)
+
+- Saved `Plans/Self-Hosted Fonts Migration.md` and registered it in `Plans/Plan History.md` for the full Google Fonts removal pass.
+- Added follow-up validation in `Project_todos.md` for the self-hosted font rollout across public/auth/workspace pages.
+
 ## 2026-03-31 (security hotspot remediation start)
 
 - Saved `Plans/Security Hotspot Remediation - ReDoS, Injection And SRI.md` and registered it in `Plans/Plan History.md` for the current security remediation slice.
