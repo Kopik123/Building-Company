@@ -2,7 +2,9 @@ FROM node:20-alpine AS base
 
 WORKDIR /app
 
-COPY --chown=node:node package*.json ./
+# Allow the node runtime user to create node_modules, but keep manifests root-owned (not writable by node)
+RUN chown node:node /app
+COPY --chown=root:root package*.json ./
 USER node
 RUN npm ci --omit=dev
 
