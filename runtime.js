@@ -117,6 +117,43 @@
     return parsed.toLocaleString('en-GB');
   };
 
+  const buildSafeSlug = (value, options = {}) => {
+    const source = String(value ?? '').trim().toLowerCase();
+    const allowUnderscore = Boolean(options.allowUnderscore);
+    const maxLength = Number.isInteger(options.maxLength) && options.maxLength > 0 ? options.maxLength : 0;
+    const slugChars = [];
+    let needsDash = false;
+
+    const flushDash = () => {
+      if (!needsDash || !slugChars.length || slugChars[slugChars.length - 1] === '-') return;
+      slugChars.push('-');
+      needsDash = false;
+    };
+
+    for (const symbol of source) {
+      const isLetter = symbol >= 'a' && symbol <= 'z';
+      const isDigit = symbol >= '0' && symbol <= '9';
+      const isUnderscore = allowUnderscore && symbol === '_';
+
+      if (isLetter || isDigit || isUnderscore) {
+        flushDash();
+        slugChars.push(symbol);
+      } else if (slugChars.length) {
+        needsDash = true;
+      }
+    }
+
+    while (slugChars[slugChars.length - 1] === '-') slugChars.pop();
+
+    if (!maxLength || slugChars.length <= maxLength) {
+      return slugChars.join('');
+    }
+
+    const bounded = slugChars.slice(0, maxLength);
+    while (bounded[bounded.length - 1] === '-') bounded.pop();
+    return bounded.join('');
+  };
+
   const createOverviewEntry = ({ title, detail, meta }) => {
     const item = document.createElement('article');
     item.className = 'workspace-overview-entry';
@@ -285,6 +322,7 @@
     createApiClient,
     titleCase,
     formatDateTime,
+    buildSafeSlug,
     createOverviewEntry,
     renderMailboxPreviewList,
     requestAccordionRefresh,

@@ -13,6 +13,12 @@
 - Updated `review-diff.js` to expose a safe CommonJS export path for tests, then removed the `vm.runInNewContext()` loader from `tests/review-diff-browser.test.js`.
 - Hardened `Dockerfile` further by making the copied app tree root-owned and effectively read-only to the runtime user, while recreating only `/app/uploads`, `/app/logs`, and `/app/.bootstrap.lock` as writable `node`-owned runtime paths.
 
+## 2026-03-31 (duplication follow-up)
+
+- Added `sonar-project.properties` with CPD exclusions for generated public HTML, legal page shells, migrations, and tests so SonarQube stops counting low-value/generated duplication against new-code quality gates.
+- Moved the browser slug helper into `runtime.js` and updated `review-diff.js` to consume `LevelLinesRuntime.buildSafeSlug`, removing the extra copy of the slug-building logic from the review diff bundle.
+- Adjusted `tests/review-diff-browser.test.js` to inject the runtime slug helper before loading `review-diff.js`, then re-ran the available review-diff validation path.
+
 ## 2026-03-31 (migration hotspot hardening start)
 
 - Saved `Plans/Migration Hotspot Hardening For ReDoS And Dynamic SQL.md` and registered it in `Plans/Plan History.md` for this migration-security cleanup slice.

@@ -1,12 +1,20 @@
 const assert = require('node:assert/strict');
 const path = require('node:path');
 const test = require('node:test');
+const { buildSafeSlug } = require('../utils/safeSlug');
 
 const scriptPath = path.join(__dirname, '..', 'review-diff.js');
 
 const loadDiffViewer = () => {
+  global.window = {
+    LevelLinesRuntime: {
+      buildSafeSlug
+    }
+  };
   delete require.cache[require.resolve(scriptPath)];
-  return require(scriptPath);
+  const diffViewer = require(scriptPath);
+  delete global.window;
+  return diffViewer;
 };
 
 test('review diff helper builds stable entry ids from scope, change type and timestamp', () => {
