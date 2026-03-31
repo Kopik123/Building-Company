@@ -1,9 +1,18 @@
+const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 const express = require('express');
 const {
   appendRevisionEntry,
   buildEstimateRevisionSnapshot,
   buildQuoteRevisionSnapshot
 } = require('../../utils/revisionHistory');
+const { generateEstimatePdfBuffer } = require('../../utils/estimatePdf');
+
+const UPLOADS_DIR = path.join(__dirname, '..', '..', 'uploads');
+const buildEstimatePdfFilename = (estimate) => `${String(estimate.title || 'estimate')
+  .replace(/[^a-z0-9-_]+/gi, '-')
+  .replace(/^-+|-+$/g, '') || 'estimate'}.pdf`;
 
 const toPlain = (entity) => (typeof entity?.toJSON === 'function' ? entity.toJSON() : { ...(entity || {}) });
 
@@ -38,6 +47,64 @@ const buildEstimateRevisionPayload = ({
       snapshot: buildEstimateRevisionSnapshot(nextState)
     })
   };
+};
+
+const persistEstimateDocument = async ({
+  estimate,
+  actor,
+  updates,
+  Quote,
+  Notification,
+  buildEstimateRevisionPayload,
+  buildQuoteRevisionPayload,
+  safeUnlink,
+  loadEstimateDetail,
+  quoteChangeType,
+  clientNotification
+}) => {
+  const previousStoragePath = estimate.documentStoragePath || null;
+  const revisionPayload = buildEstimateRevisionPayload({
+    estimate,
+    actor,
+    changeType: quoteChangeType,
+    changedFields: ['documentUrl', 'documentFilename', 'documentMimeType', 'documentSizeBytes'],
+    updates
+  });
+  await estimate.update(revisionPayload);
+  if (previousStoragePath && previousStoragePath !== updates.documentStoragePath) {
+    await safeUnlink(previousStoragePath);
+  }
+
+  if (estimate.quoteId) {
+    const quote = await Quote.findByPk(estimate.quoteId);
+    if (quote) {
+      const quotePayload = buildQuoteRevisionPayload({
+        quote,
+        actor,
+        changeType: quoteChangeType,
+        changedFields: ['estimateDocumentUrl'],
+        updates: { estimateDocumentUrl: updates.documentUrl }
+      });
+      await quote.update(quotePayload);
+
+      if (quote.clientId && clientNotification) {
+        await Notification.create({
+          userId: quote.clientId,
+          type: clientNotification.type,
+          title: clientNotification.title,
+          body: clientNotification.body,
+          quoteId: quote.id,
+          data: {
+            quoteId: quote.id,
+            estimateId: estimate.id,
+            documentUrl: updates.documentUrl || null
+          }
+        });
+      }
+    }
+  }
+
+  return loadEstimateDetail(estimate.id);
 };
 
 const buildQuoteRevisionPayload = ({
@@ -319,34 +386,75 @@ module.exports = function createEstimateRoutes({
         documentMimeType: req.file.mimetype || null,
         documentSizeBytes: Number.isFinite(req.file.size) ? req.file.size : null
       };
-      const previousStoragePath = estimate.documentStoragePath || null;
-      const revisionPayload = buildEstimateRevisionPayload({
+      const detail = await persistEstimateDocument({
         estimate,
         actor: req.user,
-        changeType: 'document_uploaded',
-        changedFields: ['documentUrl', 'documentFilename', 'documentMimeType', 'documentSizeBytes'],
-        updates
-      });
-      await estimate.update(revisionPayload);
-      if (previousStoragePath && previousStoragePath !== updates.documentStoragePath) {
-        await safeUnlink(previousStoragePath);
-      }
-
-      if (estimate.quoteId) {
-        const quote = await Quote.findByPk(estimate.quoteId);
-        if (quote) {
-          const quotePayload = buildQuoteRevisionPayload({
-            quote,
-            actor: req.user,
-            changeType: 'estimate_document_linked',
-            changedFields: ['estimateDocumentUrl'],
-            updates: { estimateDocumentUrl: updates.documentUrl }
-          });
-          await quote.update(quotePayload);
+        updates,
+        Quote,
+        Notification,
+        buildEstimateRevisionPayload,
+        buildQuoteRevisionPayload,
+        safeUnlink,
+        loadEstimateDetail,
+        quoteChangeType: 'document_uploaded',
+        clientNotification: {
+          type: 'quote_estimate_pack_file_uploaded',
+          title: 'Estimate file updated',
+          body: `A manager uploaded a new file for "${estimate.title}".`
         }
+      });
+      return res.status(201).json({ estimate: detail });
+    })
+  );
+
+  router.post(
+    '/estimates/:id/generate-pdf',
+    [...managerGuard, param('id').isUUID()],
+    asyncHandler(async (req, res) => {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
       }
 
-      const detail = await loadEstimateDetail(estimate.id);
+      const estimateDetail = await loadEstimateDetail(req.params.id);
+      if (!estimateDetail) {
+        return res.status(404).json({ error: 'Estimate not found' });
+      }
+
+      const estimate = await Estimate.findByPk(req.params.id);
+      if (!estimate) {
+        return res.status(404).json({ error: 'Estimate not found' });
+      }
+
+      const filename = `${crypto.randomUUID()}.pdf`;
+      const absolutePath = path.join(UPLOADS_DIR, filename);
+      const pdfBuffer = generateEstimatePdfBuffer(estimateDetail);
+      await fs.promises.writeFile(absolutePath, pdfBuffer);
+
+      const detail = await persistEstimateDocument({
+        estimate,
+        actor: req.user,
+        updates: {
+          documentUrl: `/uploads/${filename}`,
+          documentStoragePath: normalizeStoragePath(absolutePath),
+          documentFilename: buildEstimatePdfFilename(estimate),
+          documentMimeType: 'application/pdf',
+          documentSizeBytes: pdfBuffer.length
+        },
+        Quote,
+        Notification,
+        buildEstimateRevisionPayload,
+        buildQuoteRevisionPayload,
+        safeUnlink,
+        loadEstimateDetail,
+        quoteChangeType: 'pdf_generated',
+        clientNotification: {
+          type: 'quote_estimate_pdf_generated',
+          title: 'Estimate PDF ready',
+          body: `A manager generated a PDF pack for "${estimate.title}".`
+        }
+      });
+
       return res.status(201).json({ estimate: detail });
     })
   );
@@ -379,6 +487,34 @@ module.exports = function createEstimateRoutes({
       }
 
       const sentToClientAt = new Date();
+      let latestEstimate = estimate;
+      if (!estimate.documentUrl) {
+        const estimateDetail = await loadEstimateDetail(estimate.id);
+        const filename = `${crypto.randomUUID()}.pdf`;
+        const absolutePath = path.join(UPLOADS_DIR, filename);
+        const pdfBuffer = generateEstimatePdfBuffer(estimateDetail || estimate);
+        await fs.promises.writeFile(absolutePath, pdfBuffer);
+        await persistEstimateDocument({
+          estimate,
+          actor: req.user,
+          updates: {
+            documentUrl: `/uploads/${filename}`,
+            documentStoragePath: normalizeStoragePath(absolutePath),
+            documentFilename: buildEstimatePdfFilename(estimate),
+            documentMimeType: 'application/pdf',
+            documentSizeBytes: pdfBuffer.length
+          },
+          Quote,
+          Notification,
+          buildEstimateRevisionPayload,
+          buildQuoteRevisionPayload,
+          safeUnlink,
+          loadEstimateDetail,
+          quoteChangeType: 'pdf_generated',
+          clientNotification: null
+        });
+        latestEstimate = await Estimate.findByPk(estimate.id);
+      }
       const estimateUpdates = {
         status: 'sent',
         clientVisible: true,
@@ -396,7 +532,7 @@ module.exports = function createEstimateRoutes({
       const quoteUpdates = {
         workflowStatus: 'client_review',
         clientReviewStartedAt: sentToClientAt,
-        estimateDocumentUrl: estimate.documentUrl || quote.estimateDocumentUrl || null
+        estimateDocumentUrl: latestEstimate.documentUrl || quote.estimateDocumentUrl || null
       };
       quoteUpdates.status = deriveLegacyQuoteStatus({
         workflowStatus: quoteUpdates.workflowStatus,
@@ -417,13 +553,13 @@ module.exports = function createEstimateRoutes({
         userId: quote.clientId,
         type: 'quote_client_review_ready',
         title: 'Your estimate pack is ready for review',
-        body: `A manager sent "${estimate.title}" for your review.`,
+        body: `A manager sent "${estimate.title}" for your review. Open the review screen to accept, reject or request edits.`,
         quoteId: quote.id,
         data: {
           quoteId: quote.id,
           estimateId: estimate.id,
           workflowStatus: 'client_review',
-          documentUrl: estimate.documentUrl || null
+          documentUrl: latestEstimate.documentUrl || null
         }
       });
 

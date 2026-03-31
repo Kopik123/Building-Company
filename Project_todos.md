@@ -2,6 +2,8 @@
 
 ## Open
 
+- [ ] Validate the new quote submission split after deployment for both guest and signed-in users, including claim-code visibility, expiry messaging and direct account-linked quote creation.
+- [ ] Validate the dedicated client review screen after deployment, including revision diff rendering, PDF download/opening and decision/notification loops.
 - [ ] Validate the phase-3 flow after deployment, especially estimate upload/download, client-review status transitions, and history visibility on both workspaces.
 - [ ] Validate the phase-2 quote workflow manually after deployment, especially draft-estimate creation from quotes and client visibility of the linked estimate summary.
 - [ ] Validate the new quote workflow manually with a real manager/client account pair after deployment, including visit reschedule, client decision, notifications and conversion to project.
@@ -38,6 +40,8 @@
 
 ## Completed
 
+- [x] Added the quote-submission follow-up: guest quote completion now shows the claim code on-screen with expiry/save guidance, signed-in users can submit quotes directly into their account, and the client review flow now has a separate review screen with revision diff visibility.
+- [x] Saved `Plans/Quote Submission, Claim Code UX And Dedicated Client Review Follow-up.md` and registered it in `Plans/Plan History.md` as the tracked plan for the next quote/review follow-up slice.
 - [x] Delivered quote workflow phase 3: estimates can be sent into `client_review`, managers can upload estimate files, quote/estimate revision history is recorded, and the client decision UI is split into clearer review sections.
 - [x] Saved `Plans/Quote Workflow Phase 3 - Client Review Pack, Estimate Uploads And Revision History.md` and registered it in `Plans/Plan History.md` as the tracked plan for the next quote workflow execution slice.
 - [x] Re-ran `npm ci`, `npm run verify:generated` and `npm run test:api:v2` after the phase-3 implementation; the generated-page check and API suite passed in the sandbox.

@@ -132,10 +132,15 @@ test('manager can send estimate to client review', async () => {
   assert.equal(response.body?.estimate?.status, 'sent');
   assert.equal(stubs.estimate.clientVisible, true);
   assert.equal(stubs.quote.workflowStatus, 'client_review');
+  assert.equal(String(stubs.estimate.documentUrl || '').startsWith('/uploads/'), true);
+  assert.equal(stubs.estimate.documentMimeType, 'application/pdf');
   assert.equal(stubs.notifications.length, 1);
   assert.equal(Array.isArray(stubs.estimate.revisionHistory), true);
   assert.equal(stubs.estimate.revisionHistory.length > 0, true);
   assert.equal(stubs.quote.revisionHistory.length > 0, true);
+  if (stubs.estimate.documentStoragePath) {
+    await fs.unlink(path.join(__dirname, '..', '..', stubs.estimate.documentStoragePath)).catch(() => {});
+  }
 });
 
 test('manager can upload estimate file metadata and link it to quote', async () => {

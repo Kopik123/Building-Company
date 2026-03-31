@@ -66,6 +66,14 @@ const createStubs = () => {
             siteVisitDate: '2026-04-04',
             siteVisitTimeWindow: 'AM',
             revisionHistory: [],
+            estimates: [{
+              id: 'estimate-1',
+              clientVisible: true,
+              title: 'Client Review Pack',
+              status: 'sent',
+              total: 1900,
+              revisionHistory: []
+            }],
             archivedAt: null,
             async update(payload) {
               Object.assign(this, payload);
@@ -154,4 +162,21 @@ test('client can request visit reschedule and quote changes', async () => {
   assert.equal(response.body?.quote?.revisionHistory?.length > 0, true);
   assert.equal(stubs.notifications.length, 1);
   assert.equal(stubs.notifications[0]?.type, 'quote_visit_reschedule_requested');
+});
+
+test('client can load the dedicated quote review payload', async () => {
+  const stubs = createStubs();
+  mockModels(stubs.models);
+
+  const route = loadRoute('routes/client.js');
+  const app = buildExpressApp('/api/client', route);
+  const token = signAccessToken('33333333-3333-4333-8333-333333333333', 'client');
+
+  const response = await request(app)
+    .get('/api/client/quotes/44444444-4444-4444-8444-444444444444/review')
+    .set('Authorization', `Bearer ${token}`)
+    .expect(200);
+
+  assert.equal(response.body?.quote?.id, '44444444-4444-4444-8444-444444444444');
+  assert.equal(response.body?.quote?.estimates?.[0]?.title, 'Client Review Pack');
 });

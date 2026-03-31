@@ -267,140 +267,34 @@
       card.className = 'dashboard-item';
       card.innerHTML = `<h3>${escapeHtml(quote.projectType)}</h3><p class="muted">${escapeHtml(quote.status)} | Priority ${escapeHtml(quote.priority)} | ${escapeHtml(quote.location || '-')}</p><p class="muted">Workflow: ${escapeHtml(workflowStatus)} | Visit: ${escapeHtml(visitDetail)} | Proposed start: ${escapeHtml(startDetail)} | Your decision: ${escapeHtml(decisionStatus)}</p><p>${escapeHtml(quote.description || '')}</p>`;
 
-      const sections = document.createElement('div');
-      sections.className = 'dashboard-grid';
-
       const summaryWrap = document.createElement('div');
       summaryWrap.className = 'dashboard-list';
       summaryWrap.appendChild(createOverviewEntry({
         title: 'Review summary',
         detail: workflowStatus === 'client_review'
-          ? 'The estimate pack is ready for your review. Check the pack, then accept, reject, or request edits.'
-          : 'Track the current quote route and review updates from your manager here.',
+          ? 'The estimate pack is ready for full review in the dedicated review screen.'
+          : 'Open the dedicated review screen to follow revisions, downloads and decisions.',
         meta: `Latest estimate: ${estimateSummary}`
       }));
+      card.appendChild(summaryWrap);
 
-      const estimatePackWrap = document.createElement('div');
-      estimatePackWrap.className = 'dashboard-list';
-      estimatePackWrap.appendChild(createOverviewEntry({
-        title: 'Estimate pack',
-        detail: estimatePackBits.length ? estimatePackBits.join(' | ') : 'The manager has not published the estimate pack details yet.',
-        meta: visibleEstimate?.sentToClientAt ? `Sent ${formatDateTime(visibleEstimate.sentToClientAt)}` : ''
-      }));
+      const actions = document.createElement('div');
+      actions.className = 'dashboard-actions-row';
+      const reviewLink = document.createElement('a');
+      reviewLink.className = 'btn btn-outline';
+      reviewLink.href = `/client-review.html?quoteId=${encodeURIComponent(quote.id)}`;
+      reviewLink.textContent = workflowStatus === 'client_review' ? 'Open client review' : 'Open quote review';
+      actions.appendChild(reviewLink);
       if (visibleEstimate?.documentUrl || quote.estimateDocumentUrl) {
-        const link = document.createElement('a');
-        link.className = 'btn btn-outline';
-        link.href = visibleEstimate?.documentUrl || quote.estimateDocumentUrl;
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
-        link.textContent = 'Open estimate file';
-        estimatePackWrap.appendChild(link);
+        const fileLink = document.createElement('a');
+        fileLink.className = 'btn btn-outline';
+        fileLink.href = visibleEstimate?.documentUrl || quote.estimateDocumentUrl;
+        fileLink.target = '_blank';
+        fileLink.rel = 'noopener noreferrer';
+        fileLink.textContent = 'Open latest file';
+        actions.appendChild(fileLink);
       }
-
-      const decisionSection = document.createElement('div');
-      decisionSection.className = 'dashboard-edit-grid dashboard-edit-grid--wide';
-      decisionSection.appendChild(createOverviewEntry({
-        title: 'Decision',
-        detail: 'Choose the next step for this quote pack. Use notes to explain any requested changes.',
-        meta: `Current decision: ${decisionStatus}`
-      }));
-
-      const visitSection = document.createElement('div');
-      visitSection.className = 'dashboard-edit-grid dashboard-edit-grid--wide';
-      visitSection.appendChild(createOverviewEntry({
-        title: 'Visit changes',
-        detail: 'Suggest another day or time window if the current visit plan does not work for you.',
-        meta: ''
-      }));
-
-      const visitDateInput = document.createElement('input');
-      visitDateInput.type = 'date';
-      visitDateInput.value = toDateInputValue(quote.siteVisitDate);
-      const visitWindowInput = document.createElement('input');
-      visitWindowInput.type = 'text';
-      visitWindowInput.placeholder = 'Preferred time window';
-      visitWindowInput.value = quote.siteVisitTimeWindow || '';
-      const decisionSelect = document.createElement('select');
-      [
-        { value: '', label: 'Keep current decision' },
-        { value: 'accepted', label: 'Accept quote' },
-        { value: 'rejected', label: 'Reject quote' },
-        { value: 'request_edit', label: 'Request changes' }
-      ].forEach((item) => {
-        const option = document.createElement('option');
-        option.value = item.value;
-        option.textContent = item.label;
-        decisionSelect.appendChild(option);
-      });
-      const notesInput = document.createElement('textarea');
-      notesInput.rows = 3;
-      notesInput.placeholder = 'Message for your manager (optional)';
-      notesInput.value = quote.clientDecisionNotes || '';
-      const saveBtn = document.createElement('button');
-      saveBtn.type = 'button';
-      saveBtn.className = 'btn btn-outline';
-      saveBtn.textContent = 'Send update';
-      saveBtn.addEventListener('click', async () => {
-        try {
-          const payload = {};
-          const visitDateValue = visitDateInput.value || null;
-          const visitWindowValue = visitWindowInput.value.trim() || null;
-          const notesValue = notesInput.value.trim() || null;
-          if ((visitDateValue || null) !== (quote.siteVisitDate || null)) payload.siteVisitDate = visitDateValue || null;
-          if ((visitWindowValue || null) !== (quote.siteVisitTimeWindow || null)) payload.siteVisitTimeWindow = visitWindowValue || null;
-          if (decisionSelect.value) payload.clientDecisionStatus = decisionSelect.value;
-          if (notesValue !== (quote.clientDecisionNotes || null)) payload.clientDecisionNotes = notesValue;
-          if (!Object.keys(payload).length) {
-            window.alert('Add a decision or a preferred visit change first.');
-            return;
-          }
-          await api(`/api/client/quotes/${quote.id}/workflow`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-          await loadOverview();
-        } catch (error) {
-          window.alert(error.message || 'Failed to update quote workflow');
-        }
-      });
-      decisionSection.appendChild(createControlField('Decision', decisionSelect));
-      decisionSection.appendChild(createControlField('Decision notes', notesInput));
-      decisionSection.appendChild(saveBtn);
-      visitSection.appendChild(createControlField('Preferred visit date', visitDateInput));
-      visitSection.appendChild(createControlField('Preferred visit time', visitWindowInput));
-
-      const historyWrap = document.createElement('div');
-      historyWrap.className = 'dashboard-list';
-      const quoteHistory = Array.isArray(quote.revisionHistory) ? quote.revisionHistory : [];
-      const estimateHistory = Array.isArray(visibleEstimate?.revisionHistory) ? visibleEstimate.revisionHistory : [];
-      const historyEntries = [...quoteHistory.slice(-3), ...estimateHistory.slice(-3)]
-        .sort((left, right) => Date.parse(right?.createdAt || 0) - Date.parse(left?.createdAt || 0))
-        .slice(0, 5);
-      if (historyEntries.length) {
-        historyEntries.forEach((entry) => {
-          historyWrap.appendChild(createOverviewEntry({
-            title: titleCase(entry.changeType || 'update'),
-            detail: Array.isArray(entry.changedFields) && entry.changedFields.length
-              ? entry.changedFields.join(', ')
-              : 'snapshot',
-            meta: formatDateTime(entry.createdAt) || ''
-          }));
-        });
-      } else {
-        historyWrap.appendChild(createOverviewEntry({
-          title: 'History',
-          detail: 'Revision history will appear here once the quote or estimate pack changes.',
-          meta: ''
-        }));
-      }
-
-      sections.appendChild(summaryWrap);
-      sections.appendChild(estimatePackWrap);
-      sections.appendChild(decisionSection);
-      sections.appendChild(visitSection);
-      sections.appendChild(historyWrap);
-      card.appendChild(sections);
+      card.appendChild(actions);
       frag.appendChild(card);
     });
     el.quotesList.appendChild(frag);

@@ -66,6 +66,31 @@ const formatVisitPreference = ({ siteVisitDate, siteVisitTimeWindow }) => {
   return `${siteVisitDate}${siteVisitTimeWindow ? ` (${siteVisitTimeWindow})` : ''}`;
 };
 
+const quoteEstimateInclude = {
+  model: Estimate,
+  as: 'estimates',
+  attributes: [
+    'id',
+    'title',
+    'status',
+    'total',
+    'subtotal',
+    'notes',
+    'updatedAt',
+    'createdAt',
+    'revisionNumber',
+    'clientVisible',
+    'sentToClientAt',
+    'documentUrl',
+    'documentFilename',
+    'revisionHistory'
+  ],
+  required: false,
+  separate: true,
+  limit: 10,
+  order: [['updatedAt', 'DESC'], ['createdAt', 'DESC']]
+};
+
 const buildQuoteHistoryPayload = ({ quote, actor, changeType, note, changedFields = [], updates = {} }) => {
   const current = typeof quote?.toJSON === 'function' ? quote.toJSON() : { ...(quote || {}) };
   const nextState = { ...current, ...updates };
@@ -107,28 +132,7 @@ router.get(
         where: { clientId: req.user.id },
         include: [
           { model: User, as: 'assignedManager', attributes: ['id', 'name', 'email'], required: false },
-          {
-            model: Estimate,
-            as: 'estimates',
-            attributes: [
-              'id',
-              'title',
-              'status',
-              'total',
-              'updatedAt',
-              'createdAt',
-              'revisionNumber',
-              'clientVisible',
-              'sentToClientAt',
-              'documentUrl',
-              'documentFilename',
-              'revisionHistory'
-            ],
-            required: false,
-            separate: true,
-            limit: 5,
-            order: [['updatedAt', 'DESC'], ['createdAt', 'DESC']]
-          }
+          quoteEstimateInclude
         ],
         order: [['createdAt', 'DESC']],
         limit: 100
@@ -203,6 +207,31 @@ router.get(
     }
 
     return res.json({ project: mapProject(project) });
+  })
+);
+
+router.get(
+  '/quotes/:id/review',
+  [...clientGuard, param('id').isUUID()],
+  asyncHandler(async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const quote = await Quote.findOne({
+      where: { id: req.params.id, clientId: req.user.id },
+      include: [
+        { model: User, as: 'assignedManager', attributes: ['id', 'name', 'email'], required: false },
+        quoteEstimateInclude
+      ]
+    });
+
+    if (!quote) {
+      return res.status(404).json({ error: 'Quote not found' });
+    }
+
+    return res.json({ quote });
   })
 );
 
@@ -285,13 +314,36 @@ router.post(
     if (managerId) {
       const requestedVisit = payload.siteVisitDate || quote.siteVisitDate;
       const requestedWindow = payload.siteVisitTimeWindow || quote.siteVisitTimeWindow;
+      const decisionStatus = payload.clientDecisionStatus || quote.clientDecisionStatus;
+      const decisionTypeMap = {
+        accepted: {
+          type: 'quote_client_accepted',
+          title: 'Client accepted the quote',
+          body: `Client ${req.user.name} accepted the quote and is ready to move forward.`
+        },
+        rejected: {
+          type: 'quote_client_rejected',
+          title: 'Client rejected the quote',
+          body: `Client ${req.user.name} rejected the quote.`
+        },
+        request_edit: {
+          type: 'quote_client_requested_edits',
+          title: 'Client requested estimate edits',
+          body: `Client ${req.user.name} requested edits to the quote or estimate pack.`
+        }
+      };
+      const decisionPayload = decisionTypeMap[decisionStatus] || {
+        type: 'quote_client_decision_updated',
+        title: 'Client updated quote decision',
+        body: `Client ${req.user.name} set quote decision to ${decisionStatus || 'pending'}.`
+      };
       await Notification.create({
         userId: managerId,
-        type: requestedVisitChange ? 'quote_visit_reschedule_requested' : 'quote_client_decision_updated',
-        title: requestedVisitChange ? 'Client requested a different visit date' : 'Client updated quote decision',
+        type: requestedVisitChange ? 'quote_visit_reschedule_requested' : decisionPayload.type,
+        title: requestedVisitChange ? 'Client requested a different visit date' : decisionPayload.title,
         body: requestedVisitChange
           ? `Client ${req.user.name} requested ${formatVisitPreference({ siteVisitDate: requestedVisit, siteVisitTimeWindow: requestedWindow })} for the quote visit.`
-          : `Client ${req.user.name} set quote decision to ${payload.clientDecisionStatus}.`,
+          : decisionPayload.body,
         quoteId: quote.id,
         data: {
           quoteId: quote.id,

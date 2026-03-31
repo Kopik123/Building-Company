@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/png" href="/assets/optimized/brand/logo.png" />
+  <title>Client Review | Level Lines Studio</title>
+  <meta name="description" content="Review estimate packs, revisions and decisions for your Level Lines Studio quote." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles/tokens.css" />
+  <link rel="stylesheet" href="/styles/base.css" />
+  <link rel="stylesheet" href="/styles/public.css" />
+  <link rel="stylesheet" href="/styles/workspace.css" />
+</head>
+<body class="workspace-page">
+  <header class="site-header site-header--public-shell" id="top">
+    <div class="container public-shell-header">
+      <div class="public-brand-board">
+        <a class="public-brand-link" href="/index.html" aria-label="Level Lines Studio home">
+          <picture class="public-brand-picture">
+            <source type="image/avif" srcset="/assets/optimized/brand/title.avif" />
+            <source type="image/webp" srcset="/assets/optimized/brand/title.webp" />
+            <img src="/assets/optimized/brand/title.png" alt="Level Lines Studio" class="public-brand-title-image" width="1800" height="412" decoding="async" />
+          </picture>
+        </a>
+      </div>
+      <div class="public-shell-strip">
+        <section class="public-inline-auth" data-inline-auth-shell aria-label="Studio login">
+          <p class="public-strip-heading">Login</p>
+          <form class="public-inline-login-form" data-inline-login-form novalidate>
+            <div class="public-inline-login-row">
+              <input type="email" name="email" autocomplete="username email" placeholder="Email" aria-label="Email" required />
+              <input type="password" name="password" autocomplete="current-password" placeholder="Password" aria-label="Password" required />
+              <button class="public-inline-login-submit" type="submit">Login</button>
+              <a class="public-inline-login-link" href="/auth.html">Register</a>
+            </div>
+            <p class="public-inline-login-helper">Open your quote review route inside the private account.</p>
+          </form>
+          <div class="public-inline-session" data-inline-session hidden>
+            <p class="public-inline-session-copy" data-inline-session-copy>Account ready.</p>
+            <div class="public-inline-session-actions">
+              <a class="public-inline-session-link" href="/client-dashboard.html" data-inline-account-link>Open Account</a>
+              <button class="public-inline-session-link public-inline-session-link--button" type="button" data-inline-logout>Log out</button>
+            </div>
+          </div>
+          <p class="form-status public-inline-login-status" data-inline-login-status aria-live="polite"></p>
+        </section>
+      </div>
+    </div>
+  </header>
+  <main class="section section--dark">
+    <div class="container workspace-shell workspace-shell--single">
+      <section class="card surface-card surface-card--light">
+        <p class="section-eyebrow">Client Review</p>
+        <h1 id="client-review-title">Quote review</h1>
+        <p class="section-lead" id="client-review-summary">Open the latest estimate pack, review revisions and send your decision from one place.</p>
+        <p class="form-status" id="client-review-status" aria-live="polite"></p>
+      </section>
+
+      <div class="dashboard-grid">
+        <section class="card surface-card surface-card--light">
+          <h2>Review Summary</h2>
+          <div id="client-review-summary-list" class="dashboard-list"></div>
+        </section>
+        <section class="card surface-card surface-card--light">
+          <h2>Estimate Pack</h2>
+          <div id="client-review-estimate-list" class="dashboard-list"></div>
+        </section>
+      </div>
+
+      <div class="dashboard-grid">
+        <section class="card surface-card surface-card--light">
+          <h2>Your Decision</h2>
+          <form id="client-review-decision-form" novalidate>
+            <div class="form-grid">
+              <label>Decision
+                <select name="clientDecisionStatus">
+                  <option value="">Keep current decision</option>
+                  <option value="accepted">Accept quote</option>
+                  <option value="rejected">Reject quote</option>
+                  <option value="request_edit">Request edits</option>
+                </select>
+              </label>
+              <label>Preferred visit date
+                <input type="date" name="siteVisitDate" />
+              </label>
+              <label>Preferred visit time
+                <input type="text" name="siteVisitTimeWindow" placeholder="AM / PM / specific window" />
+              </label>
+              <label class="span-2">Notes
+                <textarea name="clientDecisionNotes" rows="4" placeholder="Tell your manager what changed, what you approved, or what needs editing."></textarea>
+              </label>
+            </div>
+            <button class="btn btn-gold" type="submit">Send review update</button>
+            <p class="form-status" id="client-review-decision-status" aria-live="polite"></p>
+          </form>
+        </section>
+        <section class="card surface-card surface-card--light">
+          <h2>Revision History</h2>
+          <div id="client-review-history-list" class="dashboard-list"></div>
+        </section>
+      </div>
+    </div>
+  </main>
+  <script src="/asset-manifest.js" defer></script>
+  <script src="/brand.js" defer></script>
+  <script src="/runtime.js" defer></script>
+  <script src="/site.js" defer></script>
+  <script src="/client-review.js" defer></script>
+</body>
+</html>

@@ -95,6 +95,22 @@
           <button class="btn btn-gold btn-block" type="submit">Send Enquiry</button>
           <p class="form-status" aria-live="polite"></p>
         </form>
+        <aside class="quote-panel quote-panel--light" data-quote-result hidden>
+          <p class="section-eyebrow section-eyebrow--compact">Submission Result</p>
+          <h2 data-quote-result-title>Quote saved.</h2>
+          <p class="muted" data-quote-result-reference></p>
+          <p data-quote-result-message></p>
+          <div class="workspace-overview-entry" data-quote-result-claim-wrap hidden>
+            <h3>Your quote claim code</h3>
+            <p><strong data-quote-result-claim-code></strong></p>
+            <p class="muted" data-quote-result-claim-expiry></p>
+            <p data-quote-result-claim-warning></p>
+          </div>
+          <div class="dashboard-actions-row">
+            <a class="btn btn-outline" href="/auth.html" data-quote-result-auth-link hidden>Open account / claim this quote</a>
+            <a class="btn btn-outline" href="/client-dashboard.html" data-quote-result-dashboard-link hidden>Open your account</a>
+          </div>
+        </aside>
       </div>
     </section>
   </main>
@@ -103,7 +119,6 @@
   <script src="/brand.js" defer></script><script src="/runtime.js" defer></script><script src="/site.js" defer></script><script src="/quote.js" defer></script>
 </body>
 </html>
-
 
 
 

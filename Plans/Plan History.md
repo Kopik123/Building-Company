@@ -2,6 +2,7 @@
 
 | Date | Time | Plan Title | File |
 | --- | --- | --- | --- |
+| 2026-03-31 | 14:46:03 +00:00 | Quote Submission, Claim Code UX And Dedicated Client Review Follow-up | `Plans/Quote Submission, Claim Code UX And Dedicated Client Review Follow-up.md` |
 | 2026-03-31 | 14:16:40 +00:00 | Quote Workflow Phase 3 - Client Review Pack, Estimate Uploads And Revision History | `Plans/Quote Workflow Phase 3 - Client Review Pack, Estimate Uploads And Revision History.md` |
 | 2026-03-31 | 08:55:07 +00:00 | Quote Workflow Phase 2 - Estimate Pack Visibility And Draft Builder | `Plans/Quote Workflow Phase 2 - Estimate Pack Visibility And Draft Builder.md` |
 | 2026-03-31 | 06:44:14 +00:00 | Quote Workflow, Visit Scheduling And Client Manager Coordination | `Plans/Quote Workflow, Visit Scheduling And Client Manager Coordination.md` |

@@ -1,5 +1,17 @@
 # Project Dev Plan
 
+## 2026-03-31 (quote/review follow-up start)
+
+- Saved `Plans/Quote Submission, Claim Code UX And Dedicated Client Review Follow-up.md` and registered it in `Plans/Plan History.md` as the active execution plan for the quote submission and dedicated review follow-up.
+- Added follow-up checklist items to `Project_todos.md` for guest/signed-in quote submission validation and the dedicated client review flow.
+- Reworked `routes/quotes.js` and `quote.js`/`quote.html` so guest submissions return the claim code on-screen with expiry/save guidance, while authenticated users submit quotes directly into their account-linked flow without the guest-claim detour.
+- Added `client-review.html` and `client-review.js`, plus `/api/client/quotes/:id/review`, to move the rich review/decision/revision-diff flow off the dashboard card and into a dedicated client review screen.
+- Extended `routes/manager/estimate-routes.js` with server-side estimate PDF generation from estimate lines and automatic PDF generation before `client_review` handoff when no estimate file exists yet.
+- Added more specific review/revision notifications for client decisions and estimate file/PDF updates in the manager/client quote flows.
+- Added targeted route coverage in `tests/api-v2/public-quote-submission.test.js`, expanded client review route coverage, and re-checked the estimate-review tests against the new automatic PDF behavior.
+- Re-ran `npm ci`, `npm run verify:generated`, `npm run test:api:v2`, `node --test tests/api-v2/public-quote-submission.test.js`, `node --test tests/api-v2/client-overview-include-threads.test.js`, and `node --check` on the updated JS files; the available sandbox validation path is green.
+- Re-ran automated review once during implementation, addressed the actionable feedback, and finished with `codeql_checker` reporting no JavaScript alerts for the follow-up change set.
+
 ## 2026-03-31 (quote workflow phase-3 start)
 
 - Saved `Plans/Quote Workflow Phase 3 - Client Review Pack, Estimate Uploads And Revision History.md` and registered it in `Plans/Plan History.md` as the active execution plan for the third quote workflow slice.
