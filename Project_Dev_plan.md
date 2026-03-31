@@ -1,5 +1,12 @@
 # Project Dev Plan
 
+## 2026-03-31 (security hotspot follow-up)
+
+- Reviewed the current Sonar hotspot set: the remaining SRI findings are same-origin local asset includes, while the actionable code/container fixes in this slice were the mobile `Math.random()` poller id and the production Docker root/COPY posture.
+- Replaced `Math.random()` in `apps/mobile-v1/App.js` with a monotonic in-memory poller sequence so the mobile shell keeps unique poller ids without using a weak PRNG.
+- Hardened `Dockerfile` to chown `/app`, install dependencies and run `npm start` as the `node` user, and tightened `.dockerignore` so `.env`, uploads, logs, test artifacts and bootstrap lock files are not copied into the image context.
+- Re-ran `npm run verify:generated` successfully; `npm run test:api:v2` is still blocked in this sandbox because the current environment does not have the `supertest` dev dependency installed, so the follow-up validation is recorded in `Project_todos.md`.
+
 ## 2026-03-31 (migration hotspot hardening start)
 
 - Saved `Plans/Migration Hotspot Hardening For ReDoS And Dynamic SQL.md` and registered it in `Plans/Plan History.md` for this migration-security cleanup slice.

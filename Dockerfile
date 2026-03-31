@@ -1,11 +1,13 @@
 FROM node:20-alpine AS base
 
 WORKDIR /app
+RUN chown node:node /app
 
-COPY package*.json ./
+COPY --chown=node:node package*.json ./
+USER node
 RUN npm ci --omit=dev
 
-COPY . .
+COPY --chown=node:node . .
 
 ENV NODE_ENV=production
 ENV PORT=3000

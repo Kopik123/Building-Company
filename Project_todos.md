@@ -31,6 +31,8 @@
 - [ ] Export the real issue list from SonarQube for branch `vscode`, then map every `Bug` and `Vulnerability` to `real fix`, `false positive` or `accepted tradeoff`.
 - [ ] Re-check the latest Sonar cleanup pass for `routes/auth.js`, `routes/manager/project-routes.js` and `routes/manager/quote-routes.js` after the next branch analysis, especially the `safeCompare` hard-coded-secret false positive and the media-route maintainability findings.
 - [ ] Run `scripts/sonar-export.sh` with `SONAR_URL` and `SONAR_TOKEN`, then attach `sonar-issues-full.json`, `sonar-quality-gate.json` and `sonar-measures.json` to the Sonar cleanup workflow.
+- [ ] Validate the new non-root Docker image on the target environment, especially file upload paths, runtime write permissions and `npm start` under the `node` user.
+- [ ] Re-run the full API v2 suite in an environment with dev dependencies installed, because this sandbox still lacks `supertest` for `npm run test:api:v2`.
 - [ ] Start the SonarQube cleanup with the biggest maintainability hotspots: `manager-dashboard.js`, `routes/manager.js`, `client-dashboard.js`, `styles/base.css` and `apps/mobile-v1/App.js`.
 - [ ] Plan the `multer 1.x -> 2.x` migration as a separate Sonar/dependency-hardening task instead of running `npm audit fix --force`.
 - [ ] Split `manager-dashboard.js` into feature modules (`projects`, `quotes`, `services`, `materials`, `clients`, `staff`, `estimates`, `messages`) once the new overview shell settles.
@@ -47,6 +49,7 @@
 ## Completed
 
 - [x] Replaced the remaining migration regex hotspots with bounded string parsing and tightened dynamic trigram-index SQL to use validated identifiers only.
+- [x] Removed the `Math.random()`-based mobile poller id generation and switched the production Docker image to a non-root runtime user with tighter Docker ignore rules for local/sensitive files.
 - [x] Added migration regression coverage for `unknown table` and `no such table` error handling before re-running the generated-page and API suites.
 - [x] Added self-hosted Montserrat and Cormorant Garamond assets, switched the tracked pages off Google Fonts, and removed the related external CSP allowances.
 - [x] Added a focused regression test to keep tracked HTML pages, the public page renderer and CSP free of `fonts.googleapis.com` / `fonts.gstatic.com` references.
