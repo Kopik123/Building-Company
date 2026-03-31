@@ -1,6 +1,6 @@
 const express = require('express');
 const { createValidatedHandler, findByPkOrRespond } = require('./route-helpers');
-const { appendRevisionEntry, buildQuoteRevisionSnapshot } = require('../../utils/revisionHistory');
+const { buildQuoteRevisionPayload } = require('../../utils/revisionHistory');
 
 const toTitleCase = (value) =>
   String(value || '')
@@ -88,22 +88,6 @@ module.exports = function createQuoteRoutes({
       order: [['updatedAt', 'DESC'], ['createdAt', 'DESC']]
     }
   ];
-  const buildQuoteHistoryPayload = ({ quote, actor, changeType, note, changedFields = [], updates = {} }) => {
-    const current = typeof quote?.toJSON === 'function' ? quote.toJSON() : { ...(quote || {}) };
-    const nextState = { ...current, ...updates };
-    return {
-      ...updates,
-      revisionHistory: appendRevisionEntry(current.revisionHistory, {
-        entity: 'quote',
-        changeType,
-        changedById: actor?.id || null,
-        changedByRole: actor?.role || null,
-        note: note || null,
-        changedFields,
-        snapshot: buildQuoteRevisionSnapshot(nextState)
-      })
-    };
-  };
   const inferWorkflowPayload = ({ quote, payload, managerChangedVisitPlan, managerPreparedEstimate }) => {
     const nextPayload = { ...payload };
 
@@ -230,7 +214,7 @@ module.exports = function createQuoteRoutes({
       const nextWorkflowStatus = ['accepted', 'rejected', 'archived'].includes(normalizedWorkflowStatus)
         ? normalizedWorkflowStatus
         : 'quote_requested';
-      const draftPayload = buildQuoteHistoryPayload({
+      const draftPayload = buildQuoteRevisionPayload({
         quote,
         actor: req.user,
         changeType: 'draft_estimate_created',
@@ -270,7 +254,7 @@ module.exports = function createQuoteRoutes({
       const workflowStatus = ['new', 'archived', ''].includes(normalizedWorkflowStatus)
         ? 'manager_review'
         : normalizedWorkflowStatus;
-      const acceptPayload = buildQuoteHistoryPayload({
+      const acceptPayload = buildQuoteRevisionPayload({
         quote,
         actor: req.user,
         changeType: 'manager_accepted_quote',
@@ -409,7 +393,7 @@ module.exports = function createQuoteRoutes({
         clientDecisionStatus: payload.clientDecisionStatus || quote.clientDecisionStatus
       });
 
-      const historyPayload = buildQuoteHistoryPayload({
+      const historyPayload = buildQuoteRevisionPayload({
         quote,
         actor: req.user,
         changeType: 'workflow_updated',
@@ -487,7 +471,7 @@ module.exports = function createQuoteRoutes({
         isActive: true
       });
 
-      const archivePayload = buildQuoteHistoryPayload({
+      const archivePayload = buildQuoteRevisionPayload({
         quote,
         actor: req.user,
         changeType: 'converted_to_project',

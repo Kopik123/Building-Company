@@ -18,14 +18,11 @@
 
   const api = runtime.createApiClient
     ? runtime.createApiClient(() => localStorage.getItem(TOKEN_KEY) || '')
-    : async (url, options = {}) => {
-      const headers = new Headers(options.headers || {});
-      const token = localStorage.getItem(TOKEN_KEY) || '';
-      if (!headers.has('Authorization') && token) headers.set('Authorization', `Bearer ${token}`);
-      const response = await fetch(url, { ...options, headers });
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(payload.error || 'Request failed.');
-      return payload;
+    : async (url, opts = {}) => {
+      const r = await fetch(url, opts);
+      const b = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(b.error || 'Request failed.');
+      return b;
     };
   const createOverviewEntry = runtime.createOverviewEntry || (({ title, detail, meta }) => {
     const item = document.createElement('article');
@@ -68,26 +65,13 @@
       decision: searchParams.get('filterDecision') !== 'false'
     }
   };
-  const escapeSelector = (value) => {
-    if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') return CSS.escape(value);
-    return String(value).replace(/["\\]/g, '\\$&');
-  };
 
-  const updateSearchParams = () => {
-    const url = new URL(window.location.href);
-    if (state.selectedEntryId) url.searchParams.set('entry', state.selectedEntryId);
-    else url.searchParams.delete('entry');
-    url.searchParams.set('filterQuote', String(state.filters.quote));
-    url.searchParams.set('filterEstimate', String(state.filters.estimate));
-    url.searchParams.set('filterDecision', String(state.filters.decision));
-    window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
-  };
+  const updateSearchParams = () => (runtime.syncReviewFilters ? runtime.syncReviewFilters(state) : undefined);
 
   const applySelection = () => {
-    if (!state.selectedEntryId) return;
-    const target = el.historyList.querySelector(`[data-entry-id="${escapeSelector(state.selectedEntryId)}"]`);
-    if (!target) return;
-    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (runtime.scrollToHistoryEntry) {
+      runtime.scrollToHistoryEntry(el.historyList, state.selectedEntryId);
+    }
   };
 
   const buildTimeline = (quote) => {

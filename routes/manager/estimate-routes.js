@@ -5,50 +5,17 @@ const express = require('express');
 const {
   appendRevisionEntry,
   buildEstimateRevisionSnapshot,
-  buildQuoteRevisionSnapshot
+  buildEstimateRevisionPayload,
+  buildQuoteRevisionPayload
 } = require('../../utils/revisionHistory');
 const { generateEstimatePdfBuffer } = require('../../utils/estimatePdf');
 const { buildSafeSlug } = require('../../utils/safeSlug');
+const { createValidatedHandler, findByPkOrRespond } = require('./route-helpers');
 
 const UPLOADS_DIR = path.join(__dirname, '..', '..', 'uploads');
 const buildEstimatePdfFilename = (estimate) => {
   const sanitizedTitle = buildSafeSlug(estimate?.title, { allowUnderscore: true });
   return `${sanitizedTitle || 'estimate'}.pdf`;
-};
-
-const toPlain = (entity) => (typeof entity?.toJSON === 'function' ? entity.toJSON() : { ...(entity || {}) });
-
-const buildEstimateRevisionPayload = ({
-  estimate,
-  actor,
-  changeType,
-  note,
-  changedFields = [],
-  updates = {},
-  incrementRevision = true
-}) => {
-  const current = toPlain(estimate);
-  const currentRevision = Math.max(1, Number(current.revisionNumber || 1));
-  const nextRevisionNumber = incrementRevision ? currentRevision + 1 : currentRevision;
-  const nextState = {
-    ...current,
-    ...updates,
-    revisionNumber: nextRevisionNumber
-  };
-
-  return {
-    ...updates,
-    revisionNumber: nextRevisionNumber,
-    revisionHistory: appendRevisionEntry(current.revisionHistory, {
-      entity: 'estimate',
-      changeType,
-      changedById: actor?.id || null,
-      changedByRole: actor?.role || null,
-      note: note || null,
-      changedFields,
-      snapshot: buildEstimateRevisionSnapshot(nextState)
-    })
-  };
 };
 
 const persistEstimateDocument = async ({
@@ -109,31 +76,6 @@ const persistEstimateDocument = async ({
   return loadEstimateDetail(estimate.id);
 };
 
-const buildQuoteRevisionPayload = ({
-  quote,
-  actor,
-  changeType,
-  note,
-  changedFields = [],
-  updates = {}
-}) => {
-  const current = toPlain(quote);
-  const nextState = { ...current, ...updates };
-
-  return {
-    ...updates,
-    revisionHistory: appendRevisionEntry(current.revisionHistory, {
-      entity: 'quote',
-      changeType,
-      changedById: actor?.id || null,
-      changedByRole: actor?.role || null,
-      note: note || null,
-      changedFields,
-      snapshot: buildQuoteRevisionSnapshot(nextState)
-    })
-  };
-};
-
 module.exports = function createEstimateRoutes({
   body,
   param,
@@ -171,7 +113,7 @@ module.exports = function createEstimateRoutes({
   deriveLegacyQuoteStatus
 }) {
   const router = express.Router();
-
+  const withValidation = createValidatedHandler({ validationResult, asyncHandler });
   router.get(
     '/estimates',
     [
@@ -183,11 +125,7 @@ module.exports = function createEstimateRoutes({
       query('page').optional().isInt({ min: 1 }).toInt(),
       query('pageSize').optional().isInt({ min: 1, max: MAX_PAGE_SIZE }).toInt()
     ],
-    asyncHandler(async (req, res) => {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
+    withValidation(async (req, res) => {
 
       const where = { isActive: true };
       if (req.query.projectId) where.projectId = req.query.projectId;
@@ -229,11 +167,7 @@ module.exports = function createEstimateRoutes({
   router.get(
     '/estimates/:id',
     [...staffGuard, param('id').isUUID()],
-    asyncHandler(async (req, res) => {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
+    withValidation(async (req, res) => {
 
       const estimate = await loadEstimateDetail(req.params.id);
       if (!estimate) {
@@ -247,11 +181,7 @@ module.exports = function createEstimateRoutes({
   router.get(
     '/estimates/:id/revisions',
     [...staffGuard, param('id').isUUID()],
-    asyncHandler(async (req, res) => {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
+    withValidation(async (req, res) => {
 
       const estimate = await Estimate.findByPk(req.params.id);
       if (!estimate) {
@@ -275,11 +205,7 @@ module.exports = function createEstimateRoutes({
       body('status').optional().isIn(ESTIMATE_STATUSES),
       body('notes').optional().trim()
     ],
-    asyncHandler(async (req, res) => {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
+    withValidation(async (req, res) => {
 
       const basePayload = {
         projectId: req.body.projectId || null,
@@ -320,11 +246,7 @@ module.exports = function createEstimateRoutes({
       body('status').optional().isIn(ESTIMATE_STATUSES),
       body('notes').optional().trim()
     ],
-    asyncHandler(async (req, res) => {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
+    withValidation(async (req, res) => {
 
       const estimate = await Estimate.findByPk(req.params.id);
       if (!estimate) {
@@ -412,11 +334,7 @@ module.exports = function createEstimateRoutes({
   router.post(
     '/estimates/:id/generate-pdf',
     [...managerGuard, param('id').isUUID()],
-    asyncHandler(async (req, res) => {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
+    withValidation(async (req, res) => {
 
       const estimateDetail = await loadEstimateDetail(req.params.id);
       if (!estimateDetail) {
@@ -464,11 +382,7 @@ module.exports = function createEstimateRoutes({
   router.post(
     '/estimates/:id/send-to-client-review',
     [...managerGuard, param('id').isUUID()],
-    asyncHandler(async (req, res) => {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
+    withValidation(async (req, res) => {
 
       const estimate = await Estimate.findByPk(req.params.id);
       if (!estimate) {
@@ -573,11 +487,7 @@ module.exports = function createEstimateRoutes({
   router.delete(
     '/estimates/:id',
     [...managerGuard, param('id').isUUID()],
-    asyncHandler(async (req, res) => {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
+    withValidation(async (req, res) => {
 
       const estimate = await Estimate.findByPk(req.params.id);
       if (!estimate) {
@@ -608,11 +518,7 @@ module.exports = function createEstimateRoutes({
       body('notes').optional().trim(),
       body('sortOrder').optional().isInt()
     ],
-    asyncHandler(async (req, res) => {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
+    withValidation(async (req, res) => {
 
       const estimate = await Estimate.findByPk(req.params.id);
       if (!estimate) {
@@ -680,11 +586,7 @@ module.exports = function createEstimateRoutes({
       body('notes').optional().trim(),
       body('sortOrder').optional().isInt()
     ],
-    asyncHandler(async (req, res) => {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
+    withValidation(async (req, res) => {
 
       const line = await EstimateLine.findOne({
         where: {
@@ -742,11 +644,7 @@ module.exports = function createEstimateRoutes({
   router.delete(
     '/estimates/:id/lines/:lineId',
     [...managerGuard, param('id').isUUID(), param('lineId').isUUID()],
-    asyncHandler(async (req, res) => {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
+    withValidation(async (req, res) => {
 
       const line = await EstimateLine.findOne({
         where: {

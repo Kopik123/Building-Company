@@ -22,7 +22,7 @@ const {
   QUOTE_CLIENT_DECISION_STATUSES_NON_PENDING,
   deriveLegacyQuoteStatus
 } = require('../utils/quoteWorkflow');
-const { appendRevisionEntry, buildQuoteRevisionSnapshot } = require('../utils/revisionHistory');
+const { buildQuoteRevisionPayload } = require('../utils/revisionHistory');
 
 const router = express.Router();
 const clientGuard = [auth, roleCheck('client')];
@@ -91,22 +91,6 @@ const quoteEstimateInclude = {
   order: [['updatedAt', 'DESC'], ['createdAt', 'DESC']]
 };
 
-const buildQuoteHistoryPayload = ({ quote, actor, changeType, note, changedFields = [], updates = {} }) => {
-  const current = typeof quote?.toJSON === 'function' ? quote.toJSON() : { ...(quote || {}) };
-  const nextState = { ...current, ...updates };
-  return {
-    ...updates,
-    revisionHistory: appendRevisionEntry(current.revisionHistory, {
-      entity: 'quote',
-      changeType,
-      changedById: actor?.id || null,
-      changedByRole: actor?.role || null,
-      note: note || null,
-      changedFields,
-      snapshot: buildQuoteRevisionSnapshot(nextState)
-    })
-  };
-};
 
 router.get(
   '/overview',
@@ -301,7 +285,7 @@ router.post(
       clientDecisionStatus: payload.clientDecisionStatus || quote.clientDecisionStatus
     });
 
-    const historyPayload = buildQuoteHistoryPayload({
+    const historyPayload = buildQuoteRevisionPayload({
       quote,
       actor: req.user,
       changeType: requestedVisitChange ? 'client_requested_visit_change' : 'client_updated_decision',

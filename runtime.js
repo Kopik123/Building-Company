@@ -154,6 +154,27 @@
     return bounded.join('');
   };
 
+  const escapeSelector = (value) => {
+    if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') return CSS.escape(value);
+    return String(value).replace(/["\\]/g, '\\$&');
+  };
+
+  const syncReviewFilters = (state) => {
+    const url = new URL(window.location.href);
+    if (state.selectedEntryId) url.searchParams.set('entry', state.selectedEntryId);
+    else url.searchParams.delete('entry');
+    url.searchParams.set('filterQuote', String(state.filters.quote));
+    url.searchParams.set('filterEstimate', String(state.filters.estimate));
+    url.searchParams.set('filterDecision', String(state.filters.decision));
+    window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+  };
+
+  const scrollToHistoryEntry = (historyList, entryId) => {
+    if (!entryId) return;
+    const target = historyList.querySelector(`[data-entry-id="${escapeSelector(entryId)}"]`);
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   const createOverviewEntry = ({ title, detail, meta }) => {
     const item = document.createElement('article');
     item.className = 'workspace-overview-entry';
@@ -323,6 +344,9 @@
     titleCase,
     formatDateTime,
     buildSafeSlug,
+    escapeSelector,
+    syncReviewFilters,
+    scrollToHistoryEntry,
     createOverviewEntry,
     renderMailboxPreviewList,
     requestAccordionRefresh,

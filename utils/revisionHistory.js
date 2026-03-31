@@ -51,10 +51,64 @@ const buildQuoteRevisionSnapshot = (quote) => ({
   archivedAt: quote.archivedAt || null
 });
 
+const toPlainRevision = (entity) => (typeof entity?.toJSON === 'function' ? entity.toJSON() : { ...(entity || {}) });
+
+const buildEstimateRevisionPayload = ({
+  estimate,
+  actor,
+  changeType,
+  note,
+  changedFields = [],
+  updates = {},
+  incrementRevision = true
+}) => {
+  const current = toPlainRevision(estimate);
+  const currentRevision = Math.max(1, Number(current.revisionNumber || 1));
+  const nextRevisionNumber = incrementRevision ? currentRevision + 1 : currentRevision;
+  const nextState = {
+    ...current,
+    ...updates,
+    revisionNumber: nextRevisionNumber
+  };
+
+  return {
+    ...updates,
+    revisionNumber: nextRevisionNumber,
+    revisionHistory: appendRevisionEntry(current.revisionHistory, {
+      entity: 'estimate',
+      changeType,
+      changedById: actor?.id || null,
+      changedByRole: actor?.role || null,
+      note: note || null,
+      changedFields,
+      snapshot: buildEstimateRevisionSnapshot(nextState)
+    })
+  };
+};
+
+const buildQuoteRevisionPayload = ({ quote, actor, changeType, note, changedFields = [], updates = {} }) => {
+  const current = typeof quote?.toJSON === 'function' ? quote.toJSON() : { ...(quote || {}) };
+  const nextState = { ...current, ...updates };
+  return {
+    ...updates,
+    revisionHistory: appendRevisionEntry(current.revisionHistory, {
+      entity: 'quote',
+      changeType,
+      changedById: actor?.id || null,
+      changedByRole: actor?.role || null,
+      note: note || null,
+      changedFields,
+      snapshot: buildQuoteRevisionSnapshot(nextState)
+    })
+  };
+};
+
 module.exports = {
   MAX_REVISION_HISTORY,
   normalizeRevisionHistory,
   appendRevisionEntry,
   buildEstimateRevisionSnapshot,
-  buildQuoteRevisionSnapshot
+  buildQuoteRevisionSnapshot,
+  buildEstimateRevisionPayload,
+  buildQuoteRevisionPayload
 };
