@@ -30,6 +30,28 @@
     return String(value);
   };
 
+  const buildEntryId = (entry, scope = '') => {
+    const createdAt = String(entry?.createdAt || '').trim();
+    const changeType = String(entry?.changeType || 'revision').trim().toLowerCase();
+    const scopePart = String(scope || entry?.scope || entry?.entity || 'entry')
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    return [scopePart || 'entry', changeType || 'revision', createdAt || 'unknown'].join('__');
+  };
+
+  const isClientDecisionEntry = (entry) => {
+    const changeType = String(entry?.changeType || '').toLowerCase();
+    const changedFields = Array.isArray(entry?.changedFields) ? entry.changedFields.map((field) => String(field).toLowerCase()) : [];
+    return changeType.includes('client')
+      || changeType.includes('accept')
+      || changeType.includes('reject')
+      || changeType.includes('decision')
+      || changedFields.includes('clientdecisionstatus')
+      || changedFields.includes('clientdecisionnotes');
+  };
+
   const buildRows = (entry, previousEntry) => {
     const current = entry?.snapshot || {};
     const previous = previousEntry?.snapshot || {};
@@ -73,30 +95,49 @@
     return section;
   };
 
-  const createEntry = ({ entry, previousEntry, scope }) => {
+  const createEntry = ({ entry, previousEntry, scope, selectedEntryId = '' }) => {
     const rows = buildRows(entry, previousEntry);
     const card = document.createElement('article');
-    card.className = 'review-diff-card';
+    const entryId = buildEntryId(entry, scope);
+    const changedRows = rows.filter((row) => row.changed);
+    const isSelected = Boolean(selectedEntryId && selectedEntryId === entryId);
+    card.className = `review-diff-card${isSelected ? ' is-selected' : ''}`;
+    card.dataset.entryId = entryId;
 
     const head = document.createElement('div');
     head.className = 'review-diff-head';
     const headCopy = document.createElement('div');
+    headCopy.className = 'review-diff-head-copy';
     const eyebrow = document.createElement('p');
     eyebrow.className = 'workspace-card-label';
     eyebrow.textContent = scope ? titleCase(scope) : titleCase(entry?.scope || entry?.entity || 'revision');
     const title = document.createElement('h3');
     title.textContent = titleCase(entry?.changeType || 'revision');
     headCopy.append(eyebrow, title);
+    const badges = document.createElement('div');
+    badges.className = 'review-diff-badges';
+    changedRows.forEach((row) => {
+      const badge = document.createElement('span');
+      badge.className = 'review-diff-badge';
+      badge.textContent = row.label;
+      badges.appendChild(badge);
+    });
+    if (!changedRows.length) {
+      const badge = document.createElement('span');
+      badge.className = 'review-diff-badge review-diff-badge--muted';
+      badge.textContent = 'Snapshot';
+      badges.appendChild(badge);
+    }
+    headCopy.appendChild(badges);
     const meta = document.createElement('p');
-    meta.className = 'muted';
+    meta.className = 'muted review-diff-meta';
     meta.textContent = formatDateTime(entry?.createdAt) || '';
     head.append(headCopy, meta);
 
     const summary = document.createElement('p');
-    summary.className = 'muted';
-    const changedFields = rows.filter((row) => row.changed).map((row) => row.label);
-    summary.textContent = changedFields.length
-      ? `Changed: ${changedFields.join(', ')}`
+    summary.className = 'muted review-diff-summary';
+    summary.textContent = changedRows.length
+      ? `${changedRows.length} field${changedRows.length === 1 ? '' : 's'} changed across the selected revision snapshot.`
       : 'Snapshot recorded.';
 
     const grid = document.createElement('div');
@@ -117,10 +158,12 @@
   };
 
   window.LevelLinesReviewDiff = {
+    buildEntryId,
     createEntry,
     formatCurrency,
     formatDateTime,
     formatDiffValue,
+    isClientDecisionEntry,
     titleCase
   };
 })();

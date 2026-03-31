@@ -2,6 +2,7 @@
   const runtime = window.LevelLinesRuntime || {};
   const TOKEN_KEY = runtime.TOKEN_KEY || 'll_auth_token';
   const USER_KEY = runtime.USER_KEY || 'll_auth_user';
+  const diffViewer = window.LevelLinesReviewDiff || {};
 
   const el = {
     session: document.getElementById('client-session'),
@@ -255,6 +256,9 @@
         : 'Awaiting manager proposal';
       const startDetail = quote.proposedStartDate || 'Pending';
       const decisionStatus = quote.clientDecisionStatus || 'pending';
+      const reviewEntry = Array.isArray(quote.revisionHistory) && quote.revisionHistory.length
+        ? quote.revisionHistory[quote.revisionHistory.length - 1]
+        : null;
       const estimatePackBits = [
         quote.scopeOfWork ? `Scope: ${quote.scopeOfWork}` : null,
         quote.materialsPlan ? `Materials: ${quote.materialsPlan}` : null,
@@ -285,6 +289,13 @@
       reviewLink.href = `/client-review.html?quoteId=${encodeURIComponent(quote.id)}`;
       reviewLink.textContent = workflowStatus === 'client_review' ? 'Open client review' : 'Open quote review';
       actions.appendChild(reviewLink);
+      if (reviewEntry && diffViewer.buildEntryId) {
+        const latestDiffLink = document.createElement('a');
+        latestDiffLink.className = 'btn btn-outline';
+        latestDiffLink.href = `/client-review.html?quoteId=${encodeURIComponent(quote.id)}&entry=${encodeURIComponent(diffViewer.buildEntryId({ ...reviewEntry, scope: 'quote' }, 'quote'))}`;
+        latestDiffLink.textContent = 'Open latest diff';
+        actions.appendChild(latestDiffLink);
+      }
       if (visibleEstimate?.documentUrl || quote.estimateDocumentUrl) {
         const fileLink = document.createElement('a');
         fileLink.className = 'btn btn-outline';

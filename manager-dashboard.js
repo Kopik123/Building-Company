@@ -975,7 +975,15 @@
         reviewTimelineLink.href = `/manager-review.html?quoteId=${encodeURIComponent(quote.id)}`;
         reviewTimelineLink.textContent = 'Open review timeline';
       }
-      row.appendChild(createEditActions([acceptBtn, draftEstimateBtn, reviewTimelineLink, workflowSaveBtn, convertBtn, saveBtn]));
+      let latestDiffLink = null;
+      if (canManage && Array.isArray(quote.revisionHistory) && quote.revisionHistory.length && window.LevelLinesReviewDiff?.buildEntryId) {
+        const latestQuoteRevision = quote.revisionHistory[quote.revisionHistory.length - 1];
+        latestDiffLink = document.createElement('a');
+        latestDiffLink.className = 'btn btn-outline';
+        latestDiffLink.href = `/manager-review.html?quoteId=${encodeURIComponent(quote.id)}&entry=${encodeURIComponent(window.LevelLinesReviewDiff.buildEntryId({ ...latestQuoteRevision, scope: 'quote' }, 'quote'))}`;
+        latestDiffLink.textContent = 'Open latest diff';
+      }
+      row.appendChild(createEditActions([acceptBtn, draftEstimateBtn, reviewTimelineLink, latestDiffLink, workflowSaveBtn, convertBtn, saveBtn]));
       card.appendChild(row);
       frag.appendChild(card);
     });

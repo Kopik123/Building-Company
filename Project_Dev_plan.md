@@ -1,5 +1,17 @@
 # Project Dev Plan
 
+## 2026-03-31 (review timeline UX follow-up start)
+
+- Saved `Plans/Review Timeline UX Follow-up.md` and registered it in `Plans/Plan History.md` for the next review-diff UX iteration.
+- Added follow-up validation tasks in `Project_todos.md` for review-page deep links, timeline filters and selected-entry highlighting.
+- Extended `review-diff.js` with stable entry ids, client-decision detection, selected-entry state and changed-field badge rendering so the same diff component can power deep-linking and premium compare cards.
+- Added review timeline filter controls to `client-review.html` and `manager-review.html`, then wired `client-review.js` and `manager-review.js` to sync URL params, filter quote/estimate/client-decision entries and auto-scroll to a selected entry.
+- Updated `client-dashboard.js` and `manager-dashboard.js` plus their HTML shells so dashboards can open the latest diff directly and have access to the shared review diff helper.
+- Added premium workspace styling for filter pills, selected diff cards and changed-field badges in `styles/workspace.css`.
+- Added focused regression coverage in `tests/review-diff-browser.test.js` for review-entry deep-link ids and client-decision detection.
+- Re-ran `npm ci`, `npm run verify:generated`, `npm run test:api:v2`, `node --test tests/review-diff-browser.test.js`, and `node --check` for the updated browser scripts; the available validation path is green.
+- Ran automated review and `codeql_checker`; CodeQL reported no JavaScript alerts for this follow-up change set, while the remaining review notes were broader refactor/configuration ideas outside this UI slice.
+
 ## 2026-03-31 (claim confirm and review diff follow-up start)
 
 - Saved `Plans/Quote Claim Confirm UI And Review Diff Views.md` and registered it in `Plans/Plan History.md` as the active execution plan for the next quote-review UX slice.

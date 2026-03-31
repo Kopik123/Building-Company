@@ -2,6 +2,8 @@
 
 ## Open
 
+- [ ] Validate review-page deep links after deployment, including opening a specific diff entry from client and manager dashboard actions.
+- [ ] Validate the new review timeline filters and selected-entry highlighting against mixed quote/estimate/client-decision histories.
 - [ ] Validate the new quote claim confirm UI on `/quote` and `/auth` after deployment, including prefilled claim links, logged-in claim completion and redirect into the claimed quote view.
 - [ ] Validate the new client/manager diff viewers after deployment, especially side-by-side snapshot rendering and merged review timeline ordering.
 - [ ] Validate the new quote submission split after deployment for both guest and signed-in users, including claim-code visibility, expiry messaging and direct account-linked quote creation.
@@ -42,6 +44,8 @@
 
 ## Completed
 
+- [x] Added review-page deep links, timeline filters, selected-entry highlighting and premium changed-field badges across the shared client/manager diff experience.
+- [x] Saved `Plans/Review Timeline UX Follow-up.md` and registered it in `Plans/Plan History.md` for the review timeline polish slice.
 - [x] Added inline quote-claim confirmation on `/quote` and `/auth`, plus separate client/manager review pages with side-by-side revision diff viewers and manager timeline access.
 - [x] Saved `Plans/Quote Claim Confirm UI And Review Diff Views.md` and registered it in `Plans/Plan History.md` as the tracked plan for the next review UX slice.
 - [x] Added the quote-submission follow-up: guest quote completion now shows the claim code on-screen with expiry/save guidance, signed-in users can submit quotes directly into their account, and the client review flow now has a separate review screen with revision diff visibility.

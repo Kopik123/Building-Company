@@ -9,6 +9,9 @@
     summaryList: document.getElementById('client-review-summary-list'),
     estimateList: document.getElementById('client-review-estimate-list'),
     historyList: document.getElementById('client-review-history-list'),
+    filterQuote: document.getElementById('client-review-filter-quote'),
+    filterEstimate: document.getElementById('client-review-filter-estimate'),
+    filterDecision: document.getElementById('client-review-filter-decision'),
     decisionForm: document.getElementById('client-review-decision-form'),
     decisionStatus: document.getElementById('client-review-decision-status')
   };
@@ -49,9 +52,50 @@
   });
   const toDateInputValue = (value) => (String(value || '').trim() ? String(value).slice(0, 10) : '');
 
-  const state = { quote: null };
+  const state = {
+    quote: null,
+    selectedEntryId: new URLSearchParams(window.location.search).get('entry') || '',
+    filters: {
+      quote: new URLSearchParams(window.location.search).get('filterQuote') !== 'false',
+      estimate: new URLSearchParams(window.location.search).get('filterEstimate') !== 'false',
+      decision: new URLSearchParams(window.location.search).get('filterDecision') !== 'false'
+    }
+  };
+  const escapeSelector = (value) => {
+    if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') return CSS.escape(value);
+    return String(value).replace(/["\\]/g, '\\$&');
+  };
 
   const quoteId = new URLSearchParams(window.location.search).get('quoteId');
+  const updateSearchParams = () => {
+    const url = new URL(window.location.href);
+    if (state.selectedEntryId) url.searchParams.set('entry', state.selectedEntryId);
+    else url.searchParams.delete('entry');
+    url.searchParams.set('filterQuote', String(state.filters.quote));
+    url.searchParams.set('filterEstimate', String(state.filters.estimate));
+    url.searchParams.set('filterDecision', String(state.filters.decision));
+    window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+  };
+
+  const applySelection = () => {
+    if (!state.selectedEntryId) return;
+    const target = el.historyList.querySelector(`[data-entry-id="${escapeSelector(state.selectedEntryId)}"]`);
+    if (!target) return;
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const buildHistory = (quote, visibleEstimate) => ([
+    ...(Array.isArray(quote.revisionHistory) ? quote.revisionHistory.map((entry) => ({ ...entry, scope: 'quote' })) : []),
+    ...(Array.isArray(visibleEstimate?.revisionHistory) ? visibleEstimate.revisionHistory.map((entry) => ({ ...entry, scope: 'estimate' })) : [])
+  ].sort((left, right) => Date.parse(right?.createdAt || 0) - Date.parse(left?.createdAt || 0)));
+
+  const filterHistory = (history) => history.filter((entry) => {
+    const scope = String(entry.scope || '').toLowerCase();
+    if (!state.filters.quote && scope === 'quote') return false;
+    if (!state.filters.estimate && scope === 'estimate') return false;
+    if (!state.filters.decision && diffViewer.isClientDecisionEntry && diffViewer.isClientDecisionEntry(entry)) return false;
+    return true;
+  });
 
   const getVisibleEstimate = (quote) => {
     const estimates = Array.isArray(quote?.estimates) ? quote.estimates : [];
@@ -127,10 +171,7 @@
       }));
     }
 
-    const history = [
-      ...(Array.isArray(quote.revisionHistory) ? quote.revisionHistory.map((entry) => ({ ...entry, scope: 'quote' })) : []),
-      ...(Array.isArray(visibleEstimate?.revisionHistory) ? visibleEstimate.revisionHistory.map((entry) => ({ ...entry, scope: 'estimate' })) : [])
-    ].sort((left, right) => Date.parse(right?.createdAt || 0) - Date.parse(left?.createdAt || 0));
+    const history = filterHistory(buildHistory(quote, visibleEstimate));
 
     if (!history.length) {
       el.historyList.appendChild(createOverviewEntry({
@@ -145,7 +186,8 @@
           el.historyList.appendChild(diffViewer.createEntry({
             entry,
             previousEntry: previous,
-            scope: entry.scope
+            scope: entry.scope,
+            selectedEntryId: state.selectedEntryId
           }));
           return;
         }
@@ -155,6 +197,7 @@
           meta: formatDateTime(entry.createdAt) || ''
         }));
       });
+      applySelection();
     }
 
     const form = el.decisionForm.elements;
@@ -214,6 +257,18 @@
     } catch (error) {
       setStatus(el.decisionStatus, error.message || 'Failed to send review update.', 'error');
     }
+  });
+
+  [el.filterQuote, el.filterEstimate, el.filterDecision].forEach((input) => {
+    if (!input) return;
+    input.checked = state.filters[input === el.filterQuote ? 'quote' : input === el.filterEstimate ? 'estimate' : 'decision'];
+    input.addEventListener('change', () => {
+      state.filters.quote = el.filterQuote.checked;
+      state.filters.estimate = el.filterEstimate.checked;
+      state.filters.decision = el.filterDecision.checked;
+      updateSearchParams();
+      renderSummary();
+    });
   });
 
   window.addEventListener('ll:session-changed', loadQuote);

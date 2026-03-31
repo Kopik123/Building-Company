@@ -8,7 +8,10 @@
     status: document.getElementById('manager-review-status'),
     summaryList: document.getElementById('manager-review-summary-list'),
     estimateList: document.getElementById('manager-review-estimate-list'),
-    historyList: document.getElementById('manager-review-history-list')
+    historyList: document.getElementById('manager-review-history-list'),
+    filterQuote: document.getElementById('manager-review-filter-quote'),
+    filterEstimate: document.getElementById('manager-review-filter-estimate'),
+    filterDecision: document.getElementById('manager-review-filter-decision')
   };
 
   if (Object.values(el).some((value) => !value)) return;
@@ -41,7 +44,38 @@
   const formatDateTime = diffViewer.formatDateTime || runtime.formatDateTime || ((value) => String(value || ''));
   const formatCurrency = diffViewer.formatCurrency || ((value) => String(value || ''));
 
-  const quoteId = new URLSearchParams(window.location.search).get('quoteId');
+  const searchParams = new URLSearchParams(window.location.search);
+  const quoteId = searchParams.get('quoteId');
+  const state = {
+    quote: null,
+    selectedEntryId: searchParams.get('entry') || '',
+    filters: {
+      quote: searchParams.get('filterQuote') !== 'false',
+      estimate: searchParams.get('filterEstimate') !== 'false',
+      decision: searchParams.get('filterDecision') !== 'false'
+    }
+  };
+  const escapeSelector = (value) => {
+    if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') return CSS.escape(value);
+    return String(value).replace(/["\\]/g, '\\$&');
+  };
+
+  const updateSearchParams = () => {
+    const url = new URL(window.location.href);
+    if (state.selectedEntryId) url.searchParams.set('entry', state.selectedEntryId);
+    else url.searchParams.delete('entry');
+    url.searchParams.set('filterQuote', String(state.filters.quote));
+    url.searchParams.set('filterEstimate', String(state.filters.estimate));
+    url.searchParams.set('filterDecision', String(state.filters.decision));
+    window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+  };
+
+  const applySelection = () => {
+    if (!state.selectedEntryId) return;
+    const target = el.historyList.querySelector(`[data-entry-id="${escapeSelector(state.selectedEntryId)}"]`);
+    if (!target) return;
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   const buildTimeline = (quote) => {
     const estimates = Array.isArray(quote?.estimates) ? quote.estimates : [];
@@ -52,7 +86,13 @@
           ? estimate.revisionHistory.map((entry) => ({ ...entry, scope: `estimate · ${estimate.title || estimate.id}` }))
           : []
       ))
-    ].sort((left, right) => Date.parse(right?.createdAt || 0) - Date.parse(left?.createdAt || 0));
+    ].filter((entry) => {
+      const scope = String(entry.scope || '').toLowerCase();
+      if (!state.filters.quote && scope === 'quote') return false;
+      if (!state.filters.estimate && scope.startsWith('estimate')) return false;
+      if (!state.filters.decision && diffViewer.isClientDecisionEntry && diffViewer.isClientDecisionEntry(entry)) return false;
+      return true;
+    }).sort((left, right) => Date.parse(right?.createdAt || 0) - Date.parse(left?.createdAt || 0));
   };
 
   const render = (quote) => {
@@ -121,10 +161,12 @@
         el.historyList.appendChild(diffViewer.createEntry({
           entry,
           previousEntry: previous,
-          scope: entry.scope
+          scope: entry.scope,
+          selectedEntryId: state.selectedEntryId
         }));
       }
     });
+    applySelection();
   };
 
   const loadQuote = async () => {
@@ -139,7 +181,8 @@
     setStatus(el.status, 'Loading manager review...');
     try {
       const payload = await api(`/api/manager/quotes/${encodeURIComponent(quoteId)}`);
-      render(payload.quote || {});
+      state.quote = payload.quote || null;
+      render(state.quote || {});
       setStatus(el.status, '');
     } catch (error) {
       setStatus(el.status, error.message || 'Failed to load manager review timeline.', 'error');
@@ -147,5 +190,16 @@
   };
 
   window.addEventListener('ll:session-changed', loadQuote);
+  [el.filterQuote, el.filterEstimate, el.filterDecision].forEach((input) => {
+    if (!input) return;
+    input.checked = state.filters[input === el.filterQuote ? 'quote' : input === el.filterEstimate ? 'estimate' : 'decision'];
+    input.addEventListener('change', () => {
+      state.filters.quote = el.filterQuote.checked;
+      state.filters.estimate = el.filterEstimate.checked;
+      state.filters.decision = el.filterDecision.checked;
+      updateSearchParams();
+      if (state.quote) render(state.quote);
+    });
+  });
   loadQuote();
 })();

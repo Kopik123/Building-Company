@@ -328,6 +328,16 @@ body.workspace-site .review-diff-card {
   background:
     var(--ll-surface-marble-shadow),
     var(--ll-surface-marble);
+  box-shadow: var(--ll-shadow-premium), var(--ll-shadow-line), var(--ll-shadow-frame);
+}
+
+body.workspace-site .review-diff-card.is-selected {
+  border-color: rgba(216, 166, 30, 0.62);
+  box-shadow:
+    0 0 0 1px rgba(216, 166, 30, 0.35),
+    0 18px 32px rgba(77, 58, 19, 0.18),
+    var(--ll-shadow-line),
+    var(--ll-shadow-frame);
 }
 
 body.workspace-site .review-diff-head {
@@ -341,6 +351,64 @@ body.workspace-site .review-diff-head h3,
 body.workspace-site .review-diff-column h4 {
   margin: 0;
   color: var(--ll-text-on-light);
+}
+
+body.workspace-site .review-diff-head-copy {
+  display: grid;
+  gap: 0.55rem;
+}
+
+body.workspace-site .review-diff-meta {
+  white-space: nowrap;
+}
+
+body.workspace-site .review-diff-summary {
+  margin: 0;
+}
+
+body.workspace-site .review-diff-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+body.workspace-site .review-diff-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(216, 166, 30, 0.34);
+  background: linear-gradient(180deg, rgba(216, 166, 30, 0.16), rgba(216, 166, 30, 0.08));
+  color: #5d4215;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+body.workspace-site .review-diff-badge--muted {
+  border-color: rgba(134, 100, 48, 0.24);
+  background: rgba(134, 100, 48, 0.08);
+  color: var(--ll-text-on-light-muted);
+}
+
+body.workspace-site .review-timeline-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+body.workspace-site .review-filter-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid rgba(134, 100, 48, 0.24);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.55);
+  color: var(--ll-text-on-light);
+  font-weight: 600;
 }
 
 body.workspace-site .review-diff-grid {
