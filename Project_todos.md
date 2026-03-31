@@ -2,6 +2,8 @@
 
 ## Open
 
+- [ ] Validate the auth/about pages after deployment to confirm the fallback typography still looks acceptable without the removed external font stylesheet.
+- [ ] Consider a separate site-wide self-hosted font migration so remaining pages can drop third-party font requests without visual regressions.
 - [ ] Validate review-page deep links after deployment, including opening a specific diff entry from client and manager dashboard actions.
 - [ ] Validate the new review timeline filters and selected-entry highlighting against mixed quote/estimate/client-decision histories.
 - [ ] Validate the new quote claim confirm UI on `/quote` and `/auth` after deployment, including prefilled claim links, logged-in claim completion and redirect into the claimed quote view.
@@ -44,6 +46,7 @@
 
 ## Completed
 
+- [x] Remediated the flagged security hotspots in the touched slice: replaced the risky regex checks, removed the unsafe manager-review `innerHTML` fallback, and removed the flagged third-party font stylesheet from the affected pages.
 - [x] Added review-page deep links, timeline filters, selected-entry highlighting and premium changed-field badges across the shared client/manager diff experience.
 - [x] Saved `Plans/Review Timeline UX Follow-up.md` and registered it in `Plans/Plan History.md` for the review timeline polish slice.
 - [x] Added inline quote-claim confirmation on `/quote` and `/auth`, plus separate client/manager review pages with side-by-side revision diff viewers and manager timeline access.

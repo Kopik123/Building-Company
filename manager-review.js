@@ -30,7 +30,20 @@
   const createOverviewEntry = runtime.createOverviewEntry || (({ title, detail, meta }) => {
     const item = document.createElement('article');
     item.className = 'workspace-overview-entry';
-    item.innerHTML = `<h3>${String(title || '')}</h3>${detail ? `<p>${String(detail)}</p>` : ''}${meta ? `<p class="muted">${String(meta)}</p>` : ''}`;
+    const heading = document.createElement('h3');
+    heading.textContent = String(title || '');
+    item.appendChild(heading);
+    if (detail) {
+      const detailNode = document.createElement('p');
+      detailNode.textContent = String(detail);
+      item.appendChild(detailNode);
+    }
+    if (meta) {
+      const metaNode = document.createElement('p');
+      metaNode.className = 'muted';
+      metaNode.textContent = String(meta);
+      item.appendChild(metaNode);
+    }
     return item;
   });
   const setStatus = runtime.setStatus || ((node, message = '', type = '') => {

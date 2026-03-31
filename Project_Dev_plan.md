@@ -1,5 +1,16 @@
 # Project Dev Plan
 
+## 2026-03-31 (security hotspot remediation start)
+
+- Saved `Plans/Security Hotspot Remediation - ReDoS, Injection And SRI.md` and registered it in `Plans/Plan History.md` for the current security remediation slice.
+- Added follow-up validation tasks in `Project_todos.md` for auth/about fallback typography and a later self-hosted font migration decision.
+- Replaced the risky auth-link regex in `main.js` with normalized string matching so the public-shell detection no longer relies on a potentially backtracking pattern.
+- Replaced regex-based contact email validation in `routes/contact.js` with bounded string parsing, preserved the route contract, and exposed the validator for targeted tests.
+- Removed the fallback `innerHTML` card construction in `manager-review.js` and rebuilt it with `createElement` + `textContent` only.
+- Removed the flagged Google Fonts stylesheet dependency from `about.html` and `auth.html`, leaving those pages on the existing local fallback font stacks.
+- Added `tests/security-hardening.test.js` and re-ran `npm ci`, `npm run verify:generated`, `npm run test:api:v2`, `node --test tests/security-hardening.test.js`, and `node --check` for the changed files; the available validation path is green.
+- Re-ran automated review after the final readability tweak and finished with `codeql_checker` reporting no remaining JavaScript alerts for this security slice.
+
 ## 2026-03-31 (review timeline UX follow-up start)
 
 - Saved `Plans/Review Timeline UX Follow-up.md` and registered it in `Plans/Plan History.md` for the next review-diff UX iteration.
