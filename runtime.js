@@ -117,6 +117,11 @@
     return parsed.toLocaleString('en-GB');
   };
 
+  const formatCurrency = (value) => `GBP ${Number(value || 0).toLocaleString('en-GB', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })}`;
+
   const buildSafeSlug = (value, options = {}) => {
     const source = String(value ?? '').trim().toLowerCase();
     const allowUnderscore = Boolean(options.allowUnderscore);
@@ -343,6 +348,7 @@
     createApiClient,
     titleCase,
     formatDateTime,
+    formatCurrency,
     buildSafeSlug,
     escapeSelector,
     syncReviewFilters,

@@ -3,23 +3,11 @@
   const runtime = rootWindow.LevelLinesRuntime || {};
   const buildSafeSlug = runtime.buildSafeSlug || ((value) => String(value || '').trim().toLowerCase());
 
-  const titleCase = runtime.titleCase || ((value) => String(value || '')
-    .replace(/[_-]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .replace(/\b\w/g, (char) => char.toUpperCase()));
+  const titleCase = runtime.titleCase || ((v) => String(v || '').replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim());
 
-  const formatDateTime = runtime.formatDateTime || ((value) => {
-    if (!value) return '';
-    const parsed = new Date(value);
-    if (Number.isNaN(parsed.getTime())) return '';
-    return parsed.toLocaleString('en-GB');
-  });
+  const formatDateTime = runtime.formatDateTime || ((v) => (v ? new Date(v).toLocaleString('en-GB') : ''));
 
-  const formatCurrency = (value) => `GBP ${Number(value || 0).toLocaleString('en-GB', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  })}`;
+  const formatCurrency = runtime.formatCurrency || ((v) => `GBP ${Number(v || 0).toFixed(2)}`);
 
   const formatDiffValue = (field, value) => {
     if (value === null || typeof value === 'undefined' || value === '') return 'empty';
