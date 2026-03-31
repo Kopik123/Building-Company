@@ -14,6 +14,7 @@
   };
 
   if (Object.values(el).some((value) => !value)) return;
+  const diffViewer = window.LevelLinesReviewDiff || {};
 
   const api = runtime.createApiClient
     ? runtime.createApiClient(() => localStorage.getItem(TOKEN_KEY) || '')
@@ -27,21 +28,12 @@
       return payload;
     };
   const escapeHtml = runtime.escapeHtml || ((value) => String(value ?? ''));
-  const titleCase = runtime.titleCase || ((value) => String(value || '')
-    .replace(/[_-]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .replace(/\b\w/g, (char) => char.toUpperCase()));
-  const formatDateTime = runtime.formatDateTime || ((value) => {
-    if (!value) return '';
-    const parsed = new Date(value);
-    if (Number.isNaN(parsed.getTime())) return '';
-    return parsed.toLocaleString('en-GB');
-  });
-  const formatCurrency = (value) => `GBP ${Number(value || 0).toLocaleString('en-GB', {
+  const titleCase = diffViewer.titleCase || runtime.titleCase || ((value) => String(value || ''));
+  const formatDateTime = diffViewer.formatDateTime || runtime.formatDateTime || ((value) => String(value || ''));
+  const formatCurrency = diffViewer.formatCurrency || ((value) => `GBP ${Number(value || 0).toLocaleString('en-GB', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
-  })}`;
+  })}`);
   const setStatus = runtime.setStatus || ((node, message = '', type = '') => {
     node.className = 'form-status';
     if (type === 'success') node.classList.add('is-success');
@@ -64,29 +56,6 @@
   const getVisibleEstimate = (quote) => {
     const estimates = Array.isArray(quote?.estimates) ? quote.estimates : [];
     return estimates.find((estimate) => estimate.clientVisible) || estimates[0] || null;
-  };
-
-  const buildDiffText = (entry, previousEntry) => {
-    const fields = Array.isArray(entry?.changedFields) ? entry.changedFields : [];
-    const current = entry?.snapshot || {};
-    const previous = previousEntry?.snapshot || {};
-    const formatDiffValue = (field, value) => {
-      if (value === null || typeof value === 'undefined' || value === '') return 'empty';
-      if (typeof value === 'boolean') return value ? 'yes' : 'no';
-      if (['subtotal', 'total', 'lineTotal'].includes(field)) return formatCurrency(value);
-      if (field.toLowerCase().includes('date') || field.toLowerCase().includes('at')) {
-        const formatted = formatDateTime(value);
-        return formatted || String(value);
-      }
-      return String(value);
-    };
-    if (!fields.length) return 'Snapshot recorded.';
-    return fields.map((field) => {
-      const from = previous[field];
-      const to = current[field];
-      if (typeof from === 'undefined' && typeof to === 'undefined') return `${field}: updated`;
-      return `${field}: ${formatDiffValue(field, from)} → ${formatDiffValue(field, to)}`;
-    }).join(' | ');
   };
 
   const renderSummary = () => {
@@ -172,9 +141,17 @@
     } else {
       history.forEach((entry, index) => {
         const previous = history[index + 1] || null;
+        if (diffViewer.createEntry) {
+          el.historyList.appendChild(diffViewer.createEntry({
+            entry,
+            previousEntry: previous,
+            scope: entry.scope
+          }));
+          return;
+        }
         el.historyList.appendChild(createOverviewEntry({
           title: `${titleCase(entry.scope)}: ${titleCase(entry.changeType || 'update')}`,
-          detail: buildDiffText(entry, previous),
+          detail: 'Snapshot recorded.',
           meta: formatDateTime(entry.createdAt) || ''
         }));
       });

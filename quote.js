@@ -13,7 +13,12 @@
   const resultClaimWarning = document.querySelector('[data-quote-result-claim-warning]');
   const resultAuthLink = document.querySelector('[data-quote-result-auth-link]');
   const resultDashboardLink = document.querySelector('[data-quote-result-dashboard-link]');
+  const claimForm = document.querySelector('[data-quote-claim-form]');
+  const claimHelper = document.querySelector('[data-quote-claim-helper]');
+  const claimStatus = document.querySelector('[data-quote-claim-status]');
   const TOKEN_KEY = runtime.TOKEN_KEY || 'll_auth_token';
+  const quoteClaim = window.LevelLinesQuoteClaim || {};
+  const claimState = { quoteId: '', claimToken: '', claimCode: '' };
 
   const normalizeProjectType = (value) => {
     const lower = String(value || '').trim().toLowerCase();
@@ -77,8 +82,35 @@
     if (Number.isNaN(parsed.getTime())) return '';
     return parsed.toLocaleString('en-GB');
   });
+  const setStatus = runtime.setStatus || ((node, message = '', type = '') => {
+    if (!node) return;
+    node.className = 'form-status';
+    if (type === 'success') node.classList.add('is-success');
+    if (type === 'error') node.classList.add('is-error');
+    if (type === 'loading') node.classList.add('is-loading');
+    node.textContent = message;
+  });
 
-  const renderResult = ({ quoteId, message, claimCode, claimCodeExpiresAt, claimCodeWarning, authenticated }) => {
+  const updateClaimSessionCopy = () => {
+    if (!claimForm || !claimHelper) return;
+    claimHelper.textContent = getToken()
+      ? 'Your account session is active. Confirm this guest quote into your account now.'
+      : 'Login above first, then confirm this guest quote into your account here.';
+  };
+
+  const setClaimFormValues = ({ quoteId, claimToken, claimCode }) => {
+    if (!claimForm) return;
+    claimState.quoteId = String(quoteId || '').trim();
+    claimState.claimToken = String(claimToken || '').trim();
+    claimState.claimCode = String(claimCode || '').trim();
+    claimForm.elements.quoteId.value = claimState.quoteId;
+    claimForm.elements.claimToken.value = claimState.claimToken;
+    claimForm.elements.claimCode.value = claimState.claimCode;
+    claimForm.hidden = !(claimState.quoteId && claimState.claimToken && claimState.claimCode);
+    updateClaimSessionCopy();
+  };
+
+  const renderResult = ({ quoteId, message, claimToken, claimCode, claimCodeExpiresAt, claimCodeWarning, authenticated }) => {
     if (!resultPanel) return;
     resultPanel.hidden = false;
     resultTitle.textContent = authenticated ? 'Quote added to your account.' : 'Quote saved. Keep your claim code.';
@@ -87,6 +119,7 @@
 
     if (authenticated) {
       resultClaimWrap.hidden = true;
+      if (claimForm) claimForm.hidden = true;
       resultDashboardLink.hidden = false;
       resultAuthLink.hidden = true;
     } else {
@@ -94,10 +127,55 @@
       resultClaimCode.textContent = claimCode || '-';
       resultClaimExpiry.textContent = claimCodeExpiresAt ? `Valid until: ${formatDateTime(claimCodeExpiresAt)}` : '';
       resultClaimWarning.textContent = claimCodeWarning || 'Save this code now. It will not be shown again.';
+      setClaimFormValues({ quoteId, claimToken, claimCode });
+      if (resultAuthLink && quoteClaim.buildAuthClaimUrl) {
+        resultAuthLink.href = quoteClaim.buildAuthClaimUrl({
+          quoteId,
+          claimToken,
+          claimCode,
+          next: `/client-review.html?quoteId=${encodeURIComponent(String(quoteId || ''))}`
+        });
+      }
       resultAuthLink.hidden = false;
       resultDashboardLink.hidden = true;
     }
   };
+
+  if (claimForm) {
+    claimForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!getToken()) {
+        setStatus(claimStatus, 'Login above first or use the auth page claim flow.', 'error');
+        return;
+      }
+
+      const quoteId = String(claimForm.elements.quoteId.value || '').trim();
+      const claimToken = String(claimForm.elements.claimToken.value || '').trim();
+      const claimCode = String(claimForm.elements.claimCode.value || '').trim();
+      if (!quoteId || !claimToken || !claimCode) {
+        setStatus(claimStatus, 'Quote claim details are incomplete.', 'error');
+        return;
+      }
+
+      setStatus(claimStatus, 'Claiming quote...', 'loading');
+      try {
+        await quoteClaim.submitClaimConfirmation({
+          quoteId,
+          claimToken,
+          claimCode,
+          token: getToken()
+        });
+        setStatus(claimStatus, 'Quote claimed. Redirecting to the review screen...', 'success');
+        window.setTimeout(() => {
+          window.location.assign(`/client-review.html?quoteId=${encodeURIComponent(quoteId)}`);
+        }, 350);
+      } catch (error) {
+        setStatus(claimStatus, error.message || 'Could not claim quote.', 'error');
+      }
+    });
+    updateClaimSessionCopy();
+    window.addEventListener('ll:session-changed', updateClaimSessionCopy);
+  }
 
   forms.forEach((form) => {
     const submitButton = form.querySelector('button[type="submit"]');
@@ -173,6 +251,7 @@
           message: isAuthenticated
             ? 'You are signed in, so this quote is already attached to your account and ready for manager review.'
             : 'This quote was created without an account. Keep the claim code so you can attach it to your account later.',
+          claimToken: responsePayload.claimToken,
           claimCode: responsePayload.claimCode,
           claimCodeExpiresAt: responsePayload.claimCodeExpiresAt,
           claimCodeWarning: responsePayload.claimCodeWarning,

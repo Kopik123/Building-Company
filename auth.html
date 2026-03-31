@@ -184,6 +184,27 @@
               <p class="form-status" id="register-status" aria-live="polite"></p>
             </form>
           </section>
+
+          <section class="card auth-card surface-card surface-card--light">
+            <p class="workspace-card-label">Claim Existing Quote</p>
+            <h2>Claim guest quote</h2>
+            <p class="auth-card-intro">If you already have a quote reference, claim token and code, login or register first and then attach that quote to your account here.</p>
+            <form id="claim-form" novalidate>
+              <div class="form-grid">
+                <label>Quote reference
+                  <input type="text" name="quoteId" autocomplete="off" required />
+                </label>
+                <label>Claim token
+                  <input type="text" name="claimToken" autocomplete="off" required />
+                </label>
+                <label class="span-2">Claim code
+                  <input type="text" name="claimCode" autocomplete="one-time-code" inputmode="numeric" maxlength="6" required />
+                </label>
+              </div>
+              <button type="submit" class="btn btn-outline btn-block">Claim quote into this account</button>
+              <p class="form-status" id="claim-status" aria-live="polite"></p>
+            </form>
+          </section>
         </div>
       </div>
     </section>
@@ -238,10 +259,10 @@
   <script src="/brand.js" defer></script>
   <script src="/runtime.js" defer></script>
   <script src="/site.js" defer></script>
+  <script src="/claim-flow.js" defer></script>
   <script src="/auth.js" defer></script>
 </body>
 </html>
-
 
 
 

@@ -181,3 +181,38 @@ test('guest claim request returns the code onscreen instead of delivery metadata
   assert.equal(response.body?.claimCodeDeliveryMode, 'onscreen');
   assert.equal(String(response.body?.claimCodeWarning || '').includes('valid for 15 minutes'), true);
 });
+
+test('authenticated user can confirm a guest quote claim with the onscreen code', async () => {
+  const stubs = createStubs();
+  mockModels(stubs.models);
+
+  const route = loadRoute('routes/quotes.js');
+  const app = buildExpressApp('/api/quotes', route);
+  const token = signAccessToken(clientId, 'client');
+
+  const createResponse = await request(app)
+    .post('/api/quotes/guest')
+    .send({
+      guestName: 'Guest User',
+      guestEmail: 'guest@example.com',
+      projectType: 'bathroom',
+      description: 'Need a bathroom renovation.',
+      location: 'Manchester'
+    })
+    .expect(201);
+
+  const response = await request(app)
+    .post(`/api/quotes/guest/${quoteId}/claim/confirm`)
+    .set('Authorization', `Bearer ${token}`)
+    .send({
+      claimToken: createResponse.body.claimToken,
+      claimCode: createResponse.body.claimCode
+    })
+    .expect(200);
+
+  assert.equal(response.body?.quoteId, quoteId);
+  assert.equal(response.body?.clientId, clientId);
+  assert.equal(stubs.createdQuotes[0].clientId, clientId);
+  assert.equal(stubs.createdQuotes[0].isGuest, false);
+  assert.equal(stubs.createdClaims[0].usedAt instanceof Date, true);
+});

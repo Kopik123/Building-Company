@@ -14,10 +14,11 @@ const createClaimCode = () => String(crypto.randomInt(100000, 1000000));
 const createClaimCodeHash = (value) => crypto.createHash('sha256').update(value).digest('hex');
 const CLAIM_MAX_ATTEMPTS = 5;
 const CLAIM_CODE_TTL_MS = 15 * 60 * 1000;
+const CLAIM_CODE_TTL_MINUTES = CLAIM_CODE_TTL_MS / (60 * 1000);
 
 const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
 const normalizePhone = (value) => String(value || '').trim();
-const CLAIM_CODE_WARNING = 'This code is valid for 15 minutes. Save it now because it will only be shown once.';
+const CLAIM_CODE_WARNING = `This code is valid for ${CLAIM_CODE_TTL_MINUTES} minutes. Save it now because it will only be shown once.`;
 
 const validateQuoteInput = (req) => {
   const projectType = String(req.body.projectType || '').trim();

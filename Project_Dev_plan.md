@@ -1,5 +1,17 @@
 # Project Dev Plan
 
+## 2026-03-31 (claim confirm and review diff follow-up start)
+
+- Saved `Plans/Quote Claim Confirm UI And Review Diff Views.md` and registered it in `Plans/Plan History.md` as the active execution plan for the next quote-review UX slice.
+- Added follow-up checklist items to `Project_todos.md` for quote claim confirm validation and the new client/manager diff viewers.
+- Added shared browser helpers in `claim-flow.js` and `review-diff.js` so quote/auth claim UX and client/manager diff rendering can reuse the same flow primitives instead of duplicating logic.
+- Extended `/quote` and `/auth` so guest quote claim can be completed directly in-product: quote completion now exposes a live claim form plus a prefilled auth handoff, and auth login/register can auto-claim a pending guest quote before redirecting.
+- Added `manager-review.html` and `manager-review.js` as a dedicated manager review/timeline screen, and linked to it from manager quote cards.
+- Rebuilt the client review history presentation into a visual side-by-side diff viewer and added matching review-diff styling in `styles/workspace.css`.
+- Added focused regression coverage for guest claim confirmation and manager review loading in `tests/api-v2/public-quote-submission.test.js` and `tests/api-v2/manager-quote-workflow.test.js`.
+- Re-ran `npm ci`, `npm run verify:generated`, `npm run test:api:v2`, `node --test tests/api-v2/public-quote-submission.test.js`, `node --test tests/api-v2/manager-quote-workflow.test.js`, and `node --check` on the updated front-end scripts; the available sandbox validation path is green.
+- Ran automated review and `codeql_checker`; CodeQL reported no JavaScript alerts for this follow-up change set, while the remaining review comments were broader pre-existing duplication follow-ups outside this slice.
+
 ## 2026-03-31 (quote/review follow-up start)
 
 - Saved `Plans/Quote Submission, Claim Code UX And Dedicated Client Review Follow-up.md` and registered it in `Plans/Plan History.md` as the active execution plan for the quote submission and dedicated review follow-up.

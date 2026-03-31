@@ -2,6 +2,8 @@
 
 ## Open
 
+- [ ] Validate the new quote claim confirm UI on `/quote` and `/auth` after deployment, including prefilled claim links, logged-in claim completion and redirect into the claimed quote view.
+- [ ] Validate the new client/manager diff viewers after deployment, especially side-by-side snapshot rendering and merged review timeline ordering.
 - [ ] Validate the new quote submission split after deployment for both guest and signed-in users, including claim-code visibility, expiry messaging and direct account-linked quote creation.
 - [ ] Validate the dedicated client review screen after deployment, including revision diff rendering, PDF download/opening and decision/notification loops.
 - [ ] Validate the phase-3 flow after deployment, especially estimate upload/download, client-review status transitions, and history visibility on both workspaces.
@@ -40,6 +42,8 @@
 
 ## Completed
 
+- [x] Added inline quote-claim confirmation on `/quote` and `/auth`, plus separate client/manager review pages with side-by-side revision diff viewers and manager timeline access.
+- [x] Saved `Plans/Quote Claim Confirm UI And Review Diff Views.md` and registered it in `Plans/Plan History.md` as the tracked plan for the next review UX slice.
 - [x] Added the quote-submission follow-up: guest quote completion now shows the claim code on-screen with expiry/save guidance, signed-in users can submit quotes directly into their account, and the client review flow now has a separate review screen with revision diff visibility.
 - [x] Saved `Plans/Quote Submission, Claim Code UX And Dedicated Client Review Follow-up.md` and registered it in `Plans/Plan History.md` as the tracked plan for the next quote/review follow-up slice.
 - [x] Delivered quote workflow phase 3: estimates can be sent into `client_review`, managers can upload estimate files, quote/estimate revision history is recorded, and the client decision UI is split into clearer review sections.

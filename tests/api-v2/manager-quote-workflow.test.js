@@ -210,3 +210,42 @@ test('manager can create a draft estimate directly from a quote', async () => {
   assert.equal(stubs.quote.workflowStatus, 'quote_requested');
   assert.equal(stubs.quote.estimates.length, 1);
 });
+
+test('manager can load quote detail for the dedicated review timeline', async () => {
+  const stubs = createStubs();
+  stubs.quote.assignedManagerId = managerId;
+  stubs.quote.revisionHistory = [{
+    id: 'rev-1',
+    createdAt: '2026-03-31T12:00:00.000Z',
+    changeType: 'workflow_updated',
+    changedFields: ['workflowStatus'],
+    snapshot: { workflowStatus: 'manager_review' }
+  }];
+  stubs.quote.estimates = [{
+    id: 'estimate-1',
+    title: 'Review Pack',
+    status: 'sent',
+    total: 1500,
+    revisionHistory: [{
+      id: 'est-rev-1',
+      createdAt: '2026-03-31T12:30:00.000Z',
+      changeType: 'sent_to_client_review',
+      changedFields: ['status'],
+      snapshot: { status: 'sent' }
+    }]
+  }];
+  mockModels(stubs.models);
+
+  const route = loadRoute('routes/manager.js');
+  const app = buildExpressApp('/api/manager', route);
+  const token = signAccessToken(managerId, 'manager');
+
+  const response = await request(app)
+    .get(`/api/manager/quotes/${quoteId}`)
+    .set('Authorization', `Bearer ${token}`)
+    .expect(200);
+
+  assert.equal(response.body?.quote?.id, quoteId);
+  assert.equal(response.body?.quote?.revisionHistory?.length, 1);
+  assert.equal(response.body?.quote?.estimates?.[0]?.title, 'Review Pack');
+});

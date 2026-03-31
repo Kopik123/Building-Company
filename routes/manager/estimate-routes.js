@@ -10,9 +10,13 @@ const {
 const { generateEstimatePdfBuffer } = require('../../utils/estimatePdf');
 
 const UPLOADS_DIR = path.join(__dirname, '..', '..', 'uploads');
-const buildEstimatePdfFilename = (estimate) => `${String(estimate.title || 'estimate')
-  .replace(/[^a-z0-9-_]+/gi, '-')
-  .replace(/^-+|-+$/g, '') || 'estimate'}.pdf`;
+const buildEstimatePdfFilename = (estimate) => {
+  const sanitizedTitle = String(estimate?.title || '')
+    .trim()
+    .replace(/[^a-z0-9-_]+/gi, '-')
+    .replace(/^-+|-+$/g, '');
+  return `${sanitizedTitle || 'estimate'}.pdf`;
+};
 
 const toPlain = (entity) => (typeof entity?.toJSON === 'function' ? entity.toJSON() : { ...(entity || {}) });
 

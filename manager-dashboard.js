@@ -773,7 +773,7 @@
       const workflowStatus = quote.workflowStatus || 'new';
       const latestEstimate = Array.isArray(quote.estimates) && quote.estimates.length ? quote.estimates[0] : null;
       const latestEstimateLabel = latestEstimate
-        ? `${latestEstimate.title || 'Estimate'} | ${latestEstimate.status || 'draft'} | GBP ${Number(latestEstimate.total || 0).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        ? `${latestEstimate.title || 'Estimate'} | ${latestEstimate.status || 'draft'} | ${formatCurrency(latestEstimate.total || 0)}`
         : 'No linked estimate yet';
       const visitDetail = quote.siteVisitDate
         ? `${quote.siteVisitDate}${quote.siteVisitTimeWindow ? ` (${quote.siteVisitTimeWindow})` : ''}`
@@ -782,7 +782,16 @@
       const clientDecision = quote.clientDecisionStatus || 'pending';
       const card = document.createElement('article');
       card.className = 'dashboard-item';
-      card.innerHTML = `<h3>${escapeHtml(quote.projectType)} | ${escapeHtml(owner)}</h3><p class=\"muted\">${escapeHtml(quote.status)} | priority ${escapeHtml(quote.priority)} | ${escapeHtml(quote.location || '-')} ${escapeHtml(quote.postcode || '')}</p><p class=\"muted\">Workflow: ${escapeHtml(workflowStatus)} | Visit: ${escapeHtml(visitDetail)} | Client decision: ${escapeHtml(clientDecision)} | Proposed start: ${escapeHtml(proposedStart)}</p><p class=\"muted\">Estimate pack: ${escapeHtml(latestEstimateLabel)}</p><p>${escapeHtml(quote.description || '')}</p>`;
+      const quoteMeta = `${escapeHtml(quote.status)} | priority ${escapeHtml(quote.priority)} | ${escapeHtml(quote.location || '-')} ${escapeHtml(quote.postcode || '')}`;
+      const workflowMeta = `Workflow: ${escapeHtml(workflowStatus)} | Visit: ${escapeHtml(visitDetail)} | Client decision: ${escapeHtml(clientDecision)} | Proposed start: ${escapeHtml(proposedStart)}`;
+      const estimateMeta = `Estimate pack: ${escapeHtml(latestEstimateLabel)}`;
+      card.innerHTML = `
+        <h3>${escapeHtml(quote.projectType)} | ${escapeHtml(owner)}</h3>
+        <p class="muted">${quoteMeta}</p>
+        <p class="muted">${workflowMeta}</p>
+        <p class="muted">${estimateMeta}</p>
+        <p>${escapeHtml(quote.description || '')}</p>
+      `;
       const row = document.createElement('div');
       row.className = 'dashboard-edit-grid dashboard-edit-grid--wide';
       const statusSelect = document.createElement('select');
@@ -959,7 +968,14 @@
           }
         });
       }
-      row.appendChild(createEditActions([acceptBtn, draftEstimateBtn, workflowSaveBtn, convertBtn, saveBtn]));
+      let reviewTimelineLink = null;
+      if (canManage) {
+        reviewTimelineLink = document.createElement('a');
+        reviewTimelineLink.className = 'btn btn-outline';
+        reviewTimelineLink.href = `/manager-review.html?quoteId=${encodeURIComponent(quote.id)}`;
+        reviewTimelineLink.textContent = 'Open review timeline';
+      }
+      row.appendChild(createEditActions([acceptBtn, draftEstimateBtn, reviewTimelineLink, workflowSaveBtn, convertBtn, saveBtn]));
       card.appendChild(row);
       frag.appendChild(card);
     });

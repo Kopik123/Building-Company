@@ -29,7 +29,7 @@ const wrapLine = (text, maxLength = 84) => {
   return lines;
 };
 
-const formatCurrencyGBP = (value) => `GBP ${Number(value || 0).toLocaleString('en-GB', {
+const formatCurrency = (value) => `GBP ${Number(value || 0).toLocaleString('en-GB', {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2
 })}`;
@@ -61,7 +61,7 @@ const buildEstimatePdfLines = (estimate) => {
   } else {
     estimateLines.forEach((line, index) => {
       wrapLine(`${index + 1}. ${line.description || 'Line item'}`).forEach((item) => lines.push(item));
-      lines.push(`    Type: ${line.lineType || 'custom'} | Qty: ${line.quantity || 0} ${line.unit || ''} | Total: ${formatCurrencyGBP(line.lineTotal || 0)}`);
+      lines.push(`    Type: ${line.lineType || 'custom'} | Qty: ${line.quantity || 0} ${line.unit || ''} | Total: ${formatCurrency(line.lineTotal || 0)}`);
       if (line.notes) {
         wrapLine(`    Notes: ${line.notes}`).forEach((item) => lines.push(item));
       }
@@ -69,8 +69,8 @@ const buildEstimatePdfLines = (estimate) => {
     });
   }
   lines.push('----------------------------------------');
-  lines.push(`Subtotal: ${formatCurrencyGBP(estimate.subtotal || 0)}`);
-  lines.push(`Total: ${formatCurrencyGBP(estimate.total || 0)}`);
+  lines.push(`Subtotal: ${formatCurrency(estimate.subtotal || 0)}`);
+  lines.push(`Total: ${formatCurrency(estimate.total || 0)}`);
   return lines;
 };
 
