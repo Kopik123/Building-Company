@@ -117,6 +117,10 @@ const Quote = sequelize.define('Quote', {
     type: DataTypes.STRING,
     allowNull: true
   },
+  clientReviewStartedAt: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
   clientDecisionStatus: {
     type: DataTypes.STRING,
     allowNull: false,
@@ -125,6 +129,11 @@ const Quote = sequelize.define('Quote', {
   clientDecisionNotes: {
     type: DataTypes.TEXT,
     allowNull: true
+  },
+  revisionHistory: {
+    type: DataTypes.JSON,
+    allowNull: false,
+    defaultValue: []
   },
   archivedAt: {
     type: DataTypes.DATE,

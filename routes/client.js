@@ -22,6 +22,7 @@ const {
   QUOTE_CLIENT_DECISION_STATUSES_NON_PENDING,
   deriveLegacyQuoteStatus
 } = require('../utils/quoteWorkflow');
+const { appendRevisionEntry, buildQuoteRevisionSnapshot } = require('../utils/revisionHistory');
 
 const router = express.Router();
 const clientGuard = [auth, roleCheck('client')];
@@ -65,6 +66,23 @@ const formatVisitPreference = ({ siteVisitDate, siteVisitTimeWindow }) => {
   return `${siteVisitDate}${siteVisitTimeWindow ? ` (${siteVisitTimeWindow})` : ''}`;
 };
 
+const buildQuoteHistoryPayload = ({ quote, actor, changeType, note, changedFields = [], updates = {} }) => {
+  const current = typeof quote?.toJSON === 'function' ? quote.toJSON() : { ...(quote || {}) };
+  const nextState = { ...current, ...updates };
+  return {
+    ...updates,
+    revisionHistory: appendRevisionEntry(current.revisionHistory, {
+      entity: 'quote',
+      changeType,
+      changedById: actor?.id || null,
+      changedByRole: actor?.role || null,
+      note: note || null,
+      changedFields,
+      snapshot: buildQuoteRevisionSnapshot(nextState)
+    })
+  };
+};
+
 router.get(
   '/overview',
   [...clientGuard, query('includeThreads').optional().isIn(['true', 'false', '1', '0'])],
@@ -92,7 +110,20 @@ router.get(
           {
             model: Estimate,
             as: 'estimates',
-            attributes: ['id', 'title', 'status', 'total', 'updatedAt', 'createdAt'],
+            attributes: [
+              'id',
+              'title',
+              'status',
+              'total',
+              'updatedAt',
+              'createdAt',
+              'revisionNumber',
+              'clientVisible',
+              'sentToClientAt',
+              'documentUrl',
+              'documentFilename',
+              'revisionHistory'
+            ],
             required: false,
             separate: true,
             limit: 5,
@@ -241,7 +272,14 @@ router.post(
       clientDecisionStatus: payload.clientDecisionStatus || quote.clientDecisionStatus
     });
 
-    await quote.update(payload);
+    const historyPayload = buildQuoteHistoryPayload({
+      quote,
+      actor: req.user,
+      changeType: requestedVisitChange ? 'client_requested_visit_change' : 'client_updated_decision',
+      changedFields: Object.keys(payload),
+      updates: payload
+    });
+    await quote.update(historyPayload);
 
     const managerId = quote.assignedManagerId;
     if (managerId) {

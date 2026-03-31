@@ -1,5 +1,17 @@
 # Project Dev Plan
 
+## 2026-03-31 (quote workflow phase-3 start)
+
+- Saved `Plans/Quote Workflow Phase 3 - Client Review Pack, Estimate Uploads And Revision History.md` and registered it in `Plans/Plan History.md` as the active execution plan for the third quote workflow slice.
+- Added phase-3 follow-up items to `Project_todos.md` for client-review handoff, estimate uploads, revision history, and the rebuilt client decision UI.
+- Extended `Estimate` and `Quote` with additive phase-3 fields for client-review timestamps, estimate-file metadata, revision counters and revision history, plus a compatible migration in `migrations/202603311415-phase3-estimate-client-review-and-revisions.js`.
+- Added `utils/revisionHistory.js` and wired the manager/client quote + estimate routes so meaningful workflow/content changes append quote/estimate history snapshots instead of overwriting state silently.
+- Extended manager estimate APIs with document upload, send-to-client-review, and revision listing support; quote handoff now moves into `client_review` and notifies the client when the estimate pack is ready.
+- Updated the manager estimate editor with upload/send/revision sections and rebuilt the client quote card into separated review, estimate-pack, decision, visit-change, and history sections.
+- Added focused regression coverage in `tests/api-v2/manager-estimate-client-review.test.js`, updated client workflow assertions, and added migration coverage for the phase-3 schema additions.
+- Re-ran `npm ci`, `npm run verify:generated` and `npm run test:api:v2`; the phase-3 quote workflow change set passes the available sandbox validation path.
+- Ran automated code review and `codeql_checker`; no review findings or CodeQL alerts remained for the phase-3 change set.
+
 ## 2026-03-31 (quote workflow phase-2 start)
 
 - Saved `Plans/Quote Workflow Phase 2 - Estimate Pack Visibility And Draft Builder.md` and registered it in `Plans/Plan History.md` as the active execution plan for the second quote workflow slice.

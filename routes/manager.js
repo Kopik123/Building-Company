@@ -368,7 +368,12 @@ const loadEstimateDetail = async (estimateId) => {
   const estimate = await Estimate.findByPk(estimateId, {
     include: [
       { model: Project, as: 'project', attributes: ['id', 'title', 'location'], required: false },
-      { model: Quote, as: 'quote', attributes: ['id', 'projectType', 'location', 'status'], required: false },
+      {
+        model: Quote,
+        as: 'quote',
+        attributes: ['id', 'projectType', 'location', 'status', 'workflowStatus', 'clientDecisionStatus', 'clientReviewStartedAt'],
+        required: false
+      },
       { model: User, as: 'creator', attributes: ['id', 'name', 'email'], required: false },
       {
         model: EstimateLine,
@@ -494,7 +499,6 @@ router.use(createEstimateRoutes({
   Estimate,
   EstimateLine,
   Project,
-  Quote,
   User,
   ESTIMATE_STATUSES,
   ESTIMATE_LINE_TYPES,
@@ -512,7 +516,13 @@ router.use(createEstimateRoutes({
   toNullableNumber,
   resolveEstimateLineInput,
   calculateEstimateLineTotal,
-  recalculateEstimateTotals
+  recalculateEstimateTotals,
+  upload,
+  normalizeStoragePath,
+  safeUnlink,
+  Quote,
+  Notification,
+  deriveLegacyQuoteStatus
 }));
 
 router.use(createQuoteRoutes({

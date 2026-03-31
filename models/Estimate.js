@@ -28,8 +28,47 @@ const Estimate = sequelize.define('Estimate', {
     allowNull: false,
     defaultValue: 'draft'
   },
+  revisionNumber: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 1
+  },
+  revisionHistory: {
+    type: DataTypes.JSON,
+    allowNull: false,
+    defaultValue: []
+  },
   notes: {
     type: DataTypes.TEXT,
+    allowNull: true
+  },
+  clientVisible: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
+  },
+  sentToClientAt: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  documentUrl: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  documentStoragePath: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  documentFilename: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  documentMimeType: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  documentSizeBytes: {
+    type: DataTypes.INTEGER,
     allowNull: true
   },
   subtotal: {

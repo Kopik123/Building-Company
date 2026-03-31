@@ -73,6 +73,10 @@
     if (Number.isNaN(parsed.getTime())) return '';
     return parsed.toLocaleString('en-GB');
   });
+  const formatCurrency = runtime.formatCurrency || ((value) => `GBP ${Number(value || 0).toLocaleString('en-GB', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })}`);
   const createOverviewEntry = runtime.createOverviewEntry || (({ title, detail, meta }) => {
     const item = document.createElement('article');
     item.className = 'workspace-overview-entry';
@@ -243,7 +247,9 @@
     state.quotes.forEach((quote) => {
       const workflowStatus = quote.workflowStatus || 'new';
       const estimates = Array.isArray(quote.estimates) ? quote.estimates : [];
-      const visibleEstimate = estimates.find((estimate) => ['sent', 'approved', 'archived'].includes(String(estimate.status || '').toLowerCase())) || null;
+      const visibleEstimate = estimates.find((estimate) =>
+        estimate.clientVisible || ['sent', 'approved', 'archived'].includes(String(estimate.status || '').toLowerCase())
+      ) || null;
       const visitDetail = quote.siteVisitDate
         ? `${quote.siteVisitDate}${quote.siteVisitTimeWindow ? ` (${quote.siteVisitTimeWindow})` : ''}`
         : 'Awaiting manager proposal';
@@ -255,23 +261,58 @@
         quote.labourEstimate ? `Labour: ${quote.labourEstimate}` : null
       ].filter(Boolean);
       const estimateSummary = visibleEstimate
-        ? `${visibleEstimate.title || 'Estimate'} | ${visibleEstimate.status || 'sent'} | GBP ${Number(visibleEstimate.total || 0).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        ? `${visibleEstimate.title || 'Estimate'} | ${visibleEstimate.status || 'sent'} | ${formatCurrency(visibleEstimate.total || 0)}`
         : 'Pricing pack is still being prepared.';
       const card = document.createElement('article');
       card.className = 'dashboard-item';
-      card.innerHTML = `<h3>${escapeHtml(quote.projectType)}</h3><p class="muted">${escapeHtml(quote.status)} | Priority ${escapeHtml(quote.priority)} | ${escapeHtml(quote.location || '-')}</p><p class="muted">Workflow: ${escapeHtml(workflowStatus)} | Visit: ${escapeHtml(visitDetail)} | Proposed start: ${escapeHtml(startDetail)} | Your decision: ${escapeHtml(decisionStatus)}</p><p class="muted">Latest estimate: ${escapeHtml(estimateSummary)}</p><p>${escapeHtml(quote.description || '')}</p>`;
+      card.innerHTML = `<h3>${escapeHtml(quote.projectType)}</h3><p class="muted">${escapeHtml(quote.status)} | Priority ${escapeHtml(quote.priority)} | ${escapeHtml(quote.location || '-')}</p><p class="muted">Workflow: ${escapeHtml(workflowStatus)} | Visit: ${escapeHtml(visitDetail)} | Proposed start: ${escapeHtml(startDetail)} | Your decision: ${escapeHtml(decisionStatus)}</p><p>${escapeHtml(quote.description || '')}</p>`;
+
+      const sections = document.createElement('div');
+      sections.className = 'dashboard-grid';
+
+      const summaryWrap = document.createElement('div');
+      summaryWrap.className = 'dashboard-list';
+      summaryWrap.appendChild(createOverviewEntry({
+        title: 'Review summary',
+        detail: workflowStatus === 'client_review'
+          ? 'The estimate pack is ready for your review. Check the pack, then accept, reject, or request edits.'
+          : 'Track the current quote route and review updates from your manager here.',
+        meta: `Latest estimate: ${estimateSummary}`
+      }));
 
       const estimatePackWrap = document.createElement('div');
       estimatePackWrap.className = 'dashboard-list';
       estimatePackWrap.appendChild(createOverviewEntry({
         title: 'Estimate pack',
         detail: estimatePackBits.length ? estimatePackBits.join(' | ') : 'The manager has not published the estimate pack details yet.',
-        meta: quote.estimateDocumentUrl ? `Estimate link: ${quote.estimateDocumentUrl}` : ''
+        meta: visibleEstimate?.sentToClientAt ? `Sent ${formatDateTime(visibleEstimate.sentToClientAt)}` : ''
       }));
-      card.appendChild(estimatePackWrap);
+      if (visibleEstimate?.documentUrl || quote.estimateDocumentUrl) {
+        const link = document.createElement('a');
+        link.className = 'btn btn-outline';
+        link.href = visibleEstimate?.documentUrl || quote.estimateDocumentUrl;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = 'Open estimate file';
+        estimatePackWrap.appendChild(link);
+      }
 
-      const form = document.createElement('div');
-      form.className = 'dashboard-edit-grid dashboard-edit-grid--wide';
+      const decisionSection = document.createElement('div');
+      decisionSection.className = 'dashboard-edit-grid dashboard-edit-grid--wide';
+      decisionSection.appendChild(createOverviewEntry({
+        title: 'Decision',
+        detail: 'Choose the next step for this quote pack. Use notes to explain any requested changes.',
+        meta: `Current decision: ${decisionStatus}`
+      }));
+
+      const visitSection = document.createElement('div');
+      visitSection.className = 'dashboard-edit-grid dashboard-edit-grid--wide';
+      visitSection.appendChild(createOverviewEntry({
+        title: 'Visit changes',
+        detail: 'Suggest another day or time window if the current visit plan does not work for you.',
+        meta: ''
+      }));
+
       const visitDateInput = document.createElement('input');
       visitDateInput.type = 'date';
       visitDateInput.value = toDateInputValue(quote.siteVisitDate);
@@ -323,18 +364,43 @@
           window.alert(error.message || 'Failed to update quote workflow');
         }
       });
+      decisionSection.appendChild(createControlField('Decision', decisionSelect));
+      decisionSection.appendChild(createControlField('Decision notes', notesInput));
+      decisionSection.appendChild(saveBtn);
+      visitSection.appendChild(createControlField('Preferred visit date', visitDateInput));
+      visitSection.appendChild(createControlField('Preferred visit time', visitWindowInput));
 
-      form.appendChild(createOverviewEntry({
-        title: 'Visit change request',
-        detail: 'Suggest another day or time window if the current visit plan does not work for you.',
-        meta: ''
-      }));
-      form.appendChild(createControlField('Preferred visit date', visitDateInput));
-      form.appendChild(createControlField('Preferred visit time', visitWindowInput));
-      form.appendChild(createControlField('Decision', decisionSelect));
-      form.appendChild(createControlField('Notes', notesInput));
-      form.appendChild(saveBtn);
-      card.appendChild(form);
+      const historyWrap = document.createElement('div');
+      historyWrap.className = 'dashboard-list';
+      const quoteHistory = Array.isArray(quote.revisionHistory) ? quote.revisionHistory : [];
+      const estimateHistory = Array.isArray(visibleEstimate?.revisionHistory) ? visibleEstimate.revisionHistory : [];
+      const historyEntries = [...quoteHistory.slice(-3), ...estimateHistory.slice(-3)]
+        .sort((left, right) => Date.parse(right?.createdAt || 0) - Date.parse(left?.createdAt || 0))
+        .slice(0, 5);
+      if (historyEntries.length) {
+        historyEntries.forEach((entry) => {
+          historyWrap.appendChild(createOverviewEntry({
+            title: titleCase(entry.changeType || 'update'),
+            detail: Array.isArray(entry.changedFields) && entry.changedFields.length
+              ? entry.changedFields.join(', ')
+              : 'snapshot',
+            meta: formatDateTime(entry.createdAt) || ''
+          }));
+        });
+      } else {
+        historyWrap.appendChild(createOverviewEntry({
+          title: 'History',
+          detail: 'Revision history will appear here once the quote or estimate pack changes.',
+          meta: ''
+        }));
+      }
+
+      sections.appendChild(summaryWrap);
+      sections.appendChild(estimatePackWrap);
+      sections.appendChild(decisionSection);
+      sections.appendChild(visitSection);
+      sections.appendChild(historyWrap);
+      card.appendChild(sections);
       frag.appendChild(card);
     });
     el.quotesList.appendChild(frag);

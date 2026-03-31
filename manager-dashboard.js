@@ -87,7 +87,12 @@
     estimateEditorTotal: document.getElementById('estimate-editor-total'),
     estimateUpdateForm: document.getElementById('estimate-update-form'),
     estimateUpdateStatus: document.getElementById('estimate-update-status'),
+    estimateSendReview: document.getElementById('estimate-send-review-btn'),
     estimateDelete: document.getElementById('estimate-delete-btn'),
+    estimateDocumentForm: document.getElementById('estimate-document-form'),
+    estimateDocumentStatus: document.getElementById('estimate-document-status'),
+    estimateDocumentSummary: document.getElementById('estimate-document-summary'),
+    estimateRevisionsList: document.getElementById('estimate-revisions-list'),
     estimateLineForm: document.getElementById('estimate-line-form'),
     estimateLineStatus: document.getElementById('estimate-line-status'),
     estimateLinesList: document.getElementById('estimate-lines-list'),
@@ -178,6 +183,10 @@
     if (Number.isNaN(parsed.getTime())) return '';
     return parsed.toLocaleString('en-GB');
   });
+  const formatCurrency = runtime.formatCurrency || ((value) => `GBP ${Number(value || 0).toLocaleString('en-GB', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })}`);
   const createOverviewEntry = runtime.createOverviewEntry || (({ title, detail, meta }) => {
     const item = document.createElement('article');
     item.className = 'workspace-overview-entry';
@@ -1168,7 +1177,9 @@
       const card = document.createElement('article');
       card.className = `dashboard-item ${estimate.id === state.selectedEstimateId ? 'is-active' : ''}`;
       const projectTitle = estimate.project?.title || 'No project';
-      card.innerHTML = `<h3>${escapeHtml(estimate.title)}</h3><p class="muted">${escapeHtml(estimate.status)} | ${escapeHtml(projectTitle)} | total GBP ${escapeHtml(Number(estimate.total || 0).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}</p>`;
+      const revisionMeta = estimate.revisionNumber ? ` | revision ${estimate.revisionNumber}` : '';
+      const clientMeta = estimate.sentToClientAt ? ` | sent ${escapeHtml(formatDateTime(estimate.sentToClientAt))}` : '';
+      card.innerHTML = `<h3>${escapeHtml(estimate.title)}</h3><p class="muted">${escapeHtml(estimate.status)}${revisionMeta}${clientMeta} | ${escapeHtml(projectTitle)} | total ${escapeHtml(formatCurrency(estimate.total || 0))}</p>`;
       const row = document.createElement('div');
       row.className = 'dashboard-actions-row';
       const btn = document.createElement('button');
@@ -1201,7 +1212,7 @@
     estimate.lines.forEach((line) => {
       const card = document.createElement('article');
       card.className = 'dashboard-item';
-      card.innerHTML = `<h3>${escapeHtml(line.description)}</h3><p class="muted">${escapeHtml(line.lineType)} | qty ${escapeHtml(line.quantity)} ${escapeHtml(line.unit || '')} | GBP ${escapeHtml(Number(line.lineTotal || 0).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}</p>${line.notes ? `<p>${escapeHtml(line.notes)}</p>` : ''}`;
+      card.innerHTML = `<h3>${escapeHtml(line.description)}</h3><p class="muted">${escapeHtml(line.lineType)} | qty ${escapeHtml(line.quantity)} ${escapeHtml(line.unit || '')} | ${escapeHtml(formatCurrency(line.lineTotal || 0))}</p>${line.notes ? `<p>${escapeHtml(line.notes)}</p>` : ''}`;
       const row = document.createElement('div');
       row.className = 'dashboard-actions-row';
       const del = document.createElement('button');
@@ -1238,7 +1249,7 @@
     syncEstimateReferenceOptions();
     el.estimateEditorCard.hidden = false;
     el.estimateEditorTitle.textContent = estimate.title || 'Estimate';
-    el.estimateEditorTotal.textContent = `Total GBP ${Number(estimate.total || 0).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    el.estimateEditorTotal.textContent = `Total ${formatCurrency(estimate.total || 0)}`;
     const form = el.estimateUpdateForm.elements;
     form.id.value = estimate.id;
     form.title.value = estimate.title || '';
@@ -1246,8 +1257,61 @@
     form.projectId.value = estimate.projectId || '';
     form.quoteId.value = estimate.quoteId || '';
     form.notes.value = estimate.notes || '';
+    renderEstimateDocumentSummary();
+    renderEstimateRevisions();
     renderEstimateLines();
     requestAccordionRefresh();
+  };
+
+  const renderEstimateDocumentSummary = () => {
+    el.estimateDocumentSummary.innerHTML = '';
+    const estimate = selectedEstimate();
+    if (!estimate) {
+      el.estimateDocumentSummary.innerHTML = '<p class="muted">Select an estimate to manage its document pack.</p>';
+      return;
+    }
+
+    const card = document.createElement('article');
+    card.className = 'dashboard-item';
+    if (estimate.documentUrl) {
+      card.innerHTML = `<h3>${escapeHtml(estimate.documentFilename || 'Estimate file')}</h3><p class="muted">${escapeHtml(estimate.documentMimeType || 'file')} | ${escapeHtml(estimate.documentSizeBytes || '-')} bytes</p><p class="muted">Client visible: ${escapeHtml(estimate.clientVisible ? 'yes' : 'no')} | Sent: ${escapeHtml(formatDateTime(estimate.sentToClientAt) || 'not yet')}</p>`;
+      const link = document.createElement('a');
+      link.className = 'btn btn-outline';
+      link.href = estimate.documentUrl;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.textContent = 'Open uploaded file';
+      card.appendChild(link);
+    } else {
+      card.innerHTML = '<h3>No file uploaded yet</h3><p class="muted">Upload a PDF or supporting file to include it in the client-visible estimate pack.</p>';
+    }
+    el.estimateDocumentSummary.appendChild(card);
+  };
+
+  const renderEstimateRevisions = () => {
+    el.estimateRevisionsList.innerHTML = '';
+    const estimate = selectedEstimate();
+    const revisions = Array.isArray(estimate?.revisionHistory) ? estimate.revisionHistory : [];
+    if (!estimate) {
+      el.estimateRevisionsList.innerHTML = '<p class="muted">Select an estimate to see its revision history.</p>';
+      return;
+    }
+    if (!revisions.length) {
+      el.estimateRevisionsList.innerHTML = '<p class="muted">No revisions recorded yet.</p>';
+      return;
+    }
+
+    const frag = document.createDocumentFragment();
+    [...revisions].reverse().forEach((revision) => {
+      const card = document.createElement('article');
+      card.className = 'dashboard-item';
+      const changedFields = Array.isArray(revision.changedFields) && revision.changedFields.length
+        ? revision.changedFields.join(', ')
+        : 'snapshot';
+      card.innerHTML = `<h3>${escapeHtml(titleCase(revision.changeType || 'revision'))}</h3><p class="muted">${escapeHtml(formatDateTime(revision.createdAt) || '')} | ${escapeHtml(changedFields)}</p>${revision.note ? `<p>${escapeHtml(revision.note)}</p>` : ''}`;
+      frag.appendChild(card);
+    });
+    el.estimateRevisionsList.appendChild(frag);
   };
 
   const renderDirectThreads = () => {
@@ -2102,6 +2166,41 @@
       await loadEstimates();
     } catch (error) {
       setStatus(el.estimateUpdateStatus, error.message || 'Failed to delete estimate.', 'error');
+    }
+  });
+
+  el.estimateSendReview.addEventListener('click', async () => {
+    const estimate = selectedEstimate();
+    if (!estimate) return setStatus(el.estimateUpdateStatus, 'Select an estimate first.', 'error');
+    setStatus(el.estimateUpdateStatus, 'Sending estimate to client review...');
+    try {
+      await api(`/api/manager/estimates/${estimate.id}/send-to-client-review`, { method: 'POST' });
+      setStatus(el.estimateUpdateStatus, 'Estimate sent to client review.', 'success');
+      await Promise.all([loadEstimates(estimate.id), loadQuotes()]);
+    } catch (error) {
+      setStatus(el.estimateUpdateStatus, error.message || 'Failed to send estimate to client review.', 'error');
+    }
+  });
+
+  el.estimateDocumentForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const estimate = selectedEstimate();
+    if (!estimate) return setStatus(el.estimateDocumentStatus, 'Select an estimate first.', 'error');
+    const file = el.estimateDocumentForm.elements.file.files?.[0];
+    if (!file) return setStatus(el.estimateDocumentStatus, 'Choose a file first.', 'error');
+    setStatus(el.estimateDocumentStatus, 'Uploading estimate file...');
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      await api(`/api/manager/estimates/${estimate.id}/document`, {
+        method: 'POST',
+        body: formData
+      });
+      setStatus(el.estimateDocumentStatus, 'Estimate file uploaded.', 'success');
+      el.estimateDocumentForm.reset();
+      await Promise.all([loadEstimates(estimate.id), loadQuotes()]);
+    } catch (error) {
+      setStatus(el.estimateDocumentStatus, error.message || 'Failed to upload estimate file.', 'error');
     }
   });
 

@@ -5,6 +5,7 @@ const baselineHardening = require('../../migrations/202603080001-production-base
 const sessionDeviceHardening = require('../../migrations/202603080002-v2-session-device-and-email-hardening.js');
 const performanceSearch = require('../../migrations/202603090000-performance-search-trgm-indexes.js');
 const quoteWorkflowPhase1 = require('../../migrations/202603310001-quote-workflow-phase1.js');
+const quoteWorkflowPhase3 = require('../../migrations/202603311415-phase3-estimate-client-review-and-revisions.js');
 
 const createQueryInterfaceStub = (tables) => {
   const queries = [];
@@ -233,6 +234,69 @@ test('quote workflow phase-1 migration adds workflow columns and indexes when Qu
   );
   assert.equal(
     addedIndexes.some((item) => item.options.name === 'quotes_client_decision_idx'),
+    true
+  );
+});
+
+test('quote workflow phase-3 migration adds estimate review and revision columns when tables already exist', async () => {
+  const tables = {
+    Quotes: {
+      id: {},
+      workflowStatus: {},
+      status: {},
+      updatedAt: {}
+    },
+    Estimates: {
+      id: {},
+      quoteId: {},
+      status: {}
+    }
+  };
+  const addedIndexes = [];
+
+  const queryInterface = {
+    async describeTable(tableName) {
+      const table = tables[tableName];
+      if (table) return table;
+      throw new Error(`relation "${tableName}" does not exist`);
+    },
+    async addColumn(tableName, columnName, definition) {
+      tables[tableName] = tables[tableName] || {};
+      tables[tableName][columnName] = definition;
+    },
+    async showIndex() {
+      return [];
+    },
+    async addIndex(tableName, fields, options) {
+      addedIndexes.push({ tableName, fields, options });
+    }
+  };
+
+  await assert.doesNotReject(() =>
+    quoteWorkflowPhase3.up(queryInterface, {
+      DataTypes: {
+        STRING: 'STRING',
+        TEXT: 'TEXT',
+        DATE: 'DATE',
+        DATEONLY: 'DATEONLY',
+        BOOLEAN: 'BOOLEAN',
+        INTEGER: 'INTEGER',
+        JSON: 'JSON'
+      }
+    })
+  );
+
+  assert.equal(Boolean(tables.Quotes.clientReviewStartedAt), true);
+  assert.equal(Boolean(tables.Quotes.revisionHistory), true);
+  assert.equal(Boolean(tables.Estimates.revisionHistory), true);
+  assert.equal(Boolean(tables.Estimates.documentUrl), true);
+  assert.equal(Boolean(tables.Estimates.clientVisible), true);
+  assert.equal(
+    addedIndexes.some((item) => item.options.name === 'estimates_client_visible_status_idx'),
+    true
+  );
+  assert.equal(
+    addedIndexes.some((item) => item.options.name === 'quotes_client_review_started_idx'),
     true
   );
 });

@@ -1,5 +1,6 @@
 const express = require('express');
 const { createValidatedHandler, findByPkOrRespond } = require('./route-helpers');
+const { appendRevisionEntry, buildQuoteRevisionSnapshot } = require('../../utils/revisionHistory');
 
 const toTitleCase = (value) =>
   String(value || '')
@@ -67,13 +68,42 @@ module.exports = function createQuoteRoutes({
     {
       model: Estimate,
       as: 'estimates',
-      attributes: ['id', 'title', 'status', 'total', 'updatedAt', 'createdAt'],
+      attributes: [
+        'id',
+        'title',
+        'status',
+        'total',
+        'updatedAt',
+        'createdAt',
+        'revisionNumber',
+        'clientVisible',
+        'sentToClientAt',
+        'documentUrl',
+        'documentFilename',
+        'revisionHistory'
+      ],
       required: false,
       separate: true,
       limit: 5,
       order: [['updatedAt', 'DESC'], ['createdAt', 'DESC']]
     }
   ];
+  const buildQuoteHistoryPayload = ({ quote, actor, changeType, note, changedFields = [], updates = {} }) => {
+    const current = typeof quote?.toJSON === 'function' ? quote.toJSON() : { ...(quote || {}) };
+    const nextState = { ...current, ...updates };
+    return {
+      ...updates,
+      revisionHistory: appendRevisionEntry(current.revisionHistory, {
+        entity: 'quote',
+        changeType,
+        changedById: actor?.id || null,
+        changedByRole: actor?.role || null,
+        note: note || null,
+        changedFields,
+        snapshot: buildQuoteRevisionSnapshot(nextState)
+      })
+    };
+  };
   const inferWorkflowPayload = ({ quote, payload, managerChangedVisitPlan, managerPreparedEstimate }) => {
     const nextPayload = { ...payload };
 
@@ -112,6 +142,9 @@ module.exports = function createQuoteRoutes({
     }
     if (!nextPayload.workflowStatus && nextPayload.clientDecisionStatus === 'request_edit') {
       nextPayload.workflowStatus = 'changes_requested';
+    }
+    if (nextPayload.workflowStatus === 'client_review' && !nextPayload.clientReviewStartedAt) {
+      nextPayload.clientReviewStartedAt = new Date();
     }
 
     if (nextPayload.workflowStatus === 'archived') {
@@ -197,15 +230,22 @@ module.exports = function createQuoteRoutes({
       const nextWorkflowStatus = ['accepted', 'rejected', 'archived'].includes(normalizedWorkflowStatus)
         ? normalizedWorkflowStatus
         : 'quote_requested';
-      await quote.update({
-        workflowStatus: nextWorkflowStatus,
-        status: deriveLegacyQuoteStatus({
+      const draftPayload = buildQuoteHistoryPayload({
+        quote,
+        actor: req.user,
+        changeType: 'draft_estimate_created',
+        changedFields: ['workflowStatus', 'status'],
+        updates: {
           workflowStatus: nextWorkflowStatus,
-          assignedManagerId: quote.assignedManagerId,
-          archivedAt: quote.archivedAt,
-          clientDecisionStatus: quote.clientDecisionStatus
-        })
+          status: deriveLegacyQuoteStatus({
+            workflowStatus: nextWorkflowStatus,
+            assignedManagerId: quote.assignedManagerId,
+            archivedAt: quote.archivedAt,
+            clientDecisionStatus: quote.clientDecisionStatus
+          })
+        }
       });
+      await quote.update(draftPayload);
 
       const detail = await loadEstimateDetail(estimate.id);
       return res.status(201).json({ estimate: detail, reused: false });
@@ -230,16 +270,23 @@ module.exports = function createQuoteRoutes({
       const workflowStatus = ['new', 'archived', ''].includes(normalizedWorkflowStatus)
         ? 'manager_review'
         : normalizedWorkflowStatus;
-      await quote.update({
-        assignedManagerId: req.user.id,
-        workflowStatus,
-        status: deriveLegacyQuoteStatus({
-          workflowStatus,
+      const acceptPayload = buildQuoteHistoryPayload({
+        quote,
+        actor: req.user,
+        changeType: 'manager_accepted_quote',
+        changedFields: ['assignedManagerId', 'workflowStatus', 'status'],
+        updates: {
           assignedManagerId: req.user.id,
-          archivedAt: quote.archivedAt,
-          clientDecisionStatus: quote.clientDecisionStatus
-        })
+          workflowStatus,
+          status: deriveLegacyQuoteStatus({
+            workflowStatus,
+            assignedManagerId: req.user.id,
+            archivedAt: quote.archivedAt,
+            clientDecisionStatus: quote.clientDecisionStatus
+          })
+        }
       });
+      await quote.update(acceptPayload);
 
       const projectName = buildProjectName(quote);
       const groupThread = await GroupThread.create({
@@ -362,7 +409,14 @@ module.exports = function createQuoteRoutes({
         clientDecisionStatus: payload.clientDecisionStatus || quote.clientDecisionStatus
       });
 
-      await quote.update(payload);
+      const historyPayload = buildQuoteHistoryPayload({
+        quote,
+        actor: req.user,
+        changeType: 'workflow_updated',
+        changedFields: Object.keys(payload),
+        updates: payload
+      });
+      await quote.update(historyPayload);
       const inboxThread = req.body.createPrivateThread ? await ensurePrivateQuoteThread(quote, req.user) : null;
 
       if (quote.clientId) {
@@ -433,11 +487,18 @@ module.exports = function createQuoteRoutes({
         isActive: true
       });
 
-      await quote.update({
-        workflowStatus: 'archived',
-        archivedAt: new Date(),
-        status: 'closed'
+      const archivePayload = buildQuoteHistoryPayload({
+        quote,
+        actor: req.user,
+        changeType: 'converted_to_project',
+        changedFields: ['workflowStatus', 'archivedAt', 'status'],
+        updates: {
+          workflowStatus: 'archived',
+          archivedAt: new Date(),
+          status: 'closed'
+        }
       });
+      await quote.update(archivePayload);
 
       await notifyClient(quote, {
         type: 'project_created_from_quote',
@@ -450,6 +511,19 @@ module.exports = function createQuoteRoutes({
       });
 
       return res.status(201).json({ project, quote });
+    })
+  );
+
+  router.get(
+    '/quotes/:id/revisions',
+    [...managerGuard, param('id').isUUID()],
+    withValidation(async (req, res) => {
+      const quote = await findByPkOrRespond(Quote, req.params.id, res, {
+        message: 'Quote not found'
+      });
+      if (!quote) return;
+
+      return res.json({ revisions: Array.isArray(quote.revisionHistory) ? quote.revisionHistory : [] });
     })
   );
 

@@ -607,10 +607,30 @@
             </div>
             <div class="dashboard-actions-row">
               <button type="submit" class="btn btn-gold">Save estimate</button>
+              <button type="button" class="btn btn-outline" id="estimate-send-review-btn">Send to client review</button>
               <button type="button" class="btn btn-outline" id="estimate-delete-btn">Delete estimate</button>
             </div>
             <p class="form-status" id="estimate-update-status" aria-live="polite"></p>
           </form>
+
+          <hr class="dashboard-divider" />
+
+          <h3>Estimate File</h3>
+          <div id="estimate-document-summary" class="dashboard-list"></div>
+          <form id="estimate-document-form" novalidate>
+            <div class="form-grid">
+              <label class="span-2">PDF / file
+                <input type="file" name="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,image/*" />
+              </label>
+            </div>
+            <button type="submit" class="btn btn-outline">Upload estimate file</button>
+            <p class="form-status" id="estimate-document-status" aria-live="polite"></p>
+          </form>
+
+          <hr class="dashboard-divider" />
+
+          <h3>Revision History</h3>
+          <div id="estimate-revisions-list" class="dashboard-list"></div>
 
           <hr class="dashboard-divider" />
 
@@ -764,7 +784,6 @@
   <script src="/manager-dashboard.js" defer></script>
 </body>
 </html>
-
 
 
 

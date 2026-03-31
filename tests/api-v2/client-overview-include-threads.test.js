@@ -65,6 +65,7 @@ const createStubs = () => {
             clientDecisionStatus: 'pending',
             siteVisitDate: '2026-04-04',
             siteVisitTimeWindow: 'AM',
+            revisionHistory: [],
             archivedAt: null,
             async update(payload) {
               Object.assign(this, payload);
@@ -149,6 +150,8 @@ test('client can request visit reschedule and quote changes', async () => {
   assert.equal(response.body?.quote?.workflowStatus, 'visit_reschedule_requested');
   assert.equal(response.body?.quote?.siteVisitStatus, 'reschedule_requested');
   assert.equal(response.body?.quote?.clientDecisionStatus, 'request_edit');
+  assert.equal(Array.isArray(response.body?.quote?.revisionHistory), true);
+  assert.equal(response.body?.quote?.revisionHistory?.length > 0, true);
   assert.equal(stubs.notifications.length, 1);
   assert.equal(stubs.notifications[0]?.type, 'quote_visit_reschedule_requested');
 });
