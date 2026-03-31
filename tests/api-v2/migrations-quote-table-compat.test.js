@@ -83,6 +83,28 @@ test('baseline hardening migration works when only queryGenerator.quoteTable exi
   ]);
 });
 
+test('baseline hardening migration skips absent tables for unknown-table errors without regex backtracking', async () => {
+  const queries = [];
+  const queryInterface = {
+    sequelize: {
+      async query(sql) {
+        queries.push(sql);
+      }
+    },
+    async describeTable() {
+      throw new Error('Unknown table "Quotes"');
+    },
+    async showIndex() {
+      return [];
+    },
+    async addIndex() {},
+    async addColumn() {}
+  };
+
+  await assert.doesNotReject(() => baselineHardening.up(queryInterface, { UUID: 'UUID' }));
+  assert.deepEqual(queries, ['CREATE EXTENSION IF NOT EXISTS pg_trgm']);
+});
+
 test('performance search migration works when only queryGenerator.quoteTable exists', async () => {
   const { queryInterface, queries } = createQueryInterfaceStub({
     Projects: {
@@ -181,6 +203,47 @@ test('session/device hardening migration creates missing tables when Sequelize s
     queries.includes('CREATE UNIQUE INDEX IF NOT EXISTS users_email_lower_unique_idx ON "Users" (LOWER("email"))'),
     true
   );
+});
+
+test('session/device hardening migration treats sqlite no-such-table errors as missing tables', async () => {
+  const createdTables = [];
+  const queryInterface = {
+    sequelize: {
+      async query() {}
+    },
+    async describeTable(tableName) {
+      if (tableName === 'Users') {
+        return {
+          id: {},
+          email: {}
+        };
+      }
+
+      throw new Error(`SQLITE_ERROR: no such table: ${tableName}`);
+    },
+    async createTable(tableName) {
+      createdTables.push(tableName);
+    },
+    async showIndex() {
+      return [];
+    },
+    async addIndex() {},
+    async dropTable() {}
+  };
+
+  await assert.doesNotReject(() =>
+    sessionDeviceHardening.up(queryInterface, {
+      DataTypes: {
+        UUID: 'UUID',
+        STRING: 'STRING',
+        DATE: 'DATE',
+        NOW: 'NOW',
+        ENUM: (...values) => ({ type: 'ENUM', values })
+      }
+    })
+  );
+
+  assert.deepEqual(createdTables, ['SessionRefreshTokens', 'DevicePushTokens']);
 });
 
 test('quote workflow phase-1 migration adds workflow columns and indexes when Quotes already exists', async () => {

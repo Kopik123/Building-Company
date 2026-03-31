@@ -2,6 +2,7 @@
 
 ## Open
 
+- [ ] Validate the hardened migration paths once on a staging/production-like database, especially missing-table fallbacks and trigram-index creation on Postgres.
 - [ ] Validate the full self-hosted font migration after deployment, including public pages, auth, manager workspace and client workspace typography.
 - [ ] Validate review-page deep links after deployment, including opening a specific diff entry from client and manager dashboard actions.
 - [ ] Validate the new review timeline filters and selected-entry highlighting against mixed quote/estimate/client-decision histories.
@@ -45,6 +46,8 @@
 
 ## Completed
 
+- [x] Replaced the remaining migration regex hotspots with bounded string parsing and tightened dynamic trigram-index SQL to use validated identifiers only.
+- [x] Added migration regression coverage for `unknown table` and `no such table` error handling before re-running the generated-page and API suites.
 - [x] Added self-hosted Montserrat and Cormorant Garamond assets, switched the tracked pages off Google Fonts, and removed the related external CSP allowances.
 - [x] Added a focused regression test to keep tracked HTML pages, the public page renderer and CSP free of `fonts.googleapis.com` / `fonts.gstatic.com` references.
 - [x] Remediated the flagged security hotspots in the touched slice: replaced the risky regex checks, removed the unsafe manager-review `innerHTML` fallback, and removed the flagged third-party font stylesheet from the affected pages.

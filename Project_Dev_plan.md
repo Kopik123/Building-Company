@@ -1,5 +1,13 @@
 # Project Dev Plan
 
+## 2026-03-31 (migration hotspot hardening start)
+
+- Saved `Plans/Migration Hotspot Hardening For ReDoS And Dynamic SQL.md` and registered it in `Plans/Plan History.md` for this migration-security cleanup slice.
+- Added a follow-up checklist item in `Project_todos.md` for validating the hardened migration paths against a staging/production-like database.
+- Replaced the remaining regex-based missing-table checks in `migrations/202603080001-production-baseline-hardening.js` and `migrations/202603080002-v2-session-device-and-email-hardening.js` with bounded string parsing helpers.
+- Tightened the trigram-index helper in `migrations/202603080001-production-baseline-hardening.js` so raw SQL now only interpolates locally quoted identifiers after explicit identifier validation.
+- Extended `tests/api-v2/migrations-quote-table-compat.test.js` with coverage for `unknown table` and SQLite `no such table` fallbacks, then re-ran `npm ci`, `npm run verify:generated`, `npm run test:api:v2`, the focused migration test file, and `node --check` for the changed migration files; the available validation path is green.
+
 ## 2026-03-31 (self-hosted fonts migration start)
 
 - Saved `Plans/Self-Hosted Fonts Migration.md` and registered it in `Plans/Plan History.md` for the full Google Fonts removal pass.
