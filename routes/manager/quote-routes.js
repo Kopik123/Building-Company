@@ -143,7 +143,7 @@ module.exports = function createQuoteRoutes({
   const ensurePrivateQuoteThread = async (quote, manager) => {
     if (!quote.clientId) return null;
 
-    const [participantAId, participantBId] = [quote.clientId, manager.id].sort();
+    const [participantAId, participantBId] = [quote.clientId, manager.id].sort((a, b) => String(a) < String(b) ? -1 : String(a) > String(b) ? 1 : 0);
     const [thread] = await InboxThread.findOrCreate({
       where: {
         participantAId,
