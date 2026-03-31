@@ -8,13 +8,11 @@ const {
   buildQuoteRevisionSnapshot
 } = require('../../utils/revisionHistory');
 const { generateEstimatePdfBuffer } = require('../../utils/estimatePdf');
+const { buildSafeSlug } = require('../../utils/safeSlug');
 
 const UPLOADS_DIR = path.join(__dirname, '..', '..', 'uploads');
 const buildEstimatePdfFilename = (estimate) => {
-  const sanitizedTitle = String(estimate?.title || '')
-    .trim()
-    .replace(/[^a-z0-9-_]+/gi, '-')
-    .replace(/^-+|-+$/g, '');
+  const sanitizedTitle = buildSafeSlug(estimate?.title, { allowUnderscore: true });
   return `${sanitizedTitle || 'estimate'}.pdf`;
 };
 

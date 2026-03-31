@@ -22,6 +22,7 @@ const { auth, roleCheck } = require('../middleware/auth');
 const asyncHandler = require('../utils/asyncHandler');
 const { upload } = require('../utils/upload');
 const { clearServicesCache, clearGalleryCache } = require('../utils/publicCache');
+const { buildSafeSlug } = require('../utils/safeSlug');
 const {
   QUOTE_WORKFLOW_STATUSES,
   QUOTE_VISIT_STATUSES,
@@ -163,13 +164,7 @@ const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
 
 const escapeLike = (value) => String(value || '').replace(/[\\%_]/g, '\\$&');
 
-const slugify = (value) =>
-  String(value || '')
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 120);
+const slugify = (value) => buildSafeSlug(value, { maxLength: 120 });
 
 const normalizeStoragePath = (absolutePath) => {
   const relative = path.relative(path.join(__dirname, '..'), absolutePath);

@@ -1,19 +1,12 @@
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
-const vm = require('node:vm');
 
 const scriptPath = path.join(__dirname, '..', 'review-diff.js');
-const source = fs.readFileSync(scriptPath, 'utf8');
 
 const loadDiffViewer = () => {
-  const sandbox = {
-    window: {},
-    console
-  };
-  vm.runInNewContext(source, sandbox, { filename: scriptPath });
-  return sandbox.window.LevelLinesReviewDiff;
+  delete require.cache[require.resolve(scriptPath)];
+  return require(scriptPath);
 };
 
 test('review diff helper builds stable entry ids from scope, change type and timestamp', () => {

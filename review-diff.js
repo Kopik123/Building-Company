@@ -1,5 +1,37 @@
 (() => {
-  const runtime = window.LevelLinesRuntime || {};
+  const rootWindow = typeof window !== 'undefined' ? window : {};
+  const runtime = rootWindow.LevelLinesRuntime || {};
+
+  const buildSafeSlug = (value, { allowUnderscore = false } = {}) => {
+    const input = String(value || '').trim().toLowerCase();
+    let output = '';
+    let lastWasDash = false;
+
+    for (let index = 0; index < input.length; index += 1) {
+      const char = input[index];
+      const code = input.charCodeAt(index);
+      const isDigit = code >= 48 && code <= 57;
+      const isLower = code >= 97 && code <= 122;
+      const isUnderscore = allowUnderscore && code === 95;
+
+      if (isDigit || isLower || isUnderscore) {
+        output += char;
+        lastWasDash = false;
+        continue;
+      }
+
+      if (!lastWasDash && output) {
+        output += '-';
+        lastWasDash = true;
+      }
+    }
+
+    let start = 0;
+    let end = output.length;
+    while (start < end && output.charCodeAt(start) === 45) start += 1;
+    while (end > start && output.charCodeAt(end - 1) === 45) end -= 1;
+    return output.slice(start, end);
+  };
 
   const titleCase = runtime.titleCase || ((value) => String(value || '')
     .replace(/[_-]+/g, ' ')
@@ -33,11 +65,7 @@
   const buildEntryId = (entry, scope = '') => {
     const createdAt = String(entry?.createdAt || '').trim();
     const changeType = String(entry?.changeType || 'revision').trim().toLowerCase();
-    const scopePart = String(scope || entry?.scope || entry?.entity || 'entry')
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '');
+    const scopePart = buildSafeSlug(scope || entry?.scope || entry?.entity || 'entry');
     return [scopePart || 'entry', changeType || 'revision', createdAt || 'unknown'].join('__');
   };
 
@@ -157,7 +185,7 @@
     return card;
   };
 
-  window.LevelLinesReviewDiff = {
+  const reviewDiffApi = {
     buildEntryId,
     createEntry,
     formatCurrency,
@@ -166,4 +194,12 @@
     isClientDecisionEntry,
     titleCase
   };
+
+  if (typeof window !== 'undefined') {
+    window.LevelLinesReviewDiff = reviewDiffApi;
+  }
+
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = reviewDiffApi;
+  }
 })();

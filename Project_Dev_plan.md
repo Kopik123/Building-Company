@@ -7,6 +7,12 @@
 - Hardened `Dockerfile` to chown `/app`, install dependencies and run `npm start` as the `node` user, and tightened `.dockerignore` so `.env`, uploads, logs, test artifacts and bootstrap lock files are not copied into the image context.
 - Re-ran `npm run verify:generated` successfully; `npm run test:api:v2` is still blocked in this sandbox because the current environment does not have the `supertest` dev dependency installed, so the follow-up validation is recorded in `Project_todos.md`.
 
+## 2026-03-31 (security hotspot follow-up 2)
+
+- Replaced the remaining Sonar-flagged slug-sanitising regex paths in `review-diff.js`, `routes/manager/estimate-routes.js`, `routes/manager.js`, and `api/v2/routes/inventory.js` with bounded string helpers so entry ids, estimate filenames, and slugs no longer depend on regex trimming passes.
+- Updated `review-diff.js` to expose a safe CommonJS export path for tests, then removed the `vm.runInNewContext()` loader from `tests/review-diff-browser.test.js`.
+- Hardened `Dockerfile` further by making the copied app tree root-owned and effectively read-only to the runtime user, while recreating only `/app/uploads`, `/app/logs`, and `/app/.bootstrap.lock` as writable `node`-owned runtime paths.
+
 ## 2026-03-31 (migration hotspot hardening start)
 
 - Saved `Plans/Migration Hotspot Hardening For ReDoS And Dynamic SQL.md` and registered it in `Plans/Plan History.md` for this migration-security cleanup slice.

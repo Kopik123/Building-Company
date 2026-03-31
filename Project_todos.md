@@ -32,6 +32,7 @@
 - [ ] Re-check the latest Sonar cleanup pass for `routes/auth.js`, `routes/manager/project-routes.js` and `routes/manager/quote-routes.js` after the next branch analysis, especially the `safeCompare` hard-coded-secret false positive and the media-route maintainability findings.
 - [ ] Run `scripts/sonar-export.sh` with `SONAR_URL` and `SONAR_TOKEN`, then attach `sonar-issues-full.json`, `sonar-quality-gate.json` and `sonar-measures.json` to the Sonar cleanup workflow.
 - [ ] Validate the new non-root Docker image on the target environment, especially file upload paths, runtime write permissions and `npm start` under the `node` user.
+- [ ] Validate the stricter read-only app tree in the Docker image on the target environment, especially `uploads/`, `logs/` and `.bootstrap.lock` as the only runtime-write paths under the `node` user.
 - [ ] Re-run the full API v2 suite in an environment with dev dependencies installed, because this sandbox still lacks `supertest` for `npm run test:api:v2`.
 - [ ] Start the SonarQube cleanup with the biggest maintainability hotspots: `manager-dashboard.js`, `routes/manager.js`, `client-dashboard.js`, `styles/base.css` and `apps/mobile-v1/App.js`.
 - [ ] Plan the `multer 1.x -> 2.x` migration as a separate Sonar/dependency-hardening task instead of running `npm audit fix --force`.
