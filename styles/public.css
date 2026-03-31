@@ -883,6 +883,25 @@
   padding: 0.16rem 0.5rem;
 }
 
+.area-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.42rem;
+  max-width: 100%;
+}
+
+.area-chip {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  border: 1px solid rgba(209, 164, 74, 0.42);
+  border-radius: 999px;
+  padding: 0.16rem 0.5rem;
+  font-size: 0.82rem;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
 .public-site .surface-card--light,
 .public-site .content-card--light,
 .public-site .surface-card--dark,

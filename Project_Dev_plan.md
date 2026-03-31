@@ -56,13 +56,11 @@
 - Updated `tests/playwright/mobile-smoke.spec.js` so manager workspace smoke coverage now asserts the header duplicate is gone and the left quick-access rail still opens the `quotes` card on desktop and mobile.
 - Re-ran `node --check site.js`, `git diff --check`, and focused manager Playwright coverage to confirm the workspace keeps one quick-access rail without losing routing or mobile shell behavior.
 
-
 - Saved `Plans/Manager Menu Simplification And Label Cleanup Wave 25.md`, registered it in `Plans/Plan History.md`, and recorded the manager-menu cleanup as a closed checklist item in `Project_todos.md`.
 - Renamed the shared manager quick-access labels in `brand.js` from technical shortcut names (`ProjectManager`, `QuotesReview`, `ServicesManage`, `MaterialsTrack`, `PrivateChat`, `ProjectChat`) to clearer operator-facing labels (`Project Board`, `Quote Review`, `Service Catalogue`, `Materials / Stock`, `Private Inbox`, `Project Chat`).
 - Removed the duplicated `manager-available-options` block from `manager-dashboard.html` and trimmed `manager-dashboard.js` / `manager-dashboard.shell.js` so the manager workspace now shows one primary left rail instead of a full card list plus a second legacy shortcut list.
 - Shortened the manager rail card copy and status badges in `manager-dashboard.shell.js` so the menu reads faster and looks less cluttered while keeping the same card routing behaviour.
 - Updated Playwright manager/auth/public quick-access expectations to the new labels and to the single-rail dashboard model, so future menu regressions fail against the shared config rather than stale hardcoded names.
-
 
 ## 2026-03-10
 
@@ -698,6 +696,7 @@
 - Added `apps/mobile-company` as a dedicated company-only Expo shell for `employee / manager / admin`, with overview, projects, quotes, estimates, inbox, notifications, CRM, inventory and account tabs plus basic quote operational actions through `api/v2`.
 - Extended `api/v2/routes/auth.js` with a native-friendly client `register` endpoint and added `migrations/202603270004-device-push-app-variant-and-device-name.js`, `models/DevicePushToken.js` and `api/v2/routes/devices.js` support for `appVariant`, `deviceName` and Expo-friendly push providers.
 - Added backend/mobile-foundation regression coverage in `tests/api-v2/auth-flow.test.js`, `tests/api-v2/devices-push-registration.test.js` and `tests/mobile/mobile-foundation.test.js`, then used those suites as the first automated safety net for the new mobile foundation layer.
+
 ## 2026-03-29
 
 - Saved `Plans/Select Chevron And Field Surface Unification Wave 23.md`, registered it in `Plans/Plan History.md`, and recorded the shared select-chevron polish as a closed checklist item in `Project_todos.md`.
@@ -890,3 +889,10 @@
 - Added `utils/quoteReviewLookup.js` as a shared access-aware resolver for legacy quotes and staged `new_quotes`.
 - Updated `api/v2/routes/quotes.js` so detail, attachment append, patch, timeline and estimate-list routes now reuse the shared lookup helper instead of repeating legacy-vs-staged branching.
 - Added `tests/api-v2/quote-review-lookup.test.js`, then re-ran `node --check` for the shared helper and touched quote route plus `node --test tests/api-v2/quote-review-lookup.test.js`, `node --test tests/api-v2/quotes-rbac-crud.test.js`, `node --test tests/api-v2/manager-quotes-include-attachments.test.js` and `node --test tests/api-v2/manager-staged-new-quotes-review.test.js`; all targeted quote lookup regressions passed green.
+- Updated `what_missing_blackbox.md` on branch `blackboxtest` with a current Go/No-Go release checklist, replaced the outdated `styles.css empty/broken` claim with verified CSS-import entrypoint facts, and documented concrete PowerShell 5.1 ready-to-paste validation commands.
+- Added a matching open tracking item to `Project_todos.md` to explicitly gate merge readiness on closing the blackboxtest checklist (branch hygiene, consolidated live QA, screenshots, final validation run).
+- Executed the blackboxtest checklist automation pass: removed accidental `copilot_todos.md`, re-checked branch hygiene with `git status --short`, and ran `npm.cmd run test:ci` successfully (verify-generated + api-v2 + mobile foundation all green).
+- Started Playwright E2E verification (`npm.cmd run test:e2e:mobile` and focused `--grep "manager dashboard"`) to confirm browser-suite startup and flow execution; remaining open gate is the manual consolidated live QA + screenshot evidence tracked in `what_missing_blackbox.md` and `Project_todos.md`.
+- Added `scripts/live-blackbox-qa.js` plus `npm run qa:blackbox:live`, then executed the live evidence pass against `https://levellines.co.uk`, producing `test-results/blackbox-live-qa/report.md`, `test-results/blackbox-live-qa/report.json` and desktop/mobile screenshots for homepage, brochure pages, auth and both dashboard routes.
+- Closed the blackboxtest Go/No-Go checklist in `what_missing_blackbox.md` and the matching gating todo in `Project_todos.md` after the live QA + screenshot evidence run, while recording one new explicit follow-up bug: desktop horizontal overflow on `premium-renovations-altrincham.html` flagged by the live QA report.
+- Fixed the location-page overflow follow-up in `styles/public.css` by adding resilient `.area-list` and `.area-chip` wrapping rules, then reran `npm run qa:blackbox:live` on the branch-local static server (`http://127.0.0.1:4173`) to confirm the final evidence pack is fully green (`Passed: 22`, `Failed: 0`).

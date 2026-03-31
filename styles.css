@@ -1,2 +1,6 @@
-/* Style reset by request: visual layer removed, pages now render unstyled baseline. */
+@import url('./styles/tokens.css');
+@import url('./styles/base.css');
+@import url('./styles/public.css');
+@import url('./styles/workspace.css');
+/* Restored core stylesheets for public/workspace rendering. Inline critical if needed post-cutover. */
 

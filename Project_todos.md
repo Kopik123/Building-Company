@@ -56,9 +56,9 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [x] Fix the public-header regression where authenticated brochure pages could still show autofilled inline login inputs alongside session controls.
 - [x] Fix the public login regression where authenticated brochure pages on mobile could hide the signed-in session panel after a successful login, making the login flow look broken even though the session was created.
 - [x] Verify the live cache policy on `HTML`, `CSS`, `JS` and image assets; current production behavior is `HTML`/`healthz` = `Cache-Control: no-store`, while versioned `CSS`/`JS`/image assets return `Cache-Control: max-age=604800, public`.
-- [ ] Run one consolidated live QA pass on `/`, `/about.html`, `/services.html`, `/gallery.html`, `/quote.html`, `/contact.html`, `/auth.html`, both dashboards, two service pages and two location pages.
-- [ ] In that QA pass, explicitly check: `mainbackground.png` inside cards, gold-text readability, desktop header proportions, mobile stacking, login/account/logout/session state and no horizontal scroll on phone breakpoints.
-- [ ] In that same live QA pass, verify the background split stays consistent: `mainbackground.png` on cards/sections, `boxbackground.png` on fields and smaller input-style panels, with no leftover legacy dark fills covering the card background.
+- [x] Run one consolidated live QA pass on `/`, `/about.html`, `/services.html`, `/gallery.html`, `/quote.html`, `/contact.html`, `/auth.html`, both dashboards, two service pages and two location pages.
+- [x] In that QA pass, explicitly check: `mainbackground.png` inside cards, gold-text readability, desktop header proportions, mobile stacking, login/account/logout/session state and no horizontal scroll on phone breakpoints.
+- [x] In that same live QA pass, verify the background split stays consistent: `mainbackground.png` on cards/sections, `boxbackground.png` on fields and smaller input-style panels, with no leftover legacy dark fills covering the card background.
 - [ ] On live `manager-dashboard.html`, verify the new manager flow starts with area choice (`Projects`, `Materials / Stock`, `Services`) and then exposes the right create/edit actions without leaving stale sections visible.
 - [ ] On live `manager-dashboard.html`, verify the new private messenger flow can create a direct thread with a client and with a staff member from the new email-based composer.
 - [ ] On live `manager-dashboard.html`, verify project chat creation works from the new form: pick a project, auto-seed the client/assigned staff, optionally add an extra participant, and confirm the thread opens selected after creation.
@@ -87,10 +87,12 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [x] Remove the duplicated manager header quick-access/account panel from `manager-dashboard.html` so the sticky top bar stays slim and the left workspace rail is the only management navigation surface.
 - [x] Simplify the manager menu by removing the duplicated dashboard shortcut list and renaming shared quick-access labels from technical names (`ProjectManager`, `QuotesReview`, `PrivateChat`, etc.) to clearer operator-facing labels.
 - [x] Confirm on live `/services.html` that `Discuss wall systems` opens `/quote.html` with the wall-systems context already selected in the quote form.
-- [ ] Capture fresh screenshot evidence for homepage, gallery, quote/contact forms, auth state and both dashboards after the consolidated live QA pass.
-- [ ] Run manual rich-results / SERP preview QA for homepage, services, gallery, one generated service page and one generated location page after the launch-ready SEO/content pass.
+- [x] Capture fresh screenshot evidence for homepage, gallery, quote/contact forms, auth state and both dashboards after the consolidated live QA pass.
+- [x] Run manual rich-results / SERP preview QA for homepage, services, gallery, one generated service page and one generated location page after the launch-ready SEO/content pass.
 - [ ] Run a manual internal-link crawl pass from homepage -> services -> service page -> location page -> quote so the new route clusters do not leave orphan brochure pages.
-- [ ] Capture manual social-preview evidence for homepage, services, gallery and one location page after the SEO metadata sweep.
+- [x] Capture manual social-preview evidence for homepage, services, gallery and one location page after the SEO metadata sweep.
+- [x] Close `what_missing_blackbox.md` Go/No-Go checklist on branch `blackboxtest` (branch hygiene, consolidated live QA, screenshots, final validation run) before merge.
+- [x] Fix desktop horizontal overflow on `premium-renovations-altrincham.html` by adding wrapping-safe `.area-list` and `.area-chip` styles in `styles/public.css`, then confirm green in the final `test-results/blackbox-live-qa/report.md` run (`Passed: 22`, `Failed: 0`).
 - [ ] Resolve the local PowerShell execution-policy issue blocking `npm.ps1`; until fixed, keep using `npm.cmd` for local validation commands.
 - [x] Standardise local shell snippets for Windows PowerShell 5.1 (`;` or `cmd /c`) because `&&` chaining is not supported in the current local shell.
 - [x] Decide whether the current live cache contract should stay as `HTML no-store + versioned assets cached for 7 days`, or whether versioned `CSS`/`JS`/image assets should also move to `no-store` during active brochure iteration.
@@ -172,6 +174,7 @@ Active checklist only. Completed work history lives in `Project_Dev_plan.md`.
 - [ ] Remove the remaining local `node:child_process` / `node:test` `spawn EPERM` instability that still hits `test:mobile:foundation` and `spawnSync`-based script tests, so `npm.cmd run test:ci` becomes fully reliable on this workstation again.
 
 ## Later
+
 - [x] Add a deferred cleanup/retry path for rejected staged quote file deletion, because attachment storage cleanup now intentionally runs after the DB commit to avoid partial transactional state.
 
 - [ ] Replace the current runtime query-param cache-busting plus `no-store` iteration mode with hashed asset filenames or manifest-driven immutable caching once the public shell/design iteration stabilises and performance caching matters more than instant refresh behavior.

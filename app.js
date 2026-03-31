@@ -201,7 +201,12 @@ const createApp = () => {
   app.use('/api/manager', managerRoutes);
   app.use('/api/notifications', notificationsRoutes);
   app.use('/api/group', groupRoutes);
-  app.use('/api/client', clientRoutes);
+app.use('/api/client', clientRoutes);
+
+// web-v2 cutover redirects
+app.get('/auth.html', (req, res) => res.redirect('/app-v2/login'));
+app.get('/client-dashboard.html', (req, res) => res.redirect('/app-v2'));
+app.get('/manager-dashboard.html', (req, res) => res.redirect('/app-v2'));
   app.use('/api/v2', apiV2Routes);
   app.use('/api', publicRoutes);
   app.use('/api/gallery', legacyGalleryRoutes({
