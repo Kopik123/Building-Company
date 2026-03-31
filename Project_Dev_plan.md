@@ -4,6 +4,10 @@
 
 - Saved `Plans/Self-Hosted Fonts Migration.md` and registered it in `Plans/Plan History.md` for the full Google Fonts removal pass.
 - Added follow-up validation in `Project_todos.md` for the self-hosted font rollout across public/auth/workspace pages.
+- Added self-hosted `.woff2` assets for Montserrat 400/500/600/700 and Cormorant Garamond 500/600/700 under `assets/fonts/`, plus `styles/fonts.css` with the shared `@font-face` declarations.
+- Replaced the remaining Google Fonts tags across the tracked HTML pages, updated `scripts/publicPageRenderer.js` so regenerated public pages keep using local fonts, and tightened the CSP in `app.js` back to `'self'` for styles/fonts.
+- Added `tests/self-hosted-fonts.test.js` to assert that tracked pages, the renderer and CSP stay free of `fonts.googleapis.com` / `fonts.gstatic.com`, and stored a short license note in `assets/fonts/LICENSES.txt`.
+- Re-ran `npm ci`, `npm run verify:generated`, `npm run test:api:v2`, `node --test tests/self-hosted-fonts.test.js`, and `node --check` for the changed JS files; the available validation path is green.
 
 ## 2026-03-31 (security hotspot remediation start)
 

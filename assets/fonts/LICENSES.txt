@@ -1,0 +1,10 @@
+Self-hosted fonts in this directory were sourced from the Fontsource packages below:
+
+- @fontsource/montserrat
+- @fontsource/cormorant-garamond
+
+Both packages distribute these font files under the SIL Open Font License 1.1.
+
+Package sources used for this migration:
+- https://www.npmjs.com/package/@fontsource/montserrat
+- https://www.npmjs.com/package/@fontsource/cormorant-garamond
