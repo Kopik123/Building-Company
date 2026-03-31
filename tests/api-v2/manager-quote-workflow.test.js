@@ -22,6 +22,7 @@ const createQuote = () => ({
   status: 'pending',
   assignedManagerId: null,
   archivedAt: null,
+  estimates: [],
   client: { id: clientId, name: 'Client User', email: 'client@example.com' },
   async update(payload) {
     Object.assign(this, payload);
@@ -32,6 +33,7 @@ const createQuote = () => ({
 const createStubs = () => {
   const quote = createQuote();
   const createdProjects = [];
+  const createdEstimates = [];
   const clientNotifications = [];
 
   const users = {
@@ -42,6 +44,7 @@ const createStubs = () => {
   return {
     quote,
     createdProjects,
+    createdEstimates,
     clientNotifications,
     models: {
       User: {
@@ -100,7 +103,35 @@ const createStubs = () => {
       ProjectMedia: { async findAll() { return []; } },
       ServiceOffering: {},
       Material: {},
-      Estimate: {},
+      Estimate: {
+        async findOne({ where = {} } = {}) {
+          return createdEstimates.find((estimate) =>
+            estimate.quoteId === where.quoteId
+            && estimate.isActive === where.isActive
+            && estimate.status === where.status
+          ) || null;
+        },
+        async create(payload) {
+          const estimate = {
+            id: `estimate-${createdEstimates.length + 1}`,
+            lines: [],
+            toJSON() {
+              return { ...this };
+            },
+            async update(nextPayload) {
+              Object.assign(this, nextPayload);
+              return this;
+            },
+            ...payload
+          };
+          createdEstimates.push(estimate);
+          quote.estimates.unshift(estimate);
+          return estimate;
+        },
+        async findByPk(id) {
+          return createdEstimates.find((estimate) => estimate.id === id) || null;
+        }
+      },
       EstimateLine: {},
       GroupMessage: {},
       InboxMessage: {},
@@ -157,4 +188,25 @@ test('manager can convert accepted quote into archived project', async () => {
   assert.equal(stubs.createdProjects.length, 1);
   assert.equal(stubs.quote.workflowStatus, 'archived');
   assert.equal(stubs.quote.status, 'closed');
+});
+
+test('manager can create a draft estimate directly from a quote', async () => {
+  const stubs = createStubs();
+  stubs.quote.assignedManagerId = managerId;
+  stubs.quote.workflowStatus = 'visit_confirmed';
+  mockModels(stubs.models);
+
+  const route = loadRoute('routes/manager.js');
+  const app = buildExpressApp('/api/manager', route);
+  const token = signAccessToken(managerId, 'manager');
+
+  const response = await request(app)
+    .post(`/api/manager/quotes/${quoteId}/create-estimate-draft`)
+    .set('Authorization', `Bearer ${token}`)
+    .expect(201);
+
+  assert.equal(response.body?.estimate?.quoteId, quoteId);
+  assert.equal(stubs.createdEstimates.length, 1);
+  assert.equal(stubs.quote.workflowStatus, 'quote_requested');
+  assert.equal(stubs.quote.estimates.length, 1);
 });

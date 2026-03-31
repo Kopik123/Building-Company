@@ -762,6 +762,10 @@
     state.quotes.forEach((quote) => {
       const owner = quote.guestName || quote.client?.name || quote.client?.email || 'Unknown client';
       const workflowStatus = quote.workflowStatus || 'new';
+      const latestEstimate = Array.isArray(quote.estimates) && quote.estimates.length ? quote.estimates[0] : null;
+      const latestEstimateLabel = latestEstimate
+        ? `${latestEstimate.title || 'Estimate'} | ${latestEstimate.status || 'draft'} | GBP ${Number(latestEstimate.total || 0).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        : 'No linked estimate yet';
       const visitDetail = quote.siteVisitDate
         ? `${quote.siteVisitDate}${quote.siteVisitTimeWindow ? ` (${quote.siteVisitTimeWindow})` : ''}`
         : 'Not planned';
@@ -769,7 +773,7 @@
       const clientDecision = quote.clientDecisionStatus || 'pending';
       const card = document.createElement('article');
       card.className = 'dashboard-item';
-      card.innerHTML = `<h3>${escapeHtml(quote.projectType)} | ${escapeHtml(owner)}</h3><p class=\"muted\">${escapeHtml(quote.status)} | priority ${escapeHtml(quote.priority)} | ${escapeHtml(quote.location || '-')} ${escapeHtml(quote.postcode || '')}</p><p class=\"muted\">Workflow: ${escapeHtml(workflowStatus)} | Visit: ${escapeHtml(visitDetail)} | Client decision: ${escapeHtml(clientDecision)} | Proposed start: ${escapeHtml(proposedStart)}</p><p>${escapeHtml(quote.description || '')}</p>`;
+      card.innerHTML = `<h3>${escapeHtml(quote.projectType)} | ${escapeHtml(owner)}</h3><p class=\"muted\">${escapeHtml(quote.status)} | priority ${escapeHtml(quote.priority)} | ${escapeHtml(quote.location || '-')} ${escapeHtml(quote.postcode || '')}</p><p class=\"muted\">Workflow: ${escapeHtml(workflowStatus)} | Visit: ${escapeHtml(visitDetail)} | Client decision: ${escapeHtml(clientDecision)} | Proposed start: ${escapeHtml(proposedStart)}</p><p class=\"muted\">Estimate pack: ${escapeHtml(latestEstimateLabel)}</p><p>${escapeHtml(quote.description || '')}</p>`;
       const row = document.createElement('div');
       row.className = 'dashboard-edit-grid dashboard-edit-grid--wide';
       const statusSelect = document.createElement('select');
@@ -819,6 +823,19 @@
       const startDateInput = document.createElement('input');
       startDateInput.type = 'date';
       startDateInput.value = toDateInputValue(quote.proposedStartDate);
+      const scopeInput = document.createElement('textarea');
+      scopeInput.rows = 3;
+      scopeInput.value = quote.scopeOfWork || '';
+      const materialsInput = document.createElement('textarea');
+      materialsInput.rows = 3;
+      materialsInput.value = quote.materialsPlan || '';
+      const labourInput = document.createElement('textarea');
+      labourInput.rows = 3;
+      labourInput.value = quote.labourEstimate || '';
+      const estimateLinkInput = document.createElement('input');
+      estimateLinkInput.type = 'url';
+      estimateLinkInput.placeholder = 'https://...';
+      estimateLinkInput.value = quote.estimateDocumentUrl || '';
       const decisionSelect = document.createElement('select');
       ['pending', 'accepted', 'rejected', 'request_edit'].forEach((value) => {
         const option = document.createElement('option');
@@ -859,6 +876,10 @@
               siteVisitDate: visitDateInput.value || null,
               siteVisitTimeWindow: visitWindowInput.value.trim() || null,
               proposedStartDate: startDateInput.value || null,
+              scopeOfWork: scopeInput.value.trim() || null,
+              materialsPlan: materialsInput.value.trim() || null,
+              labourEstimate: labourInput.value.trim() || null,
+              estimateDocumentUrl: estimateLinkInput.value.trim() || null,
               clientDecisionStatus: decisionSelect.value
             })
           });
@@ -873,6 +894,10 @@
       row.appendChild(createControlField('Visit date', visitDateInput));
       row.appendChild(createControlField('Visit window', visitWindowInput));
       row.appendChild(createControlField('Proposed start', startDateInput));
+      row.appendChild(createControlField('Scope of work', scopeInput));
+      row.appendChild(createControlField('Materials plan', materialsInput));
+      row.appendChild(createControlField('Labour estimate', labourInput));
+      row.appendChild(createControlField('Estimate link', estimateLinkInput));
       row.appendChild(createControlField('Client decision', decisionSelect));
       let acceptBtn = null;
       if (!quote.assignedManagerId && quote.status === 'pending' && canManage) {
@@ -905,7 +930,27 @@
           }
         });
       }
-      row.appendChild(createEditActions([acceptBtn, workflowSaveBtn, convertBtn, saveBtn]));
+      let draftEstimateBtn = null;
+      if (canManage && quote.assignedManagerId) {
+        draftEstimateBtn = document.createElement('button');
+        draftEstimateBtn.type = 'button';
+        draftEstimateBtn.className = 'btn btn-outline';
+        draftEstimateBtn.textContent = latestEstimate?.status === 'draft' ? 'Open draft estimate' : 'Create draft estimate';
+        draftEstimateBtn.addEventListener('click', async () => {
+          try {
+            const result = await api(`/api/manager/quotes/${quote.id}/create-estimate-draft`, { method: 'POST' });
+            const estimateId = result?.estimate?.id || latestEstimate?.id || '';
+            await Promise.all([loadQuotes(), loadEstimates(estimateId)]);
+            if (estimateId) {
+              state.selectedEstimateId = estimateId;
+              fillEstimateEditor();
+            }
+          } catch (error) {
+            window.alert(error.message || 'Failed to open draft estimate');
+          }
+        });
+      }
+      row.appendChild(createEditActions([acceptBtn, draftEstimateBtn, workflowSaveBtn, convertBtn, saveBtn]));
       card.appendChild(row);
       frag.appendChild(card);
     });

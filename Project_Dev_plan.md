@@ -1,5 +1,16 @@
 # Project Dev Plan
 
+## 2026-03-31 (quote workflow phase-2 start)
+
+- Saved `Plans/Quote Workflow Phase 2 - Estimate Pack Visibility And Draft Builder.md` and registered it in `Plans/Plan History.md` as the active execution plan for the second quote workflow slice.
+- Added phase-2 follow-up items to `Project_todos.md` for quote-linked estimate drafting and client estimate-pack visibility.
+- Extended manager quote APIs so quote reads include linked estimate summaries and managers can create or reopen a draft estimate directly from `/api/manager/quotes/:id/create-estimate-draft`.
+- Updated the manager quote cards to expose the estimate-pack fields (`scopeOfWork`, `materialsPlan`, `labourEstimate`, `estimateDocumentUrl`) and to open/create draft estimates from the quote section instead of switching manually into the estimate builder first.
+- Updated client quote visibility so the workspace shows the estimate pack read-only plus the latest linked estimate summary when a pricing pack has been sent or approved.
+- Added focused regression coverage in `tests/api-v2/manager-quote-workflow.test.js` for the quote → draft-estimate flow.
+- Re-ran `npm ci`, `npm run verify:generated` and `npm run test:api:v2`; the phase-2 quote workflow change set passes the available sandbox validation path.
+- Ran follow-up automated review fixes and `codeql_checker`; no CodeQL alerts were reported for the phase-2 quote workflow change set.
+
 ## 2026-03-31 (quote workflow phase-1 start)
 
 - Saved `Plans/Quote Workflow, Visit Scheduling And Client Manager Coordination.md` and registered it in `Plans/Plan History.md` as the active execution plan for expanding the quote lifecycle.

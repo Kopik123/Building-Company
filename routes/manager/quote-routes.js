@@ -44,6 +44,7 @@ module.exports = function createQuoteRoutes({
   InboxThread,
   Notification,
   Project,
+  Estimate,
   Op,
   fn,
   col,
@@ -52,6 +53,7 @@ module.exports = function createQuoteRoutes({
   getPagination,
   paginationDto,
   escapeLike,
+  loadEstimateDetail,
   QUOTE_WORKFLOW_STATUSES,
   QUOTE_VISIT_STATUSES,
   QUOTE_CLIENT_DECISION_STATUSES,
@@ -61,7 +63,16 @@ module.exports = function createQuoteRoutes({
   const withValidation = createValidatedHandler({ validationResult, asyncHandler });
   const quoteInclude = [
     { model: User, as: 'client', attributes: ['id', 'name', 'email', 'phone'] },
-    { model: User, as: 'assignedManager', attributes: ['id', 'name', 'email'] }
+    { model: User, as: 'assignedManager', attributes: ['id', 'name', 'email'] },
+    {
+      model: Estimate,
+      as: 'estimates',
+      attributes: ['id', 'title', 'status', 'total', 'updatedAt', 'createdAt'],
+      required: false,
+      separate: true,
+      limit: 5,
+      order: [['updatedAt', 'DESC'], ['createdAt', 'DESC']]
+    }
   ];
   const inferWorkflowPayload = ({ quote, payload, managerChangedVisitPlan, managerPreparedEstimate }) => {
     const nextPayload = { ...payload };
@@ -144,6 +155,62 @@ module.exports = function createQuoteRoutes({
       data: payload.data || null
     });
   };
+
+  router.post(
+    '/quotes/:id/create-estimate-draft',
+    [...managerGuard, param('id').isUUID()],
+    withValidation(async (req, res) => {
+      const quote = await findByPkOrRespond(Quote, req.params.id, res, {
+        message: 'Quote not found',
+        include: quoteInclude
+      });
+      if (!quote) return;
+
+      const existingDraft = await Estimate.findOne({
+        where: {
+          quoteId: quote.id,
+          isActive: true,
+          status: 'draft'
+        },
+        order: [['updatedAt', 'DESC'], ['createdAt', 'DESC']]
+      });
+
+      if (existingDraft) {
+        const detail = await loadEstimateDetail(existingDraft.id);
+        return res.json({ estimate: detail, reused: true });
+      }
+
+      const estimate = await Estimate.create({
+        projectId: null,
+        quoteId: quote.id,
+        createdById: req.user.id,
+        title: `${buildProjectName(quote)} - Draft Estimate`,
+        status: 'draft',
+        notes: buildProjectDescription(quote),
+        subtotal: 0,
+        total: 0,
+        isActive: true
+      });
+
+      const workflowStatus = String(quote.workflowStatus || '').trim().toLowerCase();
+      const normalizedWorkflowStatus = QUOTE_WORKFLOW_STATUSES.includes(workflowStatus) ? workflowStatus : 'new';
+      const nextWorkflowStatus = ['accepted', 'rejected', 'archived'].includes(normalizedWorkflowStatus)
+        ? normalizedWorkflowStatus
+        : 'quote_requested';
+      await quote.update({
+        workflowStatus: nextWorkflowStatus,
+        status: deriveLegacyQuoteStatus({
+          workflowStatus: nextWorkflowStatus,
+          assignedManagerId: quote.assignedManagerId,
+          archivedAt: quote.archivedAt,
+          clientDecisionStatus: quote.clientDecisionStatus
+        })
+      });
+
+      const detail = await loadEstimateDetail(estimate.id);
+      return res.status(201).json({ estimate: detail, reused: false });
+    })
+  );
 
   router.post(
     '/quotes/:id/accept',

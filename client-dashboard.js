@@ -242,14 +242,33 @@
     const frag = document.createDocumentFragment();
     state.quotes.forEach((quote) => {
       const workflowStatus = quote.workflowStatus || 'new';
+      const estimates = Array.isArray(quote.estimates) ? quote.estimates : [];
+      const visibleEstimate = estimates.find((estimate) => ['sent', 'approved', 'archived'].includes(String(estimate.status || '').toLowerCase())) || null;
       const visitDetail = quote.siteVisitDate
         ? `${quote.siteVisitDate}${quote.siteVisitTimeWindow ? ` (${quote.siteVisitTimeWindow})` : ''}`
         : 'Awaiting manager proposal';
       const startDetail = quote.proposedStartDate || 'Pending';
       const decisionStatus = quote.clientDecisionStatus || 'pending';
+      const estimatePackBits = [
+        quote.scopeOfWork ? `Scope: ${quote.scopeOfWork}` : null,
+        quote.materialsPlan ? `Materials: ${quote.materialsPlan}` : null,
+        quote.labourEstimate ? `Labour: ${quote.labourEstimate}` : null
+      ].filter(Boolean);
+      const estimateSummary = visibleEstimate
+        ? `${visibleEstimate.title || 'Estimate'} | ${visibleEstimate.status || 'sent'} | GBP ${Number(visibleEstimate.total || 0).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        : 'Pricing pack is still being prepared.';
       const card = document.createElement('article');
       card.className = 'dashboard-item';
-      card.innerHTML = `<h3>${escapeHtml(quote.projectType)}</h3><p class="muted">${escapeHtml(quote.status)} | Priority ${escapeHtml(quote.priority)} | ${escapeHtml(quote.location || '-')}</p><p class="muted">Workflow: ${escapeHtml(workflowStatus)} | Visit: ${escapeHtml(visitDetail)} | Proposed start: ${escapeHtml(startDetail)} | Your decision: ${escapeHtml(decisionStatus)}</p><p>${escapeHtml(quote.description || '')}</p>`;
+      card.innerHTML = `<h3>${escapeHtml(quote.projectType)}</h3><p class="muted">${escapeHtml(quote.status)} | Priority ${escapeHtml(quote.priority)} | ${escapeHtml(quote.location || '-')}</p><p class="muted">Workflow: ${escapeHtml(workflowStatus)} | Visit: ${escapeHtml(visitDetail)} | Proposed start: ${escapeHtml(startDetail)} | Your decision: ${escapeHtml(decisionStatus)}</p><p class="muted">Latest estimate: ${escapeHtml(estimateSummary)}</p><p>${escapeHtml(quote.description || '')}</p>`;
+
+      const estimatePackWrap = document.createElement('div');
+      estimatePackWrap.className = 'dashboard-list';
+      estimatePackWrap.appendChild(createOverviewEntry({
+        title: 'Estimate pack',
+        detail: estimatePackBits.length ? estimatePackBits.join(' | ') : 'The manager has not published the estimate pack details yet.',
+        meta: quote.estimateDocumentUrl ? `Estimate link: ${quote.estimateDocumentUrl}` : ''
+      }));
+      card.appendChild(estimatePackWrap);
 
       const form = document.createElement('div');
       form.className = 'dashboard-edit-grid dashboard-edit-grid--wide';

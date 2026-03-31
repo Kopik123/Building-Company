@@ -6,6 +6,7 @@ const {
   Project,
   ProjectMedia,
   Quote,
+  Estimate,
   GroupMember,
   GroupThread,
   Notification,
@@ -86,7 +87,18 @@ router.get(
       }),
       Quote.findAll({
         where: { clientId: req.user.id },
-        include: [{ model: User, as: 'assignedManager', attributes: ['id', 'name', 'email'], required: false }],
+        include: [
+          { model: User, as: 'assignedManager', attributes: ['id', 'name', 'email'], required: false },
+          {
+            model: Estimate,
+            as: 'estimates',
+            attributes: ['id', 'title', 'status', 'total', 'updatedAt', 'createdAt'],
+            required: false,
+            separate: true,
+            limit: 5,
+            order: [['updatedAt', 'DESC'], ['createdAt', 'DESC']]
+          }
+        ],
         order: [['createdAt', 'DESC']],
         limit: 100
       }),

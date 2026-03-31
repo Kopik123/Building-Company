@@ -2,7 +2,7 @@
 
 ## Open
 
-- [ ] Finish phase-1 execution for the new quote workflow: visit scheduling, manager/client coordination, estimate handoff metadata and quote-to-project conversion.
+- [ ] Validate the phase-2 quote workflow manually after deployment, especially draft-estimate creation from quotes and client visibility of the linked estimate summary.
 - [ ] Validate the new quote workflow manually with a real manager/client account pair after deployment, including visit reschedule, client decision, notifications and conversion to project.
 - [x] Work through `copilot_todos.md` (49 items across P0–P3 priorities from full project analysis). → **21/49 completed, 28 deferred to `what_missing_copilot.md`**
 - [ ] Run `powershell -ExecutionPolicy Bypass -File .\scripts\setup-vscode.ps1` on the local machine that uses VS Code.
@@ -37,6 +37,10 @@
 
 ## Completed
 
+- [x] Completed quote workflow phase 2: manager/client dashboards now expose estimate-pack fields, quotes load linked estimate summaries, and managers can create or reopen draft estimates directly from quote cards.
+- [x] Finished the phase-1 quote workflow execution slice: visit scheduling, manager/client coordination, estimate handoff metadata and quote-to-project conversion are now wired in code.
+- [x] Saved `Plans/Quote Workflow Phase 2 - Estimate Pack Visibility And Draft Builder.md` and registered it in `Plans/Plan History.md` as the tracked plan for the second quote workflow execution slice.
+- [x] Re-ran `npm ci`, `npm run verify:generated` and `npm run test:api:v2` after the quote workflow phase-2 implementation; the generated-page check and API suite passed in the sandbox.
 - [x] Saved `Plans/Quote Workflow, Visit Scheduling And Client Manager Coordination.md` and registered it in `Plans/Plan History.md` as the tracked implementation plan for the new quote workflow expansion.
 - [x] Re-ran `npm ci`, `npm run verify:generated` and `npm run test:api:v2` after the quote workflow phase-1 implementation; the local API suite is green again once dev dependencies are installed in the sandbox.
 - [x] Added a repeatable VS Code bootstrap script for extensions and workspace settings.
