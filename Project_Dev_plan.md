@@ -3,7 +3,12 @@
 ## 2026-03-31 (quote workflow phase-1 start)
 
 - Saved `Plans/Quote Workflow, Visit Scheduling And Client Manager Coordination.md` and registered it in `Plans/Plan History.md` as the active execution plan for expanding the quote lifecycle.
-- Recorded the new follow-up checklist in `Project_todos.md`, including the phase-1 workflow workstream and the current local API-test dependency blocker (`supertest` missing in the sandbox runtime before implementation).
+- Recorded the new follow-up checklist in `Project_todos.md`, including the phase-1 workflow workstream.
+- Added the phase-1 quote workflow foundation across `models/Quote.js`, `migrations/202603310001-quote-workflow-phase1.js`, manager/client quote routes, and manager/client dashboard quote cards.
+- Extended quote handling so manager acceptance now opens a private client-manager thread when possible, workflow updates notify the client, client reschedule/decision updates notify the assigned manager, and accepted quotes can be converted into archived projects.
+- Added regression coverage for the new workflow paths in `tests/api-v2/manager-quote-workflow.test.js`, `tests/api-v2/client-overview-include-threads.test.js` and `tests/api-v2/migrations-quote-table-compat.test.js`.
+- Re-ran `npm ci`, `npm run verify:generated` and `npm run test:api:v2`; generated-page verification and the API suite now pass in the sandbox with dependencies installed.
+- Ran automated code review follow-up fixes and `codeql_checker`; no CodeQL alerts were reported for the final quote workflow phase-1 change set.
 
 ## 2026-03-30 (execution pass)
 

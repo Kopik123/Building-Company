@@ -18,6 +18,7 @@ const asyncHandler = require('../utils/asyncHandler');
 const {
   QUOTE_WORKFLOW_STATUSES,
   QUOTE_CLIENT_DECISION_STATUSES,
+  QUOTE_CLIENT_DECISION_STATUSES_NON_PENDING,
   deriveLegacyQuoteStatus
 } = require('../utils/quoteWorkflow');
 
@@ -56,6 +57,11 @@ const mapProject = (project) => {
     images,
     documents
   };
+};
+
+const formatVisitPreference = ({ siteVisitDate, siteVisitTimeWindow }) => {
+  if (!siteVisitDate) return 'a different visit slot';
+  return `${siteVisitDate}${siteVisitTimeWindow ? ` (${siteVisitTimeWindow})` : ''}`;
 };
 
 router.get(
@@ -164,7 +170,7 @@ router.post(
     param('id').isUUID(),
     body('siteVisitDate').optional({ nullable: true }).isISO8601(),
     body('siteVisitTimeWindow').optional({ nullable: true }).trim().isLength({ max: 120 }),
-    body('clientDecisionStatus').optional().isIn(QUOTE_CLIENT_DECISION_STATUSES.filter((value) => value !== 'pending')),
+    body('clientDecisionStatus').optional().isIn(QUOTE_CLIENT_DECISION_STATUSES_NON_PENDING),
     body('clientDecisionNotes').optional({ nullable: true }).trim().isLength({ max: 6000 })
   ],
   asyncHandler(async (req, res) => {
@@ -234,7 +240,7 @@ router.post(
         type: requestedVisitChange ? 'quote_visit_reschedule_requested' : 'quote_client_decision_updated',
         title: requestedVisitChange ? 'Client requested a different visit date' : 'Client updated quote decision',
         body: requestedVisitChange
-          ? `Client ${req.user.name} requested ${requestedVisit}${requestedWindow ? ` (${requestedWindow})` : ''} for the quote visit.`
+          ? `Client ${req.user.name} requested ${formatVisitPreference({ siteVisitDate: requestedVisit, siteVisitTimeWindow: requestedWindow })} for the quote visit.`
           : `Client ${req.user.name} set quote decision to ${payload.clientDecisionStatus}.`,
         quoteId: quote.id,
         data: {

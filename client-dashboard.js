@@ -286,8 +286,8 @@
           const visitDateValue = visitDateInput.value || null;
           const visitWindowValue = visitWindowInput.value.trim() || null;
           const notesValue = notesInput.value.trim() || null;
-          if (visitDateValue !== (quote.siteVisitDate || null)) payload.siteVisitDate = visitDateValue;
-          if (visitWindowValue !== (quote.siteVisitTimeWindow || null)) payload.siteVisitTimeWindow = visitWindowValue;
+          if ((visitDateValue || null) !== (quote.siteVisitDate || null)) payload.siteVisitDate = visitDateValue || null;
+          if ((visitWindowValue || null) !== (quote.siteVisitTimeWindow || null)) payload.siteVisitTimeWindow = visitWindowValue || null;
           if (decisionSelect.value) payload.clientDecisionStatus = decisionSelect.value;
           if (notesValue !== (quote.clientDecisionNotes || null)) payload.clientDecisionNotes = notesValue;
           if (!Object.keys(payload).length) {

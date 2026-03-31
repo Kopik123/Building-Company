@@ -22,7 +22,16 @@ const QUOTE_VISIT_STATUSES = [
 ];
 
 const QUOTE_CLIENT_DECISION_STATUSES = ['pending', 'accepted', 'rejected', 'request_edit'];
+const QUOTE_CLIENT_DECISION_STATUSES_NON_PENDING = QUOTE_CLIENT_DECISION_STATUSES.filter((value) => value !== 'pending');
 
+/**
+ * Maps the richer quote workflow fields back to the legacy `Quote.status` enum
+ * so existing filters and screens keep working during the transition period.
+ * - archived / rejected workflows map to `closed`
+ * - quote sent / review / accepted style workflows map to `responded`
+ * - assigned or visit / first-view workflows map to `in_progress`
+ * - everything else remains `pending`
+ */
 const deriveLegacyQuoteStatus = ({ workflowStatus, assignedManagerId, archivedAt, clientDecisionStatus }) => {
   const normalizedWorkflowStatus = String(workflowStatus || '').trim().toLowerCase();
   const normalizedDecisionStatus = String(clientDecisionStatus || '').trim().toLowerCase();
@@ -58,5 +67,6 @@ module.exports = {
   QUOTE_WORKFLOW_STATUSES,
   QUOTE_VISIT_STATUSES,
   QUOTE_CLIENT_DECISION_STATUSES,
+  QUOTE_CLIENT_DECISION_STATUSES_NON_PENDING,
   deriveLegacyQuoteStatus
 };

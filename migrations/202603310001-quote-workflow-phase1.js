@@ -130,6 +130,9 @@ module.exports = {
       return;
     }
 
+    // This rollback removes the additive quote-workflow columns and their stored
+    // values. It should only be used when intentionally discarding phase-1
+    // workflow data from the Quotes table.
     const tableDefinition = await queryInterface.describeTable('Quotes');
     for (const columnName of columns) {
       const resolved = resolveColumnName(tableDefinition, columnName);

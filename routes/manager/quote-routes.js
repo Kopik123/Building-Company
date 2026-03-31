@@ -22,6 +22,14 @@ const buildProjectDescription = (quote) => {
   return parts.join('\n\n') || quote.description || null;
 };
 
+const formatWorkflowNotificationDetail = ({ siteVisitDate, siteVisitTimeWindow, proposedStartDate }) => {
+  const visitDetail = siteVisitDate
+    ? ` Visit: ${siteVisitDate}${siteVisitTimeWindow ? ` (${siteVisitTimeWindow})` : ''}.`
+    : '';
+  const startDetail = proposedStartDate ? ` Proposed start: ${proposedStartDate}.` : '';
+  return `${visitDetail}${startDetail}`;
+};
+
 module.exports = function createQuoteRoutes({
   param,
   query,
@@ -55,6 +63,54 @@ module.exports = function createQuoteRoutes({
     { model: User, as: 'client', attributes: ['id', 'name', 'email', 'phone'] },
     { model: User, as: 'assignedManager', attributes: ['id', 'name', 'email'] }
   ];
+  const inferWorkflowPayload = ({ quote, payload, managerChangedVisitPlan, managerPreparedEstimate }) => {
+    const nextPayload = { ...payload };
+
+    if (!nextPayload.workflowStatus && managerChangedVisitPlan) {
+      nextPayload.workflowStatus = 'visit_proposed';
+    }
+    if (!nextPayload.siteVisitStatus && managerChangedVisitPlan) {
+      nextPayload.siteVisitStatus = 'proposed';
+    }
+    if (!nextPayload.workflowStatus && managerPreparedEstimate) {
+      nextPayload.workflowStatus = 'quote_requested';
+    }
+    if (!nextPayload.clientDecisionStatus && nextPayload.workflowStatus === 'accepted') {
+      nextPayload.clientDecisionStatus = 'accepted';
+    }
+    if (!nextPayload.clientDecisionStatus && nextPayload.workflowStatus === 'rejected') {
+      nextPayload.clientDecisionStatus = 'rejected';
+    }
+    if (!nextPayload.clientDecisionStatus && nextPayload.workflowStatus === 'changes_requested') {
+      nextPayload.clientDecisionStatus = 'request_edit';
+    }
+    if (!nextPayload.workflowStatus && nextPayload.siteVisitStatus === 'confirmed') {
+      nextPayload.workflowStatus = 'visit_confirmed';
+    }
+    if (!nextPayload.workflowStatus && nextPayload.siteVisitStatus === 'reschedule_requested') {
+      nextPayload.workflowStatus = 'visit_reschedule_requested';
+    }
+    if (!nextPayload.workflowStatus && nextPayload.siteVisitStatus === 'completed') {
+      nextPayload.workflowStatus = 'first_view';
+    }
+    if (!nextPayload.workflowStatus && nextPayload.clientDecisionStatus === 'accepted') {
+      nextPayload.workflowStatus = 'accepted';
+    }
+    if (!nextPayload.workflowStatus && nextPayload.clientDecisionStatus === 'rejected') {
+      nextPayload.workflowStatus = 'rejected';
+    }
+    if (!nextPayload.workflowStatus && nextPayload.clientDecisionStatus === 'request_edit') {
+      nextPayload.workflowStatus = 'changes_requested';
+    }
+
+    if (nextPayload.workflowStatus === 'archived') {
+      nextPayload.archivedAt = new Date();
+    } else if (typeof nextPayload.workflowStatus !== 'undefined' && quote.archivedAt) {
+      nextPayload.archivedAt = null;
+    }
+
+    return nextPayload;
+  };
 
   const ensurePrivateQuoteThread = async (quote, manager) => {
     if (!quote.clientId) return null;
@@ -103,9 +159,10 @@ module.exports = function createQuoteRoutes({
         return res.status(409).json({ error: 'Quote is already assigned to a manager' });
       }
 
-      const workflowStatus = ['new', 'archived'].includes(String(quote.workflowStatus || '').trim())
+      const normalizedWorkflowStatus = String(quote.workflowStatus || '').trim();
+      const workflowStatus = ['new', 'archived', ''].includes(normalizedWorkflowStatus)
         ? 'manager_review'
-        : String(quote.workflowStatus || '').trim() || 'manager_review';
+        : normalizedWorkflowStatus;
       await quote.update({
         assignedManagerId: req.user.id,
         workflowStatus,
@@ -161,7 +218,7 @@ module.exports = function createQuoteRoutes({
         await notifyClient(quote, {
           type: 'quote_manager_assigned',
           title: 'Your quote is now being reviewed',
-          body: `Manager ${req.user.name} accepted your quote. A private conversation route is ready in your workspace${inboxThread ? ' and the project chat has been opened.' : '.'}`,
+          body: `Manager ${req.user.name} accepted your quote. Private messaging is available${inboxThread ? ', and a team discussion has been opened.' : '.'}`,
           data: {
             quoteId: quote.id,
             managerId: req.user.id,
@@ -200,7 +257,7 @@ module.exports = function createQuoteRoutes({
       });
       if (!quote) return;
 
-      const payload = {};
+      let payload = {};
       const managerChangedVisitPlan = (
         typeof req.body.siteVisitDate !== 'undefined'
         || typeof req.body.siteVisitTimeWindow !== 'undefined'
@@ -225,48 +282,7 @@ module.exports = function createQuoteRoutes({
       if (typeof req.body.clientDecisionStatus !== 'undefined') payload.clientDecisionStatus = req.body.clientDecisionStatus;
       if (typeof req.body.clientDecisionNotes !== 'undefined') payload.clientDecisionNotes = String(req.body.clientDecisionNotes || '').trim() || null;
 
-      if (!payload.workflowStatus && managerChangedVisitPlan) {
-        payload.workflowStatus = 'visit_proposed';
-      }
-      if (!payload.siteVisitStatus && managerChangedVisitPlan) {
-        payload.siteVisitStatus = 'proposed';
-      }
-      if (!payload.workflowStatus && managerPreparedEstimate) {
-        payload.workflowStatus = 'quote_requested';
-      }
-      if (!payload.clientDecisionStatus && payload.workflowStatus === 'accepted') {
-        payload.clientDecisionStatus = 'accepted';
-      }
-      if (!payload.clientDecisionStatus && payload.workflowStatus === 'rejected') {
-        payload.clientDecisionStatus = 'rejected';
-      }
-      if (!payload.clientDecisionStatus && payload.workflowStatus === 'changes_requested') {
-        payload.clientDecisionStatus = 'request_edit';
-      }
-      if (!payload.workflowStatus && payload.siteVisitStatus === 'confirmed') {
-        payload.workflowStatus = 'visit_confirmed';
-      }
-      if (!payload.workflowStatus && payload.siteVisitStatus === 'reschedule_requested') {
-        payload.workflowStatus = 'visit_reschedule_requested';
-      }
-      if (!payload.workflowStatus && payload.siteVisitStatus === 'completed') {
-        payload.workflowStatus = 'first_view';
-      }
-      if (!payload.workflowStatus && payload.clientDecisionStatus === 'accepted') {
-        payload.workflowStatus = 'accepted';
-      }
-      if (!payload.workflowStatus && payload.clientDecisionStatus === 'rejected') {
-        payload.workflowStatus = 'rejected';
-      }
-      if (!payload.workflowStatus && payload.clientDecisionStatus === 'request_edit') {
-        payload.workflowStatus = 'changes_requested';
-      }
-
-      if (payload.workflowStatus === 'archived') {
-        payload.archivedAt = new Date();
-      } else if (typeof req.body.workflowStatus !== 'undefined' && quote.archivedAt) {
-        payload.archivedAt = null;
-      }
+      payload = inferWorkflowPayload({ quote, payload, managerChangedVisitPlan, managerPreparedEstimate });
 
       if (!Object.keys(payload).length) {
         return res.status(400).json({ error: 'No workflow changes provided' });
@@ -284,16 +300,14 @@ module.exports = function createQuoteRoutes({
 
       if (quote.clientId) {
         const latestWorkflow = payload.workflowStatus || quote.workflowStatus;
-        const visitDetail = payload.siteVisitDate || quote.siteVisitDate
-          ? ` Visit: ${payload.siteVisitDate || quote.siteVisitDate}${payload.siteVisitTimeWindow || quote.siteVisitTimeWindow ? ` (${payload.siteVisitTimeWindow || quote.siteVisitTimeWindow})` : ''}.`
-          : '';
-        const startDetail = payload.proposedStartDate || quote.proposedStartDate
-          ? ` Proposed start: ${payload.proposedStartDate || quote.proposedStartDate}.`
-          : '';
         await notifyClient(quote, {
           type: 'quote_workflow_updated',
           title: 'Your quote has a new update',
-          body: `Workflow stage: ${toTitleCase(latestWorkflow)}.${visitDetail}${startDetail}`,
+          body: `Workflow stage: ${toTitleCase(latestWorkflow)}.${formatWorkflowNotificationDetail({
+            siteVisitDate: payload.siteVisitDate || quote.siteVisitDate,
+            siteVisitTimeWindow: payload.siteVisitTimeWindow || quote.siteVisitTimeWindow,
+            proposedStartDate: payload.proposedStartDate || quote.proposedStartDate
+          })}`,
           data: {
             quoteId: quote.id,
             workflowStatus: latestWorkflow,

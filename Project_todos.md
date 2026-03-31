@@ -4,7 +4,6 @@
 
 - [ ] Finish phase-1 execution for the new quote workflow: visit scheduling, manager/client coordination, estimate handoff metadata and quote-to-project conversion.
 - [ ] Validate the new quote workflow manually with a real manager/client account pair after deployment, including visit reschedule, client decision, notifications and conversion to project.
-- [ ] Re-run `npm run test:api:v2` in an environment with installed dev dependencies; the current sandbox baseline failed before implementation because `supertest` was missing from the local runtime even though it is declared in `package.json`.
 - [x] Work through `copilot_todos.md` (49 items across P0–P3 priorities from full project analysis). → **21/49 completed, 28 deferred to `what_missing_copilot.md`**
 - [ ] Run `powershell -ExecutionPolicy Bypass -File .\scripts\setup-vscode.ps1` on the local machine that uses VS Code.
 - [ ] Review whether `ms-vscode.live-server` is still needed if the project always runs through the app server and Playwright.
@@ -39,6 +38,7 @@
 ## Completed
 
 - [x] Saved `Plans/Quote Workflow, Visit Scheduling And Client Manager Coordination.md` and registered it in `Plans/Plan History.md` as the tracked implementation plan for the new quote workflow expansion.
+- [x] Re-ran `npm ci`, `npm run verify:generated` and `npm run test:api:v2` after the quote workflow phase-1 implementation; the local API suite is green again once dev dependencies are installed in the sandbox.
 - [x] Added a repeatable VS Code bootstrap script for extensions and workspace settings.
 - [x] Removed tracked `test-results/.last-run.json` from the repo path and added `test-results/` to `.gitignore` so Playwright artifacts no longer dirty the worktree after validation runs.
 - [x] Added shared workspace extension recommendations in `.vscode/extensions.json`.

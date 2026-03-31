@@ -830,7 +830,7 @@
       const saveBtn = document.createElement('button');
       saveBtn.type = 'button';
       saveBtn.className = 'btn btn-gold';
-      saveBtn.textContent = 'Save legacy fields';
+      saveBtn.textContent = 'Save status and priority';
       saveBtn.disabled = !canManage;
       saveBtn.addEventListener('click', async () => {
         try {
@@ -890,7 +890,7 @@
         });
       }
       let convertBtn = null;
-      if (canManage && (workflowSelect.value === 'accepted' || clientDecision === 'accepted')) {
+      if (canManage && (workflowStatus === 'accepted' || clientDecision === 'accepted')) {
         convertBtn = document.createElement('button');
         convertBtn.type = 'button';
         convertBtn.className = 'btn btn-outline';
