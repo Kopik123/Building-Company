@@ -118,3 +118,10 @@
 - [x] Updated Playwright public/mobile expectations so regression coverage validates the new shared `title.png` shell and inline login instead of the old homepage-only header layout.
 - [x] Continue the manager-route cleanup by extracting the remaining `quotes` and `projects/media` sections once the new subrouter split has baked in under tests. → **Done: `routes/manager/quote-routes.js` (215 lines) + `routes/manager/project-routes.js` (494 lines). Main file reduced from 1151 → 568 lines.**
 - [ ] Continue reducing `apps/mobile-v1/App.js` by extracting session/tab shell logic after the new `screens.js`/`styles.js` split stabilises.
+
+## SonarQube CPD Fixes (2026-03-31)
+- [x] Extract `buildQuoteRevisionPayload` to `utils/revisionHistory.js` — removed duplicates from `routes/client.js`, `routes/manager/quote-routes.js`, `routes/manager/estimate-routes.js`
+- [x] Extract `buildEstimateRevisionPayload` to `utils/revisionHistory.js` — removed local definition from `routes/manager/estimate-routes.js`
+- [x] Apply `withValidation` to all standard handlers in `estimate-routes.js` (11 handlers) — eliminates repeated validation boilerplate
+- [x] Add `escapeSelector`, `syncReviewFilters`, `scrollToHistoryEntry` to `runtime.js` — removes identical helper definitions from `client-review.js` and `manager-review.js`
+- [x] Simplify duplicated `api` fallback in both review files

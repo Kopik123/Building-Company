@@ -232,3 +232,11 @@
 - Regenerated the public service/location pages, then re-ran `npm run verify:generated` and `npm run test:ci`; both passed after the new shell rollout.
 - Re-ran `npm run test:e2e:mobile` and confirmed the remaining failure is still the known workstation-level `spawn EPERM` issue rather than a regression from the new public shell.
 - Tightened the shared public shell proportions in `styles/public.css` so `title.png` now sits in a slimmer top bar and the inline login/menu strip reads as a lower quick-access band instead of two oversized panels.
+
+## 2026-03-31
+
+- Fixed SonarQube CPD (copy-paste detection) duplication issues in app code.
+- Extracted `buildQuoteRevisionPayload` and `buildEstimateRevisionPayload` into `utils/revisionHistory.js`, removing identical/near-identical definitions from `routes/client.js`, `routes/manager/quote-routes.js` and `routes/manager/estimate-routes.js`.
+- Applied `withValidation` (via `createValidatedHandler` from `route-helpers.js`) to all 11 standard validation handlers in `estimate-routes.js`, eliminating repeated 4-line validation boilerplate (same pattern already used in `quote-routes.js`).
+- Added `escapeSelector`, `syncReviewFilters` and `scrollToHistoryEntry` helpers to `runtime.js`; rewired `client-review.js` and `manager-review.js` to delegate to them, removing identical `updateSearchParams`/`applySelection` definitions and simplifying the duplicated `api` fallback in both files.
+- All validations passed: `node scripts/verify-generated.js` and `node --test tests/review-diff-browser.test.js` both green. CodeQL found 0 alerts.
