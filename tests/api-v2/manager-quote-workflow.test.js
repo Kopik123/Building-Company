@@ -1,13 +1,17 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
 const request = require('supertest');
-const { buildExpressApp, loadRoute, mock, mockModels, signAccessToken } = require('./_helpers');
+const { mock } = require('./_helpers');
+const {
+  managerId,
+  clientId,
+  quoteId,
+  makeManagerUsers,
+  emptyManagerModelStubs,
+  buildManagerApp
+} = require('./_manager-quote-fixtures');
 
 process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-secret-v2';
-
-const managerId = '11111111-1111-4111-8111-111111111111';
-const clientId = '22222222-2222-4222-8222-222222222222';
-const quoteId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 
 const createQuote = () => ({
   id: quoteId,
@@ -35,11 +39,7 @@ const createStubs = () => {
   const createdProjects = [];
   const createdEstimates = [];
   const clientNotifications = [];
-
-  const users = {
-    [managerId]: { id: managerId, role: 'manager', email: 'manager@example.com', name: 'Manager User', isActive: true },
-    [clientId]: { id: clientId, role: 'client', email: 'client@example.com', name: 'Client User', isActive: true }
-  };
+  const users = makeManagerUsers();
 
   return {
     quote,
@@ -133,13 +133,7 @@ const createStubs = () => {
         }
       },
       EstimateLine: {},
-      GroupMessage: {},
-      InboxMessage: {},
-      QuoteMessage: {},
-      QuoteClaimToken: {},
-      SessionRefreshToken: {},
-      DevicePushToken: {},
-      sequelize: {}
+      ...emptyManagerModelStubs()
     }
   };
 };
@@ -150,11 +144,7 @@ test.afterEach(() => {
 
 test('manager quote accept creates private inbox thread for linked client', async () => {
   const stubs = createStubs();
-  mockModels(stubs.models);
-
-  const route = loadRoute('routes/manager.js');
-  const app = buildExpressApp('/api/manager', route);
-  const token = signAccessToken(managerId, 'manager');
+  const { app, token } = buildManagerApp(stubs);
 
   const response = await request(app)
     .post(`/api/manager/quotes/${quoteId}/accept`)
@@ -173,11 +163,7 @@ test('manager can convert accepted quote into archived project', async () => {
   stubs.quote.workflowStatus = 'accepted';
   stubs.quote.assignedManagerId = managerId;
   stubs.quote.status = 'responded';
-  mockModels(stubs.models);
-
-  const route = loadRoute('routes/manager.js');
-  const app = buildExpressApp('/api/manager', route);
-  const token = signAccessToken(managerId, 'manager');
+  const { app, token } = buildManagerApp(stubs);
 
   const response = await request(app)
     .post(`/api/manager/quotes/${quoteId}/convert-to-project`)
@@ -194,11 +180,7 @@ test('manager can create a draft estimate directly from a quote', async () => {
   const stubs = createStubs();
   stubs.quote.assignedManagerId = managerId;
   stubs.quote.workflowStatus = 'visit_confirmed';
-  mockModels(stubs.models);
-
-  const route = loadRoute('routes/manager.js');
-  const app = buildExpressApp('/api/manager', route);
-  const token = signAccessToken(managerId, 'manager');
+  const { app, token } = buildManagerApp(stubs);
 
   const response = await request(app)
     .post(`/api/manager/quotes/${quoteId}/create-estimate-draft`)
@@ -234,11 +216,7 @@ test('manager can load quote detail for the dedicated review timeline', async ()
       snapshot: { status: 'sent' }
     }]
   }];
-  mockModels(stubs.models);
-
-  const route = loadRoute('routes/manager.js');
-  const app = buildExpressApp('/api/manager', route);
-  const token = signAccessToken(managerId, 'manager');
+  const { app, token } = buildManagerApp(stubs);
 
   const response = await request(app)
     .get(`/api/manager/quotes/${quoteId}`)

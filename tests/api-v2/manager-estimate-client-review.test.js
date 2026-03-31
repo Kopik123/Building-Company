@@ -3,17 +3,23 @@ const fs = require('node:fs/promises');
 const path = require('node:path');
 const test = require('node:test');
 const request = require('supertest');
-const { buildExpressApp, loadRoute, mock, mockModels, signAccessToken } = require('./_helpers');
+const { mock } = require('./_helpers');
+const {
+  managerId,
+  clientId,
+  quoteId,
+  makeManagerUsers,
+  emptyManagerModelStubs,
+  buildManagerApp
+} = require('./_manager-quote-fixtures');
 
 process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-secret-v2';
 
-const managerId = '11111111-1111-4111-8111-111111111111';
-const clientId = '22222222-2222-4222-8222-222222222222';
-const quoteId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const estimateId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
 
 const createStubs = () => {
   const notifications = [];
+  const users = makeManagerUsers();
   const quote = {
     id: quoteId,
     clientId,
@@ -58,11 +64,6 @@ const createStubs = () => {
     }
   };
 
-  const users = {
-    [managerId]: { id: managerId, role: 'manager', email: 'manager@example.com', name: 'Manager User', isActive: true },
-    [clientId]: { id: clientId, role: 'client', email: 'client@example.com', name: 'Client User', isActive: true }
-  };
-
   return {
     quote,
     estimate,
@@ -101,13 +102,7 @@ const createStubs = () => {
       InboxThread: {},
       ServiceOffering: {},
       Material: {},
-      GroupMessage: {},
-      InboxMessage: {},
-      QuoteMessage: {},
-      QuoteClaimToken: {},
-      SessionRefreshToken: {},
-      DevicePushToken: {},
-      sequelize: {}
+      ...emptyManagerModelStubs()
     }
   };
 };
@@ -118,11 +113,7 @@ test.afterEach(() => {
 
 test('manager can send estimate to client review', async () => {
   const stubs = createStubs();
-  mockModels(stubs.models);
-
-  const route = loadRoute('routes/manager.js');
-  const app = buildExpressApp('/api/manager', route);
-  const token = signAccessToken(managerId, 'manager');
+  const { app, token } = buildManagerApp(stubs);
 
   const response = await request(app)
     .post(`/api/manager/estimates/${estimateId}/send-to-client-review`)
@@ -145,11 +136,7 @@ test('manager can send estimate to client review', async () => {
 
 test('manager can upload estimate file metadata and link it to quote', async () => {
   const stubs = createStubs();
-  mockModels(stubs.models);
-
-  const route = loadRoute('routes/manager.js');
-  const app = buildExpressApp('/api/manager', route);
-  const token = signAccessToken(managerId, 'manager');
+  const { app, token } = buildManagerApp(stubs);
 
   const response = await request(app)
     .post(`/api/manager/estimates/${estimateId}/document`)
