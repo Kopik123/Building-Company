@@ -114,7 +114,7 @@ router.post(
       return res.status(404).json({ error: 'Recipient not found' });
     }
 
-    const [participantAId, participantBId] = [req.user.id, recipientUserId].sort();
+    const [participantAId, participantBId] = [req.user.id, recipientUserId].sort((a, b) => String(a) < String(b) ? -1 : String(a) > String(b) ? 1 : 0);
 
     const [thread] = await InboxThread.findOrCreate({
       where: {
