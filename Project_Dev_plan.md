@@ -6,6 +6,7 @@
 - Added a root `npm run build` / `npm run build:web-v2` path that installs the isolated `apps/web-v2` dependencies and runs the existing Vite build from the repository root.
 - Updated `apps/web-v2/vite.config.js` so the Vite bundle is emitted into the repository-root `dist/` directory, which matches common static host auto-detection without changing the existing Node runtime path.
 - Recorded a deployment follow-up in `Project_todos.md` to confirm the platform now picks up `/dist` and serves the built SPA correctly.
+- Re-ran `npm run build` and `npm run verify:generated` successfully; `npm run test:api:v2` still fails in this sandbox because the installed environment is missing the `supertest` dev dependency required by the existing API suite.
 
 ## 2026-03-31 (security hotspot follow-up)
 
