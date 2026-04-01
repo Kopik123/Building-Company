@@ -1,5 +1,5 @@
 (() => {
-  const runtime = window.LevelLinesRuntime || {};
+  const runtime = globalThis.LevelLinesRuntime || {};
   const forms = document.querySelectorAll('.quote-form');
   if (!forms.length) return;
 
@@ -17,7 +17,7 @@
   const claimHelper = document.querySelector('[data-quote-claim-helper]');
   const claimStatus = document.querySelector('[data-quote-claim-status]');
   const TOKEN_KEY = runtime.TOKEN_KEY || 'll_auth_token';
-  const quoteClaim = window.LevelLinesQuoteClaim || {};
+  const quoteClaim = globalThis.LevelLinesQuoteClaim || {};
   const claimState = { quoteId: '', claimToken: '', claimCode: '' };
 
   const normalizeProjectType = (value) => {
@@ -174,7 +174,7 @@
       }
     });
     updateClaimSessionCopy();
-    window.addEventListener('ll:session-changed', updateClaimSessionCopy);
+    globalThis.addEventListener('ll:session-changed', updateClaimSessionCopy);
   }
 
   forms.forEach((form) => {

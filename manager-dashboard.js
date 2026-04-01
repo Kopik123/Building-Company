@@ -1,5 +1,5 @@
 (() => {
-  const runtime = window.LevelLinesRuntime || {};
+  const runtime = globalThis.LevelLinesRuntime || {};
   const TOKEN_KEY = runtime.TOKEN_KEY || 'll_auth_token';
   const USER_KEY = runtime.USER_KEY || 'll_auth_user';
   const DEFAULT_PAGE_SIZE = 25;

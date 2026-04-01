@@ -1,8 +1,8 @@
 (() => {
-  const runtime = window.LevelLinesRuntime || {};
+  const runtime = globalThis.LevelLinesRuntime || {};
   const TOKEN_KEY = runtime.TOKEN_KEY || 'll_auth_token';
   const USER_KEY = runtime.USER_KEY || 'll_auth_user';
-  const diffViewer = window.LevelLinesReviewDiff || {};
+  const diffViewer = globalThis.LevelLinesReviewDiff || {};
 
   const el = {
     session: document.getElementById('client-session'),
@@ -61,7 +61,7 @@
     node.textContent = message || '';
   });
   const requestAccordionRefresh = runtime.requestAccordionRefresh || (() => {
-    window.dispatchEvent(new CustomEvent('ll:dashboard-accordions-refresh'));
+    globalThis.dispatchEvent(new CustomEvent('ll:dashboard-accordions-refresh'));
   });
   const titleCase = runtime.titleCase;
   const formatDateTime = runtime.formatDateTime;
@@ -99,7 +99,7 @@
           return;
         }
 
-        window.setTimeout(tick, 60);
+        globalThis.setTimeout(tick, 60);
       };
       tick();
     }));
@@ -653,8 +653,8 @@
     state.token = localStorage.getItem(TOKEN_KEY) || '';
     if (!state.token) {
       el.session.textContent = 'No active session. Redirecting to login...';
-      window.setTimeout(() => {
-        window.location.assign(loginUrl);
+      globalThis.setTimeout(() => {
+        globalThis.location.assign(loginUrl);
       }, 700);
       return;
     }
@@ -665,8 +665,8 @@
       if (role !== 'client') {
         clearSession();
         el.session.textContent = 'Session expired. Redirecting to login...';
-        window.setTimeout(() => {
-          window.location.assign(loginUrl);
+        globalThis.setTimeout(() => {
+          globalThis.location.assign(loginUrl);
         }, 700);
         return;
       }
@@ -682,8 +682,8 @@
     } catch (error) {
       clearSession();
       el.session.textContent = error.message || 'Session expired. Redirecting to login...';
-      window.setTimeout(() => {
-        window.location.assign(loginUrl);
+      globalThis.setTimeout(() => {
+        globalThis.location.assign(loginUrl);
       }, 700);
     }
   };
@@ -773,7 +773,7 @@
 
   el.logout.addEventListener('click', () => {
     clearSession();
-    window.location.href = '/auth.html';
+    globalThis.location.href = '/auth.html';
   });
 
   bootstrap();

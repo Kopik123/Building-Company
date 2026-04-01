@@ -6,9 +6,13 @@ node_modules
 npm-debug.log
 docker-compose*.yml
 backup
-apps/*/node_modules
+apps
+deploy
+design
 .env
 .env.*
+.env.example
+.gitattributes
 uploads
 logs
 test-results
@@ -17,8 +21,6 @@ test-results
 tests
 Plans
 sonar-project.properties
-Project_Dev_plan.md
-Project_todos.md
 scripts
 tmp
 .tmp
