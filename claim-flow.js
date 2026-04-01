@@ -59,7 +59,7 @@
       throw new Error('Claim token format is invalid.');
     }
     if (!/^[0-9A-Fa-f]{8}$/.test(normalizedClaimCode)) {
-      throw new Error('Claim code must be an 8-character code.');
+      throw new Error('Claim code must be an 8-character hexadecimal code.');
     }
     return fetchJson(`/api/quotes/guest/${encodeURIComponent(String(quoteId))}/claim/confirm`, {
       method: 'POST',
