@@ -13,7 +13,7 @@ if (missingEnvVars.length) {
 
 const rawPort = Number(process.env.PORT);
 const PORT = (Number.isFinite(rawPort) && rawPort > 0 && rawPort <= 65535) ? rawPort : 3000;
-const HOST = String(process.env.HOST || '').trim() || '127.0.0.1';
+const HOST = String(process.env.HOST || '').trim() || '0.0.0.0';
 const app = createApp();
 
 const startServer = async () => {
