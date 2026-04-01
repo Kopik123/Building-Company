@@ -3,6 +3,7 @@
 ## Open
 
 - [ ] Validate the hardened migration paths once on a staging/production-like database, especially missing-table fallbacks and trigram-index creation on Postgres.
+- [ ] Validate the new root `npm run build` static deployment path on the target platform, especially that it installs `apps/web-v2`, emits `/dist`, and the host serves the built SPA from that directory.
 - [ ] Validate the full self-hosted font migration after deployment, including public pages, auth, manager workspace and client workspace typography.
 - [ ] Validate review-page deep links after deployment, including opening a specific diff entry from client and manager dashboard actions.
 - [ ] Validate the new review timeline filters and selected-entry highlighting against mixed quote/estimate/client-decision histories.

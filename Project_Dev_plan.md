@@ -1,5 +1,12 @@
 # Project Dev Plan
 
+## 2026-04-01 (static build output fix)
+
+- Investigated the static deployment failure and confirmed the repo only had a Vite build inside `apps/web-v2/dist`, while the platform was probing for a root-level `_static`, `dist`, `public`, or `build` directory.
+- Added a root `npm run build` / `npm run build:web-v2` path that installs the isolated `apps/web-v2` dependencies and runs the existing Vite build from the repository root.
+- Updated `apps/web-v2/vite.config.js` so the Vite bundle is emitted into the repository-root `dist/` directory, which matches common static host auto-detection without changing the existing Node runtime path.
+- Recorded a deployment follow-up in `Project_todos.md` to confirm the platform now picks up `/dist` and serves the built SPA correctly.
+
 ## 2026-03-31 (security hotspot follow-up)
 
 - Reviewed the current Sonar hotspot set: the remaining SRI findings are same-origin local asset includes, while the actionable code/container fixes in this slice were the mobile `Math.random()` poller id and the production Docker root/COPY posture.
