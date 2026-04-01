@@ -170,7 +170,7 @@
     node.className = type === 'error' ? 'muted form-status is-error' : 'muted';
   });
   const requestAccordionRefresh = runtime.requestAccordionRefresh || (() => {
-    window.dispatchEvent(new CustomEvent('ll:dashboard-accordions-refresh'));
+    globalThis.dispatchEvent(new CustomEvent('ll:dashboard-accordions-refresh'));
   });
   const titleCase = runtime.titleCase;
   const formatDateTime = runtime.formatDateTime;
@@ -262,7 +262,7 @@
           return;
         }
 
-        window.setTimeout(tick, 60);
+        globalThis.setTimeout(tick, 60);
       };
       tick();
     }));
@@ -613,7 +613,7 @@
           try {
             await loadProjectDetail(project.id, true);
           } catch (error) {
-            window.alert(error.message || 'Could not load project details');
+            globalThis.alert(error.message || 'Could not load project details');
           }
         }
         fillProjectEditor();
@@ -655,7 +655,7 @@
       del.className = 'btn btn-outline';
       del.textContent = 'Delete';
       del.addEventListener('click', async () => {
-        if (!window.confirm(`Delete file \"${item.filename}\"?`)) return;
+        if (!globalThis.confirm(`Delete file \"${item.filename}\"?`)) return;
         try {
           await api(`/api/manager/projects/${project.id}/media/${item.id}`, { method: 'DELETE' });
           await loadProjects(project.id);
@@ -701,6 +701,18 @@
     requestAccordionRefresh();
   };
 
+  const buildLatestDiffLink = (quote, canManage) => {
+    if (!canManage) return null;
+    if (!Array.isArray(quote.revisionHistory) || !quote.revisionHistory.length) return null;
+    if (!globalThis.LevelLinesReviewDiff?.buildEntryId) return null;
+    const latestRevision = quote.revisionHistory.at(-1);
+    const link = document.createElement('a');
+    link.className = 'btn btn-outline';
+    link.href = `/manager-review.html?quoteId=${encodeURIComponent(quote.id)}&entry=${encodeURIComponent(globalThis.LevelLinesReviewDiff.buildEntryId({ ...latestRevision, scope: 'quote' }, 'quote'))}`;
+    link.textContent = 'Open latest diff';
+    return link;
+  };
+
   const renderQuotes = () => {
     el.quotesList.innerHTML = '';
     if (!state.quotes.length) {
@@ -719,8 +731,9 @@
       const latestEstimateLabel = latestEstimate
         ? `${latestEstimate.title || 'Estimate'} | ${latestEstimate.status || 'draft'} | ${formatCurrency(latestEstimate.total || 0)}`
         : 'No linked estimate yet';
+      const visitTimeWindow = quote.siteVisitTimeWindow ? ` (${quote.siteVisitTimeWindow})` : '';
       const visitDetail = quote.siteVisitDate
-        ? `${quote.siteVisitDate}${quote.siteVisitTimeWindow ? ` (${quote.siteVisitTimeWindow})` : ''}`
+        ? `${quote.siteVisitDate}${visitTimeWindow}`
         : 'Not planned';
       const proposedStart = quote.proposedStartDate || 'Not proposed';
       const clientDecision = quote.clientDecisionStatus || 'pending';
@@ -820,7 +833,7 @@
           });
           await loadQuotes();
         } catch (error) {
-          window.alert(error.message || 'Failed to update quote');
+          globalThis.alert(error.message || 'Failed to update quote');
         }
       });
       const workflowSaveBtn = document.createElement('button');
@@ -847,7 +860,7 @@
           });
           await loadQuotes();
         } catch (error) {
-          window.alert(error.message || 'Failed to update quote workflow');
+          globalThis.alert(error.message || 'Failed to update quote workflow');
         }
       });
       row.appendChild(createControlField('Status', statusSelect));
@@ -872,7 +885,7 @@
             await api(`/api/manager/quotes/${quote.id}/accept`, { method: 'POST' });
             await loadQuotes();
           } catch (error) {
-            window.alert(error.message || 'Failed to accept quote');
+            globalThis.alert(error.message || 'Failed to accept quote');
           }
         });
       }
@@ -883,12 +896,12 @@
         convertBtn.className = 'btn btn-outline';
         convertBtn.textContent = 'Create project';
         convertBtn.addEventListener('click', async () => {
-          if (!window.confirm('Create a project from this accepted quote?')) return;
+          if (!globalThis.confirm('Create a project from this accepted quote?')) return;
           try {
             await api(`/api/manager/quotes/${quote.id}/convert-to-project`, { method: 'POST' });
             await Promise.all([loadQuotes(), loadProjects()]);
           } catch (error) {
-            window.alert(error.message || 'Failed to create project from quote');
+            globalThis.alert(error.message || 'Failed to create project from quote');
           }
         });
       }
@@ -908,7 +921,7 @@
               fillEstimateEditor();
             }
           } catch (error) {
-            window.alert(error.message || 'Failed to open draft estimate');
+            globalThis.alert(error.message || 'Failed to open draft estimate');
           }
         });
       }
@@ -919,14 +932,7 @@
         reviewTimelineLink.href = `/manager-review.html?quoteId=${encodeURIComponent(quote.id)}`;
         reviewTimelineLink.textContent = 'Open review timeline';
       }
-      let latestDiffLink = null;
-      if (canManage && Array.isArray(quote.revisionHistory) && quote.revisionHistory.length && window.LevelLinesReviewDiff?.buildEntryId) {
-        const latestQuoteRevision = quote.revisionHistory[quote.revisionHistory.length - 1];
-        latestDiffLink = document.createElement('a');
-        latestDiffLink.className = 'btn btn-outline';
-        latestDiffLink.href = `/manager-review.html?quoteId=${encodeURIComponent(quote.id)}&entry=${encodeURIComponent(window.LevelLinesReviewDiff.buildEntryId({ ...latestQuoteRevision, scope: 'quote' }, 'quote'))}`;
-        latestDiffLink.textContent = 'Open latest diff';
-      }
+      let latestDiffLink = buildLatestDiffLink(quote, canManage);
       row.appendChild(createEditActions([acceptBtn, draftEstimateBtn, reviewTimelineLink, latestDiffLink, workflowSaveBtn, convertBtn, saveBtn]));
       card.appendChild(row);
       frag.appendChild(card);
@@ -990,7 +996,7 @@
       del.className = 'btn btn-outline';
       del.textContent = 'Delete';
       del.addEventListener('click', async () => {
-        if (!window.confirm(`Delete service \"${service.title}\"?`)) return;
+        if (!globalThis.confirm(`Delete service \"${service.title}\"?`)) return;
         try {
           await api(`/api/manager/services/${service.id}`, { method: 'DELETE' });
           await loadServices();
@@ -1070,7 +1076,7 @@
       del.className = 'btn btn-outline';
       del.textContent = 'Delete';
       del.addEventListener('click', async () => {
-        if (!window.confirm(`Delete material \"${material.name}\"?`)) return;
+        if (!globalThis.confirm(`Delete material \"${material.name}\"?`)) return;
         try {
           await api(`/api/manager/materials/${material.id}`, { method: 'DELETE' });
           await loadMaterials();
@@ -1188,7 +1194,7 @@
       del.className = 'btn btn-outline';
       del.textContent = 'Delete line';
       del.addEventListener('click', async () => {
-        if (!window.confirm(`Delete estimate line "${line.description}"?`)) return;
+        if (!globalThis.confirm(`Delete estimate line "${line.description}"?`)) return;
         try {
           await api(`/api/manager/estimates/${estimate.id}/lines/${line.id}`, { method: 'DELETE' });
           await loadEstimateDetail(estimate.id, true);
@@ -1800,8 +1806,8 @@
     state.token = getToken();
     if (!state.token) {
       el.session.textContent = 'No active session. Redirecting to login...';
-      window.setTimeout(() => {
-        window.location.assign(loginUrl);
+      globalThis.setTimeout(() => {
+        globalThis.location.assign(loginUrl);
       }, 700);
       return;
     }
@@ -1811,8 +1817,8 @@
       if (!state.user || !['employee', 'manager', 'admin'].includes(role)) {
         clearSession();
         el.session.textContent = 'Session expired. Redirecting to login...';
-        window.setTimeout(() => {
-          window.location.assign(loginUrl);
+        globalThis.setTimeout(() => {
+          globalThis.location.assign(loginUrl);
         }, 700);
         return;
       }
@@ -1839,8 +1845,8 @@
     } catch (error) {
       clearSession();
       el.session.textContent = error.message || 'Session expired. Redirecting to login...';
-      window.setTimeout(() => {
-        window.location.assign(loginUrl);
+      globalThis.setTimeout(() => {
+        globalThis.location.assign(loginUrl);
       }, 700);
     }
   };
@@ -1943,7 +1949,7 @@
   el.projectDelete.addEventListener('click', async () => {
     const project = selectedProject();
     if (!project) return;
-    if (!window.confirm(`Delete project \"${project.title}\" and all related media?`)) return;
+    if (!globalThis.confirm(`Delete project \"${project.title}\" and all related media?`)) return;
     setStatus(el.projectEditStatus, 'Deleting project...');
     try {
       await api(`/api/manager/projects/${project.id}`, { method: 'DELETE' });
@@ -2126,7 +2132,7 @@
   el.estimateDelete.addEventListener('click', async () => {
     const estimate = selectedEstimate();
     if (!estimate) return;
-    if (!window.confirm(`Delete estimate "${estimate.title}"?`)) return;
+    if (!globalThis.confirm(`Delete estimate "${estimate.title}"?`)) return;
     setStatus(el.estimateUpdateStatus, 'Deleting estimate...');
     try {
       await api(`/api/manager/estimates/${estimate.id}`, { method: 'DELETE' });
@@ -2252,8 +2258,8 @@
   });
 
   el.seedBtn.addEventListener('click', async () => {
-    if (!window.confirm('Run starter seed now?')) return;
-    const force = window.confirm('Force-update existing seed records? Click Cancel for safe mode.');
+    if (!globalThis.confirm('Run starter seed now?')) return;
+    const force = globalThis.confirm('Force-update existing seed records? Click Cancel for safe mode.');
     setStatus(el.seedStatus, 'Running seed...');
     try {
       const payload = await api('/api/manager/seed/starter', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ force }) });
@@ -2268,21 +2274,21 @@
     }
   });
 
-  el.projectsFilterApply.addEventListener('click', () => { applyProjectsFiltersFromUI(); loadProjects().catch((e) => window.alert(e.message || 'Could not load projects')); });
-  el.projectsPrev.addEventListener('click', () => { if (state.projectsQuery.page <= 1) return; state.projectsQuery.page -= 1; loadProjects().catch((e) => window.alert(e.message || 'Could not load projects')); });
-  el.projectsNext.addEventListener('click', () => { if (state.projectsQuery.page >= Number(state.projectsPagination.totalPages || 1)) return; state.projectsQuery.page += 1; loadProjects().catch((e) => window.alert(e.message || 'Could not load projects')); });
-  el.quotesRefresh.addEventListener('click', () => { applyQuotesFiltersFromUI(); loadQuotes().catch((e) => window.alert(e.message || 'Could not load quotes')); });
-  el.quotesPrev.addEventListener('click', () => { if (state.quotesQuery.page <= 1) return; state.quotesQuery.page -= 1; loadQuotes().catch((e) => window.alert(e.message || 'Could not load quotes')); });
-  el.quotesNext.addEventListener('click', () => { if (state.quotesQuery.page >= Number(state.quotesPagination.totalPages || 1)) return; state.quotesQuery.page += 1; loadQuotes().catch((e) => window.alert(e.message || 'Could not load quotes')); });
-  el.servicesRefresh.addEventListener('click', () => { applyServicesFiltersFromUI(); loadServices().catch((e) => window.alert(e.message || 'Could not load services')); });
-  el.servicesPrev.addEventListener('click', () => { if (state.servicesQuery.page <= 1) return; state.servicesQuery.page -= 1; loadServices().catch((e) => window.alert(e.message || 'Could not load services')); });
-  el.servicesNext.addEventListener('click', () => { if (state.servicesQuery.page >= Number(state.servicesPagination.totalPages || 1)) return; state.servicesQuery.page += 1; loadServices().catch((e) => window.alert(e.message || 'Could not load services')); });
-  el.materialsRefresh.addEventListener('click', () => { applyMaterialsFiltersFromUI(); loadMaterials().catch((e) => window.alert(e.message || 'Could not load materials')); });
-  el.materialsPrev.addEventListener('click', () => { if (state.materialsQuery.page <= 1) return; state.materialsQuery.page -= 1; loadMaterials().catch((e) => window.alert(e.message || 'Could not load materials')); });
-  el.materialsNext.addEventListener('click', () => { if (state.materialsQuery.page >= Number(state.materialsPagination.totalPages || 1)) return; state.materialsQuery.page += 1; loadMaterials().catch((e) => window.alert(e.message || 'Could not load materials')); });
-  el.clientsRefresh.addEventListener('click', () => { applyClientsFiltersFromUI(); loadClients().catch((e) => window.alert(e.message || 'Could not load clients')); });
-  el.staffRefresh.addEventListener('click', () => { applyStaffFiltersFromUI(); loadStaff().catch((e) => window.alert(e.message || 'Could not load staff')); });
-  el.logout.addEventListener('click', () => { clearSession(); window.location.href = '/auth.html'; });
+  el.projectsFilterApply.addEventListener('click', () => { applyProjectsFiltersFromUI(); loadProjects().catch((e) => globalThis.alert(e.message || 'Could not load projects')); });
+  el.projectsPrev.addEventListener('click', () => { if (state.projectsQuery.page <= 1) return; state.projectsQuery.page -= 1; loadProjects().catch((e) => globalThis.alert(e.message || 'Could not load projects')); });
+  el.projectsNext.addEventListener('click', () => { if (state.projectsQuery.page >= Number(state.projectsPagination.totalPages || 1)) return; state.projectsQuery.page += 1; loadProjects().catch((e) => globalThis.alert(e.message || 'Could not load projects')); });
+  el.quotesRefresh.addEventListener('click', () => { applyQuotesFiltersFromUI(); loadQuotes().catch((e) => globalThis.alert(e.message || 'Could not load quotes')); });
+  el.quotesPrev.addEventListener('click', () => { if (state.quotesQuery.page <= 1) return; state.quotesQuery.page -= 1; loadQuotes().catch((e) => globalThis.alert(e.message || 'Could not load quotes')); });
+  el.quotesNext.addEventListener('click', () => { if (state.quotesQuery.page >= Number(state.quotesPagination.totalPages || 1)) return; state.quotesQuery.page += 1; loadQuotes().catch((e) => globalThis.alert(e.message || 'Could not load quotes')); });
+  el.servicesRefresh.addEventListener('click', () => { applyServicesFiltersFromUI(); loadServices().catch((e) => globalThis.alert(e.message || 'Could not load services')); });
+  el.servicesPrev.addEventListener('click', () => { if (state.servicesQuery.page <= 1) return; state.servicesQuery.page -= 1; loadServices().catch((e) => globalThis.alert(e.message || 'Could not load services')); });
+  el.servicesNext.addEventListener('click', () => { if (state.servicesQuery.page >= Number(state.servicesPagination.totalPages || 1)) return; state.servicesQuery.page += 1; loadServices().catch((e) => globalThis.alert(e.message || 'Could not load services')); });
+  el.materialsRefresh.addEventListener('click', () => { applyMaterialsFiltersFromUI(); loadMaterials().catch((e) => globalThis.alert(e.message || 'Could not load materials')); });
+  el.materialsPrev.addEventListener('click', () => { if (state.materialsQuery.page <= 1) return; state.materialsQuery.page -= 1; loadMaterials().catch((e) => globalThis.alert(e.message || 'Could not load materials')); });
+  el.materialsNext.addEventListener('click', () => { if (state.materialsQuery.page >= Number(state.materialsPagination.totalPages || 1)) return; state.materialsQuery.page += 1; loadMaterials().catch((e) => globalThis.alert(e.message || 'Could not load materials')); });
+  el.clientsRefresh.addEventListener('click', () => { applyClientsFiltersFromUI(); loadClients().catch((e) => globalThis.alert(e.message || 'Could not load clients')); });
+  el.staffRefresh.addEventListener('click', () => { applyStaffFiltersFromUI(); loadStaff().catch((e) => globalThis.alert(e.message || 'Could not load staff')); });
+  el.logout.addEventListener('click', () => { clearSession(); globalThis.location.href = '/auth.html'; });
 
   bootstrap();
 })();

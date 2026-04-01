@@ -67,16 +67,6 @@
   const formatDateTime = runtime.formatDateTime;
   const formatCurrency = runtime.formatCurrency;
   const createOverviewEntry = runtime.createOverviewEntry;
-  const createControlField = (labelText, control) => {
-    const field = document.createElement('label');
-    field.className = 'dashboard-control-field';
-    const label = document.createElement('span');
-    label.className = 'dashboard-control-label';
-    label.textContent = labelText;
-    field.appendChild(label);
-    field.appendChild(control);
-    return field;
-  };
   const renderMailboxPreviewList = runtime.renderMailboxPreviewList;
 
   const clearSession = () => {
@@ -201,13 +191,14 @@
       const visibleEstimate = estimates.find((estimate) =>
         estimate.clientVisible || ['sent', 'approved', 'archived'].includes(String(estimate.status || '').toLowerCase())
       ) || null;
+      const visitWindow = quote.siteVisitTimeWindow ? ` (${quote.siteVisitTimeWindow})` : '';
       const visitDetail = quote.siteVisitDate
-        ? `${quote.siteVisitDate}${quote.siteVisitTimeWindow ? ` (${quote.siteVisitTimeWindow})` : ''}`
+        ? `${quote.siteVisitDate}${visitWindow}`
         : 'Awaiting manager proposal';
       const startDetail = quote.proposedStartDate || 'Pending';
       const decisionStatus = quote.clientDecisionStatus || 'pending';
       const reviewEntry = Array.isArray(quote.revisionHistory) && quote.revisionHistory.length
-        ? quote.revisionHistory[quote.revisionHistory.length - 1]
+        ? quote.revisionHistory.at(-1)
         : null;
       const estimatePackBits = [
         quote.scopeOfWork ? `Scope: ${quote.scopeOfWork}` : null,

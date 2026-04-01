@@ -225,7 +225,11 @@ router.post(
     const guestName = String(req.user?.name || req.user?.email || 'Signed-in client').trim();
     const guestEmail = normalizeEmail(req.user?.email);
     const guestPhone = normalizePhone(req.user?.phone);
-    const contactMethod = guestEmail && guestPhone ? 'both' : guestEmail ? 'email' : guestPhone ? 'phone' : null;
+    let contactMethod;
+    if (guestEmail && guestPhone) contactMethod = 'both';
+    else if (guestEmail) contactMethod = 'email';
+    else if (guestPhone) contactMethod = 'phone';
+    else contactMethod = null;
 
     const quote = await Quote.create({
       isGuest: false,

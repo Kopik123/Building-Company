@@ -1,6 +1,6 @@
 const crypto = require('crypto');
 const fs = require('fs');
-const path = require('path');
+const path = require('node:path');
 const express = require('express');
 const {
   appendRevisionEntry,

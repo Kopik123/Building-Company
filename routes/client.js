@@ -63,7 +63,8 @@ const mapProject = (project) => {
 
 const formatVisitPreference = ({ siteVisitDate, siteVisitTimeWindow }) => {
   if (!siteVisitDate) return 'a different visit slot';
-  return `${siteVisitDate}${siteVisitTimeWindow ? ` (${siteVisitTimeWindow})` : ''}`;
+  const timeWindow = siteVisitTimeWindow ? ` (${siteVisitTimeWindow})` : '';
+  return `${siteVisitDate}${timeWindow}`;
 };
 
 const quoteEstimateInclude = {

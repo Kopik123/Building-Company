@@ -4,10 +4,10 @@ const { buildQuoteRevisionPayload } = require('../../utils/revisionHistory');
 
 const toTitleCase = (value) =>
   String(value || '')
-    .replace(/[_-]+/g, ' ')
-    .replace(/\s+/g, ' ')
+    .replaceAll(/[_-]+/g, ' ')
+    .replaceAll(/\s+/g, ' ')
     .trim()
-    .replace(/\b\w/g, (char) => char.toUpperCase());
+    .replaceAll(/\b\w/g, (char) => char.toUpperCase());
 
 const buildProjectName = (quote) =>
   `${toTitleCase(quote.projectType)} - ${quote.guestName || quote.client?.name || 'Project'} (${quote.postcode || quote.location || 'Manchester'})`;
@@ -24,9 +24,8 @@ const buildProjectDescription = (quote) => {
 };
 
 const formatWorkflowNotificationDetail = ({ siteVisitDate, siteVisitTimeWindow, proposedStartDate }) => {
-  const visitDetail = siteVisitDate
-    ? ` Visit: ${siteVisitDate}${siteVisitTimeWindow ? ` (${siteVisitTimeWindow})` : ''}.`
-    : '';
+  const visitWindow = siteVisitTimeWindow ? ` (${siteVisitTimeWindow})` : '';
+  const visitDetail = siteVisitDate ? ` Visit: ${siteVisitDate}${visitWindow}.` : '';
   const startDetail = proposedStartDate ? ` Proposed start: ${proposedStartDate}.` : '';
   return `${visitDetail}${startDetail}`;
 };
@@ -133,7 +132,7 @@ module.exports = function createQuoteRoutes({
 
     if (nextPayload.workflowStatus === 'archived') {
       nextPayload.archivedAt = new Date();
-    } else if (typeof nextPayload.workflowStatus !== 'undefined' && quote.archivedAt) {
+    } else if (nextPayload.workflowStatus !== undefined && quote.archivedAt) {
       nextPayload.archivedAt = null;
     }
 
@@ -357,28 +356,28 @@ module.exports = function createQuoteRoutes({
 
       let payload = {};
       const managerChangedVisitPlan = (
-        typeof req.body.siteVisitDate !== 'undefined'
-        || typeof req.body.siteVisitTimeWindow !== 'undefined'
+        req.body.siteVisitDate !== undefined
+        || req.body.siteVisitTimeWindow !== undefined
       );
       const managerPreparedEstimate = (
-        typeof req.body.scopeOfWork !== 'undefined'
-        || typeof req.body.materialsPlan !== 'undefined'
-        || typeof req.body.labourEstimate !== 'undefined'
-        || typeof req.body.estimateDocumentUrl !== 'undefined'
-        || typeof req.body.proposedStartDate !== 'undefined'
+        req.body.scopeOfWork !== undefined
+        || req.body.materialsPlan !== undefined
+        || req.body.labourEstimate !== undefined
+        || req.body.estimateDocumentUrl !== undefined
+        || req.body.proposedStartDate !== undefined
       );
 
-      if (typeof req.body.workflowStatus !== 'undefined') payload.workflowStatus = req.body.workflowStatus;
-      if (typeof req.body.siteVisitStatus !== 'undefined') payload.siteVisitStatus = req.body.siteVisitStatus;
-      if (typeof req.body.siteVisitDate !== 'undefined') payload.siteVisitDate = req.body.siteVisitDate || null;
-      if (typeof req.body.siteVisitTimeWindow !== 'undefined') payload.siteVisitTimeWindow = String(req.body.siteVisitTimeWindow || '').trim() || null;
-      if (typeof req.body.proposedStartDate !== 'undefined') payload.proposedStartDate = req.body.proposedStartDate || null;
-      if (typeof req.body.scopeOfWork !== 'undefined') payload.scopeOfWork = String(req.body.scopeOfWork || '').trim() || null;
-      if (typeof req.body.materialsPlan !== 'undefined') payload.materialsPlan = String(req.body.materialsPlan || '').trim() || null;
-      if (typeof req.body.labourEstimate !== 'undefined') payload.labourEstimate = String(req.body.labourEstimate || '').trim() || null;
-      if (typeof req.body.estimateDocumentUrl !== 'undefined') payload.estimateDocumentUrl = String(req.body.estimateDocumentUrl || '').trim() || null;
-      if (typeof req.body.clientDecisionStatus !== 'undefined') payload.clientDecisionStatus = req.body.clientDecisionStatus;
-      if (typeof req.body.clientDecisionNotes !== 'undefined') payload.clientDecisionNotes = String(req.body.clientDecisionNotes || '').trim() || null;
+      if (req.body.workflowStatus !== undefined) payload.workflowStatus = req.body.workflowStatus;
+      if (req.body.siteVisitStatus !== undefined) payload.siteVisitStatus = req.body.siteVisitStatus;
+      if (req.body.siteVisitDate !== undefined) payload.siteVisitDate = req.body.siteVisitDate || null;
+      if (req.body.siteVisitTimeWindow !== undefined) payload.siteVisitTimeWindow = String(req.body.siteVisitTimeWindow || '').trim() || null;
+      if (req.body.proposedStartDate !== undefined) payload.proposedStartDate = req.body.proposedStartDate || null;
+      if (req.body.scopeOfWork !== undefined) payload.scopeOfWork = String(req.body.scopeOfWork || '').trim() || null;
+      if (req.body.materialsPlan !== undefined) payload.materialsPlan = String(req.body.materialsPlan || '').trim() || null;
+      if (req.body.labourEstimate !== undefined) payload.labourEstimate = String(req.body.labourEstimate || '').trim() || null;
+      if (req.body.estimateDocumentUrl !== undefined) payload.estimateDocumentUrl = String(req.body.estimateDocumentUrl || '').trim() || null;
+      if (req.body.clientDecisionStatus !== undefined) payload.clientDecisionStatus = req.body.clientDecisionStatus;
+      if (req.body.clientDecisionNotes !== undefined) payload.clientDecisionNotes = String(req.body.clientDecisionNotes || '').trim() || null;
 
       payload = inferWorkflowPayload({ quote, payload, managerChangedVisitPlan, managerPreparedEstimate });
 

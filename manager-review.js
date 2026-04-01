@@ -108,7 +108,10 @@
     }));
     el.summaryList.appendChild(createOverviewEntry({
       title: 'Visit and start',
-      detail: `Visit: ${quote.siteVisitDate || 'pending'}${quote.siteVisitTimeWindow ? ` (${quote.siteVisitTimeWindow})` : ''}`,
+      detail: (() => {
+        const timeWindow = quote.siteVisitTimeWindow ? ` (${quote.siteVisitTimeWindow})` : '';
+        return `Visit: ${quote.siteVisitDate || 'pending'}${timeWindow}`;
+      })(),
       meta: `Proposed start: ${quote.proposedStartDate || 'pending'}`
     }));
 

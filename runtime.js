@@ -148,30 +148,30 @@
       }
     }
 
-    while (slugChars[slugChars.length - 1] === '-') slugChars.pop();
+    while (slugChars.at(-1) === '-') slugChars.pop();
 
     if (!maxLength || slugChars.length <= maxLength) {
       return slugChars.join('');
     }
 
     const bounded = slugChars.slice(0, maxLength);
-    while (bounded[bounded.length - 1] === '-') bounded.pop();
+    while (bounded.at(-1) === '-') bounded.pop();
     return bounded.join('');
   };
 
   const escapeSelector = (value) => {
     if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') return CSS.escape(value);
-    return String(value).replace(/["\\]/g, '\\$&');
+    return String(value).replaceAll(/["\\]/g, String.raw`\$&`);
   };
 
   const syncReviewFilters = (state) => {
-    const url = new URL(window.location.href);
+    const url = new URL(globalThis.location.href);
     if (state.selectedEntryId) url.searchParams.set('entry', state.selectedEntryId);
     else url.searchParams.delete('entry');
     url.searchParams.set('filterQuote', String(state.filters.quote));
     url.searchParams.set('filterEstimate', String(state.filters.estimate));
     url.searchParams.set('filterDecision', String(state.filters.decision));
-    window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+    globalThis.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
   };
 
   const scrollToHistoryEntry = (historyList, entryId) => {

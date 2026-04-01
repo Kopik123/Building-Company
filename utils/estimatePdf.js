@@ -6,10 +6,10 @@ const PDF_LINE_HEIGHT = 14;
 const PDF_LINES_PER_PAGE = 48;
 
 const sanitizePdfText = (value) => String(value ?? '')
-  .replace(/[^\x20-\x7E]/g, '?')
-  .replace(/\\/g, '\\\\')
-  .replace(/\(/g, '\\(')
-  .replace(/\)/g, '\\)');
+  .replaceAll(/[^\x20-\x7E]/g, '?')
+  .replaceAll(/\\/g, '\\\\')
+  .replaceAll(/\(/g, '\\(')
+  .replaceAll(/\)/g, '\\)');
 
 const wrapLine = (text, maxLength = 84) => {
   const words = String(text || '').split(/\s+/).filter(Boolean);
@@ -53,8 +53,7 @@ const buildEstimatePdfLines = (estimate) => {
     wrapLine(`Notes: ${estimate.notes}`).forEach((line) => lines.push(line));
     lines.push('');
   }
-  lines.push('Estimate lines');
-  lines.push('----------------------------------------');
+  lines.push('Estimate lines', '----------------------------------------');
   const estimateLines = Array.isArray(estimate.lines) ? estimate.lines : [];
   if (!estimateLines.length) {
     lines.push('No line items added yet.');
@@ -68,9 +67,7 @@ const buildEstimatePdfLines = (estimate) => {
       lines.push('');
     });
   }
-  lines.push('----------------------------------------');
-  lines.push(`Subtotal: ${formatCurrency(estimate.subtotal || 0)}`);
-  lines.push(`Total: ${formatCurrency(estimate.total || 0)}`);
+  lines.push('----------------------------------------', `Subtotal: ${formatCurrency(estimate.subtotal || 0)}`, `Total: ${formatCurrency(estimate.total || 0)}`);
   return lines;
 };
 
@@ -107,7 +104,8 @@ const buildPdfDocument = (pages) => {
   const offsets = [0];
   objects.forEach((object, index) => {
     offsets.push(Buffer.byteLength(body, 'utf8'));
-    body += `${index + 1} 0 obj\n${object.replace(fontPlaceholder, `${fontId} 0 R`)}\nendobj\n`;
+    const objContent = object.replaceAll(fontPlaceholder, `${fontId} 0 R`);
+    body += `${index + 1} 0 obj\n${objContent}\nendobj\n`;
   });
   const xrefOffset = Buffer.byteLength(body, 'utf8');
   body += `xref\n0 ${objects.length + 1}\n`;

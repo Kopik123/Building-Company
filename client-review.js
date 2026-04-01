@@ -51,15 +51,15 @@
 
   const state = {
     quote: null,
-    selectedEntryId: new URLSearchParams(window.location.search).get('entry') || '',
+    selectedEntryId: new URLSearchParams(globalThis.location.search).get('entry') || '',
     filters: {
-      quote: new URLSearchParams(window.location.search).get('filterQuote') !== 'false',
-      estimate: new URLSearchParams(window.location.search).get('filterEstimate') !== 'false',
-      decision: new URLSearchParams(window.location.search).get('filterDecision') !== 'false'
+      quote: new URLSearchParams(globalThis.location.search).get('filterQuote') !== 'false',
+      estimate: new URLSearchParams(globalThis.location.search).get('filterEstimate') !== 'false',
+      decision: new URLSearchParams(globalThis.location.search).get('filterDecision') !== 'false'
     }
   };
 
-  const quoteId = new URLSearchParams(window.location.search).get('quoteId');
+  const quoteId = new URLSearchParams(globalThis.location.search).get('quoteId');
   const updateSearchParams = () => (runtime.syncReviewFilters ? runtime.syncReviewFilters(state) : undefined);
 
   const applySelection = () => {

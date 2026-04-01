@@ -166,8 +166,8 @@
           token: getToken()
         });
         setStatus(claimStatus, 'Quote claimed. Redirecting to the review screen...', 'success');
-        window.setTimeout(() => {
-          window.location.assign(`/client-review.html?quoteId=${encodeURIComponent(quoteId)}`);
+        globalThis.setTimeout(() => {
+          globalThis.location.assign(`/client-review.html?quoteId=${encodeURIComponent(quoteId)}`);
         }, 350);
       } catch (error) {
         setStatus(claimStatus, error.message || 'Could not claim quote.', 'error');
