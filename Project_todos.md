@@ -2,6 +2,9 @@
 
 ## Open
 
+- [ ] Validate the DigitalOcean deployment after the `build_command` fix in `.do/app.yaml` — confirm the buildpack runs `npm ci --omit=dev` and the Node process starts on port 8080.
+- [ ] Validate CORS behaviour in production — ensure `CORS_ORIGINS` env var is set so cross-origin requests are not silently blocked by the new production guard.
+- [ ] Validate the new 8-character hex claim codes in guest quote flow end-to-end — the frontend inputs and backend validation now expect hex instead of 6-digit numeric codes.
 - [ ] Validate the hardened migration paths once on a staging/production-like database, especially missing-table fallbacks and trigram-index creation on Postgres.
 - [ ] Validate the new root `npm run build` static deployment path on the target platform, especially that it installs `apps/web-v2`, emits `/dist`, and the host serves the built SPA from that directory.
 - [ ] Validate the full self-hosted font migration after deployment, including public pages, auth, manager workspace and client workspace typography.

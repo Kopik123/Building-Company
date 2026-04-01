@@ -120,7 +120,7 @@ test('guest quote submission returns onscreen claim code data', async () => {
 
   assert.equal(response.body?.quoteId, quoteId);
   assert.equal(typeof response.body?.claimCode, 'string');
-  assert.equal(response.body?.claimCode?.length, 6);
+  assert.equal(response.body?.claimCode?.length, 8);
   assert.equal(response.body?.claimCodeDeliveryMode, 'onscreen');
   assert.equal(String(response.body?.claimCodeWarning || '').includes('Save'), true);
   assert.equal(stubs.createdClaims.length, 1);

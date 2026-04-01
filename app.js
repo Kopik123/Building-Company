@@ -62,6 +62,7 @@ const createApp = () => {
   const authLimiter = createRateLimiter(15 * 60 * 1000, 20);
   const claimLimiter = createRateLimiter(15 * 60 * 1000, 10);
   const contactLimiter = createRateLimiter(60 * 60 * 1000, 10);
+  const guestQuoteLimiter = createRateLimiter(60 * 60 * 1000, 5);
 
   app.use(helmet({
     contentSecurityPolicy: {
@@ -81,7 +82,26 @@ const createApp = () => {
 
   app.use(cors({
     origin: (origin, callback) => {
-      if (!origin || !allowedOrigins.length || allowedOrigins.includes(origin)) {
+      // Allow same-origin requests (origin is undefined for non-browser clients)
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+
+      // In production, require explicit CORS_ORIGINS configuration
+      if (!allowedOrigins.length) {
+        if (process.env.NODE_ENV === 'production') {
+          const err = new Error('CORS_ORIGINS not configured');
+          err.statusCode = 403;
+          callback(err);
+          return;
+        }
+        // In non-production, allow all origins when unconfigured
+        callback(null, true);
+        return;
+      }
+
+      if (allowedOrigins.includes(origin)) {
         callback(null, true);
         return;
       }
@@ -110,6 +130,7 @@ const createApp = () => {
   app.use('/api/auth', authLimiter);
   app.use('/api/v2/auth', authLimiter);
   app.use('/api/quotes/guest/:id/claim', claimLimiter);
+  app.post('/api/quotes/guest', guestQuoteLimiter);
   app.use('/api/contact', contactLimiter);
 
   app.use('/api/auth', authRoutes);

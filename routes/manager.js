@@ -172,13 +172,15 @@ const normalizeStoragePath = (absolutePath) => {
   return relative.replace(/\\/g, '/');
 };
 
+const UPLOADS_DIR = path.resolve(__dirname, '..', 'uploads');
+
 const safeUnlink = async (storagePath) => {
   if (!storagePath) return;
   const normalizedPath = String(storagePath || '').replace(/\\/g, '/');
   if (!normalizedPath.startsWith('uploads/')) return;
 
-  const resolved = path.join(__dirname, '..', storagePath);
-  if (!resolved.startsWith(path.join(__dirname, '..'))) return;
+  const resolved = path.resolve(path.join(__dirname, '..'), storagePath);
+  if (!resolved.startsWith(UPLOADS_DIR + path.sep) && resolved !== UPLOADS_DIR) return;
 
   try {
     await fs.promises.unlink(resolved);
