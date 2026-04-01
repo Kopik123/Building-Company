@@ -1,5 +1,17 @@
 # Project Dev Plan
 
+## 2026-04-01 (project analysis, bug fixes, security hardening, optimization)
+
+- Analysed the full project for logic errors, security vulnerabilities and code optimisation opportunities.
+- **DigitalOcean build fix**: Added `build_command: npm ci --omit=dev` to `.do/app.yaml` — the DO Node.js buildpack was not being told how to build the project, causing deployment failures.
+- **CORS security**: Tightened the CORS origin callback in `app.js` — when `CORS_ORIGINS` is empty in production, requests from external origins are now rejected instead of silently allowed.
+- **Claim code entropy**: Upgraded guest quote claim codes from 6-digit numeric (`randomInt`) to 8-character uppercase hex (`randomBytes(4)`) — increases keyspace from ~900K to ~4.3B possibilities. Updated frontend inputs in `auth.html`, `quote.html`, and `claim-flow.js` validation.
+- **Input validation**: Added `isLength({ max })` constraints on `description` (5000), `guestName` (200), `guestEmail` (254), `guestPhone` (30), and `budgetRange` (100) in quote submission routes to prevent payload abuse.
+- **Path traversal hardening**: Replaced the `safeUnlink` function in `routes/manager.js` with a `path.resolve`-based check against a canonical `UPLOADS_DIR` to prevent symlink-based path traversal.
+- **Rate limiting**: Added a dedicated rate limiter for guest quote creation (`POST /api/quotes/guest`, 5 per hour per IP) in `app.js` to prevent notification-system flooding.
+- **Git hygiene**: Created `apps/web-v2/.gitignore` to exclude `dist/` and `node_modules/`, and removed previously committed build artifacts from tracking.
+- Updated `public-quote-submission.test.js` to expect 8-character claim codes. All 4 quote tests pass, `verify:generated` passes.
+
 ## 2026-04-01 (static build output fix)
 
 - Investigated the static deployment failure and confirmed the repo only had a Vite build inside `apps/web-v2/dist`, while the platform was probing for a root-level `_static`, `dist`, `public`, or `build` directory.

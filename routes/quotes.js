@@ -10,7 +10,7 @@ const router = express.Router();
 
 const createPublicToken = () => crypto.randomBytes(16).toString('hex');
 const createClaimToken = () => crypto.randomBytes(24).toString('hex');
-const createClaimCode = () => String(crypto.randomInt(100000, 1000000));
+const createClaimCode = () => crypto.randomBytes(4).toString('hex').toUpperCase();
 const createClaimCodeHash = (value) => crypto.createHash('sha256').update(value).digest('hex');
 const CLAIM_MAX_ATTEMPTS = 5;
 const CLAIM_CODE_TTL_MS = 15 * 60 * 1000;
@@ -125,11 +125,11 @@ router.post(
     body('projectType').isIn(['bathroom', 'kitchen', 'interior', 'tiling', 'extension', 'joinery', 'rendering', 'decorating', 'other']),
     body('location').optional({ checkFalsy: true }).trim(),
     body('postcode').optional({ checkFalsy: true }).trim(),
-    body('description').trim().notEmpty(),
-    body('guestName').trim().notEmpty(),
-    body('guestEmail').optional().isEmail(),
-    body('guestPhone').optional().trim().isLength({ min: 5 }),
-    body('budgetRange').optional().trim()
+    body('description').trim().notEmpty().isLength({ max: 5000 }),
+    body('guestName').trim().notEmpty().isLength({ max: 200 }),
+    body('guestEmail').optional().isEmail().isLength({ max: 254 }),
+    body('guestPhone').optional().trim().isLength({ min: 5, max: 30 }),
+    body('budgetRange').optional().trim().isLength({ max: 100 })
   ],
   asyncHandler(async (req, res) => {
     const errors = validationResult(req);
@@ -208,8 +208,8 @@ router.post(
     body('projectType').isIn(['bathroom', 'kitchen', 'interior', 'tiling', 'extension', 'joinery', 'rendering', 'decorating', 'other']),
     body('location').optional({ checkFalsy: true }).trim(),
     body('postcode').optional({ checkFalsy: true }).trim(),
-    body('description').trim().notEmpty(),
-    body('budgetRange').optional().trim()
+    body('description').trim().notEmpty().isLength({ max: 5000 }),
+    body('budgetRange').optional().trim().isLength({ max: 100 })
   ],
   asyncHandler(async (req, res) => {
     const errors = validationResult(req);
@@ -354,7 +354,7 @@ router.post(
 
 router.post(
   '/guest/:id/claim/confirm',
-  [auth, param('id').isUUID(), body('claimToken').isLength({ min: 16 }), body('claimCode').isLength({ min: 6, max: 6 })],
+  [auth, param('id').isUUID(), body('claimToken').isLength({ min: 16 }), body('claimCode').isLength({ min: 8, max: 8 })],
   asyncHandler(async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
