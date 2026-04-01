@@ -43,6 +43,7 @@
     mediaList: document.getElementById('media-list'),
     quotesFilterQ: document.getElementById('quotes-filter-q'),
     quotesFilterStatus: document.getElementById('quotes-filter-status'),
+    quotesFilterShowArchived: document.getElementById('quotes-filter-show-archived'),
     quotesRefresh: document.getElementById('quotes-refresh-btn'),
     quotesPageSize: document.getElementById('quotes-page-size'),
     quotesPrev: document.getElementById('quotes-prev-btn'),
@@ -137,7 +138,7 @@
     groupMessages: [],
     projectsQuery: { page: 1, pageSize: DEFAULT_PAGE_SIZE, q: '', status: '', showInGallery: '' },
     projectsPagination: { page: 1, totalPages: 1, total: 0, pageSize: DEFAULT_PAGE_SIZE },
-    quotesQuery: { page: 1, pageSize: DEFAULT_PAGE_SIZE, q: '', status: '' },
+    quotesQuery: { page: 1, pageSize: DEFAULT_PAGE_SIZE, q: '', status: '', showArchived: false },
     quotesPagination: { page: 1, totalPages: 1, total: 0, pageSize: DEFAULT_PAGE_SIZE },
     servicesQuery: { page: 1, pageSize: DEFAULT_PAGE_SIZE, q: '', category: '', showOnWebsite: '' },
     servicesPagination: { page: 1, totalPages: 1, total: 0, pageSize: DEFAULT_PAGE_SIZE },
@@ -951,8 +952,29 @@
         reviewTimelineLink.href = `/manager-review.html?quoteId=${encodeURIComponent(quote.id)}`;
         reviewTimelineLink.textContent = 'Open review timeline';
       }
+      let rejectBtn = null;
+      if (canManage && !quote.archivedAt && workflowStatus !== 'rejected' && workflowStatus !== 'archived') {
+        rejectBtn = document.createElement('button');
+        rejectBtn.type = 'button';
+        rejectBtn.className = 'btn btn-outline btn--danger';
+        rejectBtn.textContent = 'Reject';
+        rejectBtn.addEventListener('click', async () => {
+          if (!globalThis.confirm('Reject this quote? It will be archived and removed from the active list.')) return;
+          const reason = globalThis.prompt('Optional: enter a rejection reason (visible to client)') ?? '';
+          try {
+            await api(`/api/manager/quotes/${quote.id}/reject`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ reason: reason.trim() || null })
+            });
+            await loadQuotes();
+          } catch (error) {
+            globalThis.alert(error.message || 'Failed to reject quote');
+          }
+        });
+      }
       let latestDiffLink = buildLatestDiffLink(quote, canManage);
-      row.appendChild(createEditActions([acceptBtn, draftEstimateBtn, reviewTimelineLink, latestDiffLink, workflowSaveBtn, convertBtn, saveBtn]));
+      row.appendChild(createEditActions([acceptBtn, draftEstimateBtn, reviewTimelineLink, latestDiffLink, workflowSaveBtn, convertBtn, rejectBtn, saveBtn]));
       card.appendChild(row);
       frag.appendChild(card);
     });
@@ -1463,7 +1485,8 @@
       page: state.quotesQuery.page,
       pageSize: state.quotesQuery.pageSize,
       q: state.quotesQuery.q,
-      status: state.quotesQuery.status
+      status: state.quotesQuery.status,
+      showArchived: state.quotesQuery.showArchived ? 'true' : ''
     })}`);
     state.quotes = Array.isArray(payload.quotes) ? payload.quotes : [];
     state.quotesPagination = payload.pagination || state.quotesPagination;
@@ -1692,6 +1715,7 @@
   const applyQuotesFiltersFromUI = () => {
     state.quotesQuery.q = String(el.quotesFilterQ.value || '').trim();
     state.quotesQuery.status = String(el.quotesFilterStatus.value || '').trim();
+    state.quotesQuery.showArchived = el.quotesFilterShowArchived ? el.quotesFilterShowArchived.checked : false;
     state.quotesQuery.pageSize = Number.parseInt(el.quotesPageSize.value, 10) || DEFAULT_PAGE_SIZE;
     state.quotesQuery.page = 1;
   };

@@ -739,3 +739,34 @@ body.workspace-site .logs-footer {
     grid-column: 1 / -1;
   }
 }
+
+/* ── Danger action button ──────────────────────────────────── */
+
+body.workspace-site .btn--danger {
+  border-color: rgba(200, 60, 60, 0.5);
+  color: #e05c5c;
+}
+
+body.workspace-site .btn--danger:hover {
+  background: rgba(200, 60, 60, 0.14);
+  border-color: rgba(200, 60, 60, 0.75);
+}
+
+/* ── Dashboard filter checkbox label ──────────────────────── */
+
+body.workspace-site .dashboard-filter-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  color: var(--ll-text-on-dark, #e8dfc8);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+body.workspace-site .dashboard-filter-check input[type="checkbox"] {
+  accent-color: #d8a61e;
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
+}

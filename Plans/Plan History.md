@@ -23,3 +23,6 @@
 
 ## 2026-04-01 20:30
 - **System Logs Panel for Admin Dashboard** — [Plans/System Logs Panel for Admin Dashboard.md](Plans/System%20Logs%20Panel%20for%20Admin%20Dashboard.md)
+
+## 2026-04-01 20:55
+- **Manager Quote Rejection with Archive** — implemented directly, no plan file created
