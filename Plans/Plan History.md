@@ -2,6 +2,15 @@
 
 | Date | Time | Plan Title | File |
 | --- | --- | --- | --- |
+| 2026-03-31 | 19:27:41 +00:00 | Migration Hotspot Hardening For ReDoS And Dynamic SQL | `Plans/Migration Hotspot Hardening For ReDoS And Dynamic SQL.md` |
+| 2026-03-31 | 18:35:30 +00:00 | Self-Hosted Fonts Migration | `Plans/Self-Hosted Fonts Migration.md` |
+| 2026-03-31 | 18:07:44 +00:00 | Security Hotspot Remediation - ReDoS, Injection And SRI | `Plans/Security Hotspot Remediation - ReDoS, Injection And SRI.md` |
+| 2026-03-31 | 16:23:03 +00:00 | Review Timeline UX Follow-up | `Plans/Review Timeline UX Follow-up.md` |
+| 2026-03-31 | 15:47:38 +00:00 | Quote Claim Confirm UI And Review Diff Views | `Plans/Quote Claim Confirm UI And Review Diff Views.md` |
+| 2026-03-31 | 14:46:03 +00:00 | Quote Submission, Claim Code UX And Dedicated Client Review Follow-up | `Plans/Quote Submission, Claim Code UX And Dedicated Client Review Follow-up.md` |
+| 2026-03-31 | 14:16:40 +00:00 | Quote Workflow Phase 3 - Client Review Pack, Estimate Uploads And Revision History | `Plans/Quote Workflow Phase 3 - Client Review Pack, Estimate Uploads And Revision History.md` |
+| 2026-03-31 | 08:55:07 +00:00 | Quote Workflow Phase 2 - Estimate Pack Visibility And Draft Builder | `Plans/Quote Workflow Phase 2 - Estimate Pack Visibility And Draft Builder.md` |
+| 2026-03-31 | 06:44:14 +00:00 | Quote Workflow, Visit Scheduling And Client Manager Coordination | `Plans/Quote Workflow, Visit Scheduling And Client Manager Coordination.md` |
 | 2026-03-13 | 00:09:56 +00:00 | Redesign Publicznego Shellu Pod title.png | `Plans/Redesign Publicznego Shellu Pod title.png.md` |
 | 2026-03-12 | 17:55:58 +00:00 | Plan Naprawy Bledow Znalezionych Przez SonarQube | `Plans/Plan Naprawy Bledow Znalezionych Przez SonarQube.md` |
 | 2026-03-12 | 00:57:12 +00:00 | Pelna Analiza Projektu I Plan Naprawy / Usprawnien | `Plans/Pelna Analiza Projektu I Plan Naprawy - Usprawnien.md` |

@@ -23,12 +23,14 @@ export default function App() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [appState, setAppState] = useState(AppState.currentState);
   const pollersRef = useRef(new Map());
+  const pollerSequenceRef = useRef(0);
 
   const role = String(session.user?.role || 'client').toLowerCase();
   const staffRole = ['employee', 'manager', 'admin'].includes(role);
 
   const registerPoller = useCallback((baseKey, intervalMs, callback) => {
-    const id = `${baseKey}:${Math.random().toString(36).slice(2)}`;
+    pollerSequenceRef.current += 1;
+    const id = `${baseKey}:${pollerSequenceRef.current}`;
     const safeInterval = Math.max(1000, Number(intervalMs) || 1000);
     pollersRef.current.set(id, {
       intervalMs: safeInterval,

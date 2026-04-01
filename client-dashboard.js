@@ -1,7 +1,8 @@
 (() => {
-  const runtime = window.LevelLinesRuntime || {};
+  const runtime = globalThis.LevelLinesRuntime || {};
   const TOKEN_KEY = runtime.TOKEN_KEY || 'll_auth_token';
   const USER_KEY = runtime.USER_KEY || 'll_auth_user';
+  const diffViewer = globalThis.LevelLinesReviewDiff || {};
 
   const el = {
     session: document.getElementById('client-session'),
@@ -60,59 +61,13 @@
     node.textContent = message || '';
   });
   const requestAccordionRefresh = runtime.requestAccordionRefresh || (() => {
-    window.dispatchEvent(new CustomEvent('ll:dashboard-accordions-refresh'));
+    globalThis.dispatchEvent(new CustomEvent('ll:dashboard-accordions-refresh'));
   });
-  const titleCase = runtime.titleCase || ((value) => String(value || '')
-    .replace(/[_-]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .replace(/\b\w/g, (char) => char.toUpperCase()));
-  const formatDateTime = runtime.formatDateTime || ((value) => {
-    if (!value) return '';
-    const parsed = new Date(value);
-    if (Number.isNaN(parsed.getTime())) return '';
-    return parsed.toLocaleString('en-GB');
-  });
-  const createOverviewEntry = runtime.createOverviewEntry || (({ title, detail, meta }) => {
-    const item = document.createElement('article');
-    item.className = 'workspace-overview-entry';
-
-    const heading = document.createElement('h3');
-    heading.textContent = title;
-    item.appendChild(heading);
-
-    if (detail) {
-      const text = document.createElement('p');
-      text.textContent = detail;
-      item.appendChild(text);
-    }
-
-    if (meta) {
-      const metaLine = document.createElement('p');
-      metaLine.className = 'muted';
-      metaLine.textContent = meta;
-      item.appendChild(metaLine);
-    }
-
-    return item;
-  });
-  const renderMailboxPreviewList = runtime.renderMailboxPreviewList || ((node, items, { loaded, loadingText, emptyText, mapItem }) => {
-    node.innerHTML = '';
-
-    if (!loaded) {
-      node.innerHTML = `<p class="muted">${escapeHtml(loadingText)}</p>`;
-      return;
-    }
-
-    if (!items.length) {
-      node.innerHTML = `<p class="muted">${escapeHtml(emptyText)}</p>`;
-      return;
-    }
-
-    const frag = document.createDocumentFragment();
-    items.slice(0, 2).forEach((item) => frag.appendChild(createOverviewEntry(mapItem(item))));
-    node.appendChild(frag);
-  });
+  const titleCase = runtime.titleCase;
+  const formatDateTime = runtime.formatDateTime;
+  const formatCurrency = runtime.formatCurrency;
+  const createOverviewEntry = runtime.createOverviewEntry;
+  const renderMailboxPreviewList = runtime.renderMailboxPreviewList;
 
   const clearSession = () => {
     (runtime.clearSession || (() => {
@@ -144,7 +99,7 @@
           return;
         }
 
-        window.setTimeout(tick, 60);
+        globalThis.setTimeout(tick, 60);
       };
       tick();
     }));
@@ -231,9 +186,67 @@
 
     const frag = document.createDocumentFragment();
     state.quotes.forEach((quote) => {
+      const workflowStatus = quote.workflowStatus || 'new';
+      const estimates = Array.isArray(quote.estimates) ? quote.estimates : [];
+      const visibleEstimate = estimates.find((estimate) =>
+        estimate.clientVisible || ['sent', 'approved', 'archived'].includes(String(estimate.status || '').toLowerCase())
+      ) || null;
+      const visitWindow = quote.siteVisitTimeWindow ? ` (${quote.siteVisitTimeWindow})` : '';
+      const visitDetail = quote.siteVisitDate
+        ? `${quote.siteVisitDate}${visitWindow}`
+        : 'Awaiting manager proposal';
+      const startDetail = quote.proposedStartDate || 'Pending';
+      const decisionStatus = quote.clientDecisionStatus || 'pending';
+      const reviewEntry = Array.isArray(quote.revisionHistory) && quote.revisionHistory.length
+        ? quote.revisionHistory.at(-1)
+        : null;
+      const estimatePackBits = [
+        quote.scopeOfWork ? `Scope: ${quote.scopeOfWork}` : null,
+        quote.materialsPlan ? `Materials: ${quote.materialsPlan}` : null,
+        quote.labourEstimate ? `Labour: ${quote.labourEstimate}` : null
+      ].filter(Boolean);
+      const estimateSummary = visibleEstimate
+        ? `${visibleEstimate.title || 'Estimate'} | ${visibleEstimate.status || 'sent'} | ${formatCurrency(visibleEstimate.total || 0)}`
+        : 'Pricing pack is still being prepared.';
       const card = document.createElement('article');
       card.className = 'dashboard-item';
-      card.innerHTML = `<h3>${escapeHtml(quote.projectType)}</h3><p class="muted">${escapeHtml(quote.status)} | Priority ${escapeHtml(quote.priority)} | ${escapeHtml(quote.location || '-')}</p><p>${escapeHtml(quote.description || '')}</p>`;
+      card.innerHTML = `<h3>${escapeHtml(quote.projectType)}</h3><p class="muted">${escapeHtml(quote.status)} | Priority ${escapeHtml(quote.priority)} | ${escapeHtml(quote.location || '-')}</p><p class="muted">Workflow: ${escapeHtml(workflowStatus)} | Visit: ${escapeHtml(visitDetail)} | Proposed start: ${escapeHtml(startDetail)} | Your decision: ${escapeHtml(decisionStatus)}</p><p>${escapeHtml(quote.description || '')}</p>`;
+
+      const summaryWrap = document.createElement('div');
+      summaryWrap.className = 'dashboard-list';
+      summaryWrap.appendChild(createOverviewEntry({
+        title: 'Review summary',
+        detail: workflowStatus === 'client_review'
+          ? 'The estimate pack is ready for full review in the dedicated review screen.'
+          : 'Open the dedicated review screen to follow revisions, downloads and decisions.',
+        meta: `Latest estimate: ${estimateSummary}`
+      }));
+      card.appendChild(summaryWrap);
+
+      const actions = document.createElement('div');
+      actions.className = 'dashboard-actions-row';
+      const reviewLink = document.createElement('a');
+      reviewLink.className = 'btn btn-outline';
+      reviewLink.href = `/client-review.html?quoteId=${encodeURIComponent(quote.id)}`;
+      reviewLink.textContent = workflowStatus === 'client_review' ? 'Open client review' : 'Open quote review';
+      actions.appendChild(reviewLink);
+      if (reviewEntry && diffViewer.buildEntryId) {
+        const latestDiffLink = document.createElement('a');
+        latestDiffLink.className = 'btn btn-outline';
+        latestDiffLink.href = `/client-review.html?quoteId=${encodeURIComponent(quote.id)}&entry=${encodeURIComponent(diffViewer.buildEntryId({ ...reviewEntry, scope: 'quote' }, 'quote'))}`;
+        latestDiffLink.textContent = 'Open latest diff';
+        actions.appendChild(latestDiffLink);
+      }
+      if (visibleEstimate?.documentUrl || quote.estimateDocumentUrl) {
+        const fileLink = document.createElement('a');
+        fileLink.className = 'btn btn-outline';
+        fileLink.href = visibleEstimate?.documentUrl || quote.estimateDocumentUrl;
+        fileLink.target = '_blank';
+        fileLink.rel = 'noopener noreferrer';
+        fileLink.textContent = 'Open latest file';
+        actions.appendChild(fileLink);
+      }
+      card.appendChild(actions);
       frag.appendChild(card);
     });
     el.quotesList.appendChild(frag);
@@ -640,8 +653,8 @@
     state.token = localStorage.getItem(TOKEN_KEY) || '';
     if (!state.token) {
       el.session.textContent = 'No active session. Redirecting to login...';
-      window.setTimeout(() => {
-        window.location.assign(loginUrl);
+      globalThis.setTimeout(() => {
+        globalThis.location.assign(loginUrl);
       }, 700);
       return;
     }
@@ -652,8 +665,8 @@
       if (role !== 'client') {
         clearSession();
         el.session.textContent = 'Session expired. Redirecting to login...';
-        window.setTimeout(() => {
-          window.location.assign(loginUrl);
+        globalThis.setTimeout(() => {
+          globalThis.location.assign(loginUrl);
         }, 700);
         return;
       }
@@ -669,8 +682,8 @@
     } catch (error) {
       clearSession();
       el.session.textContent = error.message || 'Session expired. Redirecting to login...';
-      window.setTimeout(() => {
-        window.location.assign(loginUrl);
+      globalThis.setTimeout(() => {
+        globalThis.location.assign(loginUrl);
       }, 700);
     }
   };
@@ -760,7 +773,7 @@
 
   el.logout.addEventListener('click', () => {
     clearSession();
-    window.location.href = '/auth.html';
+    globalThis.location.href = '/auth.html';
   });
 
   bootstrap();

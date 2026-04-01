@@ -11,6 +11,8 @@
   const registerStatus = document.getElementById('register-status');
   const profileStatus = document.getElementById('profile-status');
   const passwordStatus = document.getElementById('password-status');
+  const claimForm = document.getElementById('claim-form');
+  const claimStatus = document.getElementById('claim-status');
   const sessionState = document.getElementById('auth-session-state');
   const accountRole = document.getElementById('auth-account-role');
   const logoutButton = document.getElementById('auth-logout');
@@ -28,6 +30,8 @@
     !registerStatus ||
     !profileStatus ||
     !passwordStatus ||
+    !claimForm ||
+    !claimStatus ||
     !sessionState ||
     !accountRole ||
     !logoutButton ||
@@ -93,6 +97,8 @@
   });
 
   const getToken = () => localStorage.getItem(TOKEN_KEY) || '';
+  const quoteClaim = window.LevelLinesQuoteClaim || {};
+  const initialClaimDraft = quoteClaim.readClaimDraftFromSearch ? quoteClaim.readClaimDraftFromSearch() : { quoteId: '', claimToken: '', claimCode: '' };
 
   const fetchJson = async (url, options = {}) => {
     const response = await fetch(url, options);
@@ -174,6 +180,44 @@
     }, 350);
   };
 
+  const fillClaimForm = (draft = {}) => {
+    claimForm.elements.quoteId.value = String(draft.quoteId || '').trim();
+    claimForm.elements.claimToken.value = String(draft.claimToken || '').trim();
+    claimForm.elements.claimCode.value = String(draft.claimCode || '').trim();
+  };
+
+  const hasClaimDraft = () => {
+    const draft = {
+      quoteId: String(claimForm.elements.quoteId.value || '').trim(),
+      claimToken: String(claimForm.elements.claimToken.value || '').trim(),
+      claimCode: String(claimForm.elements.claimCode.value || '').trim()
+    };
+    return quoteClaim.hasClaimDraft ? quoteClaim.hasClaimDraft(draft) : Boolean(draft.quoteId && draft.claimToken && draft.claimCode);
+  };
+
+  const submitClaim = async ({ token, redirect = true }) => {
+    const quoteId = String(claimForm.elements.quoteId.value || '').trim();
+    const claimToken = String(claimForm.elements.claimToken.value || '').trim();
+    const claimCode = String(claimForm.elements.claimCode.value || '').trim();
+    if (!quoteId || !claimToken || !claimCode) {
+      throw new Error('Quote reference, claim token and claim code are required.');
+    }
+    const payload = await quoteClaim.submitClaimConfirmation({
+      quoteId,
+      claimToken,
+      claimCode,
+      token
+    });
+    if (quoteClaim.clearClaimDraftFromSearch) quoteClaim.clearClaimDraftFromSearch();
+    setStatus(claimStatus, 'Quote claimed successfully. Opening the review screen...', 'success');
+    if (redirect) {
+      window.setTimeout(() => {
+        window.location.assign(`/client-review.html?quoteId=${encodeURIComponent(payload.quoteId || quoteId)}`);
+      }, 350);
+    }
+    return payload;
+  };
+
   loginForm.addEventListener('submit', async (event) => {
     event.preventDefault();
 
@@ -200,6 +244,11 @@
 
       saveSession(payload.token, payload.user);
       renderSession(payload.user);
+      if (hasClaimDraft()) {
+        setStatus(loginStatus, 'Login successful. Claiming your guest quote...', 'success');
+        await submitClaim({ token: payload.token });
+        return;
+      }
       setStatus(loginStatus, 'Login successful. Redirecting to your account...', 'success');
       loginForm.reset();
       redirectAfterLogin(payload.user);
@@ -248,6 +297,11 @@
 
       saveSession(payload.token, payload.user);
       renderSession(payload.user);
+      if (hasClaimDraft()) {
+        setStatus(registerStatus, 'Account created. Claiming your guest quote...', 'success');
+        await submitClaim({ token: payload.token });
+        return;
+      }
       setStatus(registerStatus, 'Account created. Redirecting to your account...', 'success');
       registerForm.reset();
       redirectAfterLogin(payload.user);
@@ -344,16 +398,33 @@
     }
   });
 
+  claimForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const token = getToken();
+    if (!token) {
+      setStatus(claimStatus, 'Login or register first, then claim the quote into your account.', 'error');
+      return;
+    }
+    setStatus(claimStatus, 'Claiming quote...');
+    try {
+      await submitClaim({ token });
+    } catch (error) {
+      setStatus(claimStatus, error.message || 'Could not claim quote.', 'error');
+    }
+  });
+
   logoutButton.addEventListener('click', () => {
     clearSession();
     setStatus(loginStatus, '');
     setStatus(registerStatus, '');
     setStatus(profileStatus, '');
     setStatus(passwordStatus, '');
+    setStatus(claimStatus, '');
     renderSession(null);
     window.location.assign('/auth.html');
   });
 
+  fillClaimForm(initialClaimDraft);
   renderSession(getSavedUser());
   syncSession();
 })();

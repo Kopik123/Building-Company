@@ -1,4 +1,80 @@
+const crypto = require('crypto');
+const fs = require('fs');
+const path = require('node:path');
 const express = require('express');
+const {
+  appendRevisionEntry,
+  buildEstimateRevisionSnapshot,
+  buildEstimateRevisionPayload,
+  buildQuoteRevisionPayload
+} = require('../../utils/revisionHistory');
+const { generateEstimatePdfBuffer } = require('../../utils/estimatePdf');
+const { buildSafeSlug } = require('../../utils/safeSlug');
+const { createValidatedHandler, findByPkOrRespond } = require('./route-helpers');
+
+const UPLOADS_DIR = path.join(__dirname, '..', '..', 'uploads');
+const buildEstimatePdfFilename = (estimate) => {
+  const sanitizedTitle = buildSafeSlug(estimate?.title, { allowUnderscore: true });
+  return `${sanitizedTitle || 'estimate'}.pdf`;
+};
+
+const persistEstimateDocument = async ({
+  estimate,
+  actor,
+  updates,
+  Quote,
+  Notification,
+  buildEstimateRevisionPayload,
+  buildQuoteRevisionPayload,
+  safeUnlink,
+  loadEstimateDetail,
+  quoteChangeType,
+  clientNotification
+}) => {
+  const previousStoragePath = estimate.documentStoragePath || null;
+  const revisionPayload = buildEstimateRevisionPayload({
+    estimate,
+    actor,
+    changeType: quoteChangeType,
+    changedFields: ['documentUrl', 'documentFilename', 'documentMimeType', 'documentSizeBytes'],
+    updates
+  });
+  await estimate.update(revisionPayload);
+  if (previousStoragePath && previousStoragePath !== updates.documentStoragePath) {
+    await safeUnlink(previousStoragePath);
+  }
+
+  if (estimate.quoteId) {
+    const quote = await Quote.findByPk(estimate.quoteId);
+    if (quote) {
+      const quotePayload = buildQuoteRevisionPayload({
+        quote,
+        actor,
+        changeType: quoteChangeType,
+        changedFields: ['estimateDocumentUrl'],
+        updates: { estimateDocumentUrl: updates.documentUrl }
+      });
+      await quote.update(quotePayload);
+
+      if (quote.clientId && clientNotification) {
+        await Notification.create({
+          userId: quote.clientId,
+          type: clientNotification.type,
+          title: clientNotification.title,
+          body: clientNotification.body,
+          quoteId: quote.id,
+          data: {
+            quoteId: quote.id,
+            estimateId: estimate.id,
+            documentUrl: updates.documentUrl || null
+          }
+        });
+      }
+    }
+  }
+
+  return loadEstimateDetail(estimate.id);
+};
 
 module.exports = function createEstimateRoutes({
   body,
@@ -29,10 +105,15 @@ module.exports = function createEstimateRoutes({
   toNullableNumber,
   resolveEstimateLineInput,
   calculateEstimateLineTotal,
-  recalculateEstimateTotals
+  recalculateEstimateTotals,
+  upload,
+  normalizeStoragePath,
+  safeUnlink,
+  Notification,
+  deriveLegacyQuoteStatus
 }) {
   const router = express.Router();
-
+  const withValidation = createValidatedHandler({ validationResult, asyncHandler });
   router.get(
     '/estimates',
     [
@@ -44,11 +125,7 @@ module.exports = function createEstimateRoutes({
       query('page').optional().isInt({ min: 1 }).toInt(),
       query('pageSize').optional().isInt({ min: 1, max: MAX_PAGE_SIZE }).toInt()
     ],
-    asyncHandler(async (req, res) => {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
+    withValidation(async (req, res) => {
 
       const where = { isActive: true };
       if (req.query.projectId) where.projectId = req.query.projectId;
@@ -67,7 +144,12 @@ module.exports = function createEstimateRoutes({
         where,
         include: [
           { model: Project, as: 'project', attributes: ['id', 'title', 'location'], required: false },
-          { model: Quote, as: 'quote', attributes: ['id', 'projectType', 'location', 'status'], required: false },
+          {
+            model: Quote,
+            as: 'quote',
+            attributes: ['id', 'projectType', 'location', 'status', 'workflowStatus', 'clientDecisionStatus'],
+            required: false
+          },
           { model: User, as: 'creator', attributes: ['id', 'name', 'email'], required: false }
         ],
         order: [['updatedAt', 'DESC']],
@@ -85,11 +167,7 @@ module.exports = function createEstimateRoutes({
   router.get(
     '/estimates/:id',
     [...staffGuard, param('id').isUUID()],
-    asyncHandler(async (req, res) => {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
+    withValidation(async (req, res) => {
 
       const estimate = await loadEstimateDetail(req.params.id);
       if (!estimate) {
@@ -97,6 +175,23 @@ module.exports = function createEstimateRoutes({
       }
 
       return res.json({ estimate });
+    })
+  );
+
+  router.get(
+    '/estimates/:id/revisions',
+    [...staffGuard, param('id').isUUID()],
+    withValidation(async (req, res) => {
+
+      const estimate = await Estimate.findByPk(req.params.id);
+      if (!estimate) {
+        return res.status(404).json({ error: 'Estimate not found' });
+      }
+
+      return res.json({
+        revisionNumber: Number(estimate.revisionNumber || 1),
+        revisions: Array.isArray(estimate.revisionHistory) ? estimate.revisionHistory : []
+      });
     })
   );
 
@@ -110,13 +205,9 @@ module.exports = function createEstimateRoutes({
       body('status').optional().isIn(ESTIMATE_STATUSES),
       body('notes').optional().trim()
     ],
-    asyncHandler(async (req, res) => {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
+    withValidation(async (req, res) => {
 
-      const estimate = await Estimate.create({
+      const basePayload = {
         projectId: req.body.projectId || null,
         quoteId: req.body.quoteId || null,
         createdById: req.user.id,
@@ -125,9 +216,20 @@ module.exports = function createEstimateRoutes({
         notes: req.body.notes ? String(req.body.notes).trim() : null,
         subtotal: 0,
         total: 0,
-        isActive: true
+        isActive: true,
+        clientVisible: ['sent', 'approved', 'archived'].includes(String(req.body.status || 'draft').toLowerCase()),
+        revisionNumber: 1
+      };
+      basePayload.revisionHistory = appendRevisionEntry([], {
+        entity: 'estimate',
+        changeType: 'created',
+        changedById: req.user.id,
+        changedByRole: req.user.role,
+        changedFields: ['title', 'status', 'projectId', 'quoteId', 'notes'],
+        snapshot: buildEstimateRevisionSnapshot(basePayload)
       });
 
+      const estimate = await Estimate.create(basePayload);
       const detail = await loadEstimateDetail(estimate.id);
       return res.status(201).json({ estimate: detail });
     })
@@ -144,10 +246,99 @@ module.exports = function createEstimateRoutes({
       body('status').optional().isIn(ESTIMATE_STATUSES),
       body('notes').optional().trim()
     ],
+    withValidation(async (req, res) => {
+
+      const estimate = await Estimate.findByPk(req.params.id);
+      if (!estimate) {
+        return res.status(404).json({ error: 'Estimate not found' });
+      }
+
+      const updates = {};
+      if (typeof req.body.projectId !== 'undefined') updates.projectId = req.body.projectId || null;
+      if (typeof req.body.quoteId !== 'undefined') updates.quoteId = req.body.quoteId || null;
+      if (typeof req.body.title !== 'undefined') updates.title = String(req.body.title || '').trim();
+      if (typeof req.body.status !== 'undefined') {
+        updates.status = req.body.status;
+        updates.clientVisible = ['sent', 'approved', 'archived'].includes(String(req.body.status || '').toLowerCase());
+      }
+      if (typeof req.body.notes !== 'undefined') updates.notes = String(req.body.notes || '').trim() || null;
+
+      if (!Object.keys(updates).length) {
+        return res.status(400).json({ error: 'No changes provided' });
+      }
+
+      const revisionPayload = buildEstimateRevisionPayload({
+        estimate,
+        actor: req.user,
+        changeType: 'updated',
+        changedFields: Object.keys(updates),
+        updates
+      });
+
+      await estimate.update(revisionPayload);
+      const detail = await loadEstimateDetail(estimate.id);
+      return res.json({ estimate: detail });
+    })
+  );
+
+  router.post(
+    '/estimates/:id/document',
+    [...managerGuard, param('id').isUUID(), upload.single('file')],
     asyncHandler(async (req, res) => {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
+        if (req.file?.path) {
+          await safeUnlink(normalizeStoragePath(req.file.path));
+        }
         return res.status(400).json({ errors: errors.array() });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({ error: 'No file uploaded' });
+      }
+
+      const estimate = await Estimate.findByPk(req.params.id);
+      if (!estimate) {
+        await safeUnlink(normalizeStoragePath(req.file.path));
+        return res.status(404).json({ error: 'Estimate not found' });
+      }
+
+      const updates = {
+        documentUrl: `/uploads/${req.file.filename}`,
+        documentStoragePath: normalizeStoragePath(req.file.path),
+        documentFilename: req.file.originalname,
+        documentMimeType: req.file.mimetype || null,
+        documentSizeBytes: Number.isFinite(req.file.size) ? req.file.size : null
+      };
+      const detail = await persistEstimateDocument({
+        estimate,
+        actor: req.user,
+        updates,
+        Quote,
+        Notification,
+        buildEstimateRevisionPayload,
+        buildQuoteRevisionPayload,
+        safeUnlink,
+        loadEstimateDetail,
+        quoteChangeType: 'document_uploaded',
+        clientNotification: {
+          type: 'quote_estimate_pack_file_uploaded',
+          title: 'Estimate file updated',
+          body: `A manager uploaded a new file for "${estimate.title}".`
+        }
+      });
+      return res.status(201).json({ estimate: detail });
+    })
+  );
+
+  router.post(
+    '/estimates/:id/generate-pdf',
+    [...managerGuard, param('id').isUUID()],
+    withValidation(async (req, res) => {
+
+      const estimateDetail = await loadEstimateDetail(req.params.id);
+      if (!estimateDetail) {
+        return res.status(404).json({ error: 'Estimate not found' });
       }
 
       const estimate = await Estimate.findByPk(req.params.id);
@@ -155,37 +346,157 @@ module.exports = function createEstimateRoutes({
         return res.status(404).json({ error: 'Estimate not found' });
       }
 
-      const payload = {};
-      if (typeof req.body.projectId !== 'undefined') payload.projectId = req.body.projectId || null;
-      if (typeof req.body.quoteId !== 'undefined') payload.quoteId = req.body.quoteId || null;
-      if (typeof req.body.title !== 'undefined') payload.title = String(req.body.title || '').trim();
-      if (typeof req.body.status !== 'undefined') payload.status = req.body.status;
-      if (typeof req.body.notes !== 'undefined') payload.notes = String(req.body.notes || '').trim() || null;
+      const filename = `${crypto.randomUUID()}.pdf`;
+      const absolutePath = path.join(UPLOADS_DIR, filename);
+      const pdfBuffer = generateEstimatePdfBuffer(estimateDetail);
+      await fs.promises.writeFile(absolutePath, pdfBuffer);
 
-      if (!Object.keys(payload).length) {
-        return res.status(400).json({ error: 'No changes provided' });
+      const detail = await persistEstimateDocument({
+        estimate,
+        actor: req.user,
+        updates: {
+          documentUrl: `/uploads/${filename}`,
+          documentStoragePath: normalizeStoragePath(absolutePath),
+          documentFilename: buildEstimatePdfFilename(estimate),
+          documentMimeType: 'application/pdf',
+          documentSizeBytes: pdfBuffer.length
+        },
+        Quote,
+        Notification,
+        buildEstimateRevisionPayload,
+        buildQuoteRevisionPayload,
+        safeUnlink,
+        loadEstimateDetail,
+        quoteChangeType: 'pdf_generated',
+        clientNotification: {
+          type: 'quote_estimate_pdf_generated',
+          title: 'Estimate PDF ready',
+          body: `A manager generated a PDF pack for "${estimate.title}".`
+        }
+      });
+
+      return res.status(201).json({ estimate: detail });
+    })
+  );
+
+  router.post(
+    '/estimates/:id/send-to-client-review',
+    [...managerGuard, param('id').isUUID()],
+    withValidation(async (req, res) => {
+
+      const estimate = await Estimate.findByPk(req.params.id);
+      if (!estimate) {
+        return res.status(404).json({ error: 'Estimate not found' });
       }
 
-      await estimate.update(payload);
+      if (!estimate.quoteId) {
+        return res.status(409).json({ error: 'Estimate must be linked to a quote before sending it to client review' });
+      }
+
+      const quote = await Quote.findByPk(estimate.quoteId);
+      if (!quote) {
+        return res.status(404).json({ error: 'Linked quote not found' });
+      }
+
+      if (!quote.clientId) {
+        return res.status(409).json({ error: 'Quote must be linked to a client account before client review can start' });
+      }
+
+      const sentToClientAt = new Date();
+      let latestEstimate = estimate;
+      if (!estimate.documentUrl) {
+        const estimateDetail = await loadEstimateDetail(estimate.id);
+        const filename = `${crypto.randomUUID()}.pdf`;
+        const absolutePath = path.join(UPLOADS_DIR, filename);
+        const pdfBuffer = generateEstimatePdfBuffer(estimateDetail || estimate);
+        await fs.promises.writeFile(absolutePath, pdfBuffer);
+        await persistEstimateDocument({
+          estimate,
+          actor: req.user,
+          updates: {
+            documentUrl: `/uploads/${filename}`,
+            documentStoragePath: normalizeStoragePath(absolutePath),
+            documentFilename: buildEstimatePdfFilename(estimate),
+            documentMimeType: 'application/pdf',
+            documentSizeBytes: pdfBuffer.length
+          },
+          Quote,
+          Notification,
+          buildEstimateRevisionPayload,
+          buildQuoteRevisionPayload,
+          safeUnlink,
+          loadEstimateDetail,
+          quoteChangeType: 'pdf_generated',
+          clientNotification: null
+        });
+        latestEstimate = await Estimate.findByPk(estimate.id);
+      }
+      const estimateUpdates = {
+        status: 'sent',
+        clientVisible: true,
+        sentToClientAt
+      };
+      const estimatePayload = buildEstimateRevisionPayload({
+        estimate,
+        actor: req.user,
+        changeType: 'sent_to_client_review',
+        changedFields: ['status', 'clientVisible', 'sentToClientAt'],
+        updates: estimateUpdates
+      });
+      await estimate.update(estimatePayload);
+
+      const quoteUpdates = {
+        workflowStatus: 'client_review',
+        clientReviewStartedAt: sentToClientAt,
+        estimateDocumentUrl: latestEstimate.documentUrl || quote.estimateDocumentUrl || null
+      };
+      quoteUpdates.status = deriveLegacyQuoteStatus({
+        workflowStatus: quoteUpdates.workflowStatus,
+        assignedManagerId: quote.assignedManagerId,
+        archivedAt: quote.archivedAt,
+        clientDecisionStatus: quote.clientDecisionStatus
+      });
+      const quotePayload = buildQuoteRevisionPayload({
+        quote,
+        actor: req.user,
+        changeType: 'client_review_started',
+        changedFields: ['workflowStatus', 'clientReviewStartedAt', 'estimateDocumentUrl', 'status'],
+        updates: quoteUpdates
+      });
+      await quote.update(quotePayload);
+
+      await Notification.create({
+        userId: quote.clientId,
+        type: 'quote_client_review_ready',
+        title: 'Your estimate pack is ready for review',
+        body: `A manager sent "${estimate.title}" for your review. Open the review screen to accept, reject or request edits.`,
+        quoteId: quote.id,
+        data: {
+          quoteId: quote.id,
+          estimateId: estimate.id,
+          workflowStatus: 'client_review',
+          documentUrl: latestEstimate.documentUrl || null
+        }
+      });
+
       const detail = await loadEstimateDetail(estimate.id);
-      return res.json({ estimate: detail });
+      return res.status(201).json({ estimate: detail, quote });
     })
   );
 
   router.delete(
     '/estimates/:id',
     [...managerGuard, param('id').isUUID()],
-    asyncHandler(async (req, res) => {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
+    withValidation(async (req, res) => {
 
       const estimate = await Estimate.findByPk(req.params.id);
       if (!estimate) {
         return res.status(404).json({ error: 'Estimate not found' });
       }
 
+      if (estimate.documentStoragePath) {
+        await safeUnlink(estimate.documentStoragePath);
+      }
       await estimate.destroy();
       return res.json({ message: 'Estimate deleted' });
     })
@@ -207,11 +518,7 @@ module.exports = function createEstimateRoutes({
       body('notes').optional().trim(),
       body('sortOrder').optional().isInt()
     ],
-    asyncHandler(async (req, res) => {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
+    withValidation(async (req, res) => {
 
       const estimate = await Estimate.findByPk(req.params.id);
       if (!estimate) {
@@ -246,7 +553,17 @@ module.exports = function createEstimateRoutes({
         sortOrder
       });
 
-      await recalculateEstimateTotals(estimate.id);
+      const recalculatedEstimate = await recalculateEstimateTotals(estimate.id);
+      if (recalculatedEstimate) {
+        const revisionPayload = buildEstimateRevisionPayload({
+          estimate: recalculatedEstimate,
+          actor: req.user,
+          changeType: 'line_added',
+          changedFields: ['lines', 'subtotal', 'total'],
+          updates: {}
+        });
+        await recalculatedEstimate.update(revisionPayload);
+      }
       const detail = await loadEstimateDetail(estimate.id);
       return res.status(201).json({ line: toEstimateLineDto(line), estimate: detail });
     })
@@ -269,11 +586,7 @@ module.exports = function createEstimateRoutes({
       body('notes').optional().trim(),
       body('sortOrder').optional().isInt()
     ],
-    asyncHandler(async (req, res) => {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
+    withValidation(async (req, res) => {
 
       const line = await EstimateLine.findOne({
         where: {
@@ -312,7 +625,17 @@ module.exports = function createEstimateRoutes({
       if (typeof req.body.sortOrder !== 'undefined') payload.sortOrder = Number.parseInt(req.body.sortOrder, 10) || 0;
 
       await line.update(payload);
-      await recalculateEstimateTotals(req.params.id);
+      const recalculatedEstimate = await recalculateEstimateTotals(req.params.id);
+      if (recalculatedEstimate) {
+        const revisionPayload = buildEstimateRevisionPayload({
+          estimate: recalculatedEstimate,
+          actor: req.user,
+          changeType: 'line_updated',
+          changedFields: ['lines', 'subtotal', 'total'],
+          updates: {}
+        });
+        await recalculatedEstimate.update(revisionPayload);
+      }
       const detail = await loadEstimateDetail(req.params.id);
       return res.json({ line: toEstimateLineDto(line), estimate: detail });
     })
@@ -321,11 +644,7 @@ module.exports = function createEstimateRoutes({
   router.delete(
     '/estimates/:id/lines/:lineId',
     [...managerGuard, param('id').isUUID(), param('lineId').isUUID()],
-    asyncHandler(async (req, res) => {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
+    withValidation(async (req, res) => {
 
       const line = await EstimateLine.findOne({
         where: {
@@ -339,6 +658,16 @@ module.exports = function createEstimateRoutes({
 
       await line.destroy();
       const estimate = await recalculateEstimateTotals(req.params.id);
+      if (estimate) {
+        const revisionPayload = buildEstimateRevisionPayload({
+          estimate,
+          actor: req.user,
+          changeType: 'line_deleted',
+          changedFields: ['lines', 'subtotal', 'total'],
+          updates: {}
+        });
+        await estimate.update(revisionPayload);
+      }
       const detail = estimate ? await loadEstimateDetail(req.params.id) : null;
       return res.json({ message: 'Estimate line deleted', estimate: detail });
     })

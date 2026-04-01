@@ -5,7 +5,6 @@ const { body, validationResult, param } = require('express-validator');
 const { Quote, QuoteClaimToken, User, Notification } = require('../models');
 const { auth } = require('../middleware/auth');
 const asyncHandler = require('../utils/asyncHandler');
-const { getTransporter } = require('../utils/mailer');
 
 const router = express.Router();
 
@@ -14,60 +13,110 @@ const createClaimToken = () => crypto.randomBytes(24).toString('hex');
 const createClaimCode = () => String(crypto.randomInt(100000, 1000000));
 const createClaimCodeHash = (value) => crypto.createHash('sha256').update(value).digest('hex');
 const CLAIM_MAX_ATTEMPTS = 5;
+const CLAIM_CODE_TTL_MS = 15 * 60 * 1000;
+const CLAIM_CODE_TTL_MINUTES = CLAIM_CODE_TTL_MS / (60 * 1000);
 
 const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
 const normalizePhone = (value) => String(value || '').trim();
+const CLAIM_CODE_WARNING = `This code is valid for ${CLAIM_CODE_TTL_MINUTES} minutes. Save it now because it will only be shown once.`;
 
-const sendClaimCodeByEmail = async (email, code) => {
-  const smtpUser = String(process.env.SMTP_USER || '').trim();
-  const smtpPass = String(process.env.SMTP_PASS || '').trim();
+const validateQuoteInput = (req) => {
+  const projectType = String(req.body.projectType || '').trim();
+  const description = String(req.body.description || '').trim();
+  const guestName = String(req.body.guestName || '').trim();
+  const guestEmail = normalizeEmail(req.body.guestEmail);
+  const guestPhone = normalizePhone(req.body.guestPhone);
+  const budgetRange = String(req.body.budgetRange || '').trim() || null;
+  const location = String(req.body.location || '').trim() || 'Greater Manchester';
+  const postcode = String(req.body.postcode || '').trim() || null;
 
-  if (!process.env.SMTP_HOST || !process.env.CONTACT_FROM) {
-    const err = new Error('Claim email service is not configured.');
-    err.statusCode = 503;
-    throw err;
-  }
-
-  if ((smtpUser && !smtpPass) || (!smtpUser && smtpPass)) {
-    const err = new Error('SMTP auth config is incomplete. Set both SMTP_USER and SMTP_PASS.');
-    err.statusCode = 503;
-    throw err;
-  }
-
-  const transporter = getTransporter();
-
-  await transporter.sendMail({
-    from: `Building Company <${process.env.CONTACT_FROM}>`,
-    to: email,
-    subject: 'Your quote claim code',
-    text: `Your quote claim code is ${code}. It expires in 15 minutes.`
-  });
+  return {
+    projectType,
+    description,
+    guestName,
+    guestEmail,
+    guestPhone,
+    budgetRange,
+    location,
+    postcode
+  };
 };
 
-const sendClaimCodeByPhone = async (phone, code) => {
-  const webhookUrl = process.env.CLAIM_SMS_WEBHOOK_URL;
-  if (!webhookUrl) {
-    const err = new Error('Phone claim delivery is not configured.');
-    err.statusCode = 503;
-    throw err;
-  }
+const notifyManagersAboutQuote = async ({
+  quote,
+  guestName,
+  guestEmail,
+  guestPhone,
+  postcode,
+  location,
+  projectType,
+  budgetRange,
+  description,
+  origin
+}) => {
+  const managers = await User.findAll({ where: { role: { [Op.in]: ['manager', 'admin'] }, isActive: true } });
 
-  const response = await fetch(webhookUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      to: phone,
-      message: `Your quote claim code is ${code}. It expires in 15 minutes.`
-    })
+  const notificationTitle = `New quote request from ${guestName}`;
+  const notificationBody = [
+    `Origin: ${origin}`,
+    `Name: ${guestName}`,
+    postcode ? `Postcode: ${postcode}` : null,
+    `Location: ${location}`,
+    `Project type: ${projectType}`,
+    guestEmail ? `Email: ${guestEmail}` : null,
+    guestPhone ? `Phone: ${guestPhone}` : null,
+    budgetRange ? `Budget: ${budgetRange}` : null,
+    `Description: ${description}`
+  ].filter(Boolean).join('\n');
+
+  if (managers.length) {
+    await Notification.bulkCreate(
+      managers.map((manager) => ({
+        userId: manager.id,
+        type: origin === 'authenticated_quote' ? 'new_quote_authenticated' : 'new_quote',
+        title: notificationTitle,
+        body: notificationBody,
+        quoteId: quote.id,
+        data: {
+          quoteId: quote.id,
+          guestName,
+          guestEmail: guestEmail || null,
+          guestPhone: guestPhone || null,
+          postcode,
+          location,
+          projectType,
+          origin
+        }
+      }))
+    );
+  }
+};
+
+const issueClaimCode = async (quote, { channel, target }) => {
+  const token = createClaimToken();
+  const code = createClaimCode();
+  const expiresAt = new Date(Date.now() + CLAIM_CODE_TTL_MS);
+  const codeHash = createClaimCodeHash(code);
+
+  await QuoteClaimToken.destroy({
+    where: {
+      quoteId: quote.id,
+      usedAt: null
+    }
   });
 
-  if (!response.ok) {
-    const err = new Error('Failed to deliver phone claim code.');
-    err.statusCode = 502;
-    throw err;
-  }
+  await QuoteClaimToken.create({
+    quoteId: quote.id,
+    token,
+    channel,
+    target,
+    code,
+    codeHash,
+    expiresAt,
+    attempts: 0
+  });
+
+  return { token, code, expiresAt, channel, target };
 };
 
 router.post(
@@ -88,21 +137,22 @@ router.post(
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const projectType = String(req.body.projectType || '').trim();
-    const description = String(req.body.description || '').trim();
-    const guestName = String(req.body.guestName || '').trim();
-    const guestEmail = normalizeEmail(req.body.guestEmail);
-    const guestPhone = normalizePhone(req.body.guestPhone);
-    const budgetRange = String(req.body.budgetRange || '').trim() || null;
-    const location = String(req.body.location || '').trim() || 'Greater Manchester';
-    const postcode = String(req.body.postcode || '').trim() || null;
+    const {
+      projectType,
+      description,
+      guestName,
+      guestEmail,
+      guestPhone,
+      budgetRange,
+      location,
+      postcode
+    } = validateQuoteInput(req);
 
     if (!guestEmail && !guestPhone) {
       return res.status(400).json({ error: 'Provide guestEmail or guestPhone' });
     }
 
     const contactMethod = guestEmail && guestPhone ? 'both' : guestEmail ? 'email' : 'phone';
-
     const quote = await Quote.create({
       isGuest: true,
       guestName,
@@ -119,46 +169,103 @@ router.post(
       contactPhone: guestPhone || null
     });
 
-    // Notify all managers via internal notification
-    const managers = await User.findAll({ where: { role: { [Op.in]: ['manager', 'admin'] }, isActive: true } });
+    await notifyManagersAboutQuote({
+      quote,
+      guestName,
+      guestEmail,
+      guestPhone,
+      postcode,
+      location,
+      projectType,
+      budgetRange,
+      description,
+      origin: 'guest_quote'
+    });
 
-    const notificationTitle = `New quote request from ${guestName}`;
-    const notificationBody = [
-      `Name: ${guestName}`,
-      postcode ? `Postcode: ${postcode}` : null,
-      `Location: ${location}`,
-      `Project type: ${projectType}`,
-      guestEmail ? `Email: ${guestEmail}` : null,
-      guestPhone ? `Phone: ${guestPhone}` : null,
-      budgetRange ? `Budget: ${budgetRange}` : null,
-      `Description: ${description}`
-    ].filter(Boolean).join('\n');
-
-    if (managers.length) {
-      await Notification.bulkCreate(
-        managers.map((manager) => ({
-          userId: manager.id,
-          type: 'new_quote',
-          title: notificationTitle,
-          body: notificationBody,
-          quoteId: quote.id,
-          data: {
-            quoteId: quote.id,
-            guestName,
-            guestEmail: guestEmail || null,
-            guestPhone: guestPhone || null,
-            postcode,
-            location,
-            projectType
-          }
-        }))
-      );
-    }
+    const preferredChannel = guestEmail ? 'email' : 'phone';
+    const claim = await issueClaimCode(quote, {
+      channel: preferredChannel,
+      target: preferredChannel === 'email' ? guestEmail : guestPhone
+    });
 
     return res.status(201).json({
       quoteId: quote.id,
       publicToken: quote.publicToken,
-      status: quote.status
+      status: quote.status,
+      claimToken: claim.token,
+      claimCode: claim.code,
+      claimCodeExpiresAt: claim.expiresAt,
+      claimCodeDeliveryMode: 'onscreen',
+      claimCodeWarning: CLAIM_CODE_WARNING
+    });
+  })
+);
+
+router.post(
+  '/',
+  [
+    auth,
+    body('projectType').isIn(['bathroom', 'kitchen', 'interior', 'tiling', 'extension', 'joinery', 'rendering', 'decorating', 'other']),
+    body('location').optional({ checkFalsy: true }).trim(),
+    body('postcode').optional({ checkFalsy: true }).trim(),
+    body('description').trim().notEmpty(),
+    body('budgetRange').optional().trim()
+  ],
+  asyncHandler(async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const projectType = String(req.body.projectType || '').trim();
+    const description = String(req.body.description || '').trim();
+    const budgetRange = String(req.body.budgetRange || '').trim() || null;
+    const location = String(req.body.location || '').trim() || 'Greater Manchester';
+    const postcode = String(req.body.postcode || '').trim() || null;
+    const guestName = String(req.user?.name || req.user?.email || 'Signed-in client').trim();
+    const guestEmail = normalizeEmail(req.user?.email);
+    const guestPhone = normalizePhone(req.user?.phone);
+    let contactMethod;
+    if (guestEmail && guestPhone) contactMethod = 'both';
+    else if (guestEmail) contactMethod = 'email';
+    else if (guestPhone) contactMethod = 'phone';
+    else contactMethod = null;
+
+    const quote = await Quote.create({
+      isGuest: false,
+      clientId: req.user.id,
+      guestName,
+      guestEmail: guestEmail || null,
+      guestPhone: guestPhone || null,
+      contactMethod,
+      publicToken: null,
+      projectType,
+      location,
+      postcode: postcode || null,
+      description,
+      budgetRange,
+      contactEmail: guestEmail || null,
+      contactPhone: guestPhone || null
+    });
+
+    await notifyManagersAboutQuote({
+      quote,
+      guestName,
+      guestEmail,
+      guestPhone,
+      postcode,
+      location,
+      projectType,
+      budgetRange,
+      description,
+      origin: 'authenticated_quote'
+    });
+
+    return res.status(201).json({
+      quoteId: quote.id,
+      status: quote.status,
+      clientId: req.user.id,
+      message: 'Quote added to your account.'
     });
   })
 );
@@ -229,40 +336,18 @@ router.post(
       return res.status(404).json({ error: 'Guest quote not found' });
     }
 
-    const token = createClaimToken();
-    const code = createClaimCode();
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
-    const codeHash = createClaimCodeHash(code);
-    const target = channel === 'email' ? inputEmail : inputPhone;
-
-    await QuoteClaimToken.destroy({
-      where: {
-        quoteId: quote.id,
-        usedAt: null
-      }
-    });
-
-    await QuoteClaimToken.create({
-      quoteId: quote.id,
-      token,
+    const claim = await issueClaimCode(quote, {
       channel,
-      target,
-      codeHash,
-      expiresAt,
-      attempts: 0
+      target: channel === 'email' ? inputEmail : inputPhone
     });
-
-    if (channel === 'email') {
-      await sendClaimCodeByEmail(target, code);
-    } else {
-      await sendClaimCodeByPhone(target, code);
-    }
 
     return res.json({
-      message: 'Claim verification code sent',
-      claimToken: token,
-      channel,
-      expiresAt
+      message: 'Claim verification code generated',
+      claimToken: claim.token,
+      claimCode: claim.code,
+      claimCodeExpiresAt: claim.expiresAt,
+      claimCodeDeliveryMode: 'onscreen',
+      claimCodeWarning: CLAIM_CODE_WARNING
     });
   })
 );
@@ -321,6 +406,15 @@ router.post(
       isGuest: false,
       clientId: req.user.id,
       publicToken: null
+    });
+
+    await Notification.create({
+      userId: req.user.id,
+      type: 'quote_claimed',
+      title: 'Quote added to your account',
+      body: `Quote ${quote.id} was claimed successfully and is now visible in your account.`,
+      quoteId: quote.id,
+      data: { quoteId: quote.id }
     });
 
     return res.json({ message: 'Quote claimed successfully', quoteId: quote.id, clientId: req.user.id });

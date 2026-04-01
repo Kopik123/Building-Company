@@ -1,3 +1,54 @@
+const includesBoundedSegment = (value, startNeedle, endNeedle) => {
+  const startIndex = value.indexOf(startNeedle);
+  if (startIndex === -1) return false;
+
+  const endIndex = value.indexOf(endNeedle, startIndex + startNeedle.length);
+  return endIndex !== -1;
+};
+
+const isMissingTableMessage = (message) => {
+  const normalized = String(message || '').toLowerCase();
+  return (
+    normalized.includes('does not exist') ||
+    normalized.includes('unknown table') ||
+    includesBoundedSegment(normalized, 'relation ', ' does not exist')
+  );
+};
+
+const isSafeIdentifier = (value) => {
+  const identifier = String(value || '');
+  if (!identifier) return false;
+
+  for (let index = 0; index < identifier.length; index += 1) {
+    const charCode = identifier.charCodeAt(index);
+    const isUpper = charCode >= 65 && charCode <= 90;
+    const isLower = charCode >= 97 && charCode <= 122;
+    const isDigit = charCode >= 48 && charCode <= 57;
+    const isUnderscore = charCode === 95;
+
+    if (index === 0) {
+      if (!isUpper && !isLower && !isUnderscore) {
+        return false;
+      }
+      continue;
+    }
+
+    if (!isUpper && !isLower && !isDigit && !isUnderscore) {
+      return false;
+    }
+  }
+
+  return true;
+};
+
+const quoteSqlIdentifier = (value, label) => {
+  if (!isSafeIdentifier(value)) {
+    throw new TypeError(`Unsafe SQL identifier for ${label}`);
+  }
+
+  return `"${value}"`;
+};
+
 const findExistingTable = async (queryInterface, candidates) => {
   for (const tableName of candidates) {
     try {
@@ -7,7 +58,7 @@ const findExistingTable = async (queryInterface, candidates) => {
       return tableName;
     } catch (error) {
       const message = String(error && error.message ? error.message : '');
-      if (!/does not exist|unknown table|relation .* does not exist/i.test(message)) {
+      if (!isMissingTableMessage(message)) {
         throw error;
       }
     }
@@ -23,30 +74,6 @@ const resolveColumnName = (tableDefinition, desired) => {
   return keys.find((key) => String(key).toLowerCase() === normalized) || null;
 };
 
-const quoteIdentifier = (queryInterface, value) => {
-  if (typeof queryInterface.quoteIdentifier === 'function') {
-    return queryInterface.quoteIdentifier(value);
-  }
-
-  if (typeof queryInterface.queryGenerator?.quoteIdentifier === 'function') {
-    return queryInterface.queryGenerator.quoteIdentifier(value);
-  }
-
-  throw new TypeError('No quoteIdentifier function available on queryInterface');
-};
-
-const quoteTable = (queryInterface, tableName) => {
-  if (typeof queryInterface.quoteTable === 'function') {
-    return queryInterface.quoteTable(tableName);
-  }
-
-  if (typeof queryInterface.queryGenerator?.quoteTable === 'function') {
-    return queryInterface.queryGenerator.quoteTable(tableName);
-  }
-
-  throw new TypeError('No quoteTable function available on queryInterface');
-};
-
 const addIndexIfMissing = async (queryInterface, tableName, indexName, fields, options = {}) => {
   const indexes = await queryInterface.showIndex(tableName);
   if (indexes.some((index) => index.name === indexName)) {
@@ -60,9 +87,9 @@ const addTrigramIndexIfPossible = async (queryInterface, tableName, tableDefinit
   const resolvedColumn = resolveColumnName(tableDefinition, columnName);
   if (!resolvedColumn) return;
 
-  const quotedIndex = quoteIdentifier(queryInterface, indexName);
-  const quotedTable = quoteTable(queryInterface, tableName);
-  const quotedColumn = quoteIdentifier(queryInterface, resolvedColumn);
+  const quotedIndex = quoteSqlIdentifier(indexName, 'index name');
+  const quotedTable = quoteSqlIdentifier(tableName, 'table name');
+  const quotedColumn = quoteSqlIdentifier(resolvedColumn, 'column name');
   await queryInterface.sequelize.query(
     `CREATE INDEX IF NOT EXISTS ${quotedIndex} ON ${quotedTable} USING gin (LOWER(${quotedColumn}) gin_trgm_ops)`
   );

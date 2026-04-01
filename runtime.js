@@ -117,6 +117,69 @@
     return parsed.toLocaleString('en-GB');
   };
 
+  const formatCurrency = (value) => `GBP ${Number(value || 0).toLocaleString('en-GB', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })}`;
+
+  const buildSafeSlug = (value, options = {}) => {
+    const source = String(value ?? '').trim().toLowerCase();
+    const allowUnderscore = Boolean(options.allowUnderscore);
+    const maxLength = Number.isInteger(options.maxLength) && options.maxLength > 0 ? options.maxLength : 0;
+    const slugChars = [];
+    let needsDash = false;
+
+    const flushDash = () => {
+      if (!needsDash || !slugChars.length || slugChars[slugChars.length - 1] === '-') return;
+      slugChars.push('-');
+      needsDash = false;
+    };
+
+    for (const symbol of source) {
+      const isLetter = symbol >= 'a' && symbol <= 'z';
+      const isDigit = symbol >= '0' && symbol <= '9';
+      const isUnderscore = allowUnderscore && symbol === '_';
+
+      if (isLetter || isDigit || isUnderscore) {
+        flushDash();
+        slugChars.push(symbol);
+      } else if (slugChars.length) {
+        needsDash = true;
+      }
+    }
+
+    while (slugChars.at(-1) === '-') slugChars.pop();
+
+    if (!maxLength || slugChars.length <= maxLength) {
+      return slugChars.join('');
+    }
+
+    const bounded = slugChars.slice(0, maxLength);
+    while (bounded.at(-1) === '-') bounded.pop();
+    return bounded.join('');
+  };
+
+  const escapeSelector = (value) => {
+    if (typeof CSS !== 'undefined' && typeof CSS.escape === 'function') return CSS.escape(value);
+    return String(value).replaceAll(/["\\]/g, String.raw`\$&`);
+  };
+
+  const syncReviewFilters = (state) => {
+    const url = new URL(globalThis.location.href);
+    if (state.selectedEntryId) url.searchParams.set('entry', state.selectedEntryId);
+    else url.searchParams.delete('entry');
+    url.searchParams.set('filterQuote', String(state.filters.quote));
+    url.searchParams.set('filterEstimate', String(state.filters.estimate));
+    url.searchParams.set('filterDecision', String(state.filters.decision));
+    globalThis.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+  };
+
+  const scrollToHistoryEntry = (historyList, entryId) => {
+    if (!entryId) return;
+    const target = historyList.querySelector(`[data-entry-id="${escapeSelector(entryId)}"]`);
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   const createOverviewEntry = ({ title, detail, meta }) => {
     const item = document.createElement('article');
     item.className = 'workspace-overview-entry';
@@ -285,6 +348,11 @@
     createApiClient,
     titleCase,
     formatDateTime,
+    formatCurrency,
+    buildSafeSlug,
+    escapeSelector,
+    syncReviewFilters,
+    scrollToHistoryEntry,
     createOverviewEntry,
     renderMailboxPreviewList,
     requestAccordionRefresh,

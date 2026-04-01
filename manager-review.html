@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/png" href="/assets/optimized/brand/logo.png" />
+  <title>Manager Review Timeline | Level Lines Studio</title>
+  <meta name="description" content="Inspect quote review diffs and timeline events for managers." />
+  <link rel="stylesheet" href="/styles/fonts.css" />
+  <link rel="stylesheet" href="/styles/tokens.css" />
+  <link rel="stylesheet" href="/styles/base.css" />
+  <link rel="stylesheet" href="/styles/public.css" />
+  <link rel="stylesheet" href="/styles/workspace.css" />
+</head>
+<body class="workspace-site">
+  <header class="site-header site-header--public-shell" id="top">
+    <div class="container public-shell-header">
+      <div class="public-brand-board">
+        <a class="public-brand-link" href="/index.html" aria-label="Level Lines Studio home">
+          <picture class="public-brand-picture">
+            <source type="image/avif" srcset="/assets/optimized/brand/title.avif" />
+            <source type="image/webp" srcset="/assets/optimized/brand/title.webp" />
+            <img src="/assets/optimized/brand/title.png" alt="Level Lines Studio" class="public-brand-title-image" width="1800" height="412" decoding="async" />
+          </picture>
+        </a>
+      </div>
+      <div class="public-shell-strip">
+        <section class="public-inline-auth" data-inline-auth-shell aria-label="Studio login">
+          <p class="public-strip-heading">Login</p>
+          <form class="public-inline-login-form" data-inline-login-form novalidate>
+            <div class="public-inline-login-row">
+              <input type="email" name="email" autocomplete="username email" placeholder="Email" aria-label="Email" required />
+              <input type="password" name="password" autocomplete="current-password" placeholder="Password" aria-label="Password" required />
+              <button class="public-inline-login-submit" type="submit">Login</button>
+              <a class="public-inline-login-link" href="/auth.html">Register</a>
+            </div>
+            <p class="public-inline-login-helper">Open the dedicated manager review timeline inside the private workspace.</p>
+          </form>
+          <div class="public-inline-session" data-inline-session hidden>
+            <p class="public-inline-session-copy" data-inline-session-copy>Account ready.</p>
+            <div class="public-inline-session-actions">
+              <a class="public-inline-session-link" href="/manager-dashboard.html" data-inline-account-link>Open Account</a>
+              <button class="public-inline-session-link public-inline-session-link--button" type="button" data-inline-logout>Log out</button>
+            </div>
+          </div>
+          <p class="form-status public-inline-login-status" data-inline-login-status aria-live="polite"></p>
+        </section>
+      </div>
+    </div>
+  </header>
+  <main class="section section--dark">
+    <div class="container workspace-shell workspace-shell--single">
+      <section class="card surface-card surface-card--light">
+        <p class="section-eyebrow">Manager Review</p>
+        <h1 id="manager-review-title">Quote review timeline</h1>
+        <p class="section-lead" id="manager-review-summary">Inspect quote and estimate revisions, review milestones and client events in one dedicated view.</p>
+        <p class="form-status" id="manager-review-status" aria-live="polite"></p>
+      </section>
+
+      <div class="dashboard-grid">
+        <section class="card surface-card surface-card--light">
+          <h2>Quote Summary</h2>
+          <div id="manager-review-summary-list" class="dashboard-list"></div>
+        </section>
+        <section class="card surface-card surface-card--light">
+          <h2>Estimate Pack</h2>
+          <div id="manager-review-estimate-list" class="dashboard-list"></div>
+        </section>
+      </div>
+
+      <section class="card surface-card surface-card--light">
+        <h2>Revision Diff + Review Timeline</h2>
+        <div class="review-timeline-toolbar" id="manager-review-filter-bar">
+          <label class="review-filter-option"><input type="checkbox" id="manager-review-filter-quote" checked /> Quote</label>
+          <label class="review-filter-option"><input type="checkbox" id="manager-review-filter-estimate" checked /> Estimate</label>
+          <label class="review-filter-option"><input type="checkbox" id="manager-review-filter-decision" checked /> Client decision</label>
+        </div>
+        <div id="manager-review-history-list" class="dashboard-list"></div>
+      </section>
+    </div>
+  </main>
+  <script src="/asset-manifest.js" defer></script>
+  <script src="/brand.js" defer></script>
+  <script src="/runtime.js" defer></script>
+  <script src="/site.js" defer></script>
+  <script src="/review-diff.js" defer></script>
+  <script src="/manager-review.js" defer></script>
+</body>
+</html>

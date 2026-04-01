@@ -1,5 +1,5 @@
 (() => {
-  const runtime = window.LevelLinesRuntime || {};
+  const runtime = globalThis.LevelLinesRuntime || {};
   const TOKEN_KEY = runtime.TOKEN_KEY || 'll_auth_token';
   const USER_KEY = runtime.USER_KEY || 'll_auth_user';
   const DEFAULT_PAGE_SIZE = 25;
@@ -87,7 +87,12 @@
     estimateEditorTotal: document.getElementById('estimate-editor-total'),
     estimateUpdateForm: document.getElementById('estimate-update-form'),
     estimateUpdateStatus: document.getElementById('estimate-update-status'),
+    estimateSendReview: document.getElementById('estimate-send-review-btn'),
     estimateDelete: document.getElementById('estimate-delete-btn'),
+    estimateDocumentForm: document.getElementById('estimate-document-form'),
+    estimateDocumentStatus: document.getElementById('estimate-document-status'),
+    estimateDocumentSummary: document.getElementById('estimate-document-summary'),
+    estimateRevisionsList: document.getElementById('estimate-revisions-list'),
     estimateLineForm: document.getElementById('estimate-line-form'),
     estimateLineStatus: document.getElementById('estimate-line-status'),
     estimateLinesList: document.getElementById('estimate-lines-list'),
@@ -165,65 +170,13 @@
     node.className = type === 'error' ? 'muted form-status is-error' : 'muted';
   });
   const requestAccordionRefresh = runtime.requestAccordionRefresh || (() => {
-    window.dispatchEvent(new CustomEvent('ll:dashboard-accordions-refresh'));
+    globalThis.dispatchEvent(new CustomEvent('ll:dashboard-accordions-refresh'));
   });
-  const titleCase = runtime.titleCase || ((value) => String(value || '')
-    .replace(/[_-]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .replace(/\b\w/g, (char) => char.toUpperCase()));
-  const formatDateTime = runtime.formatDateTime || ((value) => {
-    if (!value) return '';
-    const parsed = new Date(value);
-    if (Number.isNaN(parsed.getTime())) return '';
-    return parsed.toLocaleString('en-GB');
-  });
-  const createOverviewEntry = runtime.createOverviewEntry || (({ title, detail, meta }) => {
-    const item = document.createElement('article');
-    item.className = 'workspace-overview-entry';
-
-    const heading = document.createElement('h3');
-    heading.textContent = title;
-    item.appendChild(heading);
-
-    if (detail) {
-      const text = document.createElement('p');
-      text.textContent = detail;
-      item.appendChild(text);
-    }
-
-    if (meta) {
-      const metaLine = document.createElement('p');
-      metaLine.className = 'muted';
-      metaLine.textContent = meta;
-      item.appendChild(metaLine);
-    }
-
-    return item;
-  });
-  const renderMailboxPreviewList = runtime.renderMailboxPreviewList || ((node, items, { loaded, loadingText, emptyText, mapItem }) => {
-    node.innerHTML = '';
-
-    if (!loaded) {
-      const text = document.createElement('p');
-      text.className = 'muted';
-      text.textContent = loadingText;
-      node.appendChild(text);
-      return;
-    }
-
-    if (!items.length) {
-      const text = document.createElement('p');
-      text.className = 'muted';
-      text.textContent = emptyText;
-      node.appendChild(text);
-      return;
-    }
-
-    const frag = document.createDocumentFragment();
-    items.slice(0, 2).forEach((item) => frag.appendChild(createOverviewEntry(mapItem(item))));
-    node.appendChild(frag);
-  });
+  const titleCase = runtime.titleCase;
+  const formatDateTime = runtime.formatDateTime;
+  const formatCurrency = runtime.formatCurrency;
+  const createOverviewEntry = runtime.createOverviewEntry;
+  const renderMailboxPreviewList = runtime.renderMailboxPreviewList;
   const createControlField = (labelText, control) => {
     const field = document.createElement('label');
     field.className = 'dashboard-control-field';
@@ -309,7 +262,7 @@
           return;
         }
 
-        window.setTimeout(tick, 60);
+        globalThis.setTimeout(tick, 60);
       };
       tick();
     }));
@@ -660,7 +613,7 @@
           try {
             await loadProjectDetail(project.id, true);
           } catch (error) {
-            window.alert(error.message || 'Could not load project details');
+            globalThis.alert(error.message || 'Could not load project details');
           }
         }
         fillProjectEditor();
@@ -702,7 +655,7 @@
       del.className = 'btn btn-outline';
       del.textContent = 'Delete';
       del.addEventListener('click', async () => {
-        if (!window.confirm(`Delete file \"${item.filename}\"?`)) return;
+        if (!globalThis.confirm(`Delete file \"${item.filename}\"?`)) return;
         try {
           await api(`/api/manager/projects/${project.id}/media/${item.id}`, { method: 'DELETE' });
           await loadProjects(project.id);
@@ -748,6 +701,18 @@
     requestAccordionRefresh();
   };
 
+  const buildLatestDiffLink = (quote, canManage) => {
+    if (!canManage) return null;
+    if (!Array.isArray(quote.revisionHistory) || !quote.revisionHistory.length) return null;
+    if (!globalThis.LevelLinesReviewDiff?.buildEntryId) return null;
+    const latestRevision = quote.revisionHistory.at(-1);
+    const link = document.createElement('a');
+    link.className = 'btn btn-outline';
+    link.href = `/manager-review.html?quoteId=${encodeURIComponent(quote.id)}&entry=${encodeURIComponent(globalThis.LevelLinesReviewDiff.buildEntryId({ ...latestRevision, scope: 'quote' }, 'quote'))}`;
+    link.textContent = 'Open latest diff';
+    return link;
+  };
+
   const renderQuotes = () => {
     el.quotesList.innerHTML = '';
     if (!state.quotes.length) {
@@ -761,11 +726,31 @@
     const frag = document.createDocumentFragment();
     state.quotes.forEach((quote) => {
       const owner = quote.guestName || quote.client?.name || quote.client?.email || 'Unknown client';
+      const workflowStatus = quote.workflowStatus || 'new';
+      const latestEstimate = Array.isArray(quote.estimates) && quote.estimates.length ? quote.estimates[0] : null;
+      const latestEstimateLabel = latestEstimate
+        ? `${latestEstimate.title || 'Estimate'} | ${latestEstimate.status || 'draft'} | ${formatCurrency(latestEstimate.total || 0)}`
+        : 'No linked estimate yet';
+      const visitTimeWindow = quote.siteVisitTimeWindow ? ` (${quote.siteVisitTimeWindow})` : '';
+      const visitDetail = quote.siteVisitDate
+        ? `${quote.siteVisitDate}${visitTimeWindow}`
+        : 'Not planned';
+      const proposedStart = quote.proposedStartDate || 'Not proposed';
+      const clientDecision = quote.clientDecisionStatus || 'pending';
       const card = document.createElement('article');
       card.className = 'dashboard-item';
-      card.innerHTML = `<h3>${escapeHtml(quote.projectType)} | ${escapeHtml(owner)}</h3><p class=\"muted\">${escapeHtml(quote.status)} | priority ${escapeHtml(quote.priority)} | ${escapeHtml(quote.location || '-')} ${escapeHtml(quote.postcode || '')}</p><p>${escapeHtml(quote.description || '')}</p>`;
+      const quoteMeta = `${escapeHtml(quote.status)} | priority ${escapeHtml(quote.priority)} | ${escapeHtml(quote.location || '-')} ${escapeHtml(quote.postcode || '')}`;
+      const workflowMeta = `Workflow: ${escapeHtml(workflowStatus)} | Visit: ${escapeHtml(visitDetail)} | Client decision: ${escapeHtml(clientDecision)} | Proposed start: ${escapeHtml(proposedStart)}`;
+      const estimateMeta = `Estimate pack: ${escapeHtml(latestEstimateLabel)}`;
+      card.innerHTML = `
+        <h3>${escapeHtml(quote.projectType)} | ${escapeHtml(owner)}</h3>
+        <p class="muted">${quoteMeta}</p>
+        <p class="muted">${workflowMeta}</p>
+        <p class="muted">${estimateMeta}</p>
+        <p>${escapeHtml(quote.description || '')}</p>
+      `;
       const row = document.createElement('div');
-      row.className = 'dashboard-edit-grid';
+      row.className = 'dashboard-edit-grid dashboard-edit-grid--wide';
       const statusSelect = document.createElement('select');
       ['pending', 'in_progress', 'responded', 'closed'].forEach((value) => {
         const option = document.createElement('option');
@@ -782,10 +767,62 @@
         option.selected = quote.priority === value;
         prioritySelect.appendChild(option);
       });
+      const workflowSelect = document.createElement('select');
+      [
+        'new',
+        'manager_review',
+        'visit_proposed',
+        'visit_reschedule_requested',
+        'visit_confirmed',
+        'first_view',
+        'quote_requested',
+        'client_review',
+        'changes_requested',
+        'accepted',
+        'rejected',
+        'archived'
+      ].forEach((value) => {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = value;
+        option.selected = workflowStatus === value;
+        workflowSelect.appendChild(option);
+      });
+      const visitDateInput = document.createElement('input');
+      visitDateInput.type = 'date';
+      visitDateInput.value = toDateInputValue(quote.siteVisitDate);
+      const visitWindowInput = document.createElement('input');
+      visitWindowInput.type = 'text';
+      visitWindowInput.placeholder = 'AM / PM / 10:00-12:00';
+      visitWindowInput.value = quote.siteVisitTimeWindow || '';
+      const startDateInput = document.createElement('input');
+      startDateInput.type = 'date';
+      startDateInput.value = toDateInputValue(quote.proposedStartDate);
+      const scopeInput = document.createElement('textarea');
+      scopeInput.rows = 3;
+      scopeInput.value = quote.scopeOfWork || '';
+      const materialsInput = document.createElement('textarea');
+      materialsInput.rows = 3;
+      materialsInput.value = quote.materialsPlan || '';
+      const labourInput = document.createElement('textarea');
+      labourInput.rows = 3;
+      labourInput.value = quote.labourEstimate || '';
+      const estimateLinkInput = document.createElement('input');
+      estimateLinkInput.type = 'url';
+      estimateLinkInput.placeholder = 'https://...';
+      estimateLinkInput.value = quote.estimateDocumentUrl || '';
+      const decisionSelect = document.createElement('select');
+      ['pending', 'accepted', 'rejected', 'request_edit'].forEach((value) => {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = value;
+        option.selected = clientDecision === value;
+        decisionSelect.appendChild(option);
+      });
       const saveBtn = document.createElement('button');
       saveBtn.type = 'button';
       saveBtn.className = 'btn btn-gold';
-      saveBtn.textContent = 'Save';
+      saveBtn.textContent = 'Save status and priority';
       saveBtn.disabled = !canManage;
       saveBtn.addEventListener('click', async () => {
         try {
@@ -796,11 +833,47 @@
           });
           await loadQuotes();
         } catch (error) {
-          window.alert(error.message || 'Failed to update quote');
+          globalThis.alert(error.message || 'Failed to update quote');
+        }
+      });
+      const workflowSaveBtn = document.createElement('button');
+      workflowSaveBtn.type = 'button';
+      workflowSaveBtn.className = 'btn btn-outline';
+      workflowSaveBtn.textContent = 'Save workflow';
+      workflowSaveBtn.disabled = !canManage;
+      workflowSaveBtn.addEventListener('click', async () => {
+        try {
+          await api(`/api/manager/quotes/${quote.id}/workflow`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              workflowStatus: workflowSelect.value,
+              siteVisitDate: visitDateInput.value || null,
+              siteVisitTimeWindow: visitWindowInput.value.trim() || null,
+              proposedStartDate: startDateInput.value || null,
+              scopeOfWork: scopeInput.value.trim() || null,
+              materialsPlan: materialsInput.value.trim() || null,
+              labourEstimate: labourInput.value.trim() || null,
+              estimateDocumentUrl: estimateLinkInput.value.trim() || null,
+              clientDecisionStatus: decisionSelect.value
+            })
+          });
+          await loadQuotes();
+        } catch (error) {
+          globalThis.alert(error.message || 'Failed to update quote workflow');
         }
       });
       row.appendChild(createControlField('Status', statusSelect));
       row.appendChild(createControlField('Priority', prioritySelect));
+      row.appendChild(createControlField('Workflow', workflowSelect));
+      row.appendChild(createControlField('Visit date', visitDateInput));
+      row.appendChild(createControlField('Visit window', visitWindowInput));
+      row.appendChild(createControlField('Proposed start', startDateInput));
+      row.appendChild(createControlField('Scope of work', scopeInput));
+      row.appendChild(createControlField('Materials plan', materialsInput));
+      row.appendChild(createControlField('Labour estimate', labourInput));
+      row.appendChild(createControlField('Estimate link', estimateLinkInput));
+      row.appendChild(createControlField('Client decision', decisionSelect));
       let acceptBtn = null;
       if (!quote.assignedManagerId && quote.status === 'pending' && canManage) {
         acceptBtn = document.createElement('button');
@@ -812,11 +885,55 @@
             await api(`/api/manager/quotes/${quote.id}/accept`, { method: 'POST' });
             await loadQuotes();
           } catch (error) {
-            window.alert(error.message || 'Failed to accept quote');
+            globalThis.alert(error.message || 'Failed to accept quote');
           }
         });
       }
-      row.appendChild(createEditActions([acceptBtn, saveBtn]));
+      let convertBtn = null;
+      if (canManage && (workflowStatus === 'accepted' || clientDecision === 'accepted')) {
+        convertBtn = document.createElement('button');
+        convertBtn.type = 'button';
+        convertBtn.className = 'btn btn-outline';
+        convertBtn.textContent = 'Create project';
+        convertBtn.addEventListener('click', async () => {
+          if (!globalThis.confirm('Create a project from this accepted quote?')) return;
+          try {
+            await api(`/api/manager/quotes/${quote.id}/convert-to-project`, { method: 'POST' });
+            await Promise.all([loadQuotes(), loadProjects()]);
+          } catch (error) {
+            globalThis.alert(error.message || 'Failed to create project from quote');
+          }
+        });
+      }
+      let draftEstimateBtn = null;
+      if (canManage && quote.assignedManagerId) {
+        draftEstimateBtn = document.createElement('button');
+        draftEstimateBtn.type = 'button';
+        draftEstimateBtn.className = 'btn btn-outline';
+        draftEstimateBtn.textContent = latestEstimate?.status === 'draft' ? 'Open draft estimate' : 'Create draft estimate';
+        draftEstimateBtn.addEventListener('click', async () => {
+          try {
+            const result = await api(`/api/manager/quotes/${quote.id}/create-estimate-draft`, { method: 'POST' });
+            const estimateId = result?.estimate?.id || latestEstimate?.id || '';
+            await Promise.all([loadQuotes(), loadEstimates(estimateId)]);
+            if (estimateId) {
+              state.selectedEstimateId = estimateId;
+              fillEstimateEditor();
+            }
+          } catch (error) {
+            globalThis.alert(error.message || 'Failed to open draft estimate');
+          }
+        });
+      }
+      let reviewTimelineLink = null;
+      if (canManage) {
+        reviewTimelineLink = document.createElement('a');
+        reviewTimelineLink.className = 'btn btn-outline';
+        reviewTimelineLink.href = `/manager-review.html?quoteId=${encodeURIComponent(quote.id)}`;
+        reviewTimelineLink.textContent = 'Open review timeline';
+      }
+      let latestDiffLink = buildLatestDiffLink(quote, canManage);
+      row.appendChild(createEditActions([acceptBtn, draftEstimateBtn, reviewTimelineLink, latestDiffLink, workflowSaveBtn, convertBtn, saveBtn]));
       card.appendChild(row);
       frag.appendChild(card);
     });
@@ -879,7 +996,7 @@
       del.className = 'btn btn-outline';
       del.textContent = 'Delete';
       del.addEventListener('click', async () => {
-        if (!window.confirm(`Delete service \"${service.title}\"?`)) return;
+        if (!globalThis.confirm(`Delete service \"${service.title}\"?`)) return;
         try {
           await api(`/api/manager/services/${service.id}`, { method: 'DELETE' });
           await loadServices();
@@ -959,7 +1076,7 @@
       del.className = 'btn btn-outline';
       del.textContent = 'Delete';
       del.addEventListener('click', async () => {
-        if (!window.confirm(`Delete material \"${material.name}\"?`)) return;
+        if (!globalThis.confirm(`Delete material \"${material.name}\"?`)) return;
         try {
           await api(`/api/manager/materials/${material.id}`, { method: 'DELETE' });
           await loadMaterials();
@@ -1034,7 +1151,9 @@
       const card = document.createElement('article');
       card.className = `dashboard-item ${estimate.id === state.selectedEstimateId ? 'is-active' : ''}`;
       const projectTitle = estimate.project?.title || 'No project';
-      card.innerHTML = `<h3>${escapeHtml(estimate.title)}</h3><p class="muted">${escapeHtml(estimate.status)} | ${escapeHtml(projectTitle)} | total GBP ${escapeHtml(Number(estimate.total || 0).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}</p>`;
+      const revisionMeta = estimate.revisionNumber ? ` | revision ${estimate.revisionNumber}` : '';
+      const clientMeta = estimate.sentToClientAt ? ` | sent ${escapeHtml(formatDateTime(estimate.sentToClientAt))}` : '';
+      card.innerHTML = `<h3>${escapeHtml(estimate.title)}</h3><p class="muted">${escapeHtml(estimate.status)}${revisionMeta}${clientMeta} | ${escapeHtml(projectTitle)} | total ${escapeHtml(formatCurrency(estimate.total || 0))}</p>`;
       const row = document.createElement('div');
       row.className = 'dashboard-actions-row';
       const btn = document.createElement('button');
@@ -1067,7 +1186,7 @@
     estimate.lines.forEach((line) => {
       const card = document.createElement('article');
       card.className = 'dashboard-item';
-      card.innerHTML = `<h3>${escapeHtml(line.description)}</h3><p class="muted">${escapeHtml(line.lineType)} | qty ${escapeHtml(line.quantity)} ${escapeHtml(line.unit || '')} | GBP ${escapeHtml(Number(line.lineTotal || 0).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }))}</p>${line.notes ? `<p>${escapeHtml(line.notes)}</p>` : ''}`;
+      card.innerHTML = `<h3>${escapeHtml(line.description)}</h3><p class="muted">${escapeHtml(line.lineType)} | qty ${escapeHtml(line.quantity)} ${escapeHtml(line.unit || '')} | ${escapeHtml(formatCurrency(line.lineTotal || 0))}</p>${line.notes ? `<p>${escapeHtml(line.notes)}</p>` : ''}`;
       const row = document.createElement('div');
       row.className = 'dashboard-actions-row';
       const del = document.createElement('button');
@@ -1075,7 +1194,7 @@
       del.className = 'btn btn-outline';
       del.textContent = 'Delete line';
       del.addEventListener('click', async () => {
-        if (!window.confirm(`Delete estimate line "${line.description}"?`)) return;
+        if (!globalThis.confirm(`Delete estimate line "${line.description}"?`)) return;
         try {
           await api(`/api/manager/estimates/${estimate.id}/lines/${line.id}`, { method: 'DELETE' });
           await loadEstimateDetail(estimate.id, true);
@@ -1104,7 +1223,7 @@
     syncEstimateReferenceOptions();
     el.estimateEditorCard.hidden = false;
     el.estimateEditorTitle.textContent = estimate.title || 'Estimate';
-    el.estimateEditorTotal.textContent = `Total GBP ${Number(estimate.total || 0).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    el.estimateEditorTotal.textContent = `Total ${formatCurrency(estimate.total || 0)}`;
     const form = el.estimateUpdateForm.elements;
     form.id.value = estimate.id;
     form.title.value = estimate.title || '';
@@ -1112,8 +1231,61 @@
     form.projectId.value = estimate.projectId || '';
     form.quoteId.value = estimate.quoteId || '';
     form.notes.value = estimate.notes || '';
+    renderEstimateDocumentSummary();
+    renderEstimateRevisions();
     renderEstimateLines();
     requestAccordionRefresh();
+  };
+
+  const renderEstimateDocumentSummary = () => {
+    el.estimateDocumentSummary.innerHTML = '';
+    const estimate = selectedEstimate();
+    if (!estimate) {
+      el.estimateDocumentSummary.innerHTML = '<p class="muted">Select an estimate to manage its document pack.</p>';
+      return;
+    }
+
+    const card = document.createElement('article');
+    card.className = 'dashboard-item';
+    if (estimate.documentUrl) {
+      card.innerHTML = `<h3>${escapeHtml(estimate.documentFilename || 'Estimate file')}</h3><p class="muted">${escapeHtml(estimate.documentMimeType || 'file')} | ${escapeHtml(estimate.documentSizeBytes || '-')} bytes</p><p class="muted">Client visible: ${escapeHtml(estimate.clientVisible ? 'yes' : 'no')} | Sent: ${escapeHtml(formatDateTime(estimate.sentToClientAt) || 'not yet')}</p>`;
+      const link = document.createElement('a');
+      link.className = 'btn btn-outline';
+      link.href = estimate.documentUrl;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.textContent = 'Open uploaded file';
+      card.appendChild(link);
+    } else {
+      card.innerHTML = '<h3>No file uploaded yet</h3><p class="muted">Upload a PDF or supporting file to include it in the client-visible estimate pack.</p>';
+    }
+    el.estimateDocumentSummary.appendChild(card);
+  };
+
+  const renderEstimateRevisions = () => {
+    el.estimateRevisionsList.innerHTML = '';
+    const estimate = selectedEstimate();
+    const revisions = Array.isArray(estimate?.revisionHistory) ? estimate.revisionHistory : [];
+    if (!estimate) {
+      el.estimateRevisionsList.innerHTML = '<p class="muted">Select an estimate to see its revision history.</p>';
+      return;
+    }
+    if (!revisions.length) {
+      el.estimateRevisionsList.innerHTML = '<p class="muted">No revisions recorded yet.</p>';
+      return;
+    }
+
+    const frag = document.createDocumentFragment();
+    [...revisions].reverse().forEach((revision) => {
+      const card = document.createElement('article');
+      card.className = 'dashboard-item';
+      const changedFields = Array.isArray(revision.changedFields) && revision.changedFields.length
+        ? revision.changedFields.join(', ')
+        : 'snapshot';
+      card.innerHTML = `<h3>${escapeHtml(titleCase(revision.changeType || 'revision'))}</h3><p class="muted">${escapeHtml(formatDateTime(revision.createdAt) || '')} | ${escapeHtml(changedFields)}</p>${revision.note ? `<p>${escapeHtml(revision.note)}</p>` : ''}`;
+      frag.appendChild(card);
+    });
+    el.estimateRevisionsList.appendChild(frag);
   };
 
   const renderDirectThreads = () => {
@@ -1634,8 +1806,8 @@
     state.token = getToken();
     if (!state.token) {
       el.session.textContent = 'No active session. Redirecting to login...';
-      window.setTimeout(() => {
-        window.location.assign(loginUrl);
+      globalThis.setTimeout(() => {
+        globalThis.location.assign(loginUrl);
       }, 700);
       return;
     }
@@ -1645,8 +1817,8 @@
       if (!state.user || !['employee', 'manager', 'admin'].includes(role)) {
         clearSession();
         el.session.textContent = 'Session expired. Redirecting to login...';
-        window.setTimeout(() => {
-          window.location.assign(loginUrl);
+        globalThis.setTimeout(() => {
+          globalThis.location.assign(loginUrl);
         }, 700);
         return;
       }
@@ -1673,8 +1845,8 @@
     } catch (error) {
       clearSession();
       el.session.textContent = error.message || 'Session expired. Redirecting to login...';
-      window.setTimeout(() => {
-        window.location.assign(loginUrl);
+      globalThis.setTimeout(() => {
+        globalThis.location.assign(loginUrl);
       }, 700);
     }
   };
@@ -1777,7 +1949,7 @@
   el.projectDelete.addEventListener('click', async () => {
     const project = selectedProject();
     if (!project) return;
-    if (!window.confirm(`Delete project \"${project.title}\" and all related media?`)) return;
+    if (!globalThis.confirm(`Delete project \"${project.title}\" and all related media?`)) return;
     setStatus(el.projectEditStatus, 'Deleting project...');
     try {
       await api(`/api/manager/projects/${project.id}`, { method: 'DELETE' });
@@ -1960,7 +2132,7 @@
   el.estimateDelete.addEventListener('click', async () => {
     const estimate = selectedEstimate();
     if (!estimate) return;
-    if (!window.confirm(`Delete estimate "${estimate.title}"?`)) return;
+    if (!globalThis.confirm(`Delete estimate "${estimate.title}"?`)) return;
     setStatus(el.estimateUpdateStatus, 'Deleting estimate...');
     try {
       await api(`/api/manager/estimates/${estimate.id}`, { method: 'DELETE' });
@@ -1968,6 +2140,41 @@
       await loadEstimates();
     } catch (error) {
       setStatus(el.estimateUpdateStatus, error.message || 'Failed to delete estimate.', 'error');
+    }
+  });
+
+  el.estimateSendReview.addEventListener('click', async () => {
+    const estimate = selectedEstimate();
+    if (!estimate) return setStatus(el.estimateUpdateStatus, 'Select an estimate first.', 'error');
+    setStatus(el.estimateUpdateStatus, 'Sending estimate to client review...');
+    try {
+      await api(`/api/manager/estimates/${estimate.id}/send-to-client-review`, { method: 'POST' });
+      setStatus(el.estimateUpdateStatus, 'Estimate sent to client review.', 'success');
+      await Promise.all([loadEstimates(estimate.id), loadQuotes()]);
+    } catch (error) {
+      setStatus(el.estimateUpdateStatus, error.message || 'Failed to send estimate to client review.', 'error');
+    }
+  });
+
+  el.estimateDocumentForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const estimate = selectedEstimate();
+    if (!estimate) return setStatus(el.estimateDocumentStatus, 'Select an estimate first.', 'error');
+    const file = el.estimateDocumentForm.elements.file.files?.[0];
+    if (!file) return setStatus(el.estimateDocumentStatus, 'Choose a file first.', 'error');
+    setStatus(el.estimateDocumentStatus, 'Uploading estimate file...');
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      await api(`/api/manager/estimates/${estimate.id}/document`, {
+        method: 'POST',
+        body: formData
+      });
+      setStatus(el.estimateDocumentStatus, 'Estimate file uploaded.', 'success');
+      el.estimateDocumentForm.reset();
+      await Promise.all([loadEstimates(estimate.id), loadQuotes()]);
+    } catch (error) {
+      setStatus(el.estimateDocumentStatus, error.message || 'Failed to upload estimate file.', 'error');
     }
   });
 
@@ -2051,8 +2258,8 @@
   });
 
   el.seedBtn.addEventListener('click', async () => {
-    if (!window.confirm('Run starter seed now?')) return;
-    const force = window.confirm('Force-update existing seed records? Click Cancel for safe mode.');
+    if (!globalThis.confirm('Run starter seed now?')) return;
+    const force = globalThis.confirm('Force-update existing seed records? Click Cancel for safe mode.');
     setStatus(el.seedStatus, 'Running seed...');
     try {
       const payload = await api('/api/manager/seed/starter', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ force }) });
@@ -2067,21 +2274,21 @@
     }
   });
 
-  el.projectsFilterApply.addEventListener('click', () => { applyProjectsFiltersFromUI(); loadProjects().catch((e) => window.alert(e.message || 'Could not load projects')); });
-  el.projectsPrev.addEventListener('click', () => { if (state.projectsQuery.page <= 1) return; state.projectsQuery.page -= 1; loadProjects().catch((e) => window.alert(e.message || 'Could not load projects')); });
-  el.projectsNext.addEventListener('click', () => { if (state.projectsQuery.page >= Number(state.projectsPagination.totalPages || 1)) return; state.projectsQuery.page += 1; loadProjects().catch((e) => window.alert(e.message || 'Could not load projects')); });
-  el.quotesRefresh.addEventListener('click', () => { applyQuotesFiltersFromUI(); loadQuotes().catch((e) => window.alert(e.message || 'Could not load quotes')); });
-  el.quotesPrev.addEventListener('click', () => { if (state.quotesQuery.page <= 1) return; state.quotesQuery.page -= 1; loadQuotes().catch((e) => window.alert(e.message || 'Could not load quotes')); });
-  el.quotesNext.addEventListener('click', () => { if (state.quotesQuery.page >= Number(state.quotesPagination.totalPages || 1)) return; state.quotesQuery.page += 1; loadQuotes().catch((e) => window.alert(e.message || 'Could not load quotes')); });
-  el.servicesRefresh.addEventListener('click', () => { applyServicesFiltersFromUI(); loadServices().catch((e) => window.alert(e.message || 'Could not load services')); });
-  el.servicesPrev.addEventListener('click', () => { if (state.servicesQuery.page <= 1) return; state.servicesQuery.page -= 1; loadServices().catch((e) => window.alert(e.message || 'Could not load services')); });
-  el.servicesNext.addEventListener('click', () => { if (state.servicesQuery.page >= Number(state.servicesPagination.totalPages || 1)) return; state.servicesQuery.page += 1; loadServices().catch((e) => window.alert(e.message || 'Could not load services')); });
-  el.materialsRefresh.addEventListener('click', () => { applyMaterialsFiltersFromUI(); loadMaterials().catch((e) => window.alert(e.message || 'Could not load materials')); });
-  el.materialsPrev.addEventListener('click', () => { if (state.materialsQuery.page <= 1) return; state.materialsQuery.page -= 1; loadMaterials().catch((e) => window.alert(e.message || 'Could not load materials')); });
-  el.materialsNext.addEventListener('click', () => { if (state.materialsQuery.page >= Number(state.materialsPagination.totalPages || 1)) return; state.materialsQuery.page += 1; loadMaterials().catch((e) => window.alert(e.message || 'Could not load materials')); });
-  el.clientsRefresh.addEventListener('click', () => { applyClientsFiltersFromUI(); loadClients().catch((e) => window.alert(e.message || 'Could not load clients')); });
-  el.staffRefresh.addEventListener('click', () => { applyStaffFiltersFromUI(); loadStaff().catch((e) => window.alert(e.message || 'Could not load staff')); });
-  el.logout.addEventListener('click', () => { clearSession(); window.location.href = '/auth.html'; });
+  el.projectsFilterApply.addEventListener('click', () => { applyProjectsFiltersFromUI(); loadProjects().catch((e) => globalThis.alert(e.message || 'Could not load projects')); });
+  el.projectsPrev.addEventListener('click', () => { if (state.projectsQuery.page <= 1) return; state.projectsQuery.page -= 1; loadProjects().catch((e) => globalThis.alert(e.message || 'Could not load projects')); });
+  el.projectsNext.addEventListener('click', () => { if (state.projectsQuery.page >= Number(state.projectsPagination.totalPages || 1)) return; state.projectsQuery.page += 1; loadProjects().catch((e) => globalThis.alert(e.message || 'Could not load projects')); });
+  el.quotesRefresh.addEventListener('click', () => { applyQuotesFiltersFromUI(); loadQuotes().catch((e) => globalThis.alert(e.message || 'Could not load quotes')); });
+  el.quotesPrev.addEventListener('click', () => { if (state.quotesQuery.page <= 1) return; state.quotesQuery.page -= 1; loadQuotes().catch((e) => globalThis.alert(e.message || 'Could not load quotes')); });
+  el.quotesNext.addEventListener('click', () => { if (state.quotesQuery.page >= Number(state.quotesPagination.totalPages || 1)) return; state.quotesQuery.page += 1; loadQuotes().catch((e) => globalThis.alert(e.message || 'Could not load quotes')); });
+  el.servicesRefresh.addEventListener('click', () => { applyServicesFiltersFromUI(); loadServices().catch((e) => globalThis.alert(e.message || 'Could not load services')); });
+  el.servicesPrev.addEventListener('click', () => { if (state.servicesQuery.page <= 1) return; state.servicesQuery.page -= 1; loadServices().catch((e) => globalThis.alert(e.message || 'Could not load services')); });
+  el.servicesNext.addEventListener('click', () => { if (state.servicesQuery.page >= Number(state.servicesPagination.totalPages || 1)) return; state.servicesQuery.page += 1; loadServices().catch((e) => globalThis.alert(e.message || 'Could not load services')); });
+  el.materialsRefresh.addEventListener('click', () => { applyMaterialsFiltersFromUI(); loadMaterials().catch((e) => globalThis.alert(e.message || 'Could not load materials')); });
+  el.materialsPrev.addEventListener('click', () => { if (state.materialsQuery.page <= 1) return; state.materialsQuery.page -= 1; loadMaterials().catch((e) => globalThis.alert(e.message || 'Could not load materials')); });
+  el.materialsNext.addEventListener('click', () => { if (state.materialsQuery.page >= Number(state.materialsPagination.totalPages || 1)) return; state.materialsQuery.page += 1; loadMaterials().catch((e) => globalThis.alert(e.message || 'Could not load materials')); });
+  el.clientsRefresh.addEventListener('click', () => { applyClientsFiltersFromUI(); loadClients().catch((e) => globalThis.alert(e.message || 'Could not load clients')); });
+  el.staffRefresh.addEventListener('click', () => { applyStaffFiltersFromUI(); loadStaff().catch((e) => globalThis.alert(e.message || 'Could not load staff')); });
+  el.logout.addEventListener('click', () => { clearSession(); globalThis.location.href = '/auth.html'; });
 
   bootstrap();
 })();

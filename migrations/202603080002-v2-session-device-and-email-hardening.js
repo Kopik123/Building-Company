@@ -1,5 +1,21 @@
-const tableDoesNotExistPattern =
-  /does not exist|unknown table|relation .* does not exist|no such table|no description found .* table/i;
+const includesBoundedSegment = (value, startNeedle, endNeedle) => {
+  const startIndex = value.indexOf(startNeedle);
+  if (startIndex === -1) return false;
+
+  const endIndex = value.indexOf(endNeedle, startIndex + startNeedle.length);
+  return endIndex !== -1;
+};
+
+const isMissingTableMessage = (message) => {
+  const normalized = String(message || '').toLowerCase();
+  return (
+    normalized.includes('does not exist') ||
+    normalized.includes('unknown table') ||
+    normalized.includes('no such table') ||
+    includesBoundedSegment(normalized, 'relation ', ' does not exist') ||
+    includesBoundedSegment(normalized, 'no description found ', ' table')
+  );
+};
 
 const tableExists = async (queryInterface, tableName) => {
   try {
@@ -7,7 +23,7 @@ const tableExists = async (queryInterface, tableName) => {
     return true;
   } catch (error) {
     const message = String(error && error.message ? error.message : '');
-    if (tableDoesNotExistPattern.test(message)) return false;
+    if (isMissingTableMessage(message)) return false;
     throw error;
   }
 };

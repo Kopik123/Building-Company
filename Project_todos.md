@@ -2,6 +2,17 @@
 
 ## Open
 
+- [ ] Validate the hardened migration paths once on a staging/production-like database, especially missing-table fallbacks and trigram-index creation on Postgres.
+- [ ] Validate the full self-hosted font migration after deployment, including public pages, auth, manager workspace and client workspace typography.
+- [ ] Validate review-page deep links after deployment, including opening a specific diff entry from client and manager dashboard actions.
+- [ ] Validate the new review timeline filters and selected-entry highlighting against mixed quote/estimate/client-decision histories.
+- [ ] Validate the new quote claim confirm UI on `/quote` and `/auth` after deployment, including prefilled claim links, logged-in claim completion and redirect into the claimed quote view.
+- [ ] Validate the new client/manager diff viewers after deployment, especially side-by-side snapshot rendering and merged review timeline ordering.
+- [ ] Validate the new quote submission split after deployment for both guest and signed-in users, including claim-code visibility, expiry messaging and direct account-linked quote creation.
+- [ ] Validate the dedicated client review screen after deployment, including revision diff rendering, PDF download/opening and decision/notification loops.
+- [ ] Validate the phase-3 flow after deployment, especially estimate upload/download, client-review status transitions, and history visibility on both workspaces.
+- [ ] Validate the phase-2 quote workflow manually after deployment, especially draft-estimate creation from quotes and client visibility of the linked estimate summary.
+- [ ] Validate the new quote workflow manually with a real manager/client account pair after deployment, including visit reschedule, client decision, notifications and conversion to project.
 - [x] Work through `copilot_todos.md` (49 items across P0–P3 priorities from full project analysis). → **21/49 completed, 28 deferred to `what_missing_copilot.md`**
 - [ ] Run `powershell -ExecutionPolicy Bypass -File .\scripts\setup-vscode.ps1` on the local machine that uses VS Code.
 - [ ] Review whether `ms-vscode.live-server` is still needed if the project always runs through the app server and Playwright.
@@ -20,6 +31,10 @@
 - [ ] Export the real issue list from SonarQube for branch `vscode`, then map every `Bug` and `Vulnerability` to `real fix`, `false positive` or `accepted tradeoff`.
 - [ ] Re-check the latest Sonar cleanup pass for `routes/auth.js`, `routes/manager/project-routes.js` and `routes/manager/quote-routes.js` after the next branch analysis, especially the `safeCompare` hard-coded-secret false positive and the media-route maintainability findings.
 - [ ] Run `scripts/sonar-export.sh` with `SONAR_URL` and `SONAR_TOKEN`, then attach `sonar-issues-full.json`, `sonar-quality-gate.json` and `sonar-measures.json` to the Sonar cleanup workflow.
+- [ ] Validate the new non-root Docker image on the target environment, especially file upload paths, runtime write permissions and `npm start` under the `node` user.
+- [ ] Validate the stricter read-only app tree in the Docker image on the target environment, especially `uploads/`, `logs/` and `.bootstrap.lock` as the only runtime-write paths under the `node` user.
+- [ ] Re-run the full API v2 suite in an environment with dev dependencies installed, because this sandbox still lacks `supertest` for `npm run test:api:v2`.
+- [ ] Re-check the next SonarQube scan after adding `sonar-project.properties`, especially whether the new CPD exclusions remove generated-page / migration / test duplication noise without masking real app-code duplication in the manager/client routes.
 - [ ] Start the SonarQube cleanup with the biggest maintainability hotspots: `manager-dashboard.js`, `routes/manager.js`, `client-dashboard.js`, `styles/base.css` and `apps/mobile-v1/App.js`.
 - [ ] Plan the `multer 1.x -> 2.x` migration as a separate Sonar/dependency-hardening task instead of running `npm audit fix --force`.
 - [ ] Split `manager-dashboard.js` into feature modules (`projects`, `quotes`, `services`, `materials`, `clients`, `staff`, `estimates`, `messages`) once the new overview shell settles.
@@ -35,6 +50,27 @@
 
 ## Completed
 
+- [x] Replaced the remaining migration regex hotspots with bounded string parsing and tightened dynamic trigram-index SQL to use validated identifiers only.
+- [x] Removed the `Math.random()`-based mobile poller id generation and switched the production Docker image to a non-root runtime user with tighter Docker ignore rules for local/sensitive files.
+- [x] Added migration regression coverage for `unknown table` and `no such table` error handling before re-running the generated-page and API suites.
+- [x] Added self-hosted Montserrat and Cormorant Garamond assets, switched the tracked pages off Google Fonts, and removed the related external CSP allowances.
+- [x] Added a focused regression test to keep tracked HTML pages, the public page renderer and CSP free of `fonts.googleapis.com` / `fonts.gstatic.com` references.
+- [x] Remediated the flagged security hotspots in the touched slice: replaced the risky regex checks, removed the unsafe manager-review `innerHTML` fallback, and removed the flagged third-party font stylesheet from the affected pages.
+- [x] Added review-page deep links, timeline filters, selected-entry highlighting and premium changed-field badges across the shared client/manager diff experience.
+- [x] Saved `Plans/Review Timeline UX Follow-up.md` and registered it in `Plans/Plan History.md` for the review timeline polish slice.
+- [x] Added inline quote-claim confirmation on `/quote` and `/auth`, plus separate client/manager review pages with side-by-side revision diff viewers and manager timeline access.
+- [x] Saved `Plans/Quote Claim Confirm UI And Review Diff Views.md` and registered it in `Plans/Plan History.md` as the tracked plan for the next review UX slice.
+- [x] Added the quote-submission follow-up: guest quote completion now shows the claim code on-screen with expiry/save guidance, signed-in users can submit quotes directly into their account, and the client review flow now has a separate review screen with revision diff visibility.
+- [x] Saved `Plans/Quote Submission, Claim Code UX And Dedicated Client Review Follow-up.md` and registered it in `Plans/Plan History.md` as the tracked plan for the next quote/review follow-up slice.
+- [x] Delivered quote workflow phase 3: estimates can be sent into `client_review`, managers can upload estimate files, quote/estimate revision history is recorded, and the client decision UI is split into clearer review sections.
+- [x] Saved `Plans/Quote Workflow Phase 3 - Client Review Pack, Estimate Uploads And Revision History.md` and registered it in `Plans/Plan History.md` as the tracked plan for the next quote workflow execution slice.
+- [x] Re-ran `npm ci`, `npm run verify:generated` and `npm run test:api:v2` after the phase-3 implementation; the generated-page check and API suite passed in the sandbox.
+- [x] Completed quote workflow phase 2: manager/client dashboards now expose estimate-pack fields, quotes load linked estimate summaries, and managers can create or reopen draft estimates directly from quote cards.
+- [x] Finished the phase-1 quote workflow execution slice: visit scheduling, manager/client coordination, estimate handoff metadata and quote-to-project conversion are now wired in code.
+- [x] Saved `Plans/Quote Workflow Phase 2 - Estimate Pack Visibility And Draft Builder.md` and registered it in `Plans/Plan History.md` as the tracked plan for the second quote workflow execution slice.
+- [x] Re-ran `npm ci`, `npm run verify:generated` and `npm run test:api:v2` after the quote workflow phase-2 implementation; the generated-page check and API suite passed in the sandbox.
+- [x] Saved `Plans/Quote Workflow, Visit Scheduling And Client Manager Coordination.md` and registered it in `Plans/Plan History.md` as the tracked implementation plan for the new quote workflow expansion.
+- [x] Re-ran `npm ci`, `npm run verify:generated` and `npm run test:api:v2` after the quote workflow phase-1 implementation; the local API suite is green again once dev dependencies are installed in the sandbox.
 - [x] Added a repeatable VS Code bootstrap script for extensions and workspace settings.
 - [x] Removed tracked `test-results/.last-run.json` from the repo path and added `test-results/` to `.gitignore` so Playwright artifacts no longer dirty the worktree after validation runs.
 - [x] Added shared workspace extension recommendations in `.vscode/extensions.json`.
@@ -82,3 +118,10 @@
 - [x] Updated Playwright public/mobile expectations so regression coverage validates the new shared `title.png` shell and inline login instead of the old homepage-only header layout.
 - [x] Continue the manager-route cleanup by extracting the remaining `quotes` and `projects/media` sections once the new subrouter split has baked in under tests. → **Done: `routes/manager/quote-routes.js` (215 lines) + `routes/manager/project-routes.js` (494 lines). Main file reduced from 1151 → 568 lines.**
 - [ ] Continue reducing `apps/mobile-v1/App.js` by extracting session/tab shell logic after the new `screens.js`/`styles.js` split stabilises.
+
+## SonarQube CPD Fixes (2026-03-31)
+- [x] Extract `buildQuoteRevisionPayload` to `utils/revisionHistory.js` — removed duplicates from `routes/client.js`, `routes/manager/quote-routes.js`, `routes/manager/estimate-routes.js`
+- [x] Extract `buildEstimateRevisionPayload` to `utils/revisionHistory.js` — removed local definition from `routes/manager/estimate-routes.js`
+- [x] Apply `withValidation` to all standard handlers in `estimate-routes.js` (11 handlers) — eliminates repeated validation boilerplate
+- [x] Add `escapeSelector`, `syncReviewFilters`, `scrollToHistoryEntry` to `runtime.js` — removes identical helper definitions from `client-review.js` and `manager-review.js`
+- [x] Simplify duplicated `api` fallback in both review files

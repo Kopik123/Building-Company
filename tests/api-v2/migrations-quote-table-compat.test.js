@@ -4,6 +4,8 @@ const test = require('node:test');
 const baselineHardening = require('../../migrations/202603080001-production-baseline-hardening.js');
 const sessionDeviceHardening = require('../../migrations/202603080002-v2-session-device-and-email-hardening.js');
 const performanceSearch = require('../../migrations/202603090000-performance-search-trgm-indexes.js');
+const quoteWorkflowPhase1 = require('../../migrations/202603310001-quote-workflow-phase1.js');
+const quoteWorkflowPhase3 = require('../../migrations/202603311415-phase3-estimate-client-review-and-revisions.js');
 
 const createQueryInterfaceStub = (tables) => {
   const queries = [];
@@ -79,6 +81,28 @@ test('baseline hardening migration works when only queryGenerator.quoteTable exi
       options: { name: 'quotes_assigned_manager_idx' }
     }
   ]);
+});
+
+test('baseline hardening migration skips absent tables for unknown-table errors without regex backtracking', async () => {
+  const queries = [];
+  const queryInterface = {
+    sequelize: {
+      async query(sql) {
+        queries.push(sql);
+      }
+    },
+    async describeTable() {
+      throw new Error('Unknown table "Quotes"');
+    },
+    async showIndex() {
+      return [];
+    },
+    async addIndex() {},
+    async addColumn() {}
+  };
+
+  await assert.doesNotReject(() => baselineHardening.up(queryInterface, { UUID: 'UUID' }));
+  assert.deepEqual(queries, ['CREATE EXTENSION IF NOT EXISTS pg_trgm']);
 });
 
 test('performance search migration works when only queryGenerator.quoteTable exists', async () => {
@@ -177,6 +201,165 @@ test('session/device hardening migration creates missing tables when Sequelize s
   );
   assert.equal(
     queries.includes('CREATE UNIQUE INDEX IF NOT EXISTS users_email_lower_unique_idx ON "Users" (LOWER("email"))'),
+    true
+  );
+});
+
+test('session/device hardening migration treats sqlite no-such-table errors as missing tables', async () => {
+  const createdTables = [];
+  const queryInterface = {
+    sequelize: {
+      async query() {}
+    },
+    async describeTable(tableName) {
+      if (tableName === 'Users') {
+        return {
+          id: {},
+          email: {}
+        };
+      }
+
+      throw new Error(`SQLITE_ERROR: no such table: ${tableName}`);
+    },
+    async createTable(tableName) {
+      createdTables.push(tableName);
+    },
+    async showIndex() {
+      return [];
+    },
+    async addIndex() {},
+    async dropTable() {}
+  };
+
+  await assert.doesNotReject(() =>
+    sessionDeviceHardening.up(queryInterface, {
+      DataTypes: {
+        UUID: 'UUID',
+        STRING: 'STRING',
+        DATE: 'DATE',
+        NOW: 'NOW',
+        ENUM: (...values) => ({ type: 'ENUM', values })
+      }
+    })
+  );
+
+  assert.deepEqual(createdTables, ['SessionRefreshTokens', 'DevicePushTokens']);
+});
+
+test('quote workflow phase-1 migration adds workflow columns and indexes when Quotes already exists', async () => {
+  const tables = {
+    Quotes: {
+      id: {},
+      status: {},
+      priority: {},
+      assignedManagerId: {},
+      createdAt: {},
+      updatedAt: {}
+    }
+  };
+  const addedIndexes = [];
+
+  const queryInterface = {
+    async describeTable(tableName) {
+      const table = tables[tableName];
+      if (table) return table;
+      throw new Error(`relation "${tableName}" does not exist`);
+    },
+    async addColumn(tableName, columnName, definition) {
+      tables[tableName] = tables[tableName] || {};
+      tables[tableName][columnName] = definition;
+    },
+    async showIndex() {
+      return [];
+    },
+    async addIndex(tableName, fields, options) {
+      addedIndexes.push({ tableName, fields, options });
+    }
+  };
+
+  await assert.doesNotReject(() =>
+    quoteWorkflowPhase1.up(queryInterface, {
+      DataTypes: {
+        STRING: 'STRING',
+        TEXT: 'TEXT',
+        DATE: 'DATE',
+        DATEONLY: 'DATEONLY'
+      }
+    })
+  );
+
+  assert.equal(Boolean(tables.Quotes.workflowStatus), true);
+  assert.equal(Boolean(tables.Quotes.siteVisitDate), true);
+  assert.equal(Boolean(tables.Quotes.clientDecisionStatus), true);
+  assert.equal(
+    addedIndexes.some((item) => item.options.name === 'quotes_workflow_status_created_idx'),
+    true
+  );
+  assert.equal(
+    addedIndexes.some((item) => item.options.name === 'quotes_client_decision_idx'),
+    true
+  );
+});
+
+test('quote workflow phase-3 migration adds estimate review and revision columns when tables already exist', async () => {
+  const tables = {
+    Quotes: {
+      id: {},
+      workflowStatus: {},
+      status: {},
+      updatedAt: {}
+    },
+    Estimates: {
+      id: {},
+      quoteId: {},
+      status: {}
+    }
+  };
+  const addedIndexes = [];
+
+  const queryInterface = {
+    async describeTable(tableName) {
+      const table = tables[tableName];
+      if (table) return table;
+      throw new Error(`relation "${tableName}" does not exist`);
+    },
+    async addColumn(tableName, columnName, definition) {
+      tables[tableName] = tables[tableName] || {};
+      tables[tableName][columnName] = definition;
+    },
+    async showIndex() {
+      return [];
+    },
+    async addIndex(tableName, fields, options) {
+      addedIndexes.push({ tableName, fields, options });
+    }
+  };
+
+  await assert.doesNotReject(() =>
+    quoteWorkflowPhase3.up(queryInterface, {
+      DataTypes: {
+        STRING: 'STRING',
+        TEXT: 'TEXT',
+        DATE: 'DATE',
+        DATEONLY: 'DATEONLY',
+        BOOLEAN: 'BOOLEAN',
+        INTEGER: 'INTEGER',
+        JSON: 'JSON'
+      }
+    })
+  );
+
+  assert.equal(Boolean(tables.Quotes.clientReviewStartedAt), true);
+  assert.equal(Boolean(tables.Quotes.revisionHistory), true);
+  assert.equal(Boolean(tables.Estimates.revisionHistory), true);
+  assert.equal(Boolean(tables.Estimates.documentUrl), true);
+  assert.equal(Boolean(tables.Estimates.clientVisible), true);
+  assert.equal(
+    addedIndexes.some((item) => item.options.name === 'estimates_client_visible_status_idx'),
+    true
+  );
+  assert.equal(
+    addedIndexes.some((item) => item.options.name === 'quotes_client_review_started_idx'),
     true
   );
 });

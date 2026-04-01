@@ -9,6 +9,42 @@ const escapeHtml = (value) =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#x27;');
 
+const CHAR_CODE_0 = 48;
+const CHAR_CODE_9 = 57;
+const CHAR_CODE_A = 65;
+const CHAR_CODE_Z = 90;
+const CHAR_CODE_a = 97;
+const CHAR_CODE_z = 122;
+
+const isValidContactEmail = (value) => {
+  const email = String(value || '').trim();
+  if (!email || email.length > 254 || email.includes(' ')) return false;
+
+  const atIndex = email.indexOf('@');
+  if (atIndex <= 0 || atIndex !== email.lastIndexOf('@') || atIndex === email.length - 1) return false;
+
+  const localPart = email.slice(0, atIndex);
+  const domain = email.slice(atIndex + 1);
+  if (!localPart || localPart.length > 64 || !domain || domain.startsWith('.') || domain.endsWith('.') || domain.includes('..')) {
+    return false;
+  }
+
+  const domainLabels = domain.split('.');
+  if (domainLabels.length < 2) return false;
+
+  return domainLabels.every((label) => {
+    if (!label || label.startsWith('-') || label.endsWith('-')) return false;
+    for (const char of label) {
+      const code = char.charCodeAt(0);
+      const isDigit = code >= CHAR_CODE_0 && code <= CHAR_CODE_9;
+      const isUpper = code >= CHAR_CODE_A && code <= CHAR_CODE_Z;
+      const isLower = code >= CHAR_CODE_a && code <= CHAR_CODE_z;
+      if (!isDigit && !isUpper && !isLower && char !== '-') return false;
+    }
+    return true;
+  });
+};
+
 const createContactRouter = () => {
   const router = express.Router();
 
@@ -28,8 +64,7 @@ const createContactRouter = () => {
         return res.status(400).json({ error: 'Name, email and message are required.' });
       }
 
-      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailPattern.test(email.trim())) {
+      if (!isValidContactEmail(email)) {
         return res.status(400).json({ error: 'Please provide a valid email address.' });
       }
 
@@ -62,5 +97,7 @@ const createContactRouter = () => {
 
   return router;
 };
+
+createContactRouter.isValidContactEmail = isValidContactEmail;
 
 module.exports = createContactRouter;

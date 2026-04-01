@@ -1,11 +1,12 @@
 const express = require('express');
 const path = require('path');
 const { Op } = require('sequelize');
-const { param, query, validationResult } = require('express-validator');
+const { body, param, query, validationResult } = require('express-validator');
 const {
   Project,
   ProjectMedia,
   Quote,
+  Estimate,
   GroupMember,
   GroupThread,
   Notification,
@@ -15,6 +16,13 @@ const {
 const { auth, roleCheck } = require('../middleware/auth');
 const { upload } = require('../utils/upload');
 const asyncHandler = require('../utils/asyncHandler');
+const {
+  QUOTE_WORKFLOW_STATUSES,
+  QUOTE_CLIENT_DECISION_STATUSES,
+  QUOTE_CLIENT_DECISION_STATUSES_NON_PENDING,
+  deriveLegacyQuoteStatus
+} = require('../utils/quoteWorkflow');
+const { buildQuoteRevisionPayload } = require('../utils/revisionHistory');
 
 const router = express.Router();
 const clientGuard = [auth, roleCheck('client')];
@@ -53,6 +61,38 @@ const mapProject = (project) => {
   };
 };
 
+const formatVisitPreference = ({ siteVisitDate, siteVisitTimeWindow }) => {
+  if (!siteVisitDate) return 'a different visit slot';
+  const timeWindow = siteVisitTimeWindow ? ` (${siteVisitTimeWindow})` : '';
+  return `${siteVisitDate}${timeWindow}`;
+};
+
+const quoteEstimateInclude = {
+  model: Estimate,
+  as: 'estimates',
+  attributes: [
+    'id',
+    'title',
+    'status',
+    'total',
+    'subtotal',
+    'notes',
+    'updatedAt',
+    'createdAt',
+    'revisionNumber',
+    'clientVisible',
+    'sentToClientAt',
+    'documentUrl',
+    'documentFilename',
+    'revisionHistory'
+  ],
+  required: false,
+  separate: true,
+  limit: 10,
+  order: [['updatedAt', 'DESC'], ['createdAt', 'DESC']]
+};
+
+
 router.get(
   '/overview',
   [...clientGuard, query('includeThreads').optional().isIn(['true', 'false', '1', '0'])],
@@ -75,7 +115,10 @@ router.get(
       }),
       Quote.findAll({
         where: { clientId: req.user.id },
-        include: [{ model: User, as: 'assignedManager', attributes: ['id', 'name', 'email'], required: false }],
+        include: [
+          { model: User, as: 'assignedManager', attributes: ['id', 'name', 'email'], required: false },
+          quoteEstimateInclude
+        ],
         order: [['createdAt', 'DESC']],
         limit: 100
       }),
@@ -149,6 +192,155 @@ router.get(
     }
 
     return res.json({ project: mapProject(project) });
+  })
+);
+
+router.get(
+  '/quotes/:id/review',
+  [...clientGuard, param('id').isUUID()],
+  asyncHandler(async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const quote = await Quote.findOne({
+      where: { id: req.params.id, clientId: req.user.id },
+      include: [
+        { model: User, as: 'assignedManager', attributes: ['id', 'name', 'email'], required: false },
+        quoteEstimateInclude
+      ]
+    });
+
+    if (!quote) {
+      return res.status(404).json({ error: 'Quote not found' });
+    }
+
+    return res.json({ quote });
+  })
+);
+
+router.post(
+  '/quotes/:id/workflow',
+  [
+    ...clientGuard,
+    param('id').isUUID(),
+    body('siteVisitDate').optional({ nullable: true }).isISO8601(),
+    body('siteVisitTimeWindow').optional({ nullable: true }).trim().isLength({ max: 120 }),
+    body('clientDecisionStatus').optional().isIn(QUOTE_CLIENT_DECISION_STATUSES_NON_PENDING),
+    body('clientDecisionNotes').optional({ nullable: true }).trim().isLength({ max: 6000 })
+  ],
+  asyncHandler(async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const quote = await Quote.findOne({
+      where: { id: req.params.id, clientId: req.user.id },
+      include: [{ model: User, as: 'assignedManager', attributes: ['id', 'name', 'email'], required: false }]
+    });
+
+    if (!quote) {
+      return res.status(404).json({ error: 'Quote not found' });
+    }
+
+    const payload = {};
+    const requestedVisitChange = (
+      typeof req.body.siteVisitDate !== 'undefined'
+      || typeof req.body.siteVisitTimeWindow !== 'undefined'
+    );
+
+    if (typeof req.body.siteVisitDate !== 'undefined') payload.siteVisitDate = req.body.siteVisitDate || null;
+    if (typeof req.body.siteVisitTimeWindow !== 'undefined') payload.siteVisitTimeWindow = String(req.body.siteVisitTimeWindow || '').trim() || null;
+    if (typeof req.body.clientDecisionStatus !== 'undefined') payload.clientDecisionStatus = req.body.clientDecisionStatus;
+    if (typeof req.body.clientDecisionNotes !== 'undefined') payload.clientDecisionNotes = String(req.body.clientDecisionNotes || '').trim() || null;
+
+    if (requestedVisitChange) {
+      payload.siteVisitStatus = 'reschedule_requested';
+      payload.workflowStatus = 'visit_reschedule_requested';
+    }
+
+    if (!payload.workflowStatus && payload.clientDecisionStatus === 'accepted') {
+      payload.workflowStatus = 'accepted';
+    }
+    if (!payload.workflowStatus && payload.clientDecisionStatus === 'rejected') {
+      payload.workflowStatus = 'rejected';
+    }
+    if (!payload.workflowStatus && payload.clientDecisionStatus === 'request_edit') {
+      payload.workflowStatus = 'changes_requested';
+    }
+
+    if (payload.workflowStatus && !QUOTE_WORKFLOW_STATUSES.includes(payload.workflowStatus)) {
+      return res.status(400).json({ error: 'Invalid workflow state' });
+    }
+
+    if (!Object.keys(payload).length) {
+      return res.status(400).json({ error: 'No workflow changes provided' });
+    }
+
+    payload.status = deriveLegacyQuoteStatus({
+      workflowStatus: payload.workflowStatus || quote.workflowStatus,
+      assignedManagerId: quote.assignedManagerId,
+      archivedAt: quote.archivedAt,
+      clientDecisionStatus: payload.clientDecisionStatus || quote.clientDecisionStatus
+    });
+
+    const historyPayload = buildQuoteRevisionPayload({
+      quote,
+      actor: req.user,
+      changeType: requestedVisitChange ? 'client_requested_visit_change' : 'client_updated_decision',
+      changedFields: Object.keys(payload),
+      updates: payload
+    });
+    await quote.update(historyPayload);
+
+    const managerId = quote.assignedManagerId;
+    if (managerId) {
+      const requestedVisit = payload.siteVisitDate || quote.siteVisitDate;
+      const requestedWindow = payload.siteVisitTimeWindow || quote.siteVisitTimeWindow;
+      const decisionStatus = payload.clientDecisionStatus || quote.clientDecisionStatus;
+      const decisionTypeMap = {
+        accepted: {
+          type: 'quote_client_accepted',
+          title: 'Client accepted the quote',
+          body: `Client ${req.user.name} accepted the quote and is ready to move forward.`
+        },
+        rejected: {
+          type: 'quote_client_rejected',
+          title: 'Client rejected the quote',
+          body: `Client ${req.user.name} rejected the quote.`
+        },
+        request_edit: {
+          type: 'quote_client_requested_edits',
+          title: 'Client requested estimate edits',
+          body: `Client ${req.user.name} requested edits to the quote or estimate pack.`
+        }
+      };
+      const decisionPayload = decisionTypeMap[decisionStatus] || {
+        type: 'quote_client_decision_updated',
+        title: 'Client updated quote decision',
+        body: `Client ${req.user.name} set quote decision to ${decisionStatus || 'pending'}.`
+      };
+      await Notification.create({
+        userId: managerId,
+        type: requestedVisitChange ? 'quote_visit_reschedule_requested' : decisionPayload.type,
+        title: requestedVisitChange ? 'Client requested a different visit date' : decisionPayload.title,
+        body: requestedVisitChange
+          ? `Client ${req.user.name} requested ${formatVisitPreference({ siteVisitDate: requestedVisit, siteVisitTimeWindow: requestedWindow })} for the quote visit.`
+          : decisionPayload.body,
+        quoteId: quote.id,
+        data: {
+          quoteId: quote.id,
+          workflowStatus: payload.workflowStatus || quote.workflowStatus,
+          clientDecisionStatus: payload.clientDecisionStatus || quote.clientDecisionStatus,
+          siteVisitDate: requestedVisit || null,
+          siteVisitTimeWindow: requestedWindow || null
+        }
+      });
+    }
+
+    return res.json({ quote });
   })
 );
 

@@ -29,9 +29,19 @@
     return '/auth.html';
   };
 
+  const normalizeAuthLinkLabel = (value) => String(value || '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
+
   const isAuthLink = (link) => {
     const href = String(link.getAttribute('href') || '').toLowerCase();
-    return href.includes('auth.html') || /login\s*\/\s*register/i.test(link.textContent || '');
+    const normalizedLabel = normalizeAuthLinkLabel(link.textContent);
+    return href.includes('auth.html')
+      || normalizedLabel === 'login / register'
+      || normalizedLabel === 'login/register'
+      || normalizedLabel.includes('login / register')
+      || normalizedLabel.includes('login/register');
   };
 
   const clearInjectedAccountItems = () => {

@@ -7,6 +7,7 @@ const { authV2 } = require('../middleware/auth');
 const { roleCheckV2 } = require('../middleware/roles');
 const { ok, fail } = require('../utils/response');
 const { clearServicesCache } = require('../utils/publicCache');
+const { buildSafeSlug } = require('../../../utils/safeSlug');
 
 const router = express.Router();
 const DEFAULT_PAGE_SIZE = 25;
@@ -37,13 +38,7 @@ const toNullableNumber = (value) => {
   const num = Number(value);
   return Number.isFinite(num) ? num : null;
 };
-const slugify = (value) =>
-  String(value || '')
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 120);
+const slugify = (value) => buildSafeSlug(value, { maxLength: 120 });
 
 router.get(
   '/services',
