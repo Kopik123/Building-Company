@@ -628,3 +628,145 @@ body.workspace-site .workspace-session-actions {
     font-size: clamp(1.6rem, 8vw, 2rem);
   }
 }
+
+/* ── System Logs panel ─────────────────────────────────────── */
+
+body.workspace-site .logs-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+body.workspace-site .logs-filter-btn {
+  padding: 0.35rem 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  border: 1px solid rgba(216, 166, 30, 0.36);
+  border-radius: 2rem;
+  background: transparent;
+  color: var(--ll-text-on-dark, #e8dfc8);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+body.workspace-site .logs-filter-btn:hover {
+  background: rgba(216, 166, 30, 0.12);
+  border-color: rgba(216, 166, 30, 0.6);
+}
+
+body.workspace-site .logs-filter-btn--active {
+  background: rgba(216, 166, 30, 0.2);
+  border-color: rgba(216, 166, 30, 0.8);
+  color: #d8a61e;
+}
+
+body.workspace-site .logs-panel {
+  max-height: 520px;
+  overflow-y: auto;
+  border: 1px solid rgba(216, 166, 30, 0.18);
+  border-radius: 6px;
+  padding: 0.5rem 0;
+  background: rgba(0, 0, 0, 0.28);
+  font-size: 0.8rem;
+  font-family: var(--ll-font-mono, 'Courier New', monospace);
+}
+
+body.workspace-site .logs-entry {
+  display: grid;
+  grid-template-columns: 10rem 7rem 1fr;
+  gap: 0 0.75rem;
+  align-items: baseline;
+  padding: 0.28rem 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  line-height: 1.4;
+  word-break: break-all;
+}
+
+body.workspace-site .logs-entry:last-child {
+  border-bottom: none;
+}
+
+body.workspace-site .logs-entry--error .logs-entry-ts,
+body.workspace-site .logs-entry--error .logs-entry-cat,
+body.workspace-site .logs-entry--error .logs-entry-msg,
+body.workspace-site .logs-entry--error .logs-entry-meta {
+  color: #e05c5c;
+}
+
+body.workspace-site .logs-entry-ts {
+  color: rgba(216, 166, 30, 0.55);
+  white-space: nowrap;
+  font-size: 0.72rem;
+}
+
+body.workspace-site .logs-entry-cat {
+  text-transform: uppercase;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  color: rgba(216, 166, 30, 0.7);
+}
+
+body.workspace-site .logs-entry-msg {
+  color: #d4cfc5;
+}
+
+body.workspace-site .logs-entry-meta {
+  grid-column: 3;
+  color: rgba(180, 170, 155, 0.55);
+  font-size: 0.7rem;
+}
+
+body.workspace-site .logs-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 600px) {
+  body.workspace-site .logs-entry {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  body.workspace-site .logs-entry-msg {
+    grid-column: 1 / -1;
+  }
+
+  body.workspace-site .logs-entry-meta {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ── Danger action button ──────────────────────────────────── */
+
+body.workspace-site .btn--danger {
+  border-color: rgba(200, 60, 60, 0.5);
+  color: #e05c5c;
+}
+
+body.workspace-site .btn--danger:hover {
+  background: rgba(200, 60, 60, 0.14);
+  border-color: rgba(200, 60, 60, 0.75);
+}
+
+/* ── Dashboard filter checkbox label ──────────────────────── */
+
+body.workspace-site .dashboard-filter-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  color: var(--ll-text-on-dark, #e8dfc8);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+body.workspace-site .dashboard-filter-check input[type="checkbox"] {
+  accent-color: #d8a61e;
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
+}

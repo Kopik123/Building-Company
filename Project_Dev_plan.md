@@ -240,3 +240,24 @@
 - Applied `withValidation` (via `createValidatedHandler` from `route-helpers.js`) to all 11 standard validation handlers in `estimate-routes.js`, eliminating repeated 4-line validation boilerplate (same pattern already used in `quote-routes.js`).
 - Added `escapeSelector`, `syncReviewFilters` and `scrollToHistoryEntry` helpers to `runtime.js`; rewired `client-review.js` and `manager-review.js` to delegate to them, removing identical `updateSearchParams`/`applySelection` definitions and simplifying the duplicated `api` fallback in both files.
 - All validations passed: `node scripts/verify-generated.js` and `node --test tests/review-diff-browser.test.js` both green. CodeQL found 0 alerts.
+
+## 2026-04-01 (system logs panel for admin)
+
+- Added `models/SystemLog.js` Sequelize model for `system_logs` table with categories: site, database, user_action, visit, error.
+- Added migration `202604010001-system-logs.js` to create `system_logs` with indexes on category, level, and createdAt.
+- Added `utils/logger.js` with `requestLogger()` middleware, `logError`, `logVisit`, `logUserAction`, `logDbEvent` helpers.
+- Registered `requestLogger()` in `app.js` — logs HTML page GETs as `visit` entries; logs unhandled 5xx errors as `error` entries.
+- Created `routes/manager/log-routes.js` — admin-only `GET /api/manager/logs` endpoint with category, level, pagination filters.
+- Registered log routes in `routes/manager.js`.
+- Added `#manager-logs-section` card to `manager-dashboard.html` — visible only to admins, with horizontal filter buttons (All / Site Activity / Database / User Actions / Visit History / Errors).
+- Added log panel logic to `manager-dashboard.js` — `loadLogs()`, `renderLogEntry()`, filter bar click handler, lazy-visible loading, refresh and load-more.
+- Added `.logs-filter-bar`, `.logs-panel`, `.logs-entry`, `.logs-entry--error` CSS to `styles/workspace.css`; error-level entries render in red.
+
+## 2026-04-01 (manager quote rejection)
+
+- Added `POST /api/manager/quotes/:id/reject` endpoint in `routes/manager/quote-routes.js`: sets `workflowStatus: 'rejected'`, `archivedAt`, `status: 'closed'`, stores revision history entry (`manager_rejected_quote`), and notifies the client (if linked) via `Notification`.
+- Updated `GET /api/manager/quotes` to exclude archived quotes by default (`archivedAt IS NULL`). Added `showArchived` query param to override this filter when managers want to review archived/rejected quotes.
+- Added "Show archived" checkbox to the quotes filter bar in `manager-dashboard.html`.
+- Added "Reject" button to each active quote card in `manager-dashboard.js` — only shown when `!quote.archivedAt && workflowStatus !== 'rejected' && workflowStatus !== 'archived'`. Shows a confirmation dialog and optional reason prompt before calling the reject endpoint.
+- Wired `showArchived` state through `applyQuotesFiltersFromUI`, `loadQuotes`, and the quotes query state.
+- Added `.btn--danger` and `.dashboard-filter-check` CSS to `styles/workspace.css`.

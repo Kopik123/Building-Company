@@ -125,3 +125,8 @@
 - [x] Apply `withValidation` to all standard handlers in `estimate-routes.js` (11 handlers) — eliminates repeated validation boilerplate
 - [x] Add `escapeSelector`, `syncReviewFilters`, `scrollToHistoryEntry` to `runtime.js` — removes identical helper definitions from `client-review.js` and `manager-review.js`
 - [x] Simplify duplicated `api` fallback in both review files
+
+- [ ] Validate system logs panel after deployment: confirm `system_logs` table is created by migration, page-visit entries appear under "Visit History", error entries appear under "Errors" in red, admin-only access enforced.
+- [ ] Consider adding `logUserAction` calls to key manager/auth routes (login, quote accept, estimate send) for richer user-action log coverage.
+
+- [ ] Validate manager quote rejection after deployment: confirm rejected quotes are excluded from the default list, "Show archived" checkbox reveals them, client notification is sent, and revision history entry is recorded.

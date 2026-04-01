@@ -17,6 +17,7 @@ const Estimate = require('./Estimate');
 const EstimateLine = require('./EstimateLine');
 const SessionRefreshToken = require('./SessionRefreshToken');
 const DevicePushToken = require('./DevicePushToken');
+const SystemLog = require('./SystemLog');
 
 User.hasMany(Quote, { foreignKey: 'clientId', as: 'quotes' });
 Quote.belongsTo(User, { foreignKey: 'clientId', as: 'client' });
@@ -194,5 +195,6 @@ module.exports = {
   EstimateLine,
   SessionRefreshToken,
   DevicePushToken,
+  SystemLog,
   ensureIndexes
 };

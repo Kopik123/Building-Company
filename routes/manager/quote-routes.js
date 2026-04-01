@@ -497,6 +497,54 @@ module.exports = function createQuoteRoutes({
     })
   );
 
+  router.post(
+    '/quotes/:id/reject',
+    [
+      ...managerGuard,
+      param('id').isUUID(),
+      body('reason').optional({ nullable: true }).trim().isLength({ max: 2000 })
+    ],
+    withValidation(async (req, res) => {
+      const quote = await findByPkOrRespond(Quote, req.params.id, res, {
+        message: 'Quote not found',
+        include: [{ model: User, as: 'client', attributes: ['id', 'name', 'email'] }]
+      });
+      if (!quote) return;
+
+      if (quote.archivedAt) {
+        return res.status(409).json({ error: 'Quote is already archived' });
+      }
+
+      const reason = String(req.body.reason || '').trim() || null;
+      const rejectPayload = buildQuoteRevisionPayload({
+        quote,
+        actor: req.user,
+        changeType: 'manager_rejected_quote',
+        changedFields: ['workflowStatus', 'archivedAt', 'status'],
+        updates: {
+          workflowStatus: 'rejected',
+          archivedAt: new Date(),
+          status: 'closed'
+        },
+        ...(reason ? { notes: reason } : {})
+      });
+      await quote.update(rejectPayload);
+
+      if (quote.clientId) {
+        await notifyClient(quote, {
+          type: 'quote_rejected',
+          title: 'Your quote enquiry has been closed',
+          body: reason
+            ? `Your quote has been reviewed and closed by our team. Reason: ${reason}`
+            : 'Your quote has been reviewed and closed by our team.',
+          data: { quoteId: quote.id, reason }
+        });
+      }
+
+      return res.json({ quote });
+    })
+  );
+
   router.get(
     '/quotes/:id/revisions',
     [...managerGuard, param('id').isUUID()],
@@ -519,6 +567,7 @@ module.exports = function createQuoteRoutes({
       query('projectType').optional().isIn(['bathroom', 'kitchen', 'interior', 'tiling', 'extension', 'joinery', 'rendering', 'decorating', 'other']),
       query('workflowStatus').optional().isIn(QUOTE_WORKFLOW_STATUSES),
       query('clientDecisionStatus').optional().isIn(QUOTE_CLIENT_DECISION_STATUSES),
+      query('showArchived').optional().isBoolean().toBoolean(),
       query('q').optional().trim().isLength({ min: 1, max: 255 }),
       query('page').optional().isInt({ min: 1 }).toInt(),
       query('pageSize').optional().isInt({ min: 1, max: MAX_PAGE_SIZE }).toInt()
@@ -530,6 +579,12 @@ module.exports = function createQuoteRoutes({
       if (req.query.projectType) where.projectType = req.query.projectType;
       if (req.query.workflowStatus) where.workflowStatus = req.query.workflowStatus;
       if (req.query.clientDecisionStatus) where.clientDecisionStatus = req.query.clientDecisionStatus;
+
+      const showArchived = req.query.showArchived === true;
+      if (!showArchived) {
+        where.archivedAt = null;
+      }
+
       if (req.query.q) {
         const needle = `%${escapeLike(String(req.query.q || '').trim().toLowerCase())}%`;
         where[Op.or] = [

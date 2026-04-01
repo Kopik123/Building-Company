@@ -328,6 +328,10 @@
               <option value="responded">Responded</option>
               <option value="closed">Closed</option>
             </select>
+            <label class="dashboard-filter-check">
+              <input type="checkbox" id="quotes-filter-show-archived" />
+              Show archived
+            </label>
             <select id="quotes-page-size">
               <option value="10">10 / page</option>
               <option value="25" selected>25 / page</option>
@@ -725,6 +729,26 @@
             </div>
           </section>
         </div>
+
+        <section class="card surface-card surface-card--light" id="manager-logs-section" hidden>
+          <h2>System Logs</h2>
+          <div class="logs-filter-bar" role="group" aria-label="Log category filter">
+            <button class="logs-filter-btn logs-filter-btn--active" data-logs-filter="all" type="button">All</button>
+            <button class="logs-filter-btn" data-logs-filter="site" type="button">Site Activity</button>
+            <button class="logs-filter-btn" data-logs-filter="database" type="button">Database</button>
+            <button class="logs-filter-btn" data-logs-filter="user_action" type="button">User Actions</button>
+            <button class="logs-filter-btn" data-logs-filter="visit" type="button">Visit History</button>
+            <button class="logs-filter-btn" data-logs-filter="error" type="button">Errors</button>
+          </div>
+          <div id="manager-logs-list" class="logs-panel" aria-live="polite">
+            <p class="muted">Select a category or load logs.</p>
+          </div>
+          <div class="logs-footer">
+            <button class="btn btn-outline" id="logs-refresh-btn" type="button">Refresh</button>
+            <button class="btn btn-outline" id="logs-load-more-btn" type="button">Load more</button>
+            <p class="form-status" id="logs-status" aria-live="polite"></p>
+          </div>
+        </section>
       </div>
     </section>
   </main>

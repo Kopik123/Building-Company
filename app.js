@@ -16,6 +16,7 @@ const publicRoutes = require('./routes/public');
 const contactRoutes = require('./routes/contact');
 const legacyGalleryRoutes = require('./routes/gallery');
 const apiV2Routes = require('./api/v2');
+const { requestLogger, logError } = require('./utils/logger');
 
 const createRateLimiter = (windowMs, max) =>
   rateLimit({
@@ -94,6 +95,7 @@ const createApp = () => {
   app.use(compression());
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true }));
+  app.use(requestLogger());
 
   app.get('/healthz', (_req, res) => {
     res.setHeader('Cache-Control', 'no-store');
@@ -143,6 +145,11 @@ const createApp = () => {
     const statusCode = Number(error.statusCode) || 500;
     if (statusCode >= 500) {
       console.error('Unhandled error:', error);
+      logError(
+        error.message || 'Unhandled server error',
+        { stack: String(error.stack || '').slice(0, 1000), statusCode },
+        req
+      ).catch(() => {});
     }
 
     return res.status(statusCode).json({
