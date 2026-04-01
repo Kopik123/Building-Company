@@ -106,6 +106,14 @@
     managerGroupMessageStatus: document.getElementById('manager-group-message-status')
   };
 
+  const logsEl = {
+    section: document.getElementById('manager-logs-section'),
+    list: document.getElementById('manager-logs-list'),
+    refreshBtn: document.getElementById('logs-refresh-btn'),
+    loadMoreBtn: document.getElementById('logs-load-more-btn'),
+    status: document.getElementById('logs-status')
+  };
+
   if (Object.values(el).some((v) => !v)) return;
 
   const state = {
@@ -145,12 +153,16 @@
       staff: false,
       estimates: false,
       directThreads: false,
-      groupThreads: false
+      groupThreads: false,
+      logs: false
     },
     overviewLoaded: {
       directThreads: false,
       groupThreads: false
-    }
+    },
+    logsCategory: 'all',
+    logsPage: 1,
+    logsPagination: { total: 0, totalPages: 1 }
   };
   const USER_SEARCH_CACHE_TTL_MS = 30 * 1000;
   const userSearchCache = new Map();
@@ -545,6 +557,13 @@
         href: '#manager-project-chat',
         roles: ['employee', 'manager', 'admin'],
         meta: state.overviewLoaded.groupThreads ? `${state.groupThreads.length} threads` : 'Loading summary'
+      },
+      {
+        label: 'System Logs',
+        detail: 'Review site activity, database events, user actions, visit history and errors.',
+        href: '#manager-logs-section',
+        roles: ['admin'],
+        meta: 'Admin only'
       }
     ].filter((option) => option.roles.includes(role));
 
@@ -1701,6 +1720,73 @@
     state.staffQuery.q = String(el.staffFilterQ.value || '').trim();
   };
 
+  const renderLogEntry = (log) => {
+    const row = document.createElement('div');
+    const isError = log.level === 'error';
+    row.className = `logs-entry logs-entry--${log.category}${isError ? ' logs-entry--error' : ''}`;
+
+    const ts = document.createElement('span');
+    ts.className = 'logs-entry-ts';
+    ts.textContent = formatDateTime(log.createdAt) || log.createdAt || '';
+
+    const cat = document.createElement('span');
+    cat.className = 'logs-entry-cat';
+    cat.textContent = String(log.category || '').replace(/_/g, ' ');
+
+    const msg = document.createElement('span');
+    msg.className = 'logs-entry-msg';
+    msg.textContent = log.message || '';
+
+    const meta = [];
+    if (log.method && log.path) meta.push(`${log.method} ${log.path}`);
+    if (log.statusCode) meta.push(`HTTP ${log.statusCode}`);
+    if (log.ip) meta.push(`IP ${log.ip}`);
+    if (log.userId) meta.push(`user:${log.userId}`);
+
+    const metaEl = document.createElement('span');
+    metaEl.className = 'logs-entry-meta';
+    metaEl.textContent = meta.join(' | ');
+
+    row.appendChild(ts);
+    row.appendChild(cat);
+    row.appendChild(msg);
+    if (meta.length) row.appendChild(metaEl);
+    return row;
+  };
+
+  const loadLogs = async ({ append = false } = {}) => {
+    if (!logsEl.list) return;
+    if (!append) {
+      state.logsPage = 1;
+      logsEl.list.innerHTML = '<p class="muted">Loading logs...</p>';
+    }
+    setStatus(logsEl.status, 'Loading...');
+    try {
+      const params = new URLSearchParams({ page: state.logsPage, pageSize: 100 });
+      if (state.logsCategory && state.logsCategory !== 'all') params.set('category', state.logsCategory);
+      const payload = await api(`/api/manager/logs?${params.toString()}`);
+      const logs = Array.isArray(payload.logs) ? payload.logs : [];
+      state.logsPagination = payload.pagination || { total: 0, totalPages: 1 };
+      if (!append) logsEl.list.innerHTML = '';
+      if (!logs.length && !append) {
+        logsEl.list.innerHTML = '<p class="muted">No log entries found.</p>';
+        setStatus(logsEl.status, '');
+        if (logsEl.loadMoreBtn) logsEl.loadMoreBtn.hidden = true;
+        return;
+      }
+      const frag = document.createDocumentFragment();
+      logs.forEach((log) => frag.appendChild(renderLogEntry(log)));
+      logsEl.list.appendChild(frag);
+      setStatus(logsEl.status, `${state.logsPagination.total || logs.length} total entries.`);
+      if (logsEl.loadMoreBtn) {
+        logsEl.loadMoreBtn.hidden = state.logsPage >= state.logsPagination.totalPages;
+      }
+    } catch (error) {
+      if (!append) logsEl.list.innerHTML = '';
+      setStatus(logsEl.status, error.message || 'Failed to load logs.', 'error');
+    }
+  };
+
   const setupLazySections = (role) => {
     const tasks = [
       {
@@ -1792,8 +1878,18 @@
           state.lazyLoaded.groupThreads = true;
           await loadGroupThreads();
         }
+      },
+      {
+        key: 'logs',
+        roles: ['admin'],
+        target: logsEl.section,
+        load: async () => {
+          if (state.lazyLoaded.logs) return;
+          state.lazyLoaded.logs = true;
+          await loadLogs();
+        }
       }
-    ].filter((task) => task.target);
+    ].filter((task) => task.target && (!task.roles || task.roles.includes(role)));
 
     (runtime.onceVisible || ((items) => {
       items.forEach((item) => item.load());
@@ -1826,6 +1922,9 @@
       if (!['manager', 'admin'].includes(role)) {
         el.seedBtn.disabled = true;
         el.seedBtn.title = 'Only manager/admin can run seed';
+      }
+      if (role === 'admin' && logsEl.section) {
+        logsEl.section.hidden = false;
       }
       await loadProjects();
       const mailboxResults = await Promise.allSettled([
@@ -2288,6 +2387,32 @@
   el.materialsNext.addEventListener('click', () => { if (state.materialsQuery.page >= Number(state.materialsPagination.totalPages || 1)) return; state.materialsQuery.page += 1; loadMaterials().catch((e) => globalThis.alert(e.message || 'Could not load materials')); });
   el.clientsRefresh.addEventListener('click', () => { applyClientsFiltersFromUI(); loadClients().catch((e) => globalThis.alert(e.message || 'Could not load clients')); });
   el.staffRefresh.addEventListener('click', () => { applyStaffFiltersFromUI(); loadStaff().catch((e) => globalThis.alert(e.message || 'Could not load staff')); });
+
+  if (logsEl.refreshBtn) {
+    logsEl.refreshBtn.addEventListener('click', () => {
+      loadLogs().catch((e) => setStatus(logsEl.status, e.message || 'Could not load logs.', 'error'));
+    });
+  }
+
+  if (logsEl.loadMoreBtn) {
+    logsEl.loadMoreBtn.addEventListener('click', () => {
+      state.logsPage += 1;
+      loadLogs({ append: true }).catch((e) => setStatus(logsEl.status, e.message || 'Could not load logs.', 'error'));
+    });
+  }
+
+  if (logsEl.section) {
+    logsEl.section.addEventListener('click', (event) => {
+      const btn = event.target.closest('[data-logs-filter]');
+      if (!btn) return;
+      logsEl.section.querySelectorAll('[data-logs-filter]').forEach((b) => b.classList.remove('logs-filter-btn--active'));
+      btn.classList.add('logs-filter-btn--active');
+      state.logsCategory = String(btn.dataset.logsFilter || 'all');
+      state.logsPage = 1;
+      loadLogs().catch((e) => setStatus(logsEl.status, e.message || 'Could not load logs.', 'error'));
+    });
+  }
+
   el.logout.addEventListener('click', () => { clearSession(); globalThis.location.href = '/auth.html'; });
 
   bootstrap();

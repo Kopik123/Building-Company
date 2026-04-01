@@ -34,6 +34,7 @@ const createCatalogRoutes = require('./manager/catalog-routes');
 const createEstimateRoutes = require('./manager/estimate-routes');
 const createQuoteRoutes = require('./manager/quote-routes');
 const createProjectRoutes = require('./manager/project-routes');
+const logRoutes = require('./manager/log-routes');
 
 
 const router = express.Router();
@@ -581,5 +582,7 @@ router.use(createProjectRoutes({
   upload,
   clearGalleryCache
 }));
+
+router.use(logRoutes);
 
 module.exports = router;
