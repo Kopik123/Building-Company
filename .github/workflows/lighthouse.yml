@@ -39,7 +39,7 @@ jobs:
           BOOTSTRAP_ADMIN_KEY: lighthouse-ci-bootstrap-key
           BOOTSTRAP_ADMIN_EMAIL: ci@example.com
           BOOTSTRAP_ADMIN_PASSWORD: CiPassword1!
-          DATABASE_URL: "sqlite://:memory:"
+          DATABASE_URL: sqlite://:memory:
 
       - name: Wait for server
         run: |
