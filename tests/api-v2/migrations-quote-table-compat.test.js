@@ -105,6 +105,54 @@ test('baseline hardening migration skips absent tables for unknown-table errors 
   assert.deepEqual(queries, ['CREATE EXTENSION IF NOT EXISTS pg_trgm']);
 });
 
+test('baseline hardening migration skips pg_trgm work on sqlite while keeping standard indexes', async () => {
+  const queries = [];
+  const addedIndexes = [];
+  const queryInterface = {
+    sequelize: {
+      getDialect: () => 'sqlite',
+      async query(sql) {
+        queries.push(sql);
+      }
+    },
+    async describeTable(tableName) {
+      if (tableName === 'Quotes') {
+        return {
+          assignedManagerId: {},
+          guestEmail: {},
+          guestName: {}
+        };
+      }
+
+      if (tableName === 'Users') {
+        return {
+          email: {},
+          name: {}
+        };
+      }
+
+      throw new Error(`relation "${tableName}" does not exist`);
+    },
+    async showIndex() {
+      return [];
+    },
+    async addIndex(tableName, fields, options) {
+      addedIndexes.push({ tableName, fields, options });
+    },
+    async addColumn() {}
+  };
+
+  await assert.doesNotReject(() => baselineHardening.up(queryInterface, { UUID: 'UUID' }));
+  assert.deepEqual(queries, []);
+  assert.deepEqual(addedIndexes, [
+    {
+      tableName: 'Quotes',
+      fields: ['assignedManagerId'],
+      options: { name: 'quotes_assigned_manager_idx' }
+    }
+  ]);
+});
+
 test('performance search migration works when only queryGenerator.quoteTable exists', async () => {
   const { queryInterface, queries } = createQueryInterfaceStub({
     Projects: {
@@ -138,6 +186,28 @@ test('performance search migration works when only queryGenerator.quoteTable exi
     queries.some((sql) => sql.includes('"materials_supplier_trgm_idx" ON "Materials" USING gin')),
     true
   );
+});
+
+test('performance search migration skips pg_trgm work on sqlite', async () => {
+  const queries = [];
+  const queryInterface = {
+    queryGenerator: {
+      quoteTable: (tableName) => `"${tableName}"`,
+      quoteIdentifier: (value) => `"${value}"`
+    },
+    sequelize: {
+      getDialect: () => 'sqlite',
+      async query(sql) {
+        queries.push(sql);
+      }
+    },
+    async describeTable() {
+      throw new Error('relation "Projects" does not exist');
+    }
+  };
+
+  await assert.doesNotReject(() => performanceSearch.up(queryInterface));
+  assert.deepEqual(queries, []);
 });
 
 test('session/device hardening migration creates missing tables when Sequelize says no description found', async () => {

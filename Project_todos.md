@@ -54,6 +54,7 @@
 
 ## Completed
 
+- [x] Fixed the Lighthouse CI SQLite startup path: normalized SQLite `DATABASE_URL` handling in `config/database.js`, treated Sequelize's `No description found` table message as a missing-table case, skipped Postgres-only `pg_trgm` work on SQLite, made the estimates migration timestamp defaults cross-dialect, and excluded helper files from the Umzug migration glob.
 - [x] Replaced the remaining migration regex hotspots with bounded string parsing and tightened dynamic trigram-index SQL to use validated identifiers only.
 - [x] Removed the `Math.random()`-based mobile poller id generation and switched the production Docker image to a non-root runtime user with tighter Docker ignore rules for local/sensitive files.
 - [x] Added migration regression coverage for `unknown table` and `no such table` error handling before re-running the generated-page and API suites.

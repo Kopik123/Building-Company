@@ -1,5 +1,15 @@
 # Project Dev Plan
 
+## 2026-04-02 (Lighthouse CI SQLite startup fix)
+
+- Reproduced the Lighthouse CI startup failure locally and confirmed the first blocker was `migrations/202603080000-initial-schema-baseline.js`, where SQLite `describeTable()` throws `No description found for "Users" table` on an empty database before `ensureTable()` can create the table.
+- Fixed that baseline migration to treat Sequelize SQLite's `No description found ...` message as a normal missing-table case.
+- Updated `config/database.js` so `DATABASE_URL` values like `sqlite://:memory:` are normalized into a real Sequelize SQLite connection (`dialect: 'sqlite', storage: ':memory:'`) instead of always forcing the Postgres dialect.
+- Hardened the Postgres-only trigram migrations (`202603080001-production-baseline-hardening.js` and `202603090000-performance-search-trgm-indexes.js`) so `pg_trgm` extension/index SQL is skipped on SQLite while normal non-trigram indexes still run where relevant.
+- Replaced the SQLite-incompatible `Sequelize.fn('NOW')` defaults in `migrations/202603100001-estimates.js` with `CURRENT_TIMESTAMP`, so the estimates tables can be created during the Lighthouse boot path.
+- Narrowed the Umzug glob in `db/migrator.js` to timestamped migration files only, so `_migration-helpers.js` is no longer treated as an executable migration.
+- Updated `.github/workflows/lighthouse.yml` to use `DATABASE_URL=sqlite://:memory:` for the Lighthouse job, recorded the fix in `Project_todos.md`, and re-ran focused migration/config tests, the full migration chain, `npm run test:ci`, and the `node server.js` + `/healthz` startup path successfully.
+
 ## 2026-04-01 (project analysis, bug fixes, security hardening, optimization)
 
 - Analysed the full project for logic errors, security vulnerabilities and code optimisation opportunities.

@@ -47,7 +47,16 @@ const quoteTable = (queryInterface, tableName) => {
   throw new TypeError('No quoteTable function available on queryInterface');
 };
 
+const supportsTrigramIndexes = (queryInterface) => {
+  const dialect = typeof queryInterface?.sequelize?.getDialect === 'function'
+    ? queryInterface.sequelize.getDialect()
+    : 'postgres';
+  return dialect === 'postgres';
+};
+
 const addTrigramIndexIfPossible = async (queryInterface, tableName, tableDefinition, columnName, indexName) => {
+  if (!supportsTrigramIndexes(queryInterface)) return;
+
   const resolvedColumn = resolveColumnName(tableDefinition, columnName);
   if (!resolvedColumn) return;
 
@@ -61,6 +70,10 @@ const addTrigramIndexIfPossible = async (queryInterface, tableName, tableDefinit
 
 module.exports = {
   up: async (queryInterface) => {
+    if (!supportsTrigramIndexes(queryInterface)) {
+      return;
+    }
+
     await queryInterface.sequelize.query('CREATE EXTENSION IF NOT EXISTS pg_trgm');
 
     const projectsTable = await findExistingTable(queryInterface, ['Projects', 'projects']);
@@ -113,6 +126,10 @@ module.exports = {
   },
 
   down: async (queryInterface) => {
+    if (!supportsTrigramIndexes(queryInterface)) {
+      return;
+    }
+
     await queryInterface.sequelize.query('DROP INDEX IF EXISTS projects_title_trgm_idx');
     await queryInterface.sequelize.query('DROP INDEX IF EXISTS projects_location_trgm_idx');
     await queryInterface.sequelize.query('DROP INDEX IF EXISTS projects_description_trgm_idx');
