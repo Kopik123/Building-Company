@@ -1,0 +1,83 @@
+name: Lighthouse CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: read
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies (including devDeps for lhci)
+        run: npm ci
+
+      - name: Start server
+        run: |
+          node server.js &
+          echo $! > /tmp/server.pid
+        env:
+          NODE_ENV: production
+          PORT: 8080
+          JWT_SECRET: lighthouse-ci-secret-not-for-prod
+          SESSION_SECRET: lighthouse-ci-session-not-for-prod
+          BOOTSTRAP_ADMIN_EMAIL: ci@example.com
+          BOOTSTRAP_ADMIN_PASSWORD: CiPassword1!
+          DATABASE_URL: "sqlite::memory:"
+
+      - name: Wait for server
+        run: |
+          for i in $(seq 1 15); do
+            curl -sf http://localhost:8080/healthz && exit 0
+            sleep 2
+          done
+          echo "Server did not start in time" && exit 1
+
+      - name: Install Lighthouse CI
+        run: npm install -g @lhci/cli
+
+      - name: Run Lighthouse CI
+        run: |
+          lhci autorun \
+            --collect.url=http://localhost:8080/ \
+            --collect.url=http://localhost:8080/about.html \
+            --collect.url=http://localhost:8080/gallery.html \
+            --collect.url=http://localhost:8080/quote.html \
+            --collect.url=http://localhost:8080/contact.html \
+            --assert.preset=lighthouse:no-pwa \
+            --assert.assertions.categories:performance=warn \
+            --assert.assertions.categories:accessibility=warn \
+            --assert.assertions.categories:best-practices=warn \
+            --assert.assertions.categories:seo=warn \
+            --upload.target=temporary-public-storage
+        continue-on-error: true
+
+      - name: Stop server
+        if: always()
+        run: |
+          if [ -f /tmp/server.pid ]; then
+            kill "$(cat /tmp/server.pid)" 2>/dev/null || true
+          fi
+
+      - name: Upload Lighthouse results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-results
+          path: .lighthouseci/
+          retention-days: 14

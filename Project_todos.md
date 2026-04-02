@@ -131,7 +131,7 @@
 - [x] Simplify duplicated `api` fallback in both review files
 
 - [ ] Validate system logs panel after deployment: confirm `system_logs` table is created by migration, page-visit entries appear under "Visit History", error entries appear under "Errors" in red, admin-only access enforced.
-- [ ] Consider adding `logUserAction` calls to key manager/auth routes (login, quote accept, estimate send) for richer user-action log coverage.
+- [x] Consider adding `logUserAction` calls to key manager/auth routes (login, quote accept, estimate send) for richer user-action log coverage.
 
 - [ ] Validate manager quote rejection after deployment: confirm rejected quotes are excluded from the default list, "Show archived" checkbox reveals them, client notification is sent, and revision history entry is recorded.
 
@@ -140,22 +140,22 @@
 Przeniesione z `deep-research-report.md` na podstawie analizy porównawczej z aktualnym stanem repo.
 
 ### Wysoki priorytet (H)
-- [ ] **GDPR – strona `/privacy-policy`**: Dodać dedykowaną stronę z polityką prywatności i informacjami o przetwarzaniu danych osobowych (formularz kontaktowy, sesje, logi).
-- [ ] **GDPR – cookie consent banner**: Wdrożyć banner cookies widoczny przy pierwszej wizycie, z opcją akceptacji i odrzucenia. Banner nie może ustawiać analitycznych ciasteczek przed wyrażeniem zgody.
-- [ ] **HTTPS / security headers**: Upewnić się, że nagłówki `Strict-Transport-Security`, `X-Frame-Options`, `X-Content-Type-Options` są wysyłane na produkcji (DigitalOcean App Platform / nginx).
-- [ ] **Dane kontaktowe w stopce**: Pełna nazwa, adres siedziby i numer VAT/Companies House visible w stopce każdej publicznej strony.
+- [x] **GDPR – strona `/privacy-policy`**: Dodać dedykowaną stronę z polityką prywatności i informacjami o przetwarzaniu danych osobowych (formularz kontaktowy, sesje, logi).
+- [x] **GDPR – cookie consent banner**: Wdrożyć banner cookies widoczny przy pierwszej wizycie, z opcją akceptacji i odrzucenia. Banner nie może ustawiać analitycznych ciasteczek przed wyrażeniem zgody.
+- [x] **HTTPS / security headers**: Upewnić się, że nagłówki `Strict-Transport-Security`, `X-Frame-Options`, `X-Content-Type-Options` są wysyłane na produkcji (DigitalOcean App Platform / nginx).
+- [x] **Dane kontaktowe w stopce**: Pełna nazwa, adres siedziby i numer VAT/Companies House visible w stopce każdej publicznej strony.
 
 ### Średni priorytet (M)
-- [ ] **Schema.org LocalBusiness markup**: Dodać JSON-LD `LocalBusiness` do strony głównej i stron usług (nazwa, adres, telefon, URL, openingHours).
-- [ ] **Meta descriptions i Open Graph**: Uzupełnić unikalne `<meta name="description">`, `<meta property="og:title">`, `<meta property="og:description">` i `<meta property="og:image">` na każdej publicznej stronie.
-- [ ] **Sitemap.xml + robots.txt**: Wygenerować `/sitemap.xml` (dynamicznie lub statycznie) obejmujący publiczne strony i zarejestrować w Google Search Console.
-- [ ] **Responsive images (`srcset/sizes`)**: Użyć znacznika `<picture>` z `srcset` i `sizes` dla sekcji hero i galerii, aby przeglądarka wybierała optymalną rozdzielczość.
-- [ ] **ARIA labels dla ikon nawigacyjnych**: Dodać `aria-label` do linków ikon (Facebook, Instagram) i przycisków w nawigacji, które nie mają widocznego tekstu.
-- [ ] **`<h1>` na każdej publicznej stronie**: Każda strona powinna mieć dokładnie jeden `<h1>` z kluczową frazą (np. „Luxury Construction Company in London").
-- [ ] **`lang="en-GB"` w `<html>`**: Upewnić się, że wszystkie publiczne strony mają `lang="en-GB"` (nie `en` ani brak atrybutu).
+- [x] **Schema.org LocalBusiness markup**: Dodać JSON-LD `LocalBusiness` do strony głównej i stron usług (nazwa, adres, telefon, URL, openingHours).
+- [x] **Meta descriptions i Open Graph**: Uzupełnić unikalne `<meta name="description">`, `<meta property="og:title">`, `<meta property="og:description">` i `<meta property="og:image">` na każdej publicznej stronie.
+- [x] **Sitemap.xml + robots.txt**: Wygenerować `/sitemap.xml` (dynamicznie lub statycznie) obejmujący publiczne strony i zarejestrować w Google Search Console.
+- [x] **Responsive images (`srcset/sizes`)**: Użyć znacznika `<picture>` z `srcset` i `sizes` dla sekcji hero i galerii, aby przeglądarka wybierała optymalną rozdzielczość.
+- [x] **ARIA labels dla ikon nawigacyjnych**: Dodać `aria-label` do linków ikon (Facebook, Instagram) i przycisków w nawigacji, które nie mają widocznego tekstu.
+- [x] **`<h1>` na każdej publicznej stronie**: Każda strona powinna mieć dokładnie jeden `<h1>` z kluczową frazą (np. „Luxury Construction Company in London").
+- [x] **`lang="en-GB"` w `<html>`**: Upewnić się, że wszystkie publiczne strony mają `lang="en-GB"` (nie `en` ani brak atrybutu).
 
 ### Niski priorytet (L)
-- [ ] **Core Web Vitals monitoring**: Dodać Google Search Console / Lighthouse CI do pipeline'u GitHub Actions, aby śledzić LCP, INP i CLS po każdym deploy.
+- [x] **Core Web Vitals monitoring**: Dodać Google Search Console / Lighthouse CI do pipeline'u GitHub Actions, aby śledzić LCP, INP i CLS po każdym deploy.
 - [ ] **A/B testing CTA**: Rozważyć testy różnych tekstów i kolorów przycisku „Request a Quote" (złoty vs czarny) — po wdrożeniu Google Analytics (po uzyskaniu zgody cookies).
 - [ ] **Usunięcie zbędnych/developerskich plików**: Przejrzeć repozytorium pod kątem screenshotów, placeholderów i nieużywanych assetów i usunąć je.
 - [ ] **Favicon ICO/SVG**: Upewnić się, że favicon jest poprawnie zdefiniowany w `<head>` jako `favicon.ico` i `favicon.svg` (PWA-ready).

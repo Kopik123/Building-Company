@@ -7,6 +7,7 @@ const { body, validationResult } = require('express-validator');
 const { User } = require('../models');
 const { auth, roleCheck } = require('../middleware/auth');
 const asyncHandler = require('../utils/asyncHandler');
+const { logUserAction } = require('../utils/logger');
 
 const router = express.Router();
 
@@ -81,6 +82,7 @@ router.post(
 
     await user.update({ lastLogin: new Date() });
     const token = signToken(user.id);
+    logUserAction(user.id, 'user_login', { email: user.email, role: user.role }, req).catch(() => {});
     return res.json({ user, token });
   })
 );

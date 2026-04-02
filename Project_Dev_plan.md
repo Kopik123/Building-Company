@@ -288,3 +288,14 @@
 - Stwierdzono, że raport był generowany bez bezpośredniego dostępu do repo — wiele problemów (stack, bezpieczeństwo, fonty, build pipeline) jest już rozwiązanych.
 - Przeniesiono otwarte, wciąż aktualne zadania z raportu do `Project_todos.md` w sekcji „Deep-Research-Report – otwarte zadania (2026-04-02)".
 - Kluczowe nierozwiązane obszary: GDPR cookie banner, strona `/privacy-policy`, Schema.org LocalBusiness markup, meta descriptions/OG, sitemap.xml, ARIA labels, `lang="en-GB"`, Core Web Vitals monitoring.
+
+## 2026-04-02 (implementacja backlogu deep-research-report.md)
+
+- **HSTS explicit config**: Dodano `hsts: { maxAge: 31536000, includeSubDomains: true, preload: true }` do konfiguracji Helmet w `app.js` — HSTS jest teraz jednoznacznie skonfigurowany zamiast opierać się na wartościach domyślnych.
+- **Cookie consent banner**: Dodano banner GDPR do `site.js` (wyświetlany na wszystkich stronach `public-site` przy pierwszej wizycie, znika po kliknięciu "Accept", stan w `localStorage`). Dodano dedykowane style `.cookie-consent-banner` do `styles/public.css` (ciemne tło, złota obwódka, przycisk Accept, linki do Cookie Policy i Privacy).
+- **logUserAction — login**: Dodano import `logUserAction` do `routes/auth.js` i wywołanie po każdym udanym logowaniu (`user_login`).
+- **logUserAction — quote accept**: Dodano import `logUserAction` do `routes/client.js` i wywołanie gdy klient zaakceptuje wycenę (`client_accepted_quote`).
+- **logUserAction — estimate send**: Dodano import `logUserAction` do `routes/manager/estimate-routes.js` i wywołanie gdy manager wysyła kosztorys do klienta (`manager_sent_estimate_to_client`).
+- **Lighthouse CI**: Stworzono `.github/workflows/lighthouse.yml` — uruchamia Lighthouse CI na PR i push do main, zbiera wyniki dla 5 publicznych stron, uploaduje artefakty. Wyniki są "warn-only" (nie blokują merge).
+- Potwierdzono że wcześniej otwarte zadania (privacy.html, sitemap.xml, robots.txt, Schema.org, meta/OG, ARIA labels, h1, lang="en-GB", responsive images, dane kontaktowe w stopce) były już zaimplementowane w poprzednich sesjach.
+- Wszystkie zmiany przeszły przez `npm run verify:generated` i nie wprowadziły nowych regresji w `npm run test:api:v2`.

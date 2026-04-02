@@ -11,6 +11,7 @@ const {
 const { generateEstimatePdfBuffer } = require('../../utils/estimatePdf');
 const { buildSafeSlug } = require('../../utils/safeSlug');
 const { createValidatedHandler, findByPkOrRespond } = require('./route-helpers');
+const { logUserAction } = require('../../utils/logger');
 
 const UPLOADS_DIR = path.join(__dirname, '..', '..', 'uploads');
 const buildEstimatePdfFilename = (estimate) => {
@@ -480,6 +481,7 @@ module.exports = function createEstimateRoutes({
       });
 
       const detail = await loadEstimateDetail(estimate.id);
+      logUserAction(req.user.id, 'manager_sent_estimate_to_client', { estimateId: estimate.id, quoteId: quote.id }, req).catch(() => {});
       return res.status(201).json({ estimate: detail, quote });
     })
   );

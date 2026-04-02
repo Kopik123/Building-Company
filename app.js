@@ -77,6 +77,11 @@ const createApp = () => {
         objectSrc: ["'none'"],
         frameAncestors: ["'none'"]
       }
+    },
+    hsts: {
+      maxAge: 31536000,
+      includeSubDomains: true,
+      preload: true
     }
   }));
 
