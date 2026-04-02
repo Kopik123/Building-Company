@@ -134,3 +134,28 @@
 - [ ] Consider adding `logUserAction` calls to key manager/auth routes (login, quote accept, estimate send) for richer user-action log coverage.
 
 - [ ] Validate manager quote rejection after deployment: confirm rejected quotes are excluded from the default list, "Show archived" checkbox reveals them, client notification is sent, and revision history entry is recorded.
+
+## Deep-Research-Report – otwarte zadania (2026-04-02)
+
+Przeniesione z `deep-research-report.md` na podstawie analizy porównawczej z aktualnym stanem repo.
+
+### Wysoki priorytet (H)
+- [ ] **GDPR – strona `/privacy-policy`**: Dodać dedykowaną stronę z polityką prywatności i informacjami o przetwarzaniu danych osobowych (formularz kontaktowy, sesje, logi).
+- [ ] **GDPR – cookie consent banner**: Wdrożyć banner cookies widoczny przy pierwszej wizycie, z opcją akceptacji i odrzucenia. Banner nie może ustawiać analitycznych ciasteczek przed wyrażeniem zgody.
+- [ ] **HTTPS / security headers**: Upewnić się, że nagłówki `Strict-Transport-Security`, `X-Frame-Options`, `X-Content-Type-Options` są wysyłane na produkcji (DigitalOcean App Platform / nginx).
+- [ ] **Dane kontaktowe w stopce**: Pełna nazwa, adres siedziby i numer VAT/Companies House visible w stopce każdej publicznej strony.
+
+### Średni priorytet (M)
+- [ ] **Schema.org LocalBusiness markup**: Dodać JSON-LD `LocalBusiness` do strony głównej i stron usług (nazwa, adres, telefon, URL, openingHours).
+- [ ] **Meta descriptions i Open Graph**: Uzupełnić unikalne `<meta name="description">`, `<meta property="og:title">`, `<meta property="og:description">` i `<meta property="og:image">` na każdej publicznej stronie.
+- [ ] **Sitemap.xml + robots.txt**: Wygenerować `/sitemap.xml` (dynamicznie lub statycznie) obejmujący publiczne strony i zarejestrować w Google Search Console.
+- [ ] **Responsive images (`srcset/sizes`)**: Użyć znacznika `<picture>` z `srcset` i `sizes` dla sekcji hero i galerii, aby przeglądarka wybierała optymalną rozdzielczość.
+- [ ] **ARIA labels dla ikon nawigacyjnych**: Dodać `aria-label` do linków ikon (Facebook, Instagram) i przycisków w nawigacji, które nie mają widocznego tekstu.
+- [ ] **`<h1>` na każdej publicznej stronie**: Każda strona powinna mieć dokładnie jeden `<h1>` z kluczową frazą (np. „Luxury Construction Company in London").
+- [ ] **`lang="en-GB"` w `<html>`**: Upewnić się, że wszystkie publiczne strony mają `lang="en-GB"` (nie `en` ani brak atrybutu).
+
+### Niski priorytet (L)
+- [ ] **Core Web Vitals monitoring**: Dodać Google Search Console / Lighthouse CI do pipeline'u GitHub Actions, aby śledzić LCP, INP i CLS po każdym deploy.
+- [ ] **A/B testing CTA**: Rozważyć testy różnych tekstów i kolorów przycisku „Request a Quote" (złoty vs czarny) — po wdrożeniu Google Analytics (po uzyskaniu zgody cookies).
+- [ ] **Usunięcie zbędnych/developerskich plików**: Przejrzeć repozytorium pod kątem screenshotów, placeholderów i nieużywanych assetów i usunąć je.
+- [ ] **Favicon ICO/SVG**: Upewnić się, że favicon jest poprawnie zdefiniowany w `<head>` jako `favicon.ico` i `favicon.svg` (PWA-ready).

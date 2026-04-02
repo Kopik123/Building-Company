@@ -281,3 +281,10 @@
 - Added "Reject" button to each active quote card in `manager-dashboard.js` — only shown when `!quote.archivedAt && workflowStatus !== 'rejected' && workflowStatus !== 'archived'`. Shows a confirmation dialog and optional reason prompt before calling the reject endpoint.
 - Wired `showArchived` state through `applyQuotesFiltersFromUI`, `loadQuotes`, and the quotes query state.
 - Added `.btn--danger` and `.dashboard-filter-check` CSS to `styles/workspace.css`.
+
+## 2026-04-02 (analiza deep-research-report.md → backlog)
+
+- Przeanalizowano plik `deep-research-report.md` pod kątem aktualności w stosunku do obecnego stanu repozytorium.
+- Stwierdzono, że raport był generowany bez bezpośredniego dostępu do repo — wiele problemów (stack, bezpieczeństwo, fonty, build pipeline) jest już rozwiązanych.
+- Przeniesiono otwarte, wciąż aktualne zadania z raportu do `Project_todos.md` w sekcji „Deep-Research-Report – otwarte zadania (2026-04-02)".
+- Kluczowe nierozwiązane obszary: GDPR cookie banner, strona `/privacy-policy`, Schema.org LocalBusiness markup, meta descriptions/OG, sitemap.xml, ARIA labels, `lang="en-GB"`, Core Web Vitals monitoring.
