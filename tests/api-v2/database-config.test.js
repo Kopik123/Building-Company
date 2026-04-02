@@ -36,7 +36,7 @@ const loadDatabaseConfig = (databaseUrl) => {
   return calls;
 };
 
-test('database config maps sqlite memory URLs to sqlite storage config', () => {
+test('database config maps SQLite memory URLs to SQLite storage config', () => {
   const calls = loadDatabaseConfig('sqlite://:memory:');
   assert.equal(calls.length, 1);
   assert.deepEqual(calls[0], [{

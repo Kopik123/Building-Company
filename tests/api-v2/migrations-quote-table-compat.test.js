@@ -105,7 +105,7 @@ test('baseline hardening migration skips absent tables for unknown-table errors 
   assert.deepEqual(queries, ['CREATE EXTENSION IF NOT EXISTS pg_trgm']);
 });
 
-test('baseline hardening migration skips pg_trgm work on sqlite while keeping standard indexes', async () => {
+test('baseline hardening migration skips pg_trgm work on SQLite while keeping standard indexes', async () => {
   const queries = [];
   const addedIndexes = [];
   const queryInterface = {
@@ -188,7 +188,7 @@ test('performance search migration works when only queryGenerator.quoteTable exi
   );
 });
 
-test('performance search migration skips pg_trgm work on sqlite', async () => {
+test('performance search migration skips pg_trgm work on SQLite', async () => {
   const queries = [];
   const queryInterface = {
     queryGenerator: {
