@@ -36,6 +36,7 @@ jobs:
           PORT: 8080
           JWT_SECRET: lighthouse-ci-secret-not-for-prod
           SESSION_SECRET: lighthouse-ci-session-not-for-prod
+          BOOTSTRAP_ADMIN_KEY: lighthouse-ci-bootstrap-key
           BOOTSTRAP_ADMIN_EMAIL: ci@example.com
           BOOTSTRAP_ADMIN_PASSWORD: CiPassword1!
           DATABASE_URL: "sqlite::memory:"
