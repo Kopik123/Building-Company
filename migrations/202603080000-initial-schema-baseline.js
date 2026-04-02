@@ -1,4 +1,4 @@
-const tableDoesNotExistPattern = /does not exist|unknown table|relation .* does not exist|no such table/i;
+const tableDoesNotExistPattern = /does not exist|unknown table|relation .* does not exist|no such table|no description found/i;
 
 const resolveColumnName = (tableDefinition, desiredColumnName) => {
   const columns = Object.keys(tableDefinition || {});

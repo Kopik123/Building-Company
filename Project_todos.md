@@ -54,6 +54,7 @@
 
 ## Completed
 
+- [x] Fixed the Lighthouse CI SQLite startup path: normalized SQLite `DATABASE_URL` handling in `config/database.js`, treated Sequelize's `No description found` table message as a missing-table case, skipped Postgres-only `pg_trgm` work on SQLite, made the estimates migration timestamp defaults cross-dialect, and excluded helper files from the Umzug migration glob.
 - [x] Replaced the remaining migration regex hotspots with bounded string parsing and tightened dynamic trigram-index SQL to use validated identifiers only.
 - [x] Removed the `Math.random()`-based mobile poller id generation and switched the production Docker image to a non-root runtime user with tighter Docker ignore rules for local/sensitive files.
 - [x] Added migration regression coverage for `unknown table` and `no such table` error handling before re-running the generated-page and API suites.
@@ -131,6 +132,31 @@
 - [x] Simplify duplicated `api` fallback in both review files
 
 - [ ] Validate system logs panel after deployment: confirm `system_logs` table is created by migration, page-visit entries appear under "Visit History", error entries appear under "Errors" in red, admin-only access enforced.
-- [ ] Consider adding `logUserAction` calls to key manager/auth routes (login, quote accept, estimate send) for richer user-action log coverage.
+- [x] Consider adding `logUserAction` calls to key manager/auth routes (login, quote accept, estimate send) for richer user-action log coverage.
 
 - [ ] Validate manager quote rejection after deployment: confirm rejected quotes are excluded from the default list, "Show archived" checkbox reveals them, client notification is sent, and revision history entry is recorded.
+
+## Deep-Research-Report – otwarte zadania (2026-04-02)
+
+Przeniesione z `deep-research-report.md` na podstawie analizy porównawczej z aktualnym stanem repo.
+
+### Wysoki priorytet (H)
+- [x] **GDPR – strona `/privacy-policy`**: Dodać dedykowaną stronę z polityką prywatności i informacjami o przetwarzaniu danych osobowych (formularz kontaktowy, sesje, logi).
+- [x] **GDPR – cookie consent banner**: Wdrożyć banner cookies widoczny przy pierwszej wizycie, z opcją akceptacji i odrzucenia. Banner nie może ustawiać analitycznych ciasteczek przed wyrażeniem zgody.
+- [x] **HTTPS / security headers**: Upewnić się, że nagłówki `Strict-Transport-Security`, `X-Frame-Options`, `X-Content-Type-Options` są wysyłane na produkcji (DigitalOcean App Platform / nginx).
+- [x] **Dane kontaktowe w stopce**: Pełna nazwa, adres siedziby i numer VAT/Companies House visible w stopce każdej publicznej strony.
+
+### Średni priorytet (M)
+- [x] **Schema.org LocalBusiness markup**: Dodać JSON-LD `LocalBusiness` do strony głównej i stron usług (nazwa, adres, telefon, URL, openingHours).
+- [x] **Meta descriptions i Open Graph**: Uzupełnić unikalne `<meta name="description">`, `<meta property="og:title">`, `<meta property="og:description">` i `<meta property="og:image">` na każdej publicznej stronie.
+- [x] **Sitemap.xml + robots.txt**: Wygenerować `/sitemap.xml` (dynamicznie lub statycznie) obejmujący publiczne strony i zarejestrować w Google Search Console.
+- [x] **Responsive images (`srcset/sizes`)**: Użyć znacznika `<picture>` z `srcset` i `sizes` dla sekcji hero i galerii, aby przeglądarka wybierała optymalną rozdzielczość.
+- [x] **ARIA labels dla ikon nawigacyjnych**: Dodać `aria-label` do linków ikon (Facebook, Instagram) i przycisków w nawigacji, które nie mają widocznego tekstu.
+- [x] **`<h1>` na każdej publicznej stronie**: Każda strona powinna mieć dokładnie jeden `<h1>` z kluczową frazą (np. „Luxury Construction Company in London").
+- [x] **`lang="en-GB"` w `<html>`**: Upewnić się, że wszystkie publiczne strony mają `lang="en-GB"` (nie `en` ani brak atrybutu).
+
+### Niski priorytet (L)
+- [x] **Core Web Vitals monitoring**: Dodać Google Search Console / Lighthouse CI do pipeline'u GitHub Actions, aby śledzić LCP, INP i CLS po każdym deploy.
+- [ ] **A/B testing CTA**: Rozważyć testy różnych tekstów i kolorów przycisku „Request a Quote" (złoty vs czarny) — po wdrożeniu Google Analytics (po uzyskaniu zgody cookies).
+- [ ] **Usunięcie zbędnych/developerskich plików**: Przejrzeć repozytorium pod kątem screenshotów, placeholderów i nieużywanych assetów i usunąć je.
+- [ ] **Favicon ICO/SVG**: Upewnić się, że favicon jest poprawnie zdefiniowany w `<head>` jako `favicon.ico` i `favicon.svg` (PWA-ready).

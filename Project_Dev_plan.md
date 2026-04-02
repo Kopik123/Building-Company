@@ -1,5 +1,15 @@
 # Project Dev Plan
 
+## 2026-04-02 (Lighthouse CI SQLite startup fix)
+
+- Reproduced the Lighthouse CI startup failure locally and confirmed the first blocker was `migrations/202603080000-initial-schema-baseline.js`, where SQLite `describeTable()` throws `No description found for "Users" table` on an empty database before `ensureTable()` can create the table.
+- Fixed that baseline migration to treat Sequelize SQLite's `No description found ...` message as a normal missing-table case.
+- Updated `config/database.js` so `DATABASE_URL` values like `sqlite://:memory:` are normalized into a real Sequelize SQLite connection (`dialect: 'sqlite', storage: ':memory:'`) instead of always forcing the Postgres dialect.
+- Hardened the Postgres-only trigram migrations (`202603080001-production-baseline-hardening.js` and `202603090000-performance-search-trgm-indexes.js`) so `pg_trgm` extension/index SQL is skipped on SQLite while normal non-trigram indexes still run where relevant.
+- Replaced the SQLite-incompatible `Sequelize.fn('NOW')` defaults in `migrations/202603100001-estimates.js` with `CURRENT_TIMESTAMP`, so the estimates tables can be created during the Lighthouse boot path.
+- Narrowed the Umzug glob in `db/migrator.js` to timestamped migration files only, so `_migration-helpers.js` is no longer treated as an executable migration.
+- Updated `.github/workflows/lighthouse.yml` to use `DATABASE_URL=sqlite://:memory:` for the Lighthouse job, recorded the fix in `Project_todos.md`, and re-ran focused migration/config tests, the full migration chain, `npm run test:ci`, and the `node server.js` + `/healthz` startup path successfully.
+
 ## 2026-04-01 (project analysis, bug fixes, security hardening, optimization)
 
 - Analysed the full project for logic errors, security vulnerabilities and code optimisation opportunities.
@@ -281,3 +291,21 @@
 - Added "Reject" button to each active quote card in `manager-dashboard.js` — only shown when `!quote.archivedAt && workflowStatus !== 'rejected' && workflowStatus !== 'archived'`. Shows a confirmation dialog and optional reason prompt before calling the reject endpoint.
 - Wired `showArchived` state through `applyQuotesFiltersFromUI`, `loadQuotes`, and the quotes query state.
 - Added `.btn--danger` and `.dashboard-filter-check` CSS to `styles/workspace.css`.
+
+## 2026-04-02 (analiza deep-research-report.md → backlog)
+
+- Przeanalizowano plik `deep-research-report.md` pod kątem aktualności w stosunku do obecnego stanu repozytorium.
+- Stwierdzono, że raport był generowany bez bezpośredniego dostępu do repo — wiele problemów (stack, bezpieczeństwo, fonty, build pipeline) jest już rozwiązanych.
+- Przeniesiono otwarte, wciąż aktualne zadania z raportu do `Project_todos.md` w sekcji „Deep-Research-Report – otwarte zadania (2026-04-02)".
+- Kluczowe nierozwiązane obszary: GDPR cookie banner, strona `/privacy-policy`, Schema.org LocalBusiness markup, meta descriptions/OG, sitemap.xml, ARIA labels, `lang="en-GB"`, Core Web Vitals monitoring.
+
+## 2026-04-02 (implementacja backlogu deep-research-report.md)
+
+- **HSTS explicit config**: Dodano `hsts: { maxAge: 31536000, includeSubDomains: true, preload: true }` do konfiguracji Helmet w `app.js` — HSTS jest teraz jednoznacznie skonfigurowany zamiast opierać się na wartościach domyślnych.
+- **Cookie consent banner**: Dodano banner GDPR do `site.js` (wyświetlany na wszystkich stronach `public-site` przy pierwszej wizycie, znika po kliknięciu "Accept", stan w `localStorage`). Dodano dedykowane style `.cookie-consent-banner` do `styles/public.css` (ciemne tło, złota obwódka, przycisk Accept, linki do Cookie Policy i Privacy).
+- **logUserAction — login**: Dodano import `logUserAction` do `routes/auth.js` i wywołanie po każdym udanym logowaniu (`user_login`).
+- **logUserAction — quote accept**: Dodano import `logUserAction` do `routes/client.js` i wywołanie gdy klient zaakceptuje wycenę (`client_accepted_quote`).
+- **logUserAction — estimate send**: Dodano import `logUserAction` do `routes/manager/estimate-routes.js` i wywołanie gdy manager wysyła kosztorys do klienta (`manager_sent_estimate_to_client`).
+- **Lighthouse CI**: Stworzono `.github/workflows/lighthouse.yml` — uruchamia Lighthouse CI na PR i push do main, zbiera wyniki dla 5 publicznych stron, uploaduje artefakty. Wyniki są "warn-only" (nie blokują merge).
+- Potwierdzono że wcześniej otwarte zadania (privacy.html, sitemap.xml, robots.txt, Schema.org, meta/OG, ARIA labels, h1, lang="en-GB", responsive images, dane kontaktowe w stopce) były już zaimplementowane w poprzednich sesjach.
+- Wszystkie zmiany przeszły przez `npm run verify:generated` i nie wprowadziły nowych regresji w `npm run test:api:v2`.

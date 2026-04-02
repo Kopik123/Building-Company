@@ -589,6 +589,40 @@
   setupDashboardAccordions();
   setupHomePageMotion();
 
+  // ── Cookie consent banner ──────────────────────────────────────────────
+  (() => {
+    const CONSENT_KEY = 'll_cookie_consent';
+    if (localStorage.getItem(CONSENT_KEY)) return;
+    if (!document.body.classList.contains('public-site')) return;
+
+    const banner = document.createElement('div');
+    banner.className = 'cookie-consent-banner';
+    banner.setAttribute('role', 'region');
+    banner.setAttribute('aria-label', 'Cookie consent');
+
+    const text = document.createElement('p');
+    text.innerHTML =
+      'This site uses essential cookies for session management only. No tracking or analytics cookies are set without consent. ' +
+      'See our <a href="/cookie-policy.html">Cookie Policy</a> and <a href="/privacy.html">Privacy Policy</a>.';
+
+    const actions = document.createElement('div');
+    actions.className = 'cookie-consent-actions';
+
+    const acceptBtn = document.createElement('button');
+    acceptBtn.type = 'button';
+    acceptBtn.className = 'cookie-consent-accept';
+    acceptBtn.textContent = 'Accept';
+    acceptBtn.addEventListener('click', () => {
+      localStorage.setItem(CONSENT_KEY, '1');
+      banner.remove();
+    });
+
+    actions.appendChild(acceptBtn);
+    banner.appendChild(text);
+    banner.appendChild(actions);
+    document.body.appendChild(banner);
+  })();
+
   const yearEls = document.querySelectorAll('[data-current-year], [data-year]');
   if (yearEls.length) {
     const year = String(new Date().getFullYear());

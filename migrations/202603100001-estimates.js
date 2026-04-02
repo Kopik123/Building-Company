@@ -3,6 +3,7 @@
 module.exports = {
   up: async (queryInterface, Sequelize) => {
     const { DataTypes } = Sequelize;
+    const currentTimestampDefault = Sequelize.literal('CURRENT_TIMESTAMP');
 
     await queryInterface.createTable('Estimates', {
       id: {
@@ -71,12 +72,12 @@ module.exports = {
       createdAt: {
         type: DataTypes.DATE,
         allowNull: false,
-        defaultValue: Sequelize.fn('NOW')
+        defaultValue: currentTimestampDefault
       },
       updatedAt: {
         type: DataTypes.DATE,
         allowNull: false,
-        defaultValue: Sequelize.fn('NOW')
+        defaultValue: currentTimestampDefault
       }
     });
 
@@ -159,12 +160,12 @@ module.exports = {
       createdAt: {
         type: DataTypes.DATE,
         allowNull: false,
-        defaultValue: Sequelize.fn('NOW')
+        defaultValue: currentTimestampDefault
       },
       updatedAt: {
         type: DataTypes.DATE,
         allowNull: false,
-        defaultValue: Sequelize.fn('NOW')
+        defaultValue: currentTimestampDefault
       }
     });
 

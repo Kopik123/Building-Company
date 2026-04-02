@@ -83,7 +83,16 @@ const addIndexIfMissing = async (queryInterface, tableName, indexName, fields, o
   await queryInterface.addIndex(tableName, fields, { name: indexName, ...options });
 };
 
+const supportsTrigramIndexes = (queryInterface) => {
+  const dialect = typeof queryInterface?.sequelize?.getDialect === 'function'
+    ? queryInterface.sequelize.getDialect()
+    : 'postgres';
+  return dialect === 'postgres';
+};
+
 const addTrigramIndexIfPossible = async (queryInterface, tableName, tableDefinition, columnName, indexName) => {
+  if (!supportsTrigramIndexes(queryInterface)) return;
+
   const resolvedColumn = resolveColumnName(tableDefinition, columnName);
   if (!resolvedColumn) return;
 
@@ -97,7 +106,9 @@ const addTrigramIndexIfPossible = async (queryInterface, tableName, tableDefinit
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    await queryInterface.sequelize.query('CREATE EXTENSION IF NOT EXISTS pg_trgm');
+    if (supportsTrigramIndexes(queryInterface)) {
+      await queryInterface.sequelize.query('CREATE EXTENSION IF NOT EXISTS pg_trgm');
+    }
 
     const quotesTable = await findExistingTable(queryInterface, ['Quotes', 'quotes']);
     if (quotesTable) {
@@ -143,12 +154,14 @@ module.exports = {
     const quotesTable = await findExistingTable(queryInterface, ['Quotes', 'quotes']);
     if (quotesTable) {
       await queryInterface.sequelize.query('DROP INDEX IF EXISTS quotes_assigned_manager_idx');
-      await queryInterface.sequelize.query('DROP INDEX IF EXISTS quotes_guest_email_trgm_idx');
-      await queryInterface.sequelize.query('DROP INDEX IF EXISTS quotes_guest_name_trgm_idx');
+      if (supportsTrigramIndexes(queryInterface)) {
+        await queryInterface.sequelize.query('DROP INDEX IF EXISTS quotes_guest_email_trgm_idx');
+        await queryInterface.sequelize.query('DROP INDEX IF EXISTS quotes_guest_name_trgm_idx');
+      }
     }
 
     const usersTable = await findExistingTable(queryInterface, ['Users', 'users']);
-    if (usersTable) {
+    if (usersTable && supportsTrigramIndexes(queryInterface)) {
       await queryInterface.sequelize.query('DROP INDEX IF EXISTS users_email_trgm_idx');
       await queryInterface.sequelize.query('DROP INDEX IF EXISTS users_name_trgm_idx');
     }

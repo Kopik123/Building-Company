@@ -23,6 +23,7 @@ const {
   deriveLegacyQuoteStatus
 } = require('../utils/quoteWorkflow');
 const { buildQuoteRevisionPayload } = require('../utils/revisionHistory');
+const { logUserAction } = require('../utils/logger');
 
 const router = express.Router();
 const clientGuard = [auth, roleCheck('client')];
@@ -338,6 +339,10 @@ router.post(
           siteVisitTimeWindow: requestedWindow || null
         }
       });
+    }
+
+    if (payload.clientDecisionStatus === 'accepted') {
+      logUserAction(req.user.id, 'client_accepted_quote', { quoteId: quote.id }, req).catch(() => {});
     }
 
     return res.json({ quote });
