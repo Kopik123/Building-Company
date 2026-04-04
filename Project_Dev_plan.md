@@ -1,5 +1,12 @@
 # Project Dev Plan
 
+## 2026-04-02 (DigitalOcean static asset build command fix)
+
+- Investigated the latest DigitalOcean deploy log and confirmed the platform still only ran `npm ci --omit=dev`, so the root `dist/` directory was never generated before the static asset upload phase.
+- Updated `.do/app.yaml` to run `npm ci --omit=dev && npm run build`, which preserves the lean root install while invoking the existing root Vite build that emits `/dist`.
+- Updated `Project_todos.md` so the remaining deployment follow-up explicitly checks both the `/dist` upload step and the Node service startup on port 8080.
+- Re-ran `npm run build` successfully; `npm run test:ci` still reports the pre-existing `DATABASE_URL is required` failures in `tests/api-v2/app-legacy-routes.test.js` inside this sandbox.
+
 ## 2026-04-02 (Lighthouse CI SQLite startup fix)
 
 - Reproduced the Lighthouse CI startup failure locally and confirmed the first blocker was `migrations/202603080000-initial-schema-baseline.js`, where SQLite `describeTable()` throws `No description found for "Users" table` on an empty database before `ensureTable()` can create the table.
