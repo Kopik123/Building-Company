@@ -1,5 +1,12 @@
 # Project Dev Plan
 
+## 2026-04-04 (DigitalOcean production npm build-chain fix)
+
+- Reproduced the DigitalOcean-style production install locally with `NPM_CONFIG_PRODUCTION=true npm ci --omit=dev && NPM_CONFIG_PRODUCTION=true npm run build` and confirmed the nested `apps/web-v2` install dropped Vite because `npm --prefix apps/web-v2 ci` inherited production omit-dev behaviour.
+- Updated the root `build:web-v2` script to run `npm --prefix apps/web-v2 ci --include=dev` before `vite build`, so the isolated frontend build keeps its build-time devDependencies even when the platform performs a production-only root install.
+- Updated `Project_todos.md` so the remaining deployment follow-up explicitly checks the nested web build dependency install as part of the next DigitalOcean validation pass.
+- Re-ran the production build path successfully after the change; the existing `npm run test:ci` command still reports the pre-existing `DATABASE_URL is required` failures from `tests/api-v2/app-legacy-routes.test.js` in this sandbox.
+
 ## 2026-04-02 (DigitalOcean static asset build command fix)
 
 - Investigated the latest DigitalOcean deploy log and confirmed the platform still only ran `npm ci --omit=dev`, so the root `dist/` directory was never generated before the static asset upload phase.
